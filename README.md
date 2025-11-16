@@ -33,14 +33,45 @@
 
 ### インストール
 
-#### 方法1: uvを使用する場合（推奨）
+#### 方法1: PyPIからインストール（推奨）
+
+```bash
+# pipを使用する場合
+pip install agents-docs-sync
+
+# またはuvを使用する場合
+uv pip install agents-docs-sync
+```
+
+#### 方法2: ワンライナーインストールスクリプト
+
+```bash
+# 最新の安定版をインストール
+curl -fsSL https://raw.githubusercontent.com/your-username/agents-docs-sync/main/install.sh | bash
+
+# 開発版をインストール（GitHubから）
+curl -fsSL https://raw.githubusercontent.com/your-username/agents-docs-sync/main/install.sh | bash -s -- --dev
+```
+
+#### 方法3: ソースコードからインストール
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/your-username/agents-docs-sync.git
+cd agents-docs-sync
+
+# インストール
+pip install -e .
+```
+
+#### 方法4: uvを使用する場合（開発用）
 
 ```bash
 # セットアップスクリプトを実行
 ./setup.sh
 ```
 
-#### 方法2: pipを使用する場合
+#### 方法5: 依存関係のみインストール
 
 ```bash
 # ドキュメント生成システム用の依存関係
@@ -48,12 +79,6 @@ pip install -r requirements-docgen.txt
 
 # テスト用の依存関係
 pip install -r requirements-test.txt
-```
-
-#### 方法3: pyproject.tomlからインストール
-
-```bash
-pip install -e .
 ```
 
 ### 初回設定
@@ -64,6 +89,34 @@ pip install -e .
 
 ```bash
 cp .docgen/config.yaml.sample .docgen/config.yaml
+```
+
+### 使用方法
+
+インストール後、以下のコマンドで使用できます：
+
+```bash
+# ドキュメントを生成
+agents-docs-sync
+
+# 言語検出のみ実行
+agents-docs-sync --detect-only
+
+# ヘルプを表示
+agents-docs-sync --help
+
+# バージョンを確認
+agents-docs-sync --version
+```
+
+### Dockerを使用する場合
+
+```bash
+# イメージをビルド
+docker build -t agents-docs-sync .
+
+# 実行
+docker run --rm -v $(pwd):/workspace -w /workspace agents-docs-sync
 ```
 
 ### プラットフォーム対応
@@ -87,6 +140,7 @@ cp .docgen/config.yaml.sample .docgen/config.yaml
 │   └── templates
 ├── .github
 │   └── workflows
+├── agents_docs_sync.egg-info
 ├── docs
 │   └── implementation/
 ├── scripts
@@ -98,10 +152,9 @@ cp .docgen/config.yaml.sample .docgen/config.yaml
 ├── AGENTS.md
 ├── README.md
 ├── pyproject.toml
-├── pytest.ini
 ...
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-16 15:54:52*
+*このREADMEは自動生成されています。最終更新: 2025-11-16 17:43:36*

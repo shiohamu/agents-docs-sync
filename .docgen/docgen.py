@@ -17,17 +17,28 @@ DOCGEN_DIR = Path(__file__).parent.resolve()
 
 # モジュールパスを追加（メインエントリーポイントとして実行される場合に必要）
 # 注意: このファイルは直接実行されることを想定しているため、sys.path.insertが必要
-if str(DOCGEN_DIR) not in sys.path:
-    sys.path.insert(0, str(DOCGEN_DIR))
-
-from detectors.python_detector import PythonDetector
-from detectors.javascript_detector import JavaScriptDetector
-from detectors.go_detector import GoDetector
-from detectors.generic_detector import GenericDetector
-from generators.api_generator import APIGenerator
-from generators.readme_generator import ReadmeGenerator
-from generators.agents_generator import AgentsGenerator
-from utils.logger import get_logger
+# パッケージとしてインストールされた場合は相対インポートを使用
+try:
+    from .detectors.python_detector import PythonDetector
+    from .detectors.javascript_detector import JavaScriptDetector
+    from .detectors.go_detector import GoDetector
+    from .detectors.generic_detector import GenericDetector
+    from .generators.api_generator import APIGenerator
+    from .generators.readme_generator import ReadmeGenerator
+    from .generators.agents_generator import AgentsGenerator
+    from .utils.logger import get_logger
+except (ImportError, ValueError, SystemError):
+    # 直接実行される場合のフォールバック
+    if str(DOCGEN_DIR) not in sys.path:
+        sys.path.insert(0, str(DOCGEN_DIR))
+    from detectors.python_detector import PythonDetector
+    from detectors.javascript_detector import JavaScriptDetector
+    from detectors.go_detector import GoDetector
+    from detectors.generic_detector import GenericDetector
+    from generators.api_generator import APIGenerator
+    from generators.readme_generator import ReadmeGenerator
+    from generators.agents_generator import AgentsGenerator
+    from utils.logger import get_logger
 
 # ロガーの初期化
 logger = get_logger("docgen")
@@ -235,9 +246,18 @@ class DocGen:
 def main():
     """メインエントリーポイント"""
     import argparse
+    try:
+        from . import __version__
+    except (ImportError, ValueError, SystemError):
+        __version__ = "0.0.1"
 
     parser = argparse.ArgumentParser(
         description='汎用ドキュメント自動生成システム'
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'%(prog)s {__version__}'
     )
     parser.add_argument(
         '--config',
