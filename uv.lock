@@ -3,8 +3,8 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "auto-update-agents"
-version = "0.1.0"
+name = "agents-docs-sync"
+version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "pytest" },

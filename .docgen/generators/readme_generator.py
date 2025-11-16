@@ -319,43 +319,106 @@ class ReadmeGenerator:
 
     def _get_project_structure(self) -> List[str]:
         """
-        プロジェクト構造を取得
+        プロジェクト構造を取得（重要なディレクトリとファイルのみ）
 
         Returns:
             構造の行リスト
         """
         structure = []
-        exclude_dirs = {'.git', '.docgen', '__pycache__', 'node_modules', '.venv', 'venv', '.idea', '.vscode'}
-        exclude_files = {'.gitignore', '.gitattributes'}
 
-        def _walk_dir(path: Path, prefix: str = "", max_depth: int = 3, current_depth: int = 0):
+        # 重要なディレクトリ（表示する）
+        important_dirs = {'.docgen', '.github', 'docs', 'scripts', 'tests'}
+
+        # 除外するディレクトリ（キャッシュ、仮想環境など）
+        exclude_dirs = {
+            '.git', '__pycache__', 'node_modules', '.venv', 'venv',
+            '.idea', '.vscode', '.pytest_cache', '.mypy_cache',
+            'htmlcov', '.coverage', 'dist', 'build', '*.egg-info'
+        }
+
+        # 重要なルートレベルのファイル
+        important_files = {
+            'README.md', 'AGENTS.md', 'pyproject.toml', 'pytest.ini',
+            'requirements.txt', 'requirements-docgen.txt', 'requirements-test.txt',
+            'setup.sh', 'package.json', 'go.mod', 'Makefile'
+        }
+
+        def _should_include(item: Path, is_root: bool = False) -> bool:
+            """アイテムを含めるべきか判定"""
+            if item.is_dir():
+                # 重要なディレクトリは含める
+                if item.name in important_dirs:
+                    return True
+                # 除外ディレクトリは含めない
+                if item.name in exclude_dirs or item.name.startswith('.'):
+                    return False
+                # ルートレベル以外の隠しディレクトリは除外
+                if not is_root and item.name.startswith('.'):
+                    return False
+                return False  # その他のディレクトリは除外
+            else:
+                # ルートレベルの重要なファイルは含める
+                if is_root and item.name in important_files:
+                    return True
+                return False
+
+        def _walk_dir(path: Path, prefix: str = "", max_depth: int = 2, current_depth: int = 0, is_root: bool = False):
+            """ディレクトリを再帰的に走査"""
             if current_depth >= max_depth:
                 return
 
             try:
                 items = sorted(path.iterdir(), key=lambda x: (x.is_file(), x.name))
-                # 除外するアイテムをフィルタリング
                 filtered_items = []
+
                 for item in items:
-                    # ディレクトリの場合はexclude_dirsをチェック
-                    if item.is_dir() and item.name in exclude_dirs:
-                        continue
-                    # ファイルの場合はexclude_filesをチェック
-                    if item.is_file() and item.name in exclude_files:
-                        continue
-                    filtered_items.append(item)
+                    if _should_include(item, is_root=(current_depth == 0)):
+                        filtered_items.append(item)
 
                 for i, item in enumerate(filtered_items):
                     is_last = i == len(filtered_items) - 1
                     current_prefix = "└── " if is_last else "├── "
                     structure.append(f"{prefix}{current_prefix}{item.name}")
 
-                    if item.is_dir():
-                        next_prefix = prefix + ("    " if is_last else "│   ")
-                        _walk_dir(item, next_prefix, max_depth, current_depth + 1)
+                    # ディレクトリの場合、重要なサブディレクトリのみ表示
+                    if item.is_dir() and current_depth < max_depth - 1:
+                        # .docgen, .github, docs, scripts, tests の主要サブディレクトリのみ
+                        if item.name == '.docgen':
+                            # .docgenの主要サブディレクトリ
+                            subdirs = ['detectors', 'generators', 'collectors', 'hooks', 'templates']
+                            sub_items = []
+                            for subdir in subdirs:
+                                sub_path = item / subdir
+                                if sub_path.exists() and sub_path.is_dir():
+                                    sub_items.append(sub_path)
+                            if sub_items:
+                                for j, sub_item in enumerate(sub_items):
+                                    sub_is_last = j == len(sub_items) - 1
+                                    sub_prefix = "└── " if sub_is_last else "├── "
+                                    next_prefix = prefix + ("    " if is_last else "│   ")
+                                    structure.append(f"{next_prefix}{sub_prefix}{sub_item.name}")
+                        elif item.name == '.github':
+                            # .github/workflows のみ
+                            workflows = item / 'workflows'
+                            if workflows.exists():
+                                next_prefix = prefix + ("    " if is_last else "│   ")
+                                structure.append(f"{next_prefix}└── workflows")
+                        elif item.name == 'docs':
+                            # docsの主要サブディレクトリ（implementationは省略）
+                            subdirs = ['implementation']
+                            for subdir in subdirs:
+                                sub_path = item / subdir
+                                if sub_path.exists() and sub_path.is_dir():
+                                    next_prefix = prefix + ("    " if is_last else "│   ")
+                                    structure.append(f"{next_prefix}└── {subdir}/")
+                                    break
+                        else:
+                            # その他のディレクトリは1階層のみ
+                            next_prefix = prefix + ("    " if is_last else "│   ")
+                            _walk_dir(item, next_prefix, max_depth, current_depth + 1, is_root=False)
             except PermissionError:
                 pass
 
-        _walk_dir(self.project_root)
+        _walk_dir(self.project_root, is_root=True)
         return structure
 

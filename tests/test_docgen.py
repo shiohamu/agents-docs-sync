@@ -40,21 +40,78 @@ class TestDocGen:
 
     def test_detect_languages_python(self, python_project):
         """Pythonプロジェクトの言語検出を確認"""
-        # 一時プロジェクトをルートとして使用するため、DocGenを直接テストするのは難しい
-        # 代わりに、detect_languagesメソッドの動作を確認
+        # PythonDetectorを直接使用してテスト
+        from detectors.python_detector import PythonDetector
+
+        detector = PythonDetector(python_project)
+        assert detector.detect() is True
+        assert detector.get_language() == 'python'
+
+        # DocGenのdetect_languagesメソッドもテスト
+        # 注意: DocGenは実際のプロジェクトルートを使用するため、
+        # このテストは現在のプロジェクトがPythonプロジェクトであることを前提としています
         docgen = DocGen()
-        # 実際のプロジェクトルートではなく、テスト用のパスを使用
-        # このテストは統合テストでより適切にテストされる
+        languages = docgen.detect_languages()
+        # 現在のプロジェクトがPythonプロジェクトであれば、pythonが検出されるはず
+        assert isinstance(languages, list)
 
     def test_detect_languages_empty_project(self, temp_project):
         """空のプロジェクトで言語が検出されないことを確認"""
-        # このテストは統合テストで実装
+        from detectors.python_detector import PythonDetector
+        from detectors.javascript_detector import JavaScriptDetector
+        from detectors.go_detector import GoDetector
+
+        # 空のプロジェクトでは言語が検出されないことを確認
+        python_detector = PythonDetector(temp_project)
+        js_detector = JavaScriptDetector(temp_project)
+        go_detector = GoDetector(temp_project)
+
+        assert python_detector.detect() is False
+        assert js_detector.detect() is False
+        assert go_detector.detect() is False
 
     def test_generate_documents(self, python_project, sample_config):
         """ドキュメント生成が実行されることを確認"""
-        docgen = DocGen(config_path=sample_config)
-        # プロジェクトルートを一時的に変更する必要があるため、
-        # このテストは統合テストで実装
+        # 統合テストとして、各コンポーネントを個別にテスト
+        # DocGenクラスはPROJECT_ROOTをグローバル変数として使用するため、
+        # 一時プロジェクトを直接使用するのは難しい
+        # 代わりに、各生成器を直接テスト
+
+        config = {
+            'output': {
+                'api_doc': 'docs/api.md',
+                'readme': 'README.md',
+                'agents_doc': 'AGENTS.md'
+            },
+            'generation': {
+                'update_readme': True,
+                'generate_api_doc': True,
+                'generate_agents_doc': True,
+                'preserve_manual_sections': True
+            }
+        }
+
+        from generators.api_generator import APIGenerator
+        from generators.readme_generator import ReadmeGenerator
+        from generators.agents_generator import AgentsGenerator
+
+        # API生成をテスト
+        api_generator = APIGenerator(python_project, ['python'], config)
+        result = api_generator.generate()
+        assert result is True
+        assert (python_project / "docs" / "api.md").exists()
+
+        # README生成をテスト
+        readme_generator = ReadmeGenerator(python_project, ['python'], config)
+        result = readme_generator.generate()
+        assert result is True
+        assert (python_project / "README.md").exists()
+
+        # AGENTS.md生成をテスト
+        agents_generator = AgentsGenerator(python_project, ['python'], config)
+        result = agents_generator.generate()
+        assert result is True
+        assert (python_project / "AGENTS.md").exists()
 
     def test_config_merges_with_defaults(self, temp_project):
         """部分的な設定がデフォルトとマージされることを確認"""

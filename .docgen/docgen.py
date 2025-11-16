@@ -8,7 +8,7 @@ import os
 import sys
 import yaml
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 # プロジェクトルートのパスを取得
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -23,6 +23,7 @@ from detectors.go_detector import GoDetector
 from detectors.generic_detector import GenericDetector
 from generators.api_generator import APIGenerator
 from generators.readme_generator import ReadmeGenerator
+from generators.agents_generator import AgentsGenerator
 
 
 class DocGen:
@@ -42,11 +43,42 @@ class DocGen:
         self.detected_languages = []
 
     def _load_config(self) -> Dict[str, Any]:
-        """設定ファイルを読み込む"""
+        """
+        設定ファイルを読み込む
+
+        Returns:
+            設定辞書。ファイルが存在しない場合はデフォルト設定を返す
+        """
         if self.config_path.exists():
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f) or {}
-        return self._get_default_config()
+            try:
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    config = yaml.safe_load(f) or {}
+                    return config
+            except yaml.YAMLError as e:
+                print(f"警告: 設定ファイルの解析に失敗しました: {e}")
+                print("デフォルト設定を使用します。")
+                return self._get_default_config()
+            except Exception as e:
+                print(f"警告: 設定ファイルの読み込みに失敗しました: {e}")
+                print("デフォルト設定を使用します。")
+                return self._get_default_config()
+        else:
+            # 設定ファイルが存在しない場合、sampleからコピーを試みる
+            sample_path = self.docgen_dir / "config.yaml.sample"
+            if sample_path.exists():
+                try:
+                    import shutil
+                    shutil.copy2(sample_path, self.config_path)
+                    print(f"情報: {sample_path.name}から{self.config_path.name}を作成しました。")
+                    with open(self.config_path, 'r', encoding='utf-8') as f:
+                        return yaml.safe_load(f) or {}
+                except Exception as e:
+                    print(f"警告: 設定ファイルの作成に失敗しました: {e}")
+                    print("デフォルト設定を使用します。")
+            else:
+                print(f"警告: 設定ファイルが見つかりません: {self.config_path}")
+                print("デフォルト設定を使用します。")
+            return self._get_default_config()
 
     def _get_default_config(self) -> Dict[str, Any]:
         """デフォルト設定を返す"""
@@ -57,16 +89,18 @@ class DocGen:
             },
             'output': {
                 'api_doc': 'docs/api.md',
-                'readme': 'README.md'
+                'readme': 'README.md',
+                'agents_doc': 'AGENTS.md'
             },
             'generation': {
                 'update_readme': True,
                 'generate_api_doc': True,
+                'generate_agents_doc': True,
                 'preserve_manual_sections': True
             }
         }
 
-    def detect_languages(self) -> list:
+    def detect_languages(self) -> List[str]:
         """
         プロジェクトの使用言語を自動検出
 
@@ -110,29 +144,61 @@ class DocGen:
         # APIドキュメント生成
         if self.config.get('generation', {}).get('generate_api_doc', True):
             print("\n[APIドキュメント生成]")
-            api_generator = APIGenerator(
-                self.project_root,
-                self.detected_languages,
-                self.config
-            )
-            if api_generator.generate():
-                print("✓ APIドキュメントを生成しました")
-            else:
-                print("✗ APIドキュメントの生成に失敗しました")
+            try:
+                api_generator = APIGenerator(
+                    self.project_root,
+                    self.detected_languages,
+                    self.config
+                )
+                if api_generator.generate():
+                    print("✓ APIドキュメントを生成しました")
+                else:
+                    print("✗ APIドキュメントの生成に失敗しました")
+                    success = False
+            except Exception as e:
+                print(f"✗ APIドキュメントの生成中にエラーが発生しました: {e}")
+                import traceback
+                traceback.print_exc()
                 success = False
 
         # README生成
         if self.config.get('generation', {}).get('update_readme', True):
             print("\n[README生成]")
-            readme_generator = ReadmeGenerator(
-                self.project_root,
-                self.detected_languages,
-                self.config
-            )
-            if readme_generator.generate():
-                print("✓ READMEを更新しました")
-            else:
-                print("✗ READMEの更新に失敗しました")
+            try:
+                readme_generator = ReadmeGenerator(
+                    self.project_root,
+                    self.detected_languages,
+                    self.config
+                )
+                if readme_generator.generate():
+                    print("✓ READMEを更新しました")
+                else:
+                    print("✗ READMEの更新に失敗しました")
+                    success = False
+            except Exception as e:
+                print(f"✗ READMEの更新中にエラーが発生しました: {e}")
+                import traceback
+                traceback.print_exc()
+                success = False
+
+        # AGENTS.md生成
+        if self.config.get('generation', {}).get('generate_agents_doc', True):
+            print("\n[AGENTS.md生成]")
+            try:
+                agents_generator = AgentsGenerator(
+                    self.project_root,
+                    self.detected_languages,
+                    self.config
+                )
+                if agents_generator.generate():
+                    print("✓ AGENTS.mdを生成しました")
+                else:
+                    print("✗ AGENTS.mdの生成に失敗しました")
+                    success = False
+            except Exception as e:
+                print(f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}")
+                import traceback
+                traceback.print_exc()
                 success = False
 
         return success
