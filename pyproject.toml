@@ -39,7 +39,7 @@ dependencies = [
 agents-docs-sync = "docgen.docgen:main"
 
 [tool.uv]
-default-groups = ["dev"]
+default-groups = ["default"]
 
 [dependency-groups]
 # ドキュメント生成システム用の依存関係
@@ -58,7 +58,7 @@ test = [
 ]
 
 # 開発用の依存関係（テストとドキュメント生成を含む）
-dev = [
+default = [
     {include-group = "docgen"},
     {include-group = "test"}
 ]
