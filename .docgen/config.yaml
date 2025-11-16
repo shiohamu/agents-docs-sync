@@ -1,0 +1,64 @@
+# 汎用ドキュメント自動生成システム 設定ファイル
+# このファイルを編集して、ドキュメント生成の動作をカスタマイズできます
+
+# 言語設定
+languages:
+  # 自動検出を有効にするかどうか
+  auto_detect: true
+
+  # 優先する言語（自動検出で複数の言語が検出された場合の優先順位）
+  # 空の場合は検出された順序を使用
+  preferred: []
+
+  # 例:
+  # preferred:
+  #   - python
+  #   - javascript
+  #   - go
+
+# 出力設定
+output:
+  # APIドキュメントの出力パス（プロジェクトルートからの相対パス）
+  api_doc: docs/api.md
+
+  # READMEファイルのパス（プロジェクトルートからの相対パス）
+  readme: README.md
+
+# 生成設定
+generation:
+  # READMEを更新するかどうか
+  update_readme: true
+
+  # APIドキュメントを生成するかどうか
+  generate_api_doc: true
+
+  # 既存READMEの手動セクションを保持するかどうか
+  # <!-- MANUAL_START:section_name --> と <!-- MANUAL_END:section_name --> で
+  # 囲まれたセクションは保持されます
+  preserve_manual_sections: true
+
+# 除外設定（オプション）
+# exclude:
+#   # 除外するディレクトリ
+#   directories:
+#     - .git
+#     - .docgen
+#     - __pycache__
+#     - node_modules
+#     - .venv
+#     - venv
+#
+#   # 除外するファイルパターン（glob形式）
+#   patterns:
+#     - "*.pyc"
+#     - "*.pyo"
+#     - "*.log"
+
+# カスタマイズ設定（オプション）
+# custom:
+#   # APIドキュメントのテンプレート（将来の拡張用）
+#   # api_template: null
+#
+#   # READMEのテンプレート（将来の拡張用）
+#   # readme_template: null
+

@@ -1,0 +1,12 @@
+[project]
+name = "agents-docs-sync"
+version = "0.0.1"
+description = "GitHub にプッシュされた変更をトリガーに、テスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.1",
+    "pyyaml>=6.0.3",
+]
