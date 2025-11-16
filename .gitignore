@@ -154,6 +154,7 @@ config.local.yml
 # ============================================
 .cache/
 *.cache
+.docgen/.cache/
 .temp/
 tmp/
 temp/

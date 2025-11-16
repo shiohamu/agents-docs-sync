@@ -157,4 +157,4 @@ docker run --rm -v $(pwd):/workspace -w /workspace agents-docs-sync
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-16 17:43:36*
+*このREADMEは自動生成されています。最終更新: 2025-11-16 18:05:29*

@@ -10,6 +10,7 @@ from datetime import datetime
 # フォールバック: 絶対インポート
 try:
     from ..collectors.project_info_collector import ProjectInfoCollector
+    from ..utils.logger import get_logger
 except ImportError:
     # 相対インポートが失敗した場合のフォールバック
     import sys
@@ -17,6 +18,9 @@ except ImportError:
     if str(DOCGEN_DIR) not in sys.path:
         sys.path.insert(0, str(DOCGEN_DIR))
     from collectors.project_info_collector import ProjectInfoCollector
+    from utils.logger import get_logger
+
+logger = get_logger("agents_generator")
 
 
 class AgentsGenerator:
@@ -69,9 +73,7 @@ class AgentsGenerator:
 
             return True
         except Exception as e:
-            print(f"エラー: AGENTS.md生成に失敗しました: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"AGENTS.md生成に失敗しました: {e}", exc_info=True)
             return False
 
     def _generate_markdown(self, project_info: Dict[str, Any]) -> str:

@@ -3,12 +3,29 @@ APIドキュメント生成モジュール
 """
 
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, TYPE_CHECKING
 from datetime import datetime
 
 from .parsers.python_parser import PythonParser
 from .parsers.js_parser import JSParser
 from .parsers.generic_parser import GenericParser
+
+if TYPE_CHECKING:
+    from .parsers.base_parser import BaseParser
+
+# ロガーのインポート
+try:
+    from ..utils.logger import get_logger
+    from ..utils.cache import CacheManager
+except ImportError:
+    import sys
+    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
+    if str(DOCGEN_DIR) not in sys.path:
+        sys.path.insert(0, str(DOCGEN_DIR))
+    from utils.logger import get_logger
+    from utils.cache import CacheManager
+
+logger = get_logger("api_generator")
 
 
 class APIGenerator:
@@ -32,6 +49,13 @@ class APIGenerator:
         if not self.output_path.is_absolute():
             self.output_path = project_root / self.output_path
 
+        # キャッシュマネージャーの初期化
+        cache_enabled = config.get('cache', {}).get('enabled', True)
+        self.cache_manager = CacheManager(
+            project_root=project_root,
+            enabled=cache_enabled
+        ) if cache_enabled else None
+
     def generate(self) -> bool:
         """
         APIドキュメントを生成
@@ -47,8 +71,21 @@ class APIGenerator:
             all_apis = []
             parsers = self._get_parsers()
 
+            # 除外ディレクトリとファイルパターンを設定
+            exclude_dirs = self.config.get('exclude', {}).get('directories', [
+                '.git', '.docgen', '__pycache__', 'node_modules', '.venv', 'venv',
+                'htmlcov', '.pytest_cache', 'dist', 'build'
+            ])
+
+            # キャッシュの使用設定
+            use_cache = self.config.get('cache', {}).get('enabled', True)
+
             for parser in parsers:
-                apis = parser.parse_project()
+                apis = parser.parse_project(
+                    exclude_dirs=exclude_dirs,
+                    use_cache=use_cache,
+                    cache_manager=self.cache_manager
+                )
                 all_apis.extend(apis)
 
             # API情報をソート（ファイル名、行番号順）
@@ -63,10 +100,10 @@ class APIGenerator:
 
             return True
         except Exception as e:
-            print(f"エラー: APIドキュメント生成に失敗しました: {e}")
+            logger.error(f"APIドキュメント生成に失敗しました: {e}", exc_info=True)
             return False
 
-    def _get_parsers(self) -> List:
+    def _get_parsers(self) -> List['BaseParser']:
         """
         言語に応じたパーサーのリストを取得
 

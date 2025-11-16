@@ -7,6 +7,18 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
+# ロガーのインポート
+try:
+    from ..utils.logger import get_logger
+except ImportError:
+    import sys
+    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
+    if str(DOCGEN_DIR) not in sys.path:
+        sys.path.insert(0, str(DOCGEN_DIR))
+    from utils.logger import get_logger
+
+logger = get_logger("readme_generator")
+
 
 class ReadmeGenerator:
     """README生成クラス"""
@@ -49,7 +61,7 @@ class ReadmeGenerator:
 
             return True
         except Exception as e:
-            print(f"エラー: README生成に失敗しました: {e}")
+            logger.error(f"README生成に失敗しました: {e}", exc_info=True)
             return False
 
     def _extract_manual_sections(self, content: str) -> Dict[str, str]:

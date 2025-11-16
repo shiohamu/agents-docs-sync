@@ -3,9 +3,10 @@
 """
 
 import sys
+import copy
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # モジュールパスを追加（utils.loggerをインポートするため）
@@ -16,6 +17,9 @@ if str(DOCGEN_DIR) not in sys.path:
     sys.path.insert(0, str(DOCGEN_DIR))
 
 from utils.logger import get_logger
+
+if TYPE_CHECKING:
+    from utils.cache import CacheManager
 
 logger = get_logger("parser")
 
@@ -61,7 +65,32 @@ class BaseParser(ABC):
         """
         pass
 
-    def parse_project(self, exclude_dirs: Optional[List[str]] = None, use_parallel: bool = True, max_workers: Optional[int] = None) -> List[Dict[str, Any]]:
+    def get_parser_type(self) -> str:
+        """
+        パーサーの種類を返す（キャッシュキーの生成に使用）
+
+        Returns:
+            パーサーの種類（例: 'python', 'javascript'）
+        """
+        # デフォルト実装: クラス名から推測
+        class_name = self.__class__.__name__.lower()
+        if 'python' in class_name:
+            return 'python'
+        elif 'javascript' in class_name or 'js' in class_name:
+            return 'javascript'
+        elif 'go' in class_name:
+            return 'go'
+        else:
+            return 'generic'
+
+    def parse_project(
+        self,
+        exclude_dirs: Optional[List[str]] = None,
+        use_parallel: bool = True,
+        max_workers: Optional[int] = None,
+        use_cache: bool = True,
+        cache_manager: Optional['CacheManager'] = None
+    ) -> List[Dict[str, Any]]:
         """
         プロジェクト全体を解析
 
@@ -69,12 +98,18 @@ class BaseParser(ABC):
             exclude_dirs: 除外するディレクトリ（例: ['.git', 'node_modules']）
             use_parallel: 並列処理を使用するかどうか（デフォルト: True）
             max_workers: 並列処理の最大ワーカー数（Noneの場合は自動）
+            use_cache: キャッシュを使用するかどうか（デフォルト: True）
+            cache_manager: キャッシュマネージャー（Noneの場合はキャッシュを使用しない）
 
         Returns:
             全API情報のリスト
         """
         if exclude_dirs is None:
-            exclude_dirs = ['.git', '.docgen', '__pycache__', 'node_modules', '.venv', 'venv']
+            exclude_dirs = ['.git', '.docgen', '__pycache__', 'node_modules', '.venv', 'venv', 'htmlcov', '.pytest_cache', 'dist', 'build']
+
+        # キャッシュの設定
+        effective_use_cache = use_cache and cache_manager is not None
+        parser_type = self.get_parser_type()
 
         all_apis = []
         extensions = self.get_supported_extensions()
@@ -107,6 +142,10 @@ class BaseParser(ABC):
                     if any(excluded in file_path.parts for excluded in exclude_dirs):
                         continue
 
+                    # egg-infoディレクトリをスキップ（動的な名前のため）
+                    if any(part.endswith('.egg-info') for part in file_path.parts):
+                        continue
+
                     files_to_parse.append((file_path, file_path_relative))
                 except (OSError, PermissionError) as e:
                     # ファイルアクセスエラー（権限エラーなど）は無視して続行
@@ -117,7 +156,13 @@ class BaseParser(ABC):
         if use_parallel and len(files_to_parse) > 10:  # ファイル数が10を超える場合のみ並列処理
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_file = {
-                    executor.submit(self._parse_file_safe, file_path, file_path_relative): (file_path, file_path_relative)
+                    executor.submit(
+                        self._parse_file_safe,
+                        file_path,
+                        file_path_relative,
+                        cache_manager if effective_use_cache else None,
+                        parser_type if effective_use_cache else None
+                    ): (file_path, file_path_relative)
                     for file_path, file_path_relative in files_to_parse
                 }
 
@@ -133,30 +178,63 @@ class BaseParser(ABC):
             # 逐次処理
             for file_path, file_path_relative in files_to_parse:
                 try:
-                    apis = self._parse_file_safe(file_path, file_path_relative)
+                    apis = self._parse_file_safe(
+                        file_path,
+                        file_path_relative,
+                        cache_manager if effective_use_cache else None,
+                        parser_type if effective_use_cache else None
+                    )
                     if apis:
                         all_apis.extend(apis)
                 except Exception as e:
                     logger.warning(f"{file_path} の解析に失敗しました: {e}")
                     continue
 
+        # キャッシュを保存
+        if effective_use_cache and cache_manager:
+            cache_manager.save()
+
         return all_apis
 
-    def _parse_file_safe(self, file_path: Path, file_path_relative: Path) -> List[Dict[str, Any]]:
+    def _parse_file_safe(
+        self,
+        file_path: Path,
+        file_path_relative: Path,
+        cache_manager: Optional['CacheManager'] = None,
+        parser_type: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         ファイルを安全に解析（内部メソッド）
 
         Args:
             file_path: ファイルパス
             file_path_relative: 相対パス
+            cache_manager: キャッシュマネージャー（オプション）
+            parser_type: パーサーの種類（オプション）
 
         Returns:
             API情報のリスト
         """
+        # キャッシュから結果を取得
+        if cache_manager is not None and parser_type is not None:
+            cached_result = cache_manager.get_cached_result(file_path, parser_type)
+            if cached_result is not None:
+                # キャッシュされた結果のコピーを作成（キャッシュ内のデータを変更しないため）
+                result = copy.deepcopy(cached_result)
+                # 相対パスを設定
+                for api in result:
+                    api['file'] = str(file_path_relative)
+                return result
+
         try:
             apis = self.parse_file(file_path)
             for api in apis:
                 api['file'] = str(file_path_relative)
+
+            # 結果をキャッシュに保存
+            if cache_manager is not None and parser_type is not None:
+                cache_manager.set_cached_result(file_path, parser_type, apis)
+
             return apis
         except Exception as e:
             logger.warning(f"{file_path} の解析に失敗しました: {e}")
