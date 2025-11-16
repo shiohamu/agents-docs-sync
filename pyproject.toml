@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agents-docs-sync"
-version = "0.0.1"
+version = "0.1.0"
 description = "GitHub にプッシュされた変更をトリガーに、テスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン"
 readme = "README.md"
 requires-python = ">=3.12"
