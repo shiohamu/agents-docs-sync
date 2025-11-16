@@ -64,8 +64,34 @@ class BaseDetector(ABC):
         Returns:
             該当ファイルが存在する場合True
         """
+        # プロジェクトルートを正規化（絶対パスに変換）
+        project_root_resolved = self.project_root.resolve()
+
         for ext in extensions:
-            if list(self.project_root.rglob(f'*{ext}')):
-                return True
+            try:
+                for file_path in self.project_root.rglob(f'*{ext}'):
+                    try:
+                        # パスの正規化（シンボリックリンクを解決）
+                        file_path_resolved = file_path.resolve()
+
+                        # プロジェクトルート外へのアクセスを防止
+                        try:
+                            file_path_resolved.relative_to(project_root_resolved)
+                        except ValueError:
+                            # プロジェクトルート外のファイルはスキップ
+                            continue
+
+                        # シンボリックリンクをスキップ（オプション）
+                        if file_path.is_symlink():
+                            continue
+
+                        # 有効なファイルが見つかった
+                        return True
+                    except (OSError, PermissionError):
+                        # ファイルアクセスエラーは無視して続行
+                        continue
+            except (OSError, PermissionError):
+                # ディレクトリアクセスエラーは無視して続行
+                continue
         return False
 

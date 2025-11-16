@@ -97,7 +97,9 @@ class GenericParser(BaseParser):
 
             return apis
         except Exception as e:
-            print(f"警告: {file_path} の解析エラー: {e}")
+            # base_parserのloggerを使用
+            from .base_parser import logger
+            logger.warning(f"{file_path} の解析エラー: {e}")
             return []
 
     def _extract_signature(self, content: str, start_pos: int, name: str, api_type: str) -> str:

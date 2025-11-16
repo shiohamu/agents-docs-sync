@@ -1,7 +1,6 @@
-# テスト用依存関係
+# このファイルはpyproject.tomlから自動生成されます
+# 手動で編集しないでください
+
 pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-mock>=3.11.1
-
-# 注意: pyyamlはrequirements-docgen.txtに定義されています
-# テストでYAMLファイルを読み込む必要がある場合は、requirements-docgen.txtもインストールしてください

@@ -1,8 +1,173 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-16 14:53:30
+自動生成日時: 2025-11-16 15:54:52
 
 ---
+
+## htmlcov/coverage_html_cb_cadff66e.js
+
+### debounce
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function debounce(...)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:11*
+
+---
+
+### checkVisible
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function checkVisible(element)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:21*
+
+---
+
+### on_click
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function on_click(sel, fn)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:28*
+
+---
+
+### getCellValue
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function getCellValue(...)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:36*
+
+---
+
+### rowComparator
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function rowComparator(...)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:50*
+
+---
+
+### sortColumn
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function sortColumn(th)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:59*
+
+---
+
+### or
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function or(...)
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:96*
+
+---
+
+### updateHeader
+
+**型**: `function`
+
+**シグネチャ**:
+```
+function updateHeader()
+```
+
+*説明なし*
+
+*定義場所: htmlcov/coverage_html_cb_cadff66e.js:697*
+
+---
+
+
+## scripts/generate_requirements.py
+
+### generate_requirements_file
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def generate_requirements_file(extras: list[str], output_file: Path, include_base: bool) -> None
+```
+
+**説明**:
+
+pyproject.tomlからrequirementsファイルを生成
+
+Args:
+    extras: オプショナル依存関係のリスト（例: ['docgen', 'test']）
+    output_file: 出力ファイルのパス
+    include_base: 基本依存関係を含めるかどうか
+
+*定義場所: scripts/generate_requirements.py:12*
+
+---
+
+### main
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def main()
+```
+
+**説明**:
+
+メイン処理
+
+*定義場所: scripts/generate_requirements.py:57*
+
+---
+
 
 ## tests/conftest.py
 
@@ -163,6 +328,417 @@ Returns:
     Path: プロジェクトルート
 
 *定義場所: tests/conftest.py:225*
+
+---
+
+
+## tests/test_collectors/test_project_info_collector.py
+
+### TestProjectInfoCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestProjectInfoCollector
+```
+
+**説明**:
+
+ProjectInfoCollectorのテストクラス
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:13*
+
+---
+
+### test_collect_all
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_all(self, temp_project)
+```
+
+**説明**:
+
+collect_all()がすべての情報を収集することを確認
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:16*
+
+---
+
+### test_collect_build_commands_from_makefile
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_from_makefile(self, temp_project)
+```
+
+**説明**:
+
+Makefileからビルドコマンドを収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:32*
+
+---
+
+### test_collect_build_commands_from_package_json
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_from_package_json(self, temp_project)
+```
+
+**説明**:
+
+package.jsonからビルドコマンドを収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:50*
+
+---
+
+### test_collect_build_commands_from_script
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_from_script(self, temp_project)
+```
+
+**説明**:
+
+scripts/run_pipeline.shからビルドコマンドを収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:66*
+
+---
+
+### test_collect_test_commands_from_pytest_ini
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_from_pytest_ini(self, temp_project)
+```
+
+**説明**:
+
+pytest.iniからテストコマンドを収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:77*
+
+---
+
+### test_collect_test_commands_from_package_json
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_from_package_json(self, temp_project)
+```
+
+**説明**:
+
+package.jsonからテストコマンドを収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:86*
+
+---
+
+### test_collect_test_commands_from_script
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_from_script(self, temp_project)
+```
+
+**説明**:
+
+scripts/run_tests.shからテストコマンドを収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:100*
+
+---
+
+### test_collect_dependencies_python
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_python(self, temp_project)
+```
+
+**説明**:
+
+Python依存関係を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:111*
+
+---
+
+### test_collect_dependencies_nodejs
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_nodejs(self, temp_project)
+```
+
+**説明**:
+
+Node.js依存関係を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:124*
+
+---
+
+### test_collect_dependencies_invalid_json
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_invalid_json(self, temp_project)
+```
+
+**説明**:
+
+無効なJSONファイルを処理
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:141*
+
+---
+
+### test_collect_coding_standards_from_pyproject_toml
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_from_pyproject_toml(self, temp_project)
+```
+
+**説明**:
+
+pyproject.tomlからコーディング規約を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:151*
+
+---
+
+### test_collect_coding_standards_invalid_toml
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_invalid_toml(self, temp_project)
+```
+
+**説明**:
+
+無効なTOMLファイルの処理（フォールバック処理をテスト）
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:167*
+
+---
+
+### test_collect_coding_standards_toml_with_black_and_ruff
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_toml_with_black_and_ruff(self, temp_project)
+```
+
+**説明**:
+
+pyproject.tomlにblackとruffの両方が含まれる場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:182*
+
+---
+
+### test_collect_coding_standards_from_editorconfig
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_from_editorconfig(self, temp_project)
+```
+
+**説明**:
+
+`.editorconfig`からコーディング規約を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:198*
+
+---
+
+### test_collect_coding_standards_from_prettier
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_from_prettier(self, temp_project)
+```
+
+**説明**:
+
+Prettier設定ファイルからコーディング規約を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:207*
+
+---
+
+### test_collect_ci_cd_info_github_actions
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_ci_cd_info_github_actions(self, temp_project)
+```
+
+**説明**:
+
+GitHub Actionsの情報を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:216*
+
+---
+
+### test_collect_project_structure
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_project_structure(self, temp_project)
+```
+
+**説明**:
+
+プロジェクト構造を収集
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:230*
+
+---
+
+### test_collect_project_structure_no_languages
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_project_structure_no_languages(self, temp_project)
+```
+
+**説明**:
+
+言語が検出されない場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:249*
+
+---
+
+### test_collect_build_commands_empty
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_empty(self, temp_project)
+```
+
+**説明**:
+
+ビルドコマンドが存在しない場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:257*
+
+---
+
+### test_collect_test_commands_empty
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_empty(self, temp_project)
+```
+
+**説明**:
+
+テストコマンドが存在しない場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:265*
+
+---
+
+### test_collect_dependencies_empty
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_empty(self, temp_project)
+```
+
+**説明**:
+
+依存関係が存在しない場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:272*
+
+---
+
+### test_collect_coding_standards_empty
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_empty(self, temp_project)
+```
+
+**説明**:
+
+コーディング規約が存在しない場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:280*
+
+---
+
+### test_collect_ci_cd_info_empty
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_ci_cd_info_empty(self, temp_project)
+```
+
+**説明**:
+
+CI/CD情報が存在しない場合
+
+*定義場所: tests/test_collectors/test_project_info_collector.py:288*
 
 ---
 
@@ -739,6 +1315,193 @@ def test_config_merges_with_defaults(self, temp_project)
 部分的な設定がデフォルトとマージされることを確認
 
 *定義場所: tests/test_docgen.py:116*
+
+---
+
+### test_load_config_invalid_yaml
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_load_config_invalid_yaml(self, temp_project)
+```
+
+**説明**:
+
+無効なYAMLファイルを処理
+
+*定義場所: tests/test_docgen.py:135*
+
+---
+
+### test_load_config_missing_file
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_load_config_missing_file(self, temp_project)
+```
+
+**説明**:
+
+設定ファイルが存在しない場合
+
+*定義場所: tests/test_docgen.py:147*
+
+---
+
+### test_detect_languages_parallel
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_detect_languages_parallel(self, python_project)
+```
+
+**説明**:
+
+並列処理で言語検出
+
+*定義場所: tests/test_docgen.py:154*
+
+---
+
+### test_detect_languages_sequential
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_detect_languages_sequential(self, python_project)
+```
+
+**説明**:
+
+逐次処理で言語検出
+
+*定義場所: tests/test_docgen.py:160*
+
+---
+
+### test_generate_documents_no_languages
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_generate_documents_no_languages(self, temp_project)
+```
+
+**説明**:
+
+言語が検出されない場合のドキュメント生成
+
+*定義場所: tests/test_docgen.py:166*
+
+---
+
+### test_generate_documents_api_doc_disabled
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_generate_documents_api_doc_disabled(self, python_project)
+```
+
+**説明**:
+
+APIドキュメント生成が無効な場合
+
+*定義場所: tests/test_docgen.py:181*
+
+---
+
+### test_generate_documents_readme_disabled
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_generate_documents_readme_disabled(self, python_project)
+```
+
+**説明**:
+
+README生成が無効な場合
+
+*定義場所: tests/test_docgen.py:196*
+
+---
+
+### test_main_function_detect_only
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_main_function_detect_only(self, temp_project, monkeypatch)
+```
+
+**説明**:
+
+main()関数の--detect-onlyオプションをテスト
+
+*定義場所: tests/test_docgen.py:210*
+
+---
+
+### test_main_function_no_api_doc
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_main_function_no_api_doc(self, temp_project, monkeypatch)
+```
+
+**説明**:
+
+main()関数の--no-api-docオプションをテスト
+
+*定義場所: tests/test_docgen.py:233*
+
+---
+
+### test_main_function_no_readme
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_main_function_no_readme(self, temp_project, monkeypatch)
+```
+
+**説明**:
+
+main()関数の--no-readmeオプションをテスト
+
+*定義場所: tests/test_docgen.py:253*
+
+---
+
+### test_main_function_with_config
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_main_function_with_config(self, temp_project, monkeypatch, sample_config)
+```
+
+**説明**:
+
+main()関数の--configオプションをテスト
+
+*定義場所: tests/test_docgen.py:272*
 
 ---
 
@@ -1502,6 +2265,213 @@ def test_api_doc_includes_all_languages(self, multi_language_project)
 複数言語のAPI情報が統合されることを確認
 
 *定義場所: tests/test_integration.py:118*
+
+---
+
+
+## tests/test_parsers/test_base_parser.py
+
+### TestBaseParser
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestBaseParser
+```
+
+**説明**:
+
+BaseParserのテストクラス
+
+*定義場所: tests/test_parsers/test_base_parser.py:12*
+
+---
+
+### test_parse_project_exclude_dirs
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_exclude_dirs(self, temp_project)
+```
+
+**説明**:
+
+除外ディレクトリが正しく除外されることを確認
+
+*定義場所: tests/test_parsers/test_base_parser.py:15*
+
+---
+
+### test_parse_project_custom_exclude_dirs
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_custom_exclude_dirs(self, temp_project)
+```
+
+**説明**:
+
+カスタム除外ディレクトリが正しく除外されることを確認
+
+*定義場所: tests/test_parsers/test_base_parser.py:30*
+
+---
+
+### test_parse_project_parallel
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_parallel(self, temp_project)
+```
+
+**説明**:
+
+並列処理でプロジェクトを解析
+
+*定義場所: tests/test_parsers/test_base_parser.py:42*
+
+---
+
+### test_parse_project_sequential
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_sequential(self, temp_project)
+```
+
+**説明**:
+
+逐次処理でプロジェクトを解析
+
+*定義場所: tests/test_parsers/test_base_parser.py:53*
+
+---
+
+### test_parse_project_few_files_sequential
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_few_files_sequential(self, temp_project)
+```
+
+**説明**:
+
+ファイル数が少ない場合は逐次処理になることを確認
+
+*定義場所: tests/test_parsers/test_base_parser.py:62*
+
+---
+
+### test_parse_file_safe_with_error
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_file_safe_with_error(self, temp_project)
+```
+
+**説明**:
+
+エラーが発生した場合の安全な処理
+
+*定義場所: tests/test_parsers/test_base_parser.py:73*
+
+---
+
+### test_parse_project_symlink_skipped
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_symlink_skipped(self, temp_project)
+```
+
+**説明**:
+
+シンボリックリンクがスキップされることを確認
+
+*定義場所: tests/test_parsers/test_base_parser.py:85*
+
+---
+
+### test_parse_project_permission_error
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_permission_error(self, temp_project)
+```
+
+**説明**:
+
+権限エラーが発生した場合の処理
+
+*定義場所: tests/test_parsers/test_base_parser.py:96*
+
+---
+
+### test_parse_project_max_workers
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_max_workers(self, temp_project)
+```
+
+**説明**:
+
+max_workersが指定された場合の処理
+
+*定義場所: tests/test_parsers/test_base_parser.py:107*
+
+---
+
+### test_parse_project_parallel_with_exception
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_project_parallel_with_exception(self, temp_project)
+```
+
+**説明**:
+
+並列処理で例外が発生した場合の処理
+
+*定義場所: tests/test_parsers/test_base_parser.py:117*
+
+---
+
+### test_parse_file_safe_exception_handling
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_parse_file_safe_exception_handling(self, temp_project)
+```
+
+**説明**:
+
+_parse_file_safeで例外が発生した場合の処理
+
+*定義場所: tests/test_parsers/test_base_parser.py:134*
 
 ---
 

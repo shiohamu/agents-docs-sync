@@ -2,9 +2,22 @@
 パーサーのベースクラス
 """
 
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Dict, Any, Optional
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# モジュールパスを追加（utils.loggerをインポートするため）
+# 注意: このモジュールは.docgenパッケージ内で実行されることを想定
+# 相対インポートが困難な場合のフォールバックとしてsys.path.insertを使用
+DOCGEN_DIR = Path(__file__).parent.parent.parent.resolve()
+if str(DOCGEN_DIR) not in sys.path:
+    sys.path.insert(0, str(DOCGEN_DIR))
+
+from utils.logger import get_logger
+
+logger = get_logger("parser")
 
 
 class BaseParser(ABC):
@@ -48,12 +61,14 @@ class BaseParser(ABC):
         """
         pass
 
-    def parse_project(self, exclude_dirs: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    def parse_project(self, exclude_dirs: Optional[List[str]] = None, use_parallel: bool = True, max_workers: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         プロジェクト全体を解析
 
         Args:
             exclude_dirs: 除外するディレクトリ（例: ['.git', 'node_modules']）
+            use_parallel: 並列処理を使用するかどうか（デフォルト: True）
+            max_workers: 並列処理の最大ワーカー数（Noneの場合は自動）
 
         Returns:
             全API情報のリスト
@@ -64,21 +79,86 @@ class BaseParser(ABC):
         all_apis = []
         extensions = self.get_supported_extensions()
 
+        # プロジェクトルートを正規化（絶対パスに変換）
+        project_root_resolved = self.project_root.resolve()
+
+        # 解析対象ファイルのリストを収集
+        files_to_parse = []
         for ext in extensions:
             for file_path in self.project_root.rglob(f'*{ext}'):
-                # 除外ディレクトリをスキップ
-                if any(excluded in file_path.parts for excluded in exclude_dirs):
+                try:
+                    # パスの正規化（シンボリックリンクを解決）
+                    file_path_resolved = file_path.resolve()
+
+                    # プロジェクトルート外へのアクセスを防止
+                    try:
+                        file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                    except ValueError:
+                        # プロジェクトルート外のファイルはスキップ
+                        logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                        continue
+
+                    # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
+                    if file_path.is_symlink():
+                        logger.debug(f"シンボリックリンクをスキップ: {file_path}")
+                        continue
+
+                    # 除外ディレクトリをスキップ
+                    if any(excluded in file_path.parts for excluded in exclude_dirs):
+                        continue
+
+                    files_to_parse.append((file_path, file_path_relative))
+                except (OSError, PermissionError) as e:
+                    # ファイルアクセスエラー（権限エラーなど）は無視して続行
+                    logger.debug(f"{file_path} へのアクセスに失敗しました: {e}")
                     continue
 
+        # 並列処理または逐次処理で解析
+        if use_parallel and len(files_to_parse) > 10:  # ファイル数が10を超える場合のみ並列処理
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_file = {
+                    executor.submit(self._parse_file_safe, file_path, file_path_relative): (file_path, file_path_relative)
+                    for file_path, file_path_relative in files_to_parse
+                }
+
+                for future in as_completed(future_to_file):
+                    file_path, file_path_relative = future_to_file[future]
+                    try:
+                        apis = future.result()
+                        if apis:
+                            all_apis.extend(apis)
+                    except Exception as e:
+                        logger.warning(f"{file_path} の解析に失敗しました: {e}")
+        else:
+            # 逐次処理
+            for file_path, file_path_relative in files_to_parse:
                 try:
-                    apis = self.parse_file(file_path)
-                    for api in apis:
-                        api['file'] = str(file_path.relative_to(self.project_root))
-                    all_apis.extend(apis)
+                    apis = self._parse_file_safe(file_path, file_path_relative)
+                    if apis:
+                        all_apis.extend(apis)
                 except Exception as e:
-                    # パースエラーは無視して続行
-                    print(f"警告: {file_path} の解析に失敗しました: {e}")
+                    logger.warning(f"{file_path} の解析に失敗しました: {e}")
                     continue
 
         return all_apis
+
+    def _parse_file_safe(self, file_path: Path, file_path_relative: Path) -> List[Dict[str, Any]]:
+        """
+        ファイルを安全に解析（内部メソッド）
+
+        Args:
+            file_path: ファイルパス
+            file_path_relative: 相対パス
+
+        Returns:
+            API情報のリスト
+        """
+        try:
+            apis = self.parse_file(file_path)
+            for api in apis:
+                api['file'] = str(file_path_relative)
+            return apis
+        except Exception as e:
+            logger.warning(f"{file_path} の解析に失敗しました: {e}")
+            return []
 

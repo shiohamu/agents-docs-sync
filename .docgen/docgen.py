@@ -9,13 +9,16 @@ import sys
 import yaml
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # プロジェクトルートのパスを取得
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DOCGEN_DIR = Path(__file__).parent.resolve()
 
-# モジュールパスを追加
-sys.path.insert(0, str(DOCGEN_DIR))
+# モジュールパスを追加（メインエントリーポイントとして実行される場合に必要）
+# 注意: このファイルは直接実行されることを想定しているため、sys.path.insertが必要
+if str(DOCGEN_DIR) not in sys.path:
+    sys.path.insert(0, str(DOCGEN_DIR))
 
 from detectors.python_detector import PythonDetector
 from detectors.javascript_detector import JavaScriptDetector
@@ -24,6 +27,10 @@ from detectors.generic_detector import GenericDetector
 from generators.api_generator import APIGenerator
 from generators.readme_generator import ReadmeGenerator
 from generators.agents_generator import AgentsGenerator
+from utils.logger import get_logger
+
+# ロガーの初期化
+logger = get_logger("docgen")
 
 
 class DocGen:
@@ -55,12 +62,12 @@ class DocGen:
                     config = yaml.safe_load(f) or {}
                     return config
             except yaml.YAMLError as e:
-                print(f"警告: 設定ファイルの解析に失敗しました: {e}")
-                print("デフォルト設定を使用します。")
+                logger.warning(f"設定ファイルの解析に失敗しました: {e}")
+                logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
             except Exception as e:
-                print(f"警告: 設定ファイルの読み込みに失敗しました: {e}")
-                print("デフォルト設定を使用します。")
+                logger.warning(f"設定ファイルの読み込みに失敗しました: {e}")
+                logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
         else:
             # 設定ファイルが存在しない場合、sampleからコピーを試みる
@@ -69,15 +76,15 @@ class DocGen:
                 try:
                     import shutil
                     shutil.copy2(sample_path, self.config_path)
-                    print(f"情報: {sample_path.name}から{self.config_path.name}を作成しました。")
+                    logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
                     with open(self.config_path, 'r', encoding='utf-8') as f:
                         return yaml.safe_load(f) or {}
                 except Exception as e:
-                    print(f"警告: 設定ファイルの作成に失敗しました: {e}")
-                    print("デフォルト設定を使用します。")
+                    logger.warning(f"設定ファイルの作成に失敗しました: {e}")
+                    logger.info("デフォルト設定を使用します。")
             else:
-                print(f"警告: 設定ファイルが見つかりません: {self.config_path}")
-                print("デフォルト設定を使用します。")
+                logger.warning(f"設定ファイルが見つかりません: {self.config_path}")
+                logger.info("デフォルト設定を使用します。")
             return self._get_default_config()
 
     def _get_default_config(self) -> Dict[str, Any]:
@@ -100,9 +107,12 @@ class DocGen:
             }
         }
 
-    def detect_languages(self) -> List[str]:
+    def detect_languages(self, use_parallel: bool = True) -> List[str]:
         """
         プロジェクトの使用言語を自動検出
+
+        Args:
+            use_parallel: 並列処理を使用するかどうか（デフォルト: True）
 
         Returns:
             検出された言語のリスト
@@ -115,12 +125,36 @@ class DocGen:
         ]
 
         detected = []
-        for detector in detectors:
-            if detector.detect():
-                lang = detector.get_language()
-                if lang not in detected:
-                    detected.append(lang)
-                    print(f"✓ 検出: {lang}")
+
+        if use_parallel:
+            # 並列処理で検出
+            with ThreadPoolExecutor(max_workers=len(detectors)) as executor:
+                future_to_detector = {
+                    executor.submit(detector.detect): detector
+                    for detector in detectors
+                }
+
+                for future in as_completed(future_to_detector):
+                    detector = future_to_detector[future]
+                    try:
+                        if future.result():
+                            lang = detector.get_language()
+                            if lang not in detected:
+                                detected.append(lang)
+                                logger.info(f"✓ 検出: {lang}")
+                    except Exception as e:
+                        logger.warning(f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}")
+        else:
+            # 逐次処理で検出
+            for detector in detectors:
+                try:
+                    if detector.detect():
+                        lang = detector.get_language()
+                        if lang not in detected:
+                            detected.append(lang)
+                            logger.info(f"✓ 検出: {lang}")
+                except Exception as e:
+                    logger.warning(f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}")
 
         self.detected_languages = detected
         return detected
@@ -136,14 +170,14 @@ class DocGen:
             self.detect_languages()
 
         if not self.detected_languages:
-            print("警告: サポートされている言語が検出されませんでした")
+            logger.warning("サポートされている言語が検出されませんでした")
             return False
 
         success = True
 
         # APIドキュメント生成
         if self.config.get('generation', {}).get('generate_api_doc', True):
-            print("\n[APIドキュメント生成]")
+            logger.info("[APIドキュメント生成]")
             try:
                 api_generator = APIGenerator(
                     self.project_root,
@@ -151,19 +185,17 @@ class DocGen:
                     self.config
                 )
                 if api_generator.generate():
-                    print("✓ APIドキュメントを生成しました")
+                    logger.info("✓ APIドキュメントを生成しました")
                 else:
-                    print("✗ APIドキュメントの生成に失敗しました")
+                    logger.error("✗ APIドキュメントの生成に失敗しました")
                     success = False
             except Exception as e:
-                print(f"✗ APIドキュメントの生成中にエラーが発生しました: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"✗ APIドキュメントの生成中にエラーが発生しました: {e}", exc_info=True)
                 success = False
 
         # README生成
         if self.config.get('generation', {}).get('update_readme', True):
-            print("\n[README生成]")
+            logger.info("[README生成]")
             try:
                 readme_generator = ReadmeGenerator(
                     self.project_root,
@@ -171,19 +203,17 @@ class DocGen:
                     self.config
                 )
                 if readme_generator.generate():
-                    print("✓ READMEを更新しました")
+                    logger.info("✓ READMEを更新しました")
                 else:
-                    print("✗ READMEの更新に失敗しました")
+                    logger.error("✗ READMEの更新に失敗しました")
                     success = False
             except Exception as e:
-                print(f"✗ READMEの更新中にエラーが発生しました: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"✗ READMEの更新中にエラーが発生しました: {e}", exc_info=True)
                 success = False
 
         # AGENTS.md生成
         if self.config.get('generation', {}).get('generate_agents_doc', True):
-            print("\n[AGENTS.md生成]")
+            logger.info("[AGENTS.md生成]")
             try:
                 agents_generator = AgentsGenerator(
                     self.project_root,
@@ -191,14 +221,12 @@ class DocGen:
                     self.config
                 )
                 if agents_generator.generate():
-                    print("✓ AGENTS.mdを生成しました")
+                    logger.info("✓ AGENTS.mdを生成しました")
                 else:
-                    print("✗ AGENTS.mdの生成に失敗しました")
+                    logger.error("✗ AGENTS.mdの生成に失敗しました")
                     success = False
             except Exception as e:
-                print(f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}", exc_info=True)
                 success = False
 
         return success
@@ -238,7 +266,7 @@ def main():
 
     if args.detect_only:
         languages = docgen.detect_languages()
-        print(f"\n検出された言語: {', '.join(languages) if languages else 'なし'}")
+        logger.info(f"\n検出された言語: {', '.join(languages) if languages else 'なし'}")
         return 0
 
     # 設定を一時的に上書き

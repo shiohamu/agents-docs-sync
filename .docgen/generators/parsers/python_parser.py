@@ -62,7 +62,9 @@ class PythonParser(BaseParser):
             # 構文エラーは無視
             return []
         except Exception as e:
-            print(f"警告: {file_path} の解析エラー: {e}")
+            # base_parserのloggerを使用
+            from .base_parser import logger
+            logger.warning(f"{file_path} の解析エラー: {e}")
             return []
 
     def _parse_function(self, node: ast.FunctionDef, file_path: Path) -> Dict[str, Any]:

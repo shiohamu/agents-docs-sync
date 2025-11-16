@@ -23,13 +23,14 @@ jobs:
           pip install -r requirements-test.txt
           pip install -r requirements-docgen.txt
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
-          pytest tests/ -v --tb=short
+          pytest tests/ -v --tb=short --cov=.docgen --cov-report=xml --cov-report=term-missing --cov-fail-under=80
 
-      - name: Generate coverage report
+      - name: Check coverage threshold
         run: |
-          pytest tests/ --cov=.docgen --cov-report=xml --cov-report=term-missing
+          # カバレッジが80%未満の場合、CIを失敗させる
+          coverage report --fail-under=80 || exit 1
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

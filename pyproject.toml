@@ -5,8 +5,30 @@ description = "GitHub にプッシュされた変更をトリガーに、テス�
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "pyyaml>=6.0.3",
+]
+
+[tool.uv]
+default-groups = ["docgen"]
+
+[dependency-groups]
+# ドキュメント生成システム用の依存関係
+docgen = [
+    "pyyaml>=6.0.3",
+    # tomliはPython 3.11未満でのみ必要（Python 3.11以降ではtomllibを使用）
+    # Python 3.10以前のサポートが必要な場合は、以下のコメントを外してください
+    # "tomli>=2.0.0; python_version<'3.11'",
+]
+
+# テスト用の依存関係
+test = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.11.1",
-    "pyyaml>=6.0.3",
+]
+
+# 開発用の依存関係（テストとドキュメント生成を含む）
+dev = [
+    {include-group = "docgen"},
+    {include-group = "test"}
 ]

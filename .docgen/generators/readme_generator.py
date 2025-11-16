@@ -349,13 +349,10 @@ class ReadmeGenerator:
                 # 重要なディレクトリは含める
                 if item.name in important_dirs:
                     return True
-                # 除外ディレクトリは含めない
+                # 除外ディレクトリは含めない（隠しディレクトリも除外）
                 if item.name in exclude_dirs or item.name.startswith('.'):
                     return False
-                # ルートレベル以外の隠しディレクトリは除外
-                if not is_root and item.name.startswith('.'):
-                    return False
-                return False  # その他のディレクトリは除外
+                return True  # その他の通常ディレクトリは含める
             else:
                 # ルートレベルの重要なファイルは含める
                 if is_root and item.name in important_files:
@@ -412,10 +409,11 @@ class ReadmeGenerator:
                                     next_prefix = prefix + ("    " if is_last else "│   ")
                                     structure.append(f"{next_prefix}└── {subdir}/")
                                     break
-                        else:
-                            # その他のディレクトリは1階層のみ
+                        elif item.name in important_dirs:
+                            # 重要なディレクトリ（scripts, testsなど）は再帰的に走査
                             next_prefix = prefix + ("    " if is_last else "│   ")
                             _walk_dir(item, next_prefix, max_depth, current_depth + 1, is_root=False)
+                        # その他の通常ディレクトリ（srcなど）は表示するが、中身は走査しない
             except PermissionError:
                 pass
 

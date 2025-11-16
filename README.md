@@ -91,15 +91,17 @@ cp .docgen/config.yaml.sample .docgen/config.yaml
 │   └── implementation/
 ├── scripts
 ├── tests
+│   ├── test_collectors
+│   ├── test_detectors
+│   ├── test_generators
+│   └── test_parsers
 ├── AGENTS.md
 ├── README.md
 ├── pyproject.toml
 ├── pytest.ini
-├── requirements-docgen.txt
-├── requirements-test.txt
-└── setup.sh
+...
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-16 14:53:30*
+*このREADMEは自動生成されています。最終更新: 2025-11-16 15:54:52*

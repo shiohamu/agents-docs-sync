@@ -5,15 +5,18 @@ AGENTS.md生成モジュール（OpenAI仕様準拠）
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-import sys
 
-# collectorsモジュールをインポート可能にする
-# 注意: このモジュールは.docgenディレクトリ内で実行されることを想定しています
-DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-if str(DOCGEN_DIR) not in sys.path:
-    sys.path.insert(0, str(DOCGEN_DIR))
-
-from collectors.project_info_collector import ProjectInfoCollector
+# 相対インポートを使用（.docgenがパッケージとして認識される場合）
+# フォールバック: 絶対インポート
+try:
+    from ..collectors.project_info_collector import ProjectInfoCollector
+except ImportError:
+    # 相対インポートが失敗した場合のフォールバック
+    import sys
+    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
+    if str(DOCGEN_DIR) not in sys.path:
+        sys.path.insert(0, str(DOCGEN_DIR))
+    from collectors.project_info_collector import ProjectInfoCollector
 
 
 class AgentsGenerator:
