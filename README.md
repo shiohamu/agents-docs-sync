@@ -16,7 +16,6 @@
 ## 使用技術
 
 - Python
-- JavaScript
 - Shell
 
 ## セットアップ
@@ -136,25 +135,25 @@ docker run --rm -v $(pwd):/workspace -w /workspace agents-docs-sync
 │   ├── detectors
 │   ├── generators
 │   ├── collectors
-│   ├── hooks
-│   └── templates
+│   └── hooks
 ├── .github
 │   └── workflows
-├── agents_docs_sync.egg-info
 ├── docs
 │   └── implementation/
 ├── scripts
 ├── tests
-│   ├── test_collectors
 │   ├── test_detectors
 │   ├── test_generators
 │   └── test_parsers
 ├── AGENTS.md
 ├── README.md
 ├── pyproject.toml
+├── pytest.ini
+├── requirements-docgen.txt
+├── requirements-test.txt
 ...
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-17 14:05:26*
+*このREADMEは自動生成されています。最終更新: 2025-11-17 05:06:30*
