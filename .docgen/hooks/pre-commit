@@ -38,17 +38,24 @@ UV_LOCK_PATH="uv.lock"
 
 if [ -f "$CONFIG_FILE" ] && command -v python3 &> /dev/null; then
     # Pythonで設定ファイルを読み取り
-    API_DOC_PATH=$(python3 -c "
+    CONFIG_PATHS=$(python3 -c "
 import yaml
 import sys
 try:
     with open('$CONFIG_FILE', 'r') as f:
         config = yaml.safe_load(f) or {}
-    api_path = config.get('output', {}).get('api_doc', 'docs/api.md')
-    print(api_path)
+    output = config.get('output', {})
+    api_path = output.get('api_doc', 'docs/api.md')
+    agents_path = output.get('agents_doc', 'AGENTS.md')
+    print(f'{api_path}\n{agents_path}')
 except:
-    print('docs/api.md')
-" 2>/dev/null || echo "docs/api.md")
+    print('docs/api.md\nAGENTS.md')
+" 2>/dev/null || echo -e "docs/api.md\nAGENTS.md")
+
+    if [ -n "$CONFIG_PATHS" ]; then
+        API_DOC_PATH=$(echo "$CONFIG_PATHS" | head -1)
+        AGENTS_PATH=$(echo "$CONFIG_PATHS" | tail -1)
+    fi
 fi
 
 cd "$PROJECT_ROOT" || exit 0
@@ -67,36 +74,43 @@ fi
 # 変更があったファイルをステージングに追加
 CHANGED_FILES=()
 
-# APIドキュメントの変更を確認
-if [ -f "$API_DOC_PATH" ]; then
-    if ! git diff --quiet "$API_DOC_PATH" 2>/dev/null; then
-        git add "$API_DOC_PATH" 2>/dev/null
-        CHANGED_FILES+=("$API_DOC_PATH")
+# ファイルの変更を確認してステージングに追加する関数
+# 新しく生成されたファイル（未追跡）も検出できるように改善
+add_if_changed() {
+    local file_path="$1"
+
+    if [ ! -f "$file_path" ]; then
+        return 1
     fi
+
+    # git status --porcelainで変更を確認（最も確実な方法）
+    # 未追跡ファイル、変更されたファイル、ステージング済みの変更をすべて検出
+    if git status --porcelain "$file_path" 2>/dev/null | grep -q .; then
+        git add "$file_path" 2>/dev/null
+        return 0
+    fi
+
+    return 1
+}
+
+# APIドキュメントの変更を確認
+if add_if_changed "$API_DOC_PATH"; then
+    CHANGED_FILES+=("$API_DOC_PATH")
 fi
 
 # READMEの変更を確認
-if [ -f "$README_PATH" ]; then
-    if ! git diff --quiet "$README_PATH" 2>/dev/null; then
-        git add "$README_PATH" 2>/dev/null
-        CHANGED_FILES+=("$README_PATH")
-    fi
+if add_if_changed "$README_PATH"; then
+    CHANGED_FILES+=("$README_PATH")
 fi
 
-# AGENTS.mdの変更を確認
-if [ -f "$AGENTS_PATH" ]; then
-    if ! git diff --quiet "$AGENTS_PATH" 2>/dev/null; then
-        git add "$AGENTS_PATH" 2>/dev/null
-        CHANGED_FILES+=("$AGENTS_PATH")
-    fi
+# AGENTS.mdの変更を確認（新規生成ファイルも含む）
+if add_if_changed "$AGENTS_PATH"; then
+    CHANGED_FILES+=("$AGENTS_PATH")
 fi
 
-# uv.lockの変更を確認
-if [ -f "$UV_LOCK_PATH" ]; then
-    if ! git diff --quiet "$UV_LOCK_PATH" 2>/dev/null; then
-        git add "$UV_LOCK_PATH" 2>/dev/null
-        CHANGED_FILES+=("$UV_LOCK_PATH")
-    fi
+# uv.lockの変更を確認（新規生成ファイルも含む）
+if add_if_changed "$UV_LOCK_PATH"; then
+    CHANGED_FILES+=("$UV_LOCK_PATH")
 fi
 
 # 変更があった場合は通知
