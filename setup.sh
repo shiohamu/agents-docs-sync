@@ -184,12 +184,19 @@ install_git_hook() {
 
     # フックを追加
     if ! grep -q "# docgen" "$hook_file" 2>/dev/null; then
+        # シェバンが存在しない場合は追加
+        if [ ! -f "$hook_file" ] || ! head -1 "$hook_file" | grep -q "^#!"; then
+            echo "#!/bin/bash" > "$hook_file"
+        fi
         {
             echo ""
             echo "# docgen - $hook_description"
             if [ "$hook_name" = "post-commit" ]; then
                 echo "# このフックはデフォルトで無効です。有効にするには環境変数を設定してください:"
                 echo "# export DOCGEN_ENABLE_POST_COMMIT=1"
+            elif [ "$hook_name" = "pre-push" ]; then
+                echo "# このフックはデフォルトで無効です。有効にするには環境変数を設定してください:"
+                echo "# export AUTO_RELEASE_ENABLED=1"
             else
                 echo "# 以下の行を削除すると、docgenの$hook_nameフックが無効になります"
             fi
@@ -219,6 +226,7 @@ install_git_hooks() {
 
     install_git_hook "pre-commit" "ドキュメント自動生成フック"
     install_git_hook "post-commit" "ドキュメント自動生成フック（オプション）"
+    install_git_hook "pre-push" "自動リリースフック（オプション、環境変数 AUTO_RELEASE_ENABLED=1 で有効化）"
 }
 
 # 5. Git hooksのインストール

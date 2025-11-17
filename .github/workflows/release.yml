@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # vで始まるタグ（例: v0.0.1）
+      - 'v*'  # vで始まるタグ（例: v0.0.1, v1.2.3）
   workflow_dispatch:
     inputs:
       version:
@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,9 +39,11 @@ jobs:
         id: tag_version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
+          echo "Extracted version: $VERSION"
 
       - name: Set version from workflow input
         id: input_version
@@ -60,30 +65,29 @@ jobs:
         run: |
           VERSION="${{ steps.tag_version.outputs.version || steps.input_version.outputs.version || '0.0.1' }}"
           ARCHIVE_NAME="agents-docs-sync-${VERSION}"
-          tar -czf "${ARCHIVE_NAME}.tar.gz" \
-            --exclude='.git' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='.pytest_cache' \
-            --exclude='htmlcov' \
-            --exclude='.coverage' \
-            --exclude='coverage.xml' \
-            --exclude='.venv' \
-            --exclude='venv' \
-            --exclude='node_modules' \
-            --transform "s|^|${ARCHIVE_NAME}/|" \
-            .
-          zip -r "${ARCHIVE_NAME}.zip" . \
-            -x '*.git*' \
-            -x '*__pycache__*' \
-            -x '*.pyc' \
-            -x '*.pytest_cache*' \
-            -x '*htmlcov*' \
-            -x '*.coverage' \
-            -x 'coverage.xml' \
-            -x '*.venv*' \
-            -x '*venv*' \
-            -x '*node_modules*'
+
+          # 一時ディレクトリにコピーしてからアーカイブを作成（ファイル変更エラーを回避）
+          TEMP_DIR=$(mktemp -d)
+          cp -r . "${TEMP_DIR}/${ARCHIVE_NAME}"
+
+          # 不要なファイルを削除
+          cd "${TEMP_DIR}/${ARCHIVE_NAME}"
+          # nullglobを設定してグロブパターンがマッチしない場合のエラーを回避
+          shopt -s nullglob
+          rm -rf .git __pycache__ .pytest_cache htmlcov .coverage coverage.xml .venv venv node_modules dist 2>/dev/null || true
+          # グロブパターンでファイルを削除（マッチしない場合はエラーを無視）
+          rm -f *.pyc 2>/dev/null || true
+          # *.egg-infoはディレクトリなので-rfで削除
+          rm -rf *.egg-info 2>/dev/null || true
+          shopt -u nullglob
+
+          # アーカイブを作成
+          cd "${TEMP_DIR}"
+          tar -czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
+          zip -r "${ARCHIVE_NAME}.zip" "${ARCHIVE_NAME}"
+
+          # アーカイブを元のディレクトリに移動
+          mv "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}.zip" "${GITHUB_WORKSPACE}/"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

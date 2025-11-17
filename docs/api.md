@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-16 18:05:29
+自動生成日時: 2025-11-17 14:04:45
 
 ---
 
@@ -41,7 +41,7 @@ def main()
 
 メイン処理
 
-*定義場所: scripts/generate_requirements.py:57*
+*定義場所: scripts/generate_requirements.py:72*
 
 ---
 
