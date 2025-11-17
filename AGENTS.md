@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-17 14:58:46
+自動生成日時: 2025-11-17 05:59:22
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -10,7 +10,7 @@
 
 <!-- MANUAL_START:description -->
 
-**使用技術**: python, javascript, shell
+**使用技術**: python, shell
 
 ---
 
@@ -19,7 +19,6 @@
 ### 前提条件
 
 - Python 3.12以上
-- Node.js 18以上
 
 ### 依存関係のインストール
 
@@ -72,16 +71,16 @@ python3 .docgen/docgen.py
 
 ```bash
 python3 -m pytest test
-pytest
 pytest tests/ -v --tb=short
+pytest
 ```
 
 #### ローカルLLMを使用する場合
 
 ```bash
 python3 -m pytest test
-pytest
 pytest tests/ -v --tb=short
+pytest
 ```
 
 **注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
@@ -111,8 +110,8 @@ pytest tests/ -v --tb=short
 3. **テストの実行**
    ```bash
    python3 -m pytest test
-   pytest
    pytest tests/ -v --tb=short
+   pytest
    ```
 
 4. **プルリクエストの作成**
@@ -122,4 +121,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-17 14:58:46*
+*このドキュメントは自動生成されています。最終更新: 2025-11-17 05:59:22*
