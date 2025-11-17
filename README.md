@@ -46,10 +46,10 @@ uv pip install agents-docs-sync
 
 ```bash
 # 最新の安定版をインストール
-curl -fsSL https://raw.githubusercontent.com/shiohamu/agents-docs-sync/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/shiohamu/agents-docs-sync/master/install.sh | bash
 
 # 開発版をインストール（GitHubから）
-curl -fsSL https://raw.githubusercontent.com/shiohamu/agents-docs-sync/main/install.sh | bash -s -- --dev
+curl -fsSL https://raw.githubusercontent.com/shiohamu/agents-docs-sync/master/install.sh | bash -s -- --dev
 ```
 
 #### 方法3: ソースコードからインストール
@@ -156,4 +156,4 @@ docker run --rm -v $(pwd):/workspace -w /workspace agents-docs-sync
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-17 05:59:22*
+*このREADMEは自動生成されています。最終更新: 2025-11-17 15:31:52*

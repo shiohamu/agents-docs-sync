@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "agents-docs-sync"
@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
-    {name = "塩ハム(d)"}
+    {name = "塩ハム(d)", email="shiohamu029@gmail.com"}
 ]
 keywords = [
     "documentation",
@@ -63,13 +63,15 @@ default = [
     {include-group = "test"}
 ]
 
-[tool.setuptools]
-package-dir = {"docgen" = ".docgen"}
-packages = ["docgen", "docgen.collectors", "docgen.detectors", "docgen.generators", "docgen.generators.parsers", "docgen.utils"]
-
-[tool.setuptools.package-data]
-"docgen" = [
-    "config.yaml.sample",
-    "templates/**/*",
-    "hooks/*",
+dev = [
+    {include-group = "default"},
+    "build>=1.0.0",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = [".docgen"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+".docgen/config.yaml.sample" = "docgen/config.yaml"
+".docgen/templates/" = "docgen/templates/"
+".docgen/hooks/" = "docgen/hooks/"

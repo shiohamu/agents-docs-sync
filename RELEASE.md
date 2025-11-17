@@ -105,12 +105,54 @@ PyPIに公開する場合は、以下の手順を実行してください：
 
 リリース前に、ローカルでビルドとテストを実行することを推奨します：
 
+**注意:** このプロジェクトは`hatchling`をビルドバックエンドとして使用しています。
+
+### 方法1: uvを使用（推奨）
+
 ```bash
-# 依存関係のインストール
-pip install build wheel setuptools
+# 開発依存関係のインストール（buildツールを含む）
+uv sync --group dev
+
+# パッケージのビルド
+uv build
+
+# ビルド結果の確認
+ls -la dist/
+
+# テストインストール
+pip install dist/agents_docs_sync-*.whl
+
+# 動作確認
+agents-docs-sync --help
+```
+
+### 方法2: pipを使用
+
+```bash
+# ビルドツールのインストール
+pip install build
 
 # パッケージのビルド
 python -m build
+
+# ビルド結果の確認
+ls -la dist/
+
+# テストインストール
+pip install dist/agents_docs_sync-*.whl
+
+# 動作確認
+agents-docs-sync --help
+```
+
+### 方法3: hatchを使用
+
+```bash
+# hatchのインストール
+pip install hatch
+
+# パッケージのビルド
+hatch build
 
 # ビルド結果の確認
 ls -la dist/
