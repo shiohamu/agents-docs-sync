@@ -89,14 +89,52 @@ jobs:
           # アーカイブを元のディレクトリに移動
           mv "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}.zip" "${GITHUB_WORKSPACE}/"
 
+      - name: List files for release
+        run: |
+          echo "Files in dist/:"
+          ls -la dist/ || echo "dist/ directory not found"
+          echo ""
+          echo "Source archives:"
+          ls -la agents-docs-sync-*.tar.gz agents-docs-sync-*.zip 2>/dev/null || echo "No source archives found"
+
+      - name: Prepare release files
+        id: release_files
+        run: |
+          RELEASE_FILES=""
+
+          # dist/*.whl ファイルを追加
+          if ls dist/*.whl 1> /dev/null 2>&1; then
+            RELEASE_FILES="${RELEASE_FILES}dist/*.whl"$'\n'
+          fi
+
+          # dist/*.tar.gz ファイルを追加
+          if ls dist/*.tar.gz 1> /dev/null 2>&1; then
+            RELEASE_FILES="${RELEASE_FILES}dist/*.tar.gz"$'\n'
+          fi
+
+          # ソースアーカイブを追加
+          if ls agents-docs-sync-*.tar.gz 1> /dev/null 2>&1; then
+            RELEASE_FILES="${RELEASE_FILES}agents-docs-sync-*.tar.gz"$'\n'
+          fi
+
+          if ls agents-docs-sync-*.zip 1> /dev/null 2>&1; then
+            RELEASE_FILES="${RELEASE_FILES}agents-docs-sync-*.zip"$'\n'
+          fi
+
+          # 末尾の改行を削除
+          RELEASE_FILES=$(echo "$RELEASE_FILES" | sed '/^$/d')
+
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "Release files:"
+          echo "$RELEASE_FILES"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            dist/*.whl
-            dist/*.tar.gz
-            agents-docs-sync-*.tar.gz
-            agents-docs-sync-*.zip
+          files: ${{ steps.release_files.outputs.files }}
           generate_release_notes: true
           draft: false
           prerelease: false
