@@ -11,7 +11,7 @@ if [ -z "$PROJECT_ROOT" ]; then
     exit 0
 fi
 
-DOCGEN_DIR="$PROJECT_ROOT/.docgen"
+DOCGEN_DIR="$PROJECT_ROOT/docgen"
 DOCGEN_SCRIPT="$DOCGEN_DIR/docgen.py"
 CONFIG_FILE="$DOCGEN_DIR/config.yaml"
 

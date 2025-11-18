@@ -47,16 +47,33 @@ logger = get_logger("docgen")
 class DocGen:
     """ドキュメント自動生成メインクラス"""
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, project_root: Optional[Path] = None, config_path: Optional[Path] = None):
         """
         初期化
 
         Args:
+            project_root: プロジェクトのルートディレクトリ（Noneの場合は現在の作業ディレクトリ）
             config_path: 設定ファイルのパス（Noneの場合はデフォルト）
         """
-        self.project_root = PROJECT_ROOT
-        self.docgen_dir = DOCGEN_DIR
-        self.config_path = config_path or self.docgen_dir / "config.yaml"
+        # プロジェクトルートの決定
+        # パッケージとしてインストールされた場合、実行時のカレントディレクトリを使用
+        if project_root is None:
+            self.project_root = Path.cwd().resolve()
+        else:
+            self.project_root = Path(project_root).resolve()
+
+        # docgenディレクトリはプロジェクトルート内のdocgenディレクトリ
+        self.docgen_dir = self.project_root / "docgen"
+
+        # 設定ファイルのパス決定
+        if config_path is not None:
+            self.config_path = Path(config_path).resolve()
+        else:
+            # プロジェクトルート内のdocgen/config.yamlを優先
+            self.config_path = self.docgen_dir / "config.yaml"
+            # パッケージ内のconfig.yaml.sampleを参照するためのパス
+            self._package_config_sample = DOCGEN_DIR / "config.yaml.sample"
+
         self.config = self._load_config()
         self.detected_languages = []
 
@@ -82,10 +99,19 @@ class DocGen:
                 return self._get_default_config()
         else:
             # 設定ファイルが存在しない場合、sampleからコピーを試みる
+            # まず、プロジェクトルート内のdocgen/config.yaml.sampleを確認
             sample_path = self.docgen_dir / "config.yaml.sample"
+            if not sample_path.exists():
+                # プロジェクト内にない場合は、パッケージ内のsampleを参照
+                sample_path = getattr(self, '_package_config_sample', None)
+                if sample_path is None:
+                    sample_path = DOCGEN_DIR / "config.yaml.sample"
+
             if sample_path.exists():
                 try:
                     import shutil
+                    # docgenディレクトリが存在しない場合は作成
+                    self.docgen_dir.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(sample_path, self.config_path)
                     logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
                     with open(self.config_path, 'r', encoding='utf-8') as f:
@@ -279,10 +305,33 @@ def main():
         action='store_true',
         help='READMEを更新しない'
     )
+    parser.add_argument(
+        'command',
+        nargs='?',
+        choices=['commit-msg'],
+        help='実行するコマンド（commit-msg: コミットメッセージ生成）'
+    )
 
     args = parser.parse_args()
 
-    docgen = DocGen(config_path=args.config)
+    # 実行時のカレントディレクトリをプロジェクトルートとして使用
+    project_root = Path.cwd().resolve()
+    docgen = DocGen(project_root=project_root, config_path=args.config)
+
+    # コミットメッセージ生成コマンド
+    if args.command == 'commit-msg':
+        try:
+            from .generators.commit_message_generator import CommitMessageGenerator
+        except (ImportError, ValueError, SystemError):
+            from generators.commit_message_generator import CommitMessageGenerator
+
+        generator = CommitMessageGenerator(project_root, docgen.config)
+        message = generator.generate()
+        if message:
+            print(message)
+            return 0
+        else:
+            return 1
 
     if args.detect_only:
         languages = docgen.detect_languages()

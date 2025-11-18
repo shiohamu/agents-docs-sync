@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 import pytest
 
-# .docgenモジュールをインポート可能にする
+# docgenモジュールをインポート可能にする
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-DOCGEN_DIR = PROJECT_ROOT / ".docgen"
+DOCGEN_DIR = PROJECT_ROOT / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 
@@ -144,7 +144,7 @@ def sample_config(temp_project):
     }
 
     import yaml
-    config_dir = temp_project / ".docgen"
+    config_dir = temp_project / "docgen"
     config_dir.mkdir()
     config_path = config_dir / "config.yaml"
     with open(config_path, 'w', encoding='utf-8') as f:

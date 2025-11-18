@@ -3,9 +3,9 @@ include README.md
 include LICENSE
 
 # Include package data
-recursive-include .docgen *.yaml.sample
-recursive-include .docgen templates *
-recursive-include .docgen hooks *
+recursive-include docgen *.yaml.sample
+recursive-include docgen templates *
+recursive-include docgen hooks *
 
 # Exclude unnecessary files
 global-exclude __pycache__

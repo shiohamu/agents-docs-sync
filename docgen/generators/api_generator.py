@@ -73,7 +73,7 @@ class APIGenerator:
 
             # 除外ディレクトリとファイルパターンを設定
             exclude_dirs = self.config.get('exclude', {}).get('directories', [
-                '.git', '.docgen', '__pycache__', 'node_modules', '.venv', 'venv',
+                '.git', 'docgen', '__pycache__', 'node_modules', '.venv', 'venv',
                 'htmlcov', '.pytest_cache', 'dist', 'build'
             ])
 

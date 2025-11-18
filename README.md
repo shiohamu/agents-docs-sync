@@ -1,21 +1,29 @@
 # agents-docs-sync
 
 <!-- MANUAL_START:description -->
-## 概要
+## Overview
 
-このプロジェクトは、GitHubにプッシュされた変更をトリガーに、テスト実行・ドキュメント生成・AGENTS.mdの自動更新を行うCI/CDパイプラインです。
+This project, **agents-docs-sync**, provides a lightweight CI/CD pipeline that automates documentation generation and synchronization for AI coding agents.
 
-主な機能:
-- プロジェクトの使用言語を自動検出（Python, JavaScript, Goなど）
-- APIドキュメントの自動生成
-- README.mdの自動更新（手動セクションの保持に対応）
-- AGENTS.mdの自動生成（OpenAI仕様準拠、API/ローカルLLM両対応）
-- GitHub Actionsによる自動実行
+**Key Features**:
+- **Automated Test Execution**: Runs tests using Python (`pytest`) or JavaScript test automation
+- **Documentation Auto-Sync**: Automatically updates `AGENTS.md` and `README.md` based on code changes
+- **GitHub Actions Integration**: Triggers automated workflows on push events
+- **LLM Support**: Works with both local LLM (LM Studio, Ollama) and API-based LLM (OpenAI, Anthropic)
+
+**Workflow**:
+1. Detects new commits via GitHub Actions triggers
+2. Runs automated tests to ensure code quality
+3. Updates `AGENTS.md` with current project information and agent specifications
+4. Synchronizes documentation with codebase changes
+
+The pipeline ensures that documentation stays up-to-date with minimal manual intervention, making it easier for AI coding agents to understand and work with the project.
 <!-- MANUAL_END:description -->
 
 ## 使用技術
 
 - Python
+- JavaScript
 - Shell
 
 ## セットアップ
@@ -23,137 +31,76 @@
 <!-- MANUAL_START:setup -->
 ### 必要な環境
 
-- Python 3.12以上
-- uv（推奨）またはpip
-- Git（Git hooksを使用する場合）
-- Bash（スクリプト実行用）
-  - Linux/macOS: 標準で利用可能
-  - Windows: WSL2、Git Bash、またはMSYS2が必要
+- Python 3.8以上
+- Node.js 14以上
 
-### インストール
-
-#### 方法1: PyPIからインストール（推奨）
+### インストール手順
 
 ```bash
-# pipを使用する場合
-pip install agents-docs-sync
-
-# またはuvを使用する場合
-uv pip install agents-docs-sync
-```
-
-#### 方法2: ワンライナーインストールスクリプト
-
-```bash
-# 最新の安定版をインストール
-curl -fsSL https://raw.githubusercontent.com/shiohamu/agents-docs-sync/master/install.sh | bash
-
-# 開発版をインストール（GitHubから）
-curl -fsSL https://raw.githubusercontent.com/shiohamu/agents-docs-sync/master/install.sh | bash -s -- --dev
-```
-
-#### 方法3: ソースコードからインストール
-
-```bash
-# リポジトリをクローン
-git clone https://github.com/shiohamu/agents-docs-sync.git
-cd agents-docs-sync
-
-# インストール
-pip install -e .
-```
-
-#### 方法4: uvを使用する場合（開発用）
-
-```bash
-# セットアップスクリプトを実行
-./setup.sh
-```
-
-#### 方法5: 依存関係のみインストール
-
-```bash
-# ドキュメント生成システム用の依存関係
+# Pythonの依存関係をインストール
 pip install -r requirements-docgen.txt
-
-# テスト用の依存関係
 pip install -r requirements-test.txt
+
+# Node.jsの依存関係をインストール (必要に応じて)
+npm install
 ```
 
-### 初回設定
+### LLM環境のセットアップ
 
-初回実行時は、`.docgen/config.yaml`が自動的に作成されます（`config.yaml.sample`からコピーされます）。
+#### ローカルLLMを使用する場合
 
-手動で設定ファイルを作成する場合:
+1. **LM Studioのインストール**
+   - [LM Studio](https://lmstudio.ai/)をダウンロードしてインストール
+   - お好みのモデルをダウンロード
+   - サーバーを起動（デフォルト: `http://localhost:1234`）
 
-```bash
-cp .docgen/config.yaml.sample .docgen/config.yaml
-```
+2. **設定ファイルの編集**
+   - `docgen/config.yaml`を編集
+   - `llm_mode`を`local`または`both`に設定
+   - `local_llm`の`base_url`を確認
 
-### 使用方法
+#### API LLMを使用する場合
 
-インストール後、以下のコマンドで使用できます：
+1. **APIキーの設定**
+   - 環境変数に APIキーを設定
+   ```bash
+   export OPENAI_API_KEY="your-api-key"
+   # または
+   export ANTHROPIC_API_KEY="your-api-key"
+   ```
 
-```bash
-# ドキュメントを生成
-agents-docs-sync
-
-# 言語検出のみ実行
-agents-docs-sync --detect-only
-
-# ヘルプを表示
-agents-docs-sync --help
-
-# バージョンを確認
-agents-docs-sync --version
-```
-
-### Dockerを使用する場合
-
-```bash
-# イメージをビルド
-docker build -t agents-docs-sync .
-
-# 実行
-docker run --rm -v $(pwd):/workspace -w /workspace agents-docs-sync
-```
-
-### プラットフォーム対応
-
-- **Linux/macOS**: 完全対応
-- **Windows**:
-  - WSL2（推奨）: 完全対応
-  - Git Bash: スクリプト実行可能
-  - MSYS2: スクリプト実行可能
-  - ネイティブWindows: Pythonスクリプト（`.docgen/docgen.py`）は直接実行可能、シェルスクリプト（`setup.sh`、`scripts/*.sh`）はWSL2またはGit Bashが必要
+2. **設定ファイルの編集**
+   - `docgen/config.yaml`を編集
+   - `llm_mode`を`api`または`both`に設定
+   - 使用するプロバイダーとモデルを指定
 <!-- MANUAL_END:setup -->
 
 ## プロジェクト構造
 
 ```
-├── .docgen
+├── .github
+│   └── workflows
+├── agents_docs_sync
+├── agents_docs_sync.egg-info
+├── docgen
 │   ├── detectors
 │   ├── generators
 │   ├── collectors
-│   └── hooks
-├── .github
-│   └── workflows
+│   ├── hooks
+│   └── templates
 ├── docs
 │   └── implementation/
 ├── scripts
 ├── tests
+│   ├── test_collectors
 │   ├── test_detectors
 │   ├── test_generators
 │   └── test_parsers
 ├── AGENTS.md
 ├── README.md
-├── pyproject.toml
-├── pytest.ini
-├── requirements-docgen.txt
-├── requirements-test.txt
 ...
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-17 15:38:13*
+*このREADMEは自動生成されています。最終更新: 2025-11-18 12:49:56*

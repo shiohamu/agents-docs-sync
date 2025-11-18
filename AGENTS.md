@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-17 15:38:13
+自動生成日時: 2025-11-18 12:50:37
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -10,15 +10,54 @@
 
 <!-- MANUAL_START:description -->
 
-**使用技術**: python, shell
+**PROJECT NAME:** agents-docs-sync
 
----
+**使用技術 (Use languages): Python, JavaScript, Shell**
+
+**依存関係**
+
+- pyyaml >=6.0.3
+- pytest >=7.4.0
+- pytest-cov >=4.1.0
+- pytest-mock >=3.11.1
+
+このプロジェクトは、`agents-docs-sync`というドキュメント自動生成・同期システムです。AIコーディングエージェントがプロジェクトで効果的に作業するための`AGENTS.md`ドキュメントを自動生成・更新します。
+
+**主な機能**:
+- プロジェクト情報の自動収集と分析
+- `AGENTS.md`と`README.md`の自動生成・更新
+- GitHub Actionsによる自動化パイプライン
+- ローカルLLMとAPI LLMの両方に対応
+
+**ビルドコマンド**
+
+```bash
+python3 docgen/docgen.py
+```
+
+**テストコマンド**
+
+- `python3 -m pytest tests`
+- `pytest` (default)
+- `pytest tests/ -v --tb=short`
+
+**GitHub Actions**:
+- pushイベント時に自動的にテストを実行
+- ドキュメントの自動更新
+- CI/CDパイプラインによる継続的インテグレーション
+
+**テスト実行**:
+- `pytest tests/ -v --tb=short` コマンドでテストを実行
+- ローカルLLM使用時は、モデルが起動していることを確認
+
+<!-- MANUAL_END:description -->
 
 ## 開発環境のセットアップ
 
 ### 前提条件
 
 - Python 3.12以上
+- Node.js 18以上
 
 ### 依存関係のインストール
 
@@ -31,24 +70,13 @@ pip install -r requirements-test.txt
 
 ### LLM環境のセットアップ
 
-#### APIを使用する場合
-
-1. **APIキーの取得と設定**
-
-   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
-   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
-
-2. **API使用時の注意事項**
-   - APIレート制限に注意してください
-   - コスト管理のために使用量を監視してください
-
 #### ローカルLLMを使用する場合
 
 1. **ローカルLLMのインストール**
 
-   - Ollamaをインストール: https://ollama.ai/
-   - モデルをダウンロード: `ollama pull llama3`
-   - サービスを起動: `ollama serve`
+   - LM Studioをインストール: https://lmstudio.ai/
+   - モデルをダウンロードして起動
+   - ベースURL: http://192.168.10.113:1234
 
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
@@ -62,24 +90,16 @@ pip install -r requirements-test.txt
 ### ビルド手順
 
 ```bash
-python3 .docgen/docgen.py
+python3 docgen/docgen.py
 ```
 
 ### テスト実行
 
-#### APIを使用する場合
-
-```bash
-pytest
-python3 -m pytest test
-pytest tests/ -v --tb=short
-```
-
 #### ローカルLLMを使用する場合
 
 ```bash
-pytest
 python3 -m pytest test
+pytest
 pytest tests/ -v --tb=short
 ```
 
@@ -109,8 +129,8 @@ pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   pytest
    python3 -m pytest test
+   pytest
    pytest tests/ -v --tb=short
    ```
 
@@ -121,4 +141,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-17 15:38:13*
+*このドキュメントは自動生成されています。最終更新: 2025-11-18 12:50:37*

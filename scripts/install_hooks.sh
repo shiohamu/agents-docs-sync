@@ -14,7 +14,7 @@ fi
 cd "$PROJECT_ROOT"
 
 GIT_HOOKS_DIR="$PROJECT_ROOT/.git/hooks"
-DOCGEN_DIR="$PROJECT_ROOT/.docgen"
+DOCGEN_DIR="$PROJECT_ROOT/docgen"
 
 if [ ! -d "$GIT_HOOKS_DIR" ]; then
     mkdir -p "$GIT_HOOKS_DIR"
@@ -68,6 +68,7 @@ echo "Gitフックをインストール中..."
 install_hook "pre-commit"
 install_hook "post-commit"
 install_hook "pre-push"
+install_hook "commit-msg"
 
 echo ""
 echo "インストール完了！"
@@ -76,4 +77,5 @@ echo "使用方法:"
 echo "  - pre-commit: 自動的に実行されます"
 echo "  - post-commit: export DOCGEN_ENABLE_POST_COMMIT=1 で有効化"
 echo "  - pre-push: export AUTO_RELEASE_ENABLED=1 で有効化"
+echo "  - commit-msg: コミットメッセージが空の場合、LLMで自動生成（config.yamlで有効/無効を設定可能）"
 

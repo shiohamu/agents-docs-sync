@@ -48,7 +48,7 @@ generation:
 #   # 除外するディレクトリ
 #   directories:
 #     - .git
-#     - .docgen
+#     - docgen
 #     - __pycache__
 #     - node_modules
 #     - .venv
@@ -70,19 +70,40 @@ cache:
 # AGENTS.md生成設定
 agents:
   # LLM使用パターン（'api', 'local', 'both'）
-  llm_mode: 'both'
+  llm_mode: 'local'
+
+  # LLM生成モード設定
+  generation:
+    # AGENTS.md生成モード: 'template', 'llm', 'hybrid'
+    # - 'template': テンプレートベース生成（デフォルト、高速）
+    # - 'llm': LLM完全生成（高品質、時間がかかる）
+    # - 'hybrid': テンプレートとLLMを組み合わせ（バランス型）
+    agents_mode: 'hybrid'
+
+    # README.md生成モード: 'template', 'llm', 'hybrid'
+    readme_mode: 'hybrid'
+
+    # コミットメッセージ自動生成: true/false
+    enable_commit_message: true
 
   # API使用時の設定
   api:
     provider: 'openai'  # 'openai', 'anthropic', 'custom'
+    model: 'gpt-4o'  # 使用するモデル名
     endpoint: null  # カスタムエンドポイント（オプション）
     api_key_env: 'OPENAI_API_KEY'  # 環境変数名
+    timeout: 180  # タイムアウト（秒）
+    max_retries: 3  # 最大リトライ回数
+    retry_delay: 1.0  # リトライ間隔（秒）
 
   # ローカルLLM使用時の設定
   local:
-    provider: 'ollama'  # 'ollama', 'lmstudio', 'custom'
-    model: 'llama3'  # デフォルトモデル名
-    base_url: 'http://localhost:11434'  # デフォルトURL
+    provider: 'lmstudio'  # 'ollama', 'lmstudio', 'custom'
+    model: 'openai/gpt-oss-20b'  # デフォルトモデル名
+    base_url: 'http://192.168.10.113:1234'  # デフォルトURL
+    timeout: 180  # タイムアウト（秒）
+    max_retries: 3  # 最大リトライ回数
+    retry_delay: 1.0  # リトライ間隔（秒）
 
   # コーディング規約の設定
   coding_standards:

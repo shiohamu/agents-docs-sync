@@ -7,8 +7,8 @@ import yaml
 from pathlib import Path
 import sys
 
-# .docgenモジュールをインポート
-DOCGEN_DIR = Path(__file__).parent.parent / ".docgen"
+# docgenモジュールをインポート
+DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 from docgen import DocGen
@@ -115,7 +115,7 @@ class TestDocGen:
 
     def test_config_merges_with_defaults(self, temp_project):
         """部分的な設定がデフォルトとマージされることを確認"""
-        config_dir = temp_project / ".docgen"
+        config_dir = temp_project / "docgen"
         config_dir.mkdir()
         config_path = config_dir / "config.yaml"
 
@@ -134,7 +134,7 @@ class TestDocGen:
 
     def test_load_config_invalid_yaml(self, temp_project):
         """無効なYAMLファイルを処理"""
-        config_dir = temp_project / ".docgen"
+        config_dir = temp_project / "docgen"
         config_dir.mkdir()
         config_path = config_dir / "config.yaml"
         config_path.write_text("invalid: yaml: content: [\n", encoding='utf-8')
@@ -146,7 +146,7 @@ class TestDocGen:
 
     def test_load_config_missing_file(self, temp_project):
         """設定ファイルが存在しない場合"""
-        config_path = temp_project / ".docgen" / "config.yaml"
+        config_path = temp_project / "docgen" / "config.yaml"
         docgen = DocGen(config_path=config_path)
         # デフォルト設定が使用されることを確認
         assert docgen.config is not None

@@ -37,6 +37,7 @@ dependencies = [
 
 [project.scripts]
 agents-docs-sync = "docgen.docgen:main"
+agents_docs_sync = "docgen.docgen:main"
 
 [tool.uv]
 default-groups = ["default"]
@@ -48,6 +49,10 @@ docgen = [
     # tomliはPython 3.11未満でのみ必要（Python 3.11以降ではtomllibを使用）
     # Python 3.10以前のサポートが必要な場合は、以下のコメントを外してください
     # "tomli>=2.0.0; python_version<'3.11'",
+    # LLM機能用の依存関係（オプショナル）
+    # OpenAI API使用時: pip install openai
+    # Anthropic API使用時: pip install anthropic
+    # ローカルLLM使用時: pip install httpx
 ]
 
 # テスト用の依存関係
@@ -60,7 +65,8 @@ test = [
 # 開発用の依存関係（テストとドキュメント生成を含む）
 default = [
     {include-group = "docgen"},
-    {include-group = "test"}
+    {include-group = "test"},
+    {include-group = "llm"},
 ]
 
 dev = [
@@ -68,10 +74,16 @@ dev = [
     "build>=1.0.0",
 ]
 
+llm = [
+    "openai>=2.8.1",
+    "anthropic>=0.73.0",
+    "httpx>=0.28.1"
+]
+
 [tool.hatch.build.targets.wheel]
-packages = [".docgen"]
+packages = ["docgen"]
 
 [tool.hatch.build.targets.wheel.shared-data]
-".docgen/config.yaml.sample" = "docgen/config.yaml"
-".docgen/templates/" = "docgen/templates/"
-".docgen/hooks/" = "docgen/hooks/"
+"docgen/config.yaml.sample" = "docgen/config.yaml"
+"docgen/templates/" = "docgen/templates/"
+"docgen/hooks/" = "docgen/hooks/"

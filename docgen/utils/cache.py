@@ -29,12 +29,12 @@ class CacheManager:
 
         Args:
             project_root: プロジェクトのルートディレクトリ
-            cache_dir: キャッシュディレクトリ（Noneの場合は`.docgen/.cache/`）
+            cache_dir: キャッシュディレクトリ（Noneの場合は`docgen/.cache/`）
             enabled: キャッシュを有効にするかどうか
         """
         self.project_root = project_root.resolve()
         self.enabled = enabled
-        self.cache_dir = cache_dir or (project_root / ".docgen" / ".cache")
+        self.cache_dir = cache_dir or (project_root / "docgen" / ".cache")
         self.cache_file = self.cache_dir / "parser_cache.json"
         self._cache_data: Optional[Dict[str, Any]] = None
 

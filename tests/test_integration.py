@@ -7,8 +7,8 @@ import yaml
 from pathlib import Path
 import sys
 
-# .docgenモジュールをインポート
-DOCGEN_DIR = Path(__file__).parent.parent / ".docgen"
+# docgenモジュールをインポート
+DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 from docgen import DocGen
@@ -40,7 +40,7 @@ class TestIntegration:
             }
         }
 
-        config_path = python_project / ".docgen" / "config.yaml"
+        config_path = python_project / "docgen" / "config.yaml"
         config_path.parent.mkdir(exist_ok=True)
         with open(config_path, 'w', encoding='utf-8') as f:
             yaml.dump(config, f)

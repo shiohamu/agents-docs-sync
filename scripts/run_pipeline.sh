@@ -17,7 +17,7 @@ fi
 # ステップ2: ドキュメント生成
 echo "[2/3] ドキュメント生成中..."
 cd "$PROJECT_ROOT"
-python3 .docgen/docgen.py
+python3 docgen/docgen.py
 if [ $? -ne 0 ]; then
     echo "エラー: ドキュメント生成が失敗しました"
     exit 1

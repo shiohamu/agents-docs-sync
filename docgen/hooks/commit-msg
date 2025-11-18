@@ -1,0 +1,85 @@
+#!/bin/bash
+#
+# commit-msgフック
+# コミットメッセージが空の場合、LLMを使用して自動生成
+#
+
+# プロジェクトルートを取得（.git/hooksから実行されるため）
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$PROJECT_ROOT" ]; then
+    # Gitリポジトリでない場合はスキップ
+    exit 0
+fi
+
+DOCGEN_DIR="$PROJECT_ROOT/docgen"
+DOCGEN_SCRIPT="$DOCGEN_DIR/docgen.py"
+CONFIG_FILE="$DOCGEN_DIR/config.yaml"
+
+# docgen.pyが存在しない場合はスキップ
+if [ ! -f "$DOCGEN_SCRIPT" ]; then
+    exit 0
+fi
+
+# 設定ファイルからコミットメッセージ生成が有効か確認
+if [ -f "$CONFIG_FILE" ] && command -v python3 &> /dev/null; then
+    ENABLED=$(python3 -c "
+import yaml
+import sys
+try:
+    with open('$CONFIG_FILE', 'r') as f:
+        config = yaml.safe_load(f) or {}
+    agents = config.get('agents', {})
+    generation = agents.get('generation', {})
+    enabled = generation.get('enable_commit_message', True)
+    print('1' if enabled else '0')
+except:
+    print('1')  # デフォルトで有効
+" 2>/dev/null || echo "1")
+
+    if [ "$ENABLED" != "1" ]; then
+        exit 0
+    fi
+fi
+
+# コミットメッセージファイルのパス（Gitが提供）
+COMMIT_MSG_FILE="$1"
+
+# 既存のコミットメッセージを読み込む
+if [ -f "$COMMIT_MSG_FILE" ]; then
+    EXISTING_MSG=$(cat "$COMMIT_MSG_FILE" | sed '/^#/d' | sed '/^$/d' | head -1)
+
+    # メッセージが空でない場合はスキップ
+    if [ -n "$EXISTING_MSG" ]; then
+        exit 0
+    fi
+fi
+
+# uvまたはPythonが利用可能か確認
+if command -v uv &> /dev/null; then
+    PYTHON_CMD="uv run python3"
+elif command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+else
+    echo "警告: uvまたはpython3が見つかりません。コミットメッセージ生成をスキップします。"
+    exit 0
+fi
+
+cd "$PROJECT_ROOT" || exit 0
+
+# コミットメッセージを生成
+echo "コミットメッセージを自動生成中..."
+GENERATED_MSG=$($PYTHON_CMD "$DOCGEN_SCRIPT" commit-msg 2>&1)
+
+# 生成結果を確認
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ] && [ -n "$GENERATED_MSG" ]; then
+    # 生成されたメッセージをコミットメッセージファイルに書き込み
+    echo "$GENERATED_MSG" > "$COMMIT_MSG_FILE"
+    echo "✓ コミットメッセージを生成しました: $GENERATED_MSG"
+else
+    echo "警告: コミットメッセージの生成に失敗しました。手動で入力してください。"
+    # エラーがあってもコミットは続行（ユーザーが手動で入力できるように）
+fi
+
+exit 0
+

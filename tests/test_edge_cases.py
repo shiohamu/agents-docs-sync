@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 import sys
 
-DOCGEN_DIR = Path(__file__).parent.parent / ".docgen"
+DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 from detectors.python_detector import PythonDetector

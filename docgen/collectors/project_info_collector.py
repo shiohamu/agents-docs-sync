@@ -30,6 +30,7 @@ class ProjectInfoCollector:
             プロジェクト情報の辞書
         """
         return {
+            'description': self.collect_project_description(),
             'build_commands': self.collect_build_commands(),
             'test_commands': self.collect_test_commands(),
             'dependencies': self.collect_dependencies(),
@@ -259,4 +260,85 @@ class ProjectInfoCollector:
                 structure['main_directories'].append(item.name)
 
         return structure
+
+    def collect_project_description(self) -> Optional[str]:
+        """
+        プロジェクトの説明を収集
+
+        Returns:
+            プロジェクトの説明文（見つからない場合はNone）
+        """
+        # 1. README.mdから説明を取得
+        readme_path = self.project_root / 'README.md'
+        if readme_path.exists():
+            readme_content = readme_path.read_text(encoding='utf-8')
+            # 最初の段落を抽出（# タイトルの後の最初の非空行）
+            lines = readme_content.split('\n')
+            found_title = False
+            for line in lines:
+                line = line.strip()
+                if line.startswith('#'):
+                    found_title = True
+                    continue
+                if found_title and line and not line.startswith('<!--'):
+                    # 汎用的なテンプレート文をスキップ
+                    if 'このプロジェクトの説明をここに記述してください' not in line:
+                        return line
+                    break
+
+        # 2. main.pyのdocstringから取得
+        main_py = self.project_root / 'main.py'
+        if main_py.exists():
+            try:
+                content = main_py.read_text(encoding='utf-8')
+                # モジュールレベルのdocstringを抽出
+                # """...""" または '''...''' のパターンを探す
+                docstring_pattern = r'"""(.*?)"""'
+                match = re.search(docstring_pattern, content, re.DOTALL)
+                if match:
+                    docstring = match.group(1).strip()
+                    if docstring and len(docstring) > 10:  # 短すぎる場合はスキップ
+                        return docstring.split('\n')[0]  # 最初の行のみ
+            except Exception:
+                pass
+
+        # 3. __init__.pyのdocstringから取得
+        init_py = self.project_root / '__init__.py'
+        if init_py.exists():
+            try:
+                content = init_py.read_text(encoding='utf-8')
+                docstring_pattern = r'"""(.*?)"""'
+                match = re.search(docstring_pattern, content, re.DOTALL)
+                if match:
+                    docstring = match.group(1).strip()
+                    if docstring and len(docstring) > 10:
+                        return docstring.split('\n')[0]
+            except Exception:
+                pass
+
+        # 4. pyproject.tomlのdescriptionから取得
+        pyproject = self.project_root / 'pyproject.toml'
+        if pyproject.exists():
+            try:
+                import sys
+                if sys.version_info >= (3, 11):
+                    import tomllib
+                    with open(pyproject, 'rb') as f:
+                        data = tomllib.load(f)
+                else:
+                    try:
+                        import tomli
+                        with open(pyproject, 'rb') as f:
+                            data = tomli.load(f)
+                    except ImportError:
+                        data = {}
+
+                if 'project' in data and 'description' in data['project']:
+                    description = data['project']['description']
+                    if description and len(description) > 10:
+                        return description
+            except Exception:
+                pass
+
+        return None
 

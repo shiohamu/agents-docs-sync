@@ -10,7 +10,7 @@ from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # モジュールパスを追加（utils.loggerをインポートするため）
-# 注意: このモジュールは.docgenパッケージ内で実行されることを想定
+# 注意: このモジュールはdocgenパッケージ内で実行されることを想定
 # 相対インポートが困難な場合のフォールバックとしてsys.path.insertを使用
 DOCGEN_DIR = Path(__file__).parent.parent.parent.resolve()
 if str(DOCGEN_DIR) not in sys.path:
@@ -105,7 +105,7 @@ class BaseParser(ABC):
             全API情報のリスト
         """
         if exclude_dirs is None:
-            exclude_dirs = ['.git', '.docgen', '__pycache__', 'node_modules', '.venv', 'venv', 'htmlcov', '.pytest_cache', 'dist', 'build']
+            exclude_dirs = ['.git', 'docgen', '__pycache__', 'node_modules', '.venv', 'venv', 'htmlcov', '.pytest_cache', 'dist', 'build']
 
         # キャッシュの設定
         effective_use_cache = use_cache and cache_manager is not None

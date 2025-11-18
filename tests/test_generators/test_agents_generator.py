@@ -5,7 +5,7 @@ AgentsGeneratorのテスト
 import pytest
 from pathlib import Path
 
-# conftest.pyで.docgenがsys.pathに追加されているため、
+# conftest.pyでdocgenがsys.pathに追加されているため、
 # generators.agents_generatorから直接インポート可能
 from generators.agents_generator import AgentsGenerator  # pyright: ignore[reportMissingImports]
 
