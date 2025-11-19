@@ -43,6 +43,16 @@ generation:
   # 囲まれたセクションは保持されます
   preserve_manual_sections: true
 
+  # Outlinesを使用した構造化出力（実験的機能）
+  # trueに設定すると、LLM出力をJSON Schemaで制約し、より構造化されたドキュメントを生成します
+  use_outlines: false
+
+  # Outlinesスキーマファイルのパス（オプション）
+  # 指定しない場合はデフォルトのスキーマを使用
+  # outlines_schemas:
+  #   agents: schemas/agents_schema.json
+  #   readme: schemas/readme_schema.json
+
 # 除外設定（オプション）
 # exclude:
 #   # 除外するディレクトリ

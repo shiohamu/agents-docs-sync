@@ -20,7 +20,7 @@ class ProjectInfoCollector:
         Args:
             project_root: プロジェクトのルートディレクトリ
         """
-        self.project_root = project_root
+        self.project_root: Path = project_root
 
     def collect_all(self) -> Dict[str, Any]:
         """
@@ -30,13 +30,13 @@ class ProjectInfoCollector:
             プロジェクト情報の辞書
         """
         return {
-            'description': self.collect_project_description(),
-            'build_commands': self.collect_build_commands(),
-            'test_commands': self.collect_test_commands(),
-            'dependencies': self.collect_dependencies(),
-            'coding_standards': self.collect_coding_standards(),
-            'ci_cd_info': self.collect_ci_cd_info(),
-            'project_structure': self.collect_project_structure(),
+            "description": self.collect_project_description(),
+            "build_commands": self.collect_build_commands(),
+            "test_commands": self.collect_test_commands(),
+            "dependencies": self.collect_dependencies(),
+            "coding_standards": self.collect_coding_standards(),
+            "ci_cd_info": self.collect_ci_cd_info(),
+            "project_structure": self.collect_project_structure(),
         }
 
     def collect_build_commands(self) -> List[str]:
@@ -49,33 +49,37 @@ class ProjectInfoCollector:
         commands = []
 
         # scripts/run_pipeline.sh から収集
-        pipeline_script = self.project_root / 'scripts' / 'run_pipeline.sh'
+        pipeline_script = self.project_root / "scripts" / "run_pipeline.sh"
         if pipeline_script.exists():
-            content = pipeline_script.read_text(encoding='utf-8')
+            content = pipeline_script.read_text(encoding="utf-8")
             # コマンド行を抽出（簡易的な実装）
-            for line in content.split('\n'):
-                if line.strip().startswith('python') or line.strip().startswith('npm') or line.strip().startswith('make'):
+            for line in content.split("\n"):
+                if (
+                    line.strip().startswith("python")
+                    or line.strip().startswith("npm")
+                    or line.strip().startswith("make")
+                ):
                     commands.append(line.strip())
 
         # Makefile から収集
-        makefile = self.project_root / 'Makefile'
+        makefile = self.project_root / "Makefile"
         if makefile.exists():
-            content = makefile.read_text(encoding='utf-8')
+            content = makefile.read_text(encoding="utf-8")
             # .PHONY やターゲットを抽出
-            for line in content.split('\n'):
-                if re.match(r'^\w+:', line) and not line.startswith('.PHONY'):
-                    target = line.split(':')[0].strip()
-                    commands.append(f'make {target}')
+            for line in content.split("\n"):
+                if re.match(r"^\w+:", line) and not line.startswith(".PHONY"):
+                    target = line.split(":")[0].strip()
+                    commands.append(f"make {target}")
 
         # package.json から収集
-        package_json = self.project_root / 'package.json'
+        package_json = self.project_root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, 'r', encoding='utf-8') as f:
+                with open(package_json, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    if 'scripts' in data:
-                        for script_name, script_cmd in data['scripts'].items():
-                            commands.append(f'npm run {script_name}')
+                    if "scripts" in data:
+                        for script_name, script_cmd in data["scripts"].items():
+                            commands.append(f"npm run {script_name}")
             except (json.JSONDecodeError, KeyError):
                 pass
 
@@ -91,28 +95,30 @@ class ProjectInfoCollector:
         commands = []
 
         # scripts/run_tests.sh から収集
-        test_script = self.project_root / 'scripts' / 'run_tests.sh'
+        test_script = self.project_root / "scripts" / "run_tests.sh"
         if test_script.exists():
-            content = test_script.read_text(encoding='utf-8')
-            for line in content.split('\n'):
-                if 'pytest' in line or 'test' in line.lower():
+            content = test_script.read_text(encoding="utf-8")
+            for line in content.split("\n"):
+                if "pytest" in line or "test" in line.lower():
                     # コマンド行を抽出
-                    match = re.search(r'(pytest|python.*test|npm.*test|make.*test)', line)
+                    match = re.search(
+                        r"(pytest|python.*test|npm.*test|make.*test)", line
+                    )
                     if match:
                         commands.append(match.group(0))
 
         # pytest.ini から収集
-        pytest_ini = self.project_root / 'pytest.ini'
+        pytest_ini = self.project_root / "pytest.ini"
         if pytest_ini.exists():
-            commands.append('pytest tests/ -v --tb=short')
+            commands.append("pytest tests/ -v --tb=short")
 
         # package.json の test スクリプトから収集
-        package_json = self.project_root / 'package.json'
+        package_json = self.project_root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, 'r', encoding='utf-8') as f:
+                with open(package_json, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    if 'scripts' in data and 'test' in data['scripts']:
+                    if "scripts" in data and "test" in data["scripts"]:
                         commands.append(f"npm test")
             except (json.JSONDecodeError, KeyError):
                 pass
@@ -130,26 +136,33 @@ class ProjectInfoCollector:
 
         # Python依存関係
         python_deps = []
-        for req_file in ['requirements.txt', 'requirements-docgen.txt', 'requirements-test.txt']:
+        for req_file in [
+            "requirements.txt",
+            "requirements-docgen.txt",
+            "requirements-test.txt",
+        ]:
             req_path = self.project_root / req_file
             if req_path.exists():
-                with open(req_path, 'r', encoding='utf-8') as f:
+                with open(req_path, "r", encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
-                        if line and not line.startswith('#'):
+                        if line and not line.startswith("#"):
                             python_deps.append(line)
         if python_deps:
-            dependencies['python'] = python_deps
+            dependencies["python"] = python_deps
 
         # Node.js依存関係
-        package_json = self.project_root / 'package.json'
+        package_json = self.project_root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, 'r', encoding='utf-8') as f:
+                with open(package_json, "r", encoding="utf-8") as f:
                     data = json.load(f)
-                    if 'dependencies' in data:
-                        node_deps = [f"{name}@{version}" for name, version in data['dependencies'].items()]
-                        dependencies['nodejs'] = node_deps
+                    if "dependencies" in data:
+                        node_deps = [
+                            f"{name}@{version}"
+                            for name, version in data["dependencies"].items()
+                        ]
+                        dependencies["nodejs"] = node_deps
             except (json.JSONDecodeError, KeyError):
                 pass
 
@@ -165,51 +178,54 @@ class ProjectInfoCollector:
         standards = {}
 
         # pyproject.toml から収集
-        pyproject = self.project_root / 'pyproject.toml'
+        pyproject = self.project_root / "pyproject.toml"
         if pyproject.exists():
             try:
                 # Python 3.11以降では標準ライブラリのtomllibを使用
                 import sys
+
                 if sys.version_info >= (3, 11):
                     import tomllib
-                    with open(pyproject, 'rb') as f:
+
+                    with open(pyproject, "rb") as f:
                         data = tomllib.load(f)
                 else:
                     # Python 3.10以前ではtomliを使用（オプショナル）
                     try:
                         import tomli
-                        with open(pyproject, 'rb') as f:
+
+                        with open(pyproject, "rb") as f:
                             data = tomli.load(f)
                     except ImportError:
                         # tomliがインストールされていない場合、簡易的な解析にフォールバック
                         raise ImportError("tomli not available")
 
-                if 'tool' in data:
-                    tools = data['tool']
-                    if 'black' in tools:
-                        standards['formatter'] = 'black'
-                        standards['black_config'] = tools['black']
-                    if 'ruff' in tools:
-                        standards['linter'] = 'ruff'
-                        standards['ruff_config'] = tools['ruff']
+                if "tool" in data:
+                    tools = data["tool"]
+                    if "black" in tools:
+                        standards["formatter"] = "black"
+                        standards["black_config"] = tools["black"]
+                    if "ruff" in tools:
+                        standards["linter"] = "ruff"
+                        standards["ruff_config"] = tools["ruff"]
             except (ImportError, Exception) as e:
                 # TOML解析が失敗した場合、簡易的な解析にフォールバック
-                content = pyproject.read_text(encoding='utf-8')
-                if 'black' in content:
-                    standards['formatter'] = 'black'
-                if 'ruff' in content:
-                    standards['linter'] = 'ruff'
+                content = pyproject.read_text(encoding="utf-8")
+                if "black" in content:
+                    standards["formatter"] = "black"
+                if "ruff" in content:
+                    standards["linter"] = "ruff"
 
         # .editorconfig から収集
-        editorconfig = self.project_root / '.editorconfig'
+        editorconfig = self.project_root / ".editorconfig"
         if editorconfig.exists():
-            standards['editorconfig'] = True
+            standards["editorconfig"] = True
 
         # prettier.config.js または .prettierrc から収集
-        for prettier_file in ['.prettierrc', 'prettier.config.js', '.prettierrc.json']:
+        for prettier_file in [".prettierrc", "prettier.config.js", ".prettierrc.json"]:
             prettier_path = self.project_root / prettier_file
             if prettier_path.exists():
-                standards['formatter'] = 'prettier'
+                standards["formatter"] = "prettier"
                 break
 
         return standards
@@ -224,13 +240,13 @@ class ProjectInfoCollector:
         ci_info = {}
 
         # GitHub Actions
-        workflows_dir = self.project_root / '.github' / 'workflows'
+        workflows_dir = self.project_root / ".github" / "workflows"
         if workflows_dir.exists():
             workflows = []
-            for workflow_file in workflows_dir.glob('*.yml'):
+            for workflow_file in workflows_dir.glob("*.yml"):
                 workflows.append(workflow_file.name)
             if workflows:
-                ci_info['github_actions'] = workflows
+                ci_info["github_actions"] = workflows
 
         return ci_info
 
@@ -242,22 +258,24 @@ class ProjectInfoCollector:
             プロジェクト構造の辞書
         """
         structure = {
-            'languages': [],
-            'main_directories': [],
+            "languages": [],
+            "main_directories": [],
         }
 
         # 言語の検出（簡易版）
-        if (self.project_root / 'requirements.txt').exists() or (self.project_root / 'pyproject.toml').exists():
-            structure['languages'].append('python')
-        if (self.project_root / 'package.json').exists():
-            structure['languages'].append('javascript')
-        if (self.project_root / 'go.mod').exists():
-            structure['languages'].append('go')
+        if (self.project_root / "requirements.txt").exists() or (
+            self.project_root / "pyproject.toml"
+        ).exists():
+            structure["languages"].append("python")
+        if (self.project_root / "package.json").exists():
+            structure["languages"].append("javascript")
+        if (self.project_root / "go.mod").exists():
+            structure["languages"].append("go")
 
         # 主要ディレクトリ
         for item in self.project_root.iterdir():
-            if item.is_dir() and not item.name.startswith('.'):
-                structure['main_directories'].append(item.name)
+            if item.is_dir() and not item.name.startswith("."):
+                structure["main_directories"].append(item.name)
 
         return structure
 
@@ -269,28 +287,28 @@ class ProjectInfoCollector:
             プロジェクトの説明文（見つからない場合はNone）
         """
         # 1. README.mdから説明を取得
-        readme_path = self.project_root / 'README.md'
+        readme_path = self.project_root / "README.md"
         if readme_path.exists():
-            readme_content = readme_path.read_text(encoding='utf-8')
+            readme_content = readme_path.read_text(encoding="utf-8")
             # 最初の段落を抽出（# タイトルの後の最初の非空行）
-            lines = readme_content.split('\n')
+            lines = readme_content.split("\n")
             found_title = False
             for line in lines:
                 line = line.strip()
-                if line.startswith('#'):
+                if line.startswith("#"):
                     found_title = True
                     continue
-                if found_title and line and not line.startswith('<!--'):
+                if found_title and line and not line.startswith("<!--"):
                     # 汎用的なテンプレート文をスキップ
-                    if 'このプロジェクトの説明をここに記述してください' not in line:
+                    if "このプロジェクトの説明をここに記述してください" not in line:
                         return line
                     break
 
         # 2. main.pyのdocstringから取得
-        main_py = self.project_root / 'main.py'
+        main_py = self.project_root / "main.py"
         if main_py.exists():
             try:
-                content = main_py.read_text(encoding='utf-8')
+                content = main_py.read_text(encoding="utf-8")
                 # モジュールレベルのdocstringを抽出
                 # """...""" または '''...''' のパターンを探す
                 docstring_pattern = r'"""(.*?)"""'
@@ -298,47 +316,49 @@ class ProjectInfoCollector:
                 if match:
                     docstring = match.group(1).strip()
                     if docstring and len(docstring) > 10:  # 短すぎる場合はスキップ
-                        return docstring.split('\n')[0]  # 最初の行のみ
+                        return docstring.split("\n")[0]  # 最初の行のみ
             except Exception:
                 pass
 
         # 3. __init__.pyのdocstringから取得
-        init_py = self.project_root / '__init__.py'
+        init_py = self.project_root / "__init__.py"
         if init_py.exists():
             try:
-                content = init_py.read_text(encoding='utf-8')
+                content = init_py.read_text(encoding="utf-8")
                 docstring_pattern = r'"""(.*?)"""'
                 match = re.search(docstring_pattern, content, re.DOTALL)
                 if match:
                     docstring = match.group(1).strip()
                     if docstring and len(docstring) > 10:
-                        return docstring.split('\n')[0]
+                        return docstring.split("\n")[0]
             except Exception:
                 pass
 
         # 4. pyproject.tomlのdescriptionから取得
-        pyproject = self.project_root / 'pyproject.toml'
+        pyproject = self.project_root / "pyproject.toml"
         if pyproject.exists():
             try:
                 import sys
+
                 if sys.version_info >= (3, 11):
                     import tomllib
-                    with open(pyproject, 'rb') as f:
+
+                    with open(pyproject, "rb") as f:
                         data = tomllib.load(f)
                 else:
                     try:
                         import tomli
-                        with open(pyproject, 'rb') as f:
+
+                        with open(pyproject, "rb") as f:
                             data = tomli.load(f)
                     except ImportError:
                         data = {}
 
-                if 'project' in data and 'description' in data['project']:
-                    description = data['project']['description']
+                if "project" in data and "description" in data["project"]:
+                    description = data["project"]["description"]
                     if description and len(description) > 10:
                         return description
             except Exception:
                 pass
 
         return None
-

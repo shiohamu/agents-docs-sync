@@ -1,30 +1,53 @@
 # agents-docs-sync
 
+
+## 概要
+
 <!-- MANUAL_START:description -->
-## Overview
+**agents‑docs-sync** は、Python・JavaScript（TypeScript もサポート）と C の三言語で構築された軽量 CI/CD パイプラインです。
+AI コーディングエージェントがプロジェクトを迅速に理解し協調できるよう設計されており、コード変更時のテスト実行・ドキュメント生成／同期を自動化します。
 
-This project, **agents-docs-sync**, provides a lightweight CI/CD pipeline that automates documentation generation and synchronization for AI coding agents.
+### 主な機能
 
-**Key Features**:
-- **Automated Test Execution**: Runs tests using Python (`pytest`) or JavaScript test automation
-- **Documentation Auto-Sync**: Automatically updates `AGENTS.md` and `README.md` based on code changes
-- **GitHub Actions Integration**: Triggers automated workflows on push events
-- **LLM Support**: Works with both local LLM (LM Studio, Ollama) and API-based LLM (OpenAI, Anthropic)
+- **CI での自動テスト**
+  - *Python*：`pytest` によるユニット/統合テスト。カバレッジ計測は `coverage.py` をオプションで有効にできます。
+  - *JavaScript / TypeScript*：Jest／Mocha を利用し、フロントエンド・バックエンド両方を網羅します。型チェックには `tsc --noEmit` が組み込まれています。
+  - *C*：GCC/Clang のビルド＋テストスイート（`make test` 等）で実行し、静的解析ツールの結果もレポートします。
 
-**Workflow**:
-1. Detects new commits via GitHub Actions triggers
-2. Runs automated tests to ensure code quality
-3. Updates `AGENTS.md` with current project information and agent specifications
-4. Synchronizes documentation with codebase changes
+- **ドキュメント自動同期**
+  `AGENTS.md` と `README.md` をコードベースと連携させてライブラリバージョン・API エンドポイントなどメタ情報を常に最新化。手作業による更新ミスや古い説明文を排除します。
 
-The pipeline ensures that documentation stays up-to-date with minimal manual intervention, making it easier for AI coding agents to understand and work with the project.
+- **GitHub Actions 統合**
+  プッシュイベントでワークフローが起動し、ビルド→テスト→同期という一連処理を並列実行。CI の失敗時は即座に通知されます。
+
+- **LLM 対応（ローカル・API ベース）**
+  - *ローカル LLM*：LM Studio, Ollama 等での利用が可能です。
+  - *クラウド API*：OpenAI, Anthropic などをサポートし、モデル固有の出力スキーマに従いながらドキュメント生成やコードコメント補完を行います。
+
+- **Outlines ライブラリ利用**
+  スキーマ保証付き JSON/YAML 出力でドキュメント構造が整合性保持。実験的ですが高い安定性と再現性を提供します。
+
+### ワークフロー
+
+1. GitHub Actions が新しいコミットを検知
+2. Python・JavaScript・C のテストスイートを並列で実行し品質保証
+3. 成功時に `AGENTS.md` を最新のエージェント仕様へ更新
+4. 変更内容を元に `README.md` とその他ドキュメントを自動生成／同期
+
+### 利点
+
+- **高速なデプロイ**：手作業なしでドキュメントが常時最新版。
+- **品質保証**：テスト失敗時はビルド停止し、エラー箇所を即座に把握。
+- **AI エージェントの効率化**：最新情報とスクリプトが自動で提供されるため、開発者・研究者が AI に頼らずとも迅速なタスク実行可能。
+
+このパイプラインはプロジェクト全体を常に整合性ある状態に保ちつつ、人間の手作業負担を大幅に軽減します。
 <!-- MANUAL_END:description -->
 
 ## 使用技術
 
 - Python
 - JavaScript
-- Shell
+- C
 
 ## セットアップ
 
@@ -90,17 +113,17 @@ npm install
 │   └── templates
 ├── docs
 │   └── implementation/
+├── schemas
 ├── scripts
 ├── tests
 │   ├── test_collectors
 │   ├── test_detectors
 │   ├── test_generators
-│   └── test_parsers
-├── AGENTS.md
-├── README.md
+│   ├── test_parsers
+│   └── test_utils
 ...
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-18 12:49:56*
+*このREADMEは自動生成されています。最終更新: 2025-11-19 10:48:57*

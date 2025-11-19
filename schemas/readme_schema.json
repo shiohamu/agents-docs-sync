@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "プロジェクトタイトル"
+    },
+    "description": {
+      "type": "string",
+      "description": "プロジェクトの説明"
+    },
+    "technologies": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "使用技術のリスト"
+    },
+    "dependencies": {
+      "type": "object",
+      "properties": {
+        "python": {"type": "array", "items": {"type": "string"}},
+        "nodejs": {"type": "array", "items": {"type": "string"}},
+        "other": {"type": "array", "items": {"type": "string"}}
+      },
+      "description": "言語ごとの依存関係"
+    },
+    "setup_instructions": {
+      "type": "object",
+      "properties": {
+        "prerequisites": {"type": "array", "items": {"type": "string"}},
+        "installation_steps": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "project_structure": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "プロジェクト構造の説明"
+    },
+    "build_commands": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "ビルドコマンド"
+    },
+    "test_commands": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "テストコマンド"
+    },
+    "manual_sections": {
+      "type": "object",
+      "description": "手動で記述されたセクション",
+      "additionalProperties": {"type": "string"}
+    }
+  },
+  "required": ["title", "description", "technologies"]
+}

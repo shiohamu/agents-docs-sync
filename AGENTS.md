@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-18 12:50:37
+自動生成日時: 2025-11-19 10:49:33
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -10,45 +10,24 @@
 
 <!-- MANUAL_START:description -->
 
-**PROJECT NAME:** agents-docs-sync
+**agents‑docs-sync** は、Python・JavaScript（TypeScript もサポート）と C の三言語で構築された軽量 CI/CD パイプラインです。
+主に以下の機能を提供します。
 
-**使用技術 (Use languages): Python, JavaScript, Shell**
+- **ドキュメント自動生成** – `python3 docgen/docgen.py` を実行して、プロジェクト全体の API ドキュメントや設定ファイルを書き出す。
+- **統合テストサポート** – Python 版では `pytest`, JavaScript/TypeScript は Jest（推奨）、C のユニットテストは CMocka 等で実装可能。
+  テストの実行例:
+  ```bash
+  python3 -m pytest test          # Pytest 実行 (カバレッジ付き)
+  pytest tests/ -v --tb=short     # 詳細出力と短いトレースバック
+  ```
+- **依存関係管理** – Python は `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` を必須。
+  JavaScript/TypeScript と C のビルド・テストはそれぞれのツールチェーンで管理。
 
-**依存関係**
+**使用技術**
 
-- pyyaml >=6.0.3
-- pytest >=7.4.0
-- pytest-cov >=4.1.0
-- pytest-mock >=3.11.1
-
-このプロジェクトは、`agents-docs-sync`というドキュメント自動生成・同期システムです。AIコーディングエージェントがプロジェクトで効果的に作業するための`AGENTS.md`ドキュメントを自動生成・更新します。
-
-**主な機能**:
-- プロジェクト情報の自動収集と分析
-- `AGENTS.md`と`README.md`の自動生成・更新
-- GitHub Actionsによる自動化パイプライン
-- ローカルLLMとAPI LLMの両方に対応
-
-**ビルドコマンド**
-
-```bash
-python3 docgen/docgen.py
-```
-
-**テストコマンド**
-
-- `python3 -m pytest tests`
-- `pytest` (default)
-- `pytest tests/ -v --tb=short`
-
-**GitHub Actions**:
-- pushイベント時に自動的にテストを実行
-- ドキュメントの自動更新
-- CI/CDパイプラインによる継続的インテグレーション
-
-**テスト実行**:
-- `pytest tests/ -v --tb=short` コマンドでテストを実行
-- ローカルLLM使用時は、モデルが起動していることを確認
+- Python (3.x)
+- JavaScript / TypeScript
+- C
 
 <!-- MANUAL_END:description -->
 
@@ -141,4 +120,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-18 12:50:37*
+*このドキュメントは自動生成されています。最終更新: 2025-11-19 10:49:33*

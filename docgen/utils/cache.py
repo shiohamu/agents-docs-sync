@@ -23,7 +23,9 @@ logger = get_logger("cache")
 class CacheManager:
     """キャッシュ管理クラス"""
 
-    def __init__(self, project_root: Path, cache_dir: Optional[Path] = None, enabled: bool = True):
+    def __init__(
+        self, project_root: Path, cache_dir: Optional[Path] = None, enabled: bool = True
+    ):
         """
         初期化
 
@@ -32,10 +34,10 @@ class CacheManager:
             cache_dir: キャッシュディレクトリ（Noneの場合は`docgen/.cache/`）
             enabled: キャッシュを有効にするかどうか
         """
-        self.project_root = project_root.resolve()
-        self.enabled = enabled
-        self.cache_dir = cache_dir or (project_root / "docgen" / ".cache")
-        self.cache_file = self.cache_dir / "parser_cache.json"
+        self.project_root: Path = project_root.resolve()
+        self.enabled: bool = enabled
+        self.cache_dir: Path = cache_dir or (project_root / "docgen" / ".cache")
+        self.cache_file: Path = self.cache_dir / "parser_cache.json"
         self._cache_data: Optional[Dict[str, Any]] = None
 
         if self.enabled:
@@ -49,9 +51,11 @@ class CacheManager:
 
         if self.cache_file.exists():
             try:
-                with open(self.cache_file, 'r', encoding='utf-8') as f:
+                with open(self.cache_file, "r", encoding="utf-8") as f:
                     self._cache_data = json.load(f)
-                logger.debug(f"キャッシュを読み込みました: {len(self._cache_data)} エントリ")
+                logger.debug(
+                    f"キャッシュを読み込みました: {len(self._cache_data)} エントリ"
+                )
             except (json.JSONDecodeError, IOError) as e:
                 logger.warning(f"キャッシュファイルの読み込みに失敗しました: {e}")
                 self._cache_data = {}
@@ -64,7 +68,7 @@ class CacheManager:
             return
 
         try:
-            with open(self.cache_file, 'w', encoding='utf-8') as f:
+            with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(self._cache_data, f, indent=2, ensure_ascii=False)
             logger.debug(f"キャッシュを保存しました: {len(self._cache_data)} エントリ")
         except IOError as e:
@@ -81,7 +85,7 @@ class CacheManager:
             ファイルのSHA256ハッシュ（16進数文字列）
         """
         try:
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 file_hash = hashlib.sha256()
                 # 大きなファイルでも効率的に処理するため、チャンク単位で読み込む
                 while chunk := f.read(8192):
@@ -110,13 +114,15 @@ class CacheManager:
                 file_path_relative = file_path
 
             # 正規化されたパス文字列を使用
-            normalized_path = str(file_path_relative).replace('\\', '/')
+            normalized_path = str(file_path_relative).replace("\\", "/")
             return f"{parser_type}:{normalized_path}"
         except ValueError:
             # プロジェクトルート外のファイルの場合、絶対パスを使用
             return f"{parser_type}:{file_path}"
 
-    def get_cached_result(self, file_path: Path, parser_type: str) -> Optional[List[Dict[str, Any]]]:
+    def get_cached_result(
+        self, file_path: Path, parser_type: str
+    ) -> Optional[List[Dict[str, Any]]]:
         """
         キャッシュから結果を取得
 
@@ -143,13 +149,17 @@ class CacheManager:
         current_hash = self.get_file_hash(file_path)
         current_mtime = file_path.stat().st_mtime
 
-        cached_hash = cache_entry.get('hash')
-        cached_mtime = cache_entry.get('mtime')
+        cached_hash = cache_entry.get("hash")
+        cached_mtime = cache_entry.get("mtime")
 
         # ハッシュとタイムスタンプが一致する場合、キャッシュを返す
-        if current_hash and current_hash == cached_hash and current_mtime == cached_mtime:
+        if (
+            current_hash
+            and current_hash == cached_hash
+            and current_mtime == cached_mtime
+        ):
             logger.debug(f"キャッシュから結果を取得: {file_path}")
-            return cache_entry.get('result')
+            return cache_entry.get("result")
 
         # キャッシュが無効な場合、エントリを削除
         logger.debug(f"キャッシュが無効: {file_path}")
@@ -157,10 +167,7 @@ class CacheManager:
         return None
 
     def set_cached_result(
-        self,
-        file_path: Path,
-        parser_type: str,
-        result: List[Dict[str, Any]]
+        self, file_path: Path, parser_type: str, result: List[Dict[str, Any]]
     ) -> None:
         """
         結果をキャッシュに保存
@@ -185,10 +192,10 @@ class CacheManager:
             return
 
         self._cache_data[cache_key] = {
-            'hash': file_hash,
-            'mtime': file_mtime,
-            'result': result,
-            'cached_at': datetime.now().isoformat()
+            "hash": file_hash,
+            "mtime": file_mtime,
+            "result": result,
+            "cached_at": datetime.now().isoformat(),
         }
 
     def clear_cache(self) -> None:
@@ -198,7 +205,9 @@ class CacheManager:
             self._save_cache()
             logger.info("キャッシュをクリアしました")
 
-    def invalidate_file(self, file_path: Path, parser_type: Optional[str] = None) -> None:
+    def invalidate_file(
+        self, file_path: Path, parser_type: Optional[str] = None
+    ) -> None:
         """
         特定のファイルのキャッシュを無効化
 
@@ -222,13 +231,14 @@ class CacheManager:
                     file_path_relative = file_path.relative_to(self.project_root)
                 else:
                     file_path_relative = file_path
-                normalized_path = str(file_path_relative).replace('\\', '/')
+                normalized_path = str(file_path_relative).replace("\\", "/")
             except ValueError:
                 # プロジェクトルート外のファイルの場合、絶対パスを使用
-                normalized_path = str(file_path).replace('\\', '/')
+                normalized_path = str(file_path).replace("\\", "/")
 
             keys_to_remove = [
-                key for key in self._cache_data.keys()
+                key
+                for key in self._cache_data.keys()
                 if key.endswith(f":{normalized_path}")
             ]
             for key in keys_to_remove:
@@ -247,18 +257,15 @@ class CacheManager:
             統計情報の辞書
         """
         if not self.enabled or self._cache_data is None:
-            return {
-                'enabled': False,
-                'total_entries': 0,
-                'cache_file_size': 0
-            }
+            return {"enabled": False, "total_entries": 0, "cache_file_size": 0}
 
-        cache_file_size = self.cache_file.stat().st_size if self.cache_file.exists() else 0
+        cache_file_size = (
+            self.cache_file.stat().st_size if self.cache_file.exists() else 0
+        )
 
         return {
-            'enabled': True,
-            'total_entries': len(self._cache_data),
-            'cache_file_size': cache_file_size,
-            'cache_file_path': str(self.cache_file)
+            "enabled": True,
+            "total_entries": len(self._cache_data),
+            "cache_file_size": cache_file_size,
+            "cache_file_path": str(self.cache_file),
         }
-

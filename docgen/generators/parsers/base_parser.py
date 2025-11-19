@@ -34,7 +34,7 @@ class BaseParser(ABC):
         Args:
             project_root: プロジェクトのルートディレクトリ
         """
-        self.project_root = project_root
+        self.project_root: Path = project_root
 
     @abstractmethod
     def parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
@@ -74,14 +74,14 @@ class BaseParser(ABC):
         """
         # デフォルト実装: クラス名から推測
         class_name = self.__class__.__name__.lower()
-        if 'python' in class_name:
-            return 'python'
-        elif 'javascript' in class_name or 'js' in class_name:
-            return 'javascript'
-        elif 'go' in class_name:
-            return 'go'
+        if "python" in class_name:
+            return "python"
+        elif "javascript" in class_name or "js" in class_name:
+            return "javascript"
+        elif "go" in class_name:
+            return "go"
         else:
-            return 'generic'
+            return "generic"
 
     def parse_project(
         self,
@@ -89,7 +89,7 @@ class BaseParser(ABC):
         use_parallel: bool = True,
         max_workers: Optional[int] = None,
         use_cache: bool = True,
-        cache_manager: Optional['CacheManager'] = None
+        cache_manager: Optional["CacheManager"] = None,
     ) -> List[Dict[str, Any]]:
         """
         プロジェクト全体を解析
@@ -105,7 +105,18 @@ class BaseParser(ABC):
             全API情報のリスト
         """
         if exclude_dirs is None:
-            exclude_dirs = ['.git', 'docgen', '__pycache__', 'node_modules', '.venv', 'venv', 'htmlcov', '.pytest_cache', 'dist', 'build']
+            exclude_dirs = [
+                ".git",
+                "docgen",
+                "__pycache__",
+                "node_modules",
+                ".venv",
+                "venv",
+                "htmlcov",
+                ".pytest_cache",
+                "dist",
+                "build",
+            ]
 
         # キャッシュの設定
         effective_use_cache = use_cache and cache_manager is not None
@@ -120,17 +131,21 @@ class BaseParser(ABC):
         # 解析対象ファイルのリストを収集
         files_to_parse = []
         for ext in extensions:
-            for file_path in self.project_root.rglob(f'*{ext}'):
+            for file_path in self.project_root.rglob(f"*{ext}"):
                 try:
                     # パスの正規化（シンボリックリンクを解決）
                     file_path_resolved = file_path.resolve()
 
                     # プロジェクトルート外へのアクセスを防止
                     try:
-                        file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                        file_path_relative = file_path_resolved.relative_to(
+                            project_root_resolved
+                        )
                     except ValueError:
                         # プロジェクトルート外のファイルはスキップ
-                        logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                        logger.debug(
+                            f"プロジェクトルート外のファイルをスキップ: {file_path}"
+                        )
                         continue
 
                     # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
@@ -143,7 +158,7 @@ class BaseParser(ABC):
                         continue
 
                     # egg-infoディレクトリをスキップ（動的な名前のため）
-                    if any(part.endswith('.egg-info') for part in file_path.parts):
+                    if any(part.endswith(".egg-info") for part in file_path.parts):
                         continue
 
                     files_to_parse.append((file_path, file_path_relative))
@@ -153,7 +168,9 @@ class BaseParser(ABC):
                     continue
 
         # 並列処理または逐次処理で解析
-        if use_parallel and len(files_to_parse) > 10:  # ファイル数が10を超える場合のみ並列処理
+        if (
+            use_parallel and len(files_to_parse) > 10
+        ):  # ファイル数が10を超える場合のみ並列処理
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_file = {
                     executor.submit(
@@ -161,7 +178,7 @@ class BaseParser(ABC):
                         file_path,
                         file_path_relative,
                         cache_manager if effective_use_cache else None,
-                        parser_type if effective_use_cache else None
+                        parser_type if effective_use_cache else None,
                     ): (file_path, file_path_relative)
                     for file_path, file_path_relative in files_to_parse
                 }
@@ -182,7 +199,7 @@ class BaseParser(ABC):
                         file_path,
                         file_path_relative,
                         cache_manager if effective_use_cache else None,
-                        parser_type if effective_use_cache else None
+                        parser_type if effective_use_cache else None,
                     )
                     if apis:
                         all_apis.extend(apis)
@@ -200,8 +217,8 @@ class BaseParser(ABC):
         self,
         file_path: Path,
         file_path_relative: Path,
-        cache_manager: Optional['CacheManager'] = None,
-        parser_type: Optional[str] = None
+        cache_manager: Optional["CacheManager"] = None,
+        parser_type: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         ファイルを安全に解析（内部メソッド）
@@ -223,13 +240,13 @@ class BaseParser(ABC):
                 result = copy.deepcopy(cached_result)
                 # 相対パスを設定
                 for api in result:
-                    api['file'] = str(file_path_relative)
+                    api["file"] = str(file_path_relative)
                 return result
 
         try:
             apis = self.parse_file(file_path)
             for api in apis:
-                api['file'] = str(file_path_relative)
+                api["file"] = str(file_path_relative)
 
             # 結果をキャッシュに保存
             if cache_manager is not None and parser_type is not None:
@@ -239,4 +256,3 @@ class BaseParser(ABC):
         except Exception as e:
             logger.warning(f"{file_path} の解析に失敗しました: {e}")
             return []
-

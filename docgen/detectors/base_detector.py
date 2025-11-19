@@ -17,7 +17,7 @@ class BaseDetector(ABC):
         Args:
             project_root: プロジェクトのルートディレクトリ
         """
-        self.project_root = project_root
+        self.project_root: Path = project_root
 
     @abstractmethod
     def detect(self) -> bool:
@@ -69,7 +69,7 @@ class BaseDetector(ABC):
 
         for ext in extensions:
             try:
-                for file_path in self.project_root.rglob(f'*{ext}'):
+                for file_path in self.project_root.rglob(f"*{ext}"):
                     try:
                         # パスの正規化（シンボリックリンクを解決）
                         file_path_resolved = file_path.resolve()
@@ -94,4 +94,3 @@ class BaseDetector(ABC):
                 # ディレクトリアクセスエラーは無視して続行
                 continue
         return False
-

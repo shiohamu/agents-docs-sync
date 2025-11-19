@@ -11,6 +11,16 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DOCGEN_DIR = PROJECT_ROOT / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
+# LLM関連モジュールをモック（テストでのみ使用）
+import sys
+from unittest.mock import MagicMock
+
+# openaiモジュールをモック
+sys.modules["openai"] = MagicMock()
+sys.modules["anthropic"] = MagicMock()
+sys.modules["httpx"] = MagicMock()
+sys.modules["outlines"] = MagicMock()
+
 
 @pytest.fixture
 def temp_project(tmp_path):
@@ -68,7 +78,7 @@ class SampleClass:
         return self.value
 '''
     file_path = temp_project / "sample.py"
-    file_path.write_text(code, encoding='utf-8')
+    file_path.write_text(code, encoding="utf-8")
     return file_path
 
 
@@ -80,7 +90,7 @@ def sample_javascript_file(temp_project):
     Returns:
         Path: 作成されたJavaScriptファイルのパス
     """
-    code = '''/**
+    code = """/**
  * サンプルモジュール
  */
 
@@ -113,9 +123,9 @@ class SampleClass {
         return this.value;
     }
 }
-'''
+"""
     file_path = temp_project / "sample.js"
-    file_path.write_text(code, encoding='utf-8')
+    file_path.write_text(code, encoding="utf-8")
     return file_path
 
 
@@ -128,26 +138,21 @@ def sample_config(temp_project):
         Path: 作成された設定ファイルのパス
     """
     config = {
-        'languages': {
-            'auto_detect': True,
-            'preferred': []
+        "languages": {"auto_detect": True, "preferred": []},
+        "output": {"api_doc": "docs/api.md", "readme": "README.md"},
+        "generation": {
+            "update_readme": True,
+            "generate_api_doc": True,
+            "preserve_manual_sections": True,
         },
-        'output': {
-            'api_doc': 'docs/api.md',
-            'readme': 'README.md'
-        },
-        'generation': {
-            'update_readme': True,
-            'generate_api_doc': True,
-            'preserve_manual_sections': True
-        }
     }
 
     import yaml
+
     config_dir = temp_project / "docgen"
     config_dir.mkdir()
     config_path = config_dir / "config.yaml"
-    with open(config_path, 'w', encoding='utf-8') as f:
+    with open(config_path, "w", encoding="utf-8") as f:
         yaml.dump(config, f, allow_unicode=True)
 
     return config_path
@@ -162,10 +167,10 @@ def python_project(temp_project):
         Path: プロジェクトルート
     """
     # requirements.txt
-    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n", encoding='utf-8')
+    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n", encoding="utf-8")
 
     # サンプルPythonファイル
-    (temp_project / "main.py").write_text('def main():\n    pass\n', encoding='utf-8')
+    (temp_project / "main.py").write_text("def main():\n    pass\n", encoding="utf-8")
 
     return temp_project
 
@@ -180,20 +185,18 @@ def javascript_project(temp_project):
     """
     # package.json
     import json
+
     package_json = {
         "name": "test-project",
         "version": "1.0.0",
-        "dependencies": {
-            "express": "^4.18.0"
-        }
+        "dependencies": {"express": "^4.18.0"},
     }
     (temp_project / "package.json").write_text(
-        json.dumps(package_json, indent=2),
-        encoding='utf-8'
+        json.dumps(package_json, indent=2), encoding="utf-8"
     )
 
     # サンプルJavaScriptファイル
-    (temp_project / "index.js").write_text('console.log("Hello");\n', encoding='utf-8')
+    (temp_project / "index.js").write_text('console.log("Hello");\n', encoding="utf-8")
 
     return temp_project
 
@@ -208,14 +211,12 @@ def go_project(temp_project):
     """
     # go.mod
     (temp_project / "go.mod").write_text(
-        "module test-project\n\ngo 1.20\n",
-        encoding='utf-8'
+        "module test-project\n\ngo 1.20\n", encoding="utf-8"
     )
 
     # サンプルGoファイル
     (temp_project / "main.go").write_text(
-        'package main\n\nfunc main() {\n}\n',
-        encoding='utf-8'
+        "package main\n\nfunc main() {\n}\n", encoding="utf-8"
     )
 
     return temp_project
@@ -230,16 +231,15 @@ def multi_language_project(temp_project):
         Path: プロジェクトルート
     """
     # Python
-    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n", encoding='utf-8')
-    (temp_project / "main.py").write_text('def main():\n    pass\n', encoding='utf-8')
+    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n", encoding="utf-8")
+    (temp_project / "main.py").write_text("def main():\n    pass\n", encoding="utf-8")
 
     # JavaScript
     import json
+
     (temp_project / "package.json").write_text(
-        json.dumps({"name": "test-project"}, indent=2),
-        encoding='utf-8'
+        json.dumps({"name": "test-project"}, indent=2), encoding="utf-8"
     )
-    (temp_project / "index.js").write_text('console.log("Hello");\n', encoding='utf-8')
+    (temp_project / "index.js").write_text('console.log("Hello");\n', encoding="utf-8")
 
     return temp_project
-

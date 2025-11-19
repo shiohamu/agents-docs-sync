@@ -158,6 +158,8 @@ config.local.yml
 .temp/
 tmp/
 temp/
+.ruff_cache/
+.serena/
 
 # ============================================
 # ビルド成果物

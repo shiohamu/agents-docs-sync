@@ -47,7 +47,9 @@ logger = get_logger("docgen")
 class DocGen:
     """ドキュメント自動生成メインクラス"""
 
-    def __init__(self, project_root: Optional[Path] = None, config_path: Optional[Path] = None):
+    def __init__(
+        self, project_root: Optional[Path] = None, config_path: Optional[Path] = None
+    ):
         """
         初期化
 
@@ -75,6 +77,7 @@ class DocGen:
             self._package_config_sample = DOCGEN_DIR / "config.yaml.sample"
 
         self.config = self._load_config()
+        self._validate_config()
         self.detected_languages = []
 
     def _load_config(self) -> Dict[str, Any]:
@@ -86,7 +89,7 @@ class DocGen:
         """
         if self.config_path.exists():
             try:
-                with open(self.config_path, 'r', encoding='utf-8') as f:
+                with open(self.config_path, "r", encoding="utf-8") as f:
                     config = yaml.safe_load(f) or {}
                     return config
             except yaml.YAMLError as e:
@@ -103,18 +106,21 @@ class DocGen:
             sample_path = self.docgen_dir / "config.yaml.sample"
             if not sample_path.exists():
                 # プロジェクト内にない場合は、パッケージ内のsampleを参照
-                sample_path = getattr(self, '_package_config_sample', None)
+                sample_path = getattr(self, "_package_config_sample", None)
                 if sample_path is None:
                     sample_path = DOCGEN_DIR / "config.yaml.sample"
 
             if sample_path.exists():
                 try:
                     import shutil
+
                     # docgenディレクトリが存在しない場合は作成
                     self.docgen_dir.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(sample_path, self.config_path)
-                    logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
-                    with open(self.config_path, 'r', encoding='utf-8') as f:
+                    logger.info(
+                        f"{sample_path.name}から{self.config_path.name}を作成しました。"
+                    )
+                    with open(self.config_path, "r", encoding="utf-8") as f:
                         return yaml.safe_load(f) or {}
                 except Exception as e:
                     logger.warning(f"設定ファイルの作成に失敗しました: {e}")
@@ -127,22 +133,78 @@ class DocGen:
     def _get_default_config(self) -> Dict[str, Any]:
         """デフォルト設定を返す"""
         return {
-            'languages': {
-                'auto_detect': True,
-                'preferred': []
+            "languages": {"auto_detect": True, "preferred": []},
+            "output": {
+                "api_doc": "docs/api.md",
+                "readme": "README.md",
+                "agents_doc": "AGENTS.md",
             },
-            'output': {
-                'api_doc': 'docs/api.md',
-                'readme': 'README.md',
-                'agents_doc': 'AGENTS.md'
+            "generation": {
+                "update_readme": True,
+                "generate_api_doc": True,
+                "generate_agents_doc": True,
+                "preserve_manual_sections": True,
             },
-            'generation': {
-                'update_readme': True,
-                'generate_api_doc': True,
-                'generate_agents_doc': True,
-                'preserve_manual_sections': True
-            }
         }
+
+    def _validate_config(self) -> None:
+        """
+        設定の妥当性を検証
+
+        Raises:
+            ValueError: 設定が無効な場合
+        """
+        # 必須フィールドのチェック
+        required_sections = ["languages", "output", "generation"]
+        for section in required_sections:
+            if section not in self.config:
+                logger.warning(
+                    f"設定セクション '{section}' がありません。デフォルト値を使用します。"
+                )
+                # デフォルトをマージ
+                default = self._get_default_config()
+                self.config[section] = default.get(section, {})
+
+        # outputパスの検証
+        output_config = self.config.get("output", {})
+        for key, path in output_config.items():
+            if not isinstance(path, str):
+                logger.warning(
+                    f"output.{key} は文字列である必要があります。デフォルト値を使用します。"
+                )
+                default = self._get_default_config()["output"][key]
+                self.config["output"][key] = default
+
+        # generationフラグの検証
+        generation_config = self.config.get("generation", {})
+        for key, value in generation_config.items():
+            if not isinstance(value, bool):
+                logger.warning(
+                    f"generation.{key} はブール値である必要があります。デフォルト値を使用します。"
+                )
+                default = self._get_default_config()["generation"][key]
+                self.config["generation"][key] = default
+
+    def update_config(self, updates: Dict[str, Any]) -> None:
+        """
+        設定を動的に更新
+
+        Args:
+            updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
+        """
+
+        def set_nested_value(d: Dict[str, Any], keys: List[str], value: Any) -> None:
+            for key in keys[:-1]:
+                d = d.setdefault(key, {})
+            d[keys[-1]] = value
+
+        for key_path, value in updates.items():
+            keys = key_path.split(".")
+            set_nested_value(self.config, keys, value)
+
+        # 更新後に再検証
+        self._validate_config()
+        logger.info(f"設定を更新しました: {updates}")
 
     def detect_languages(self, use_parallel: bool = True) -> List[str]:
         """
@@ -158,7 +220,7 @@ class DocGen:
             PythonDetector(self.project_root),
             JavaScriptDetector(self.project_root),
             GoDetector(self.project_root),
-            GenericDetector(self.project_root)
+            GenericDetector(self.project_root),
         ]
 
         detected = []
@@ -167,8 +229,7 @@ class DocGen:
             # 並列処理で検出
             with ThreadPoolExecutor(max_workers=len(detectors)) as executor:
                 future_to_detector = {
-                    executor.submit(detector.detect): detector
-                    for detector in detectors
+                    executor.submit(detector.detect): detector for detector in detectors
                 }
 
                 for future in as_completed(future_to_detector):
@@ -180,7 +241,9 @@ class DocGen:
                                 detected.append(lang)
                                 logger.info(f"✓ 検出: {lang}")
                     except Exception as e:
-                        logger.warning(f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}")
+                        logger.warning(
+                            f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
+                        )
         else:
             # 逐次処理で検出
             for detector in detectors:
@@ -191,7 +254,9 @@ class DocGen:
                             detected.append(lang)
                             logger.info(f"✓ 検出: {lang}")
                 except Exception as e:
-                    logger.warning(f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}")
+                    logger.warning(
+                        f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
+                    )
 
         self.detected_languages = detected
         return detected
@@ -213,13 +278,11 @@ class DocGen:
         success = True
 
         # APIドキュメント生成
-        if self.config.get('generation', {}).get('generate_api_doc', True):
+        if self.config.get("generation", {}).get("generate_api_doc", True):
             logger.info("[APIドキュメント生成]")
             try:
                 api_generator = APIGenerator(
-                    self.project_root,
-                    self.detected_languages,
-                    self.config
+                    self.project_root, self.detected_languages, self.config
                 )
                 if api_generator.generate():
                     logger.info("✓ APIドキュメントを生成しました")
@@ -227,17 +290,18 @@ class DocGen:
                     logger.error("✗ APIドキュメントの生成に失敗しました")
                     success = False
             except Exception as e:
-                logger.error(f"✗ APIドキュメントの生成中にエラーが発生しました: {e}", exc_info=True)
+                logger.error(
+                    f"✗ APIドキュメントの生成中にエラーが発生しました: {e}",
+                    exc_info=True,
+                )
                 success = False
 
         # README生成
-        if self.config.get('generation', {}).get('update_readme', True):
+        if self.config.get("generation", {}).get("update_readme", True):
             logger.info("[README生成]")
             try:
                 readme_generator = ReadmeGenerator(
-                    self.project_root,
-                    self.detected_languages,
-                    self.config
+                    self.project_root, self.detected_languages, self.config
                 )
                 if readme_generator.generate():
                     logger.info("✓ READMEを更新しました")
@@ -245,17 +309,17 @@ class DocGen:
                     logger.error("✗ READMEの更新に失敗しました")
                     success = False
             except Exception as e:
-                logger.error(f"✗ READMEの更新中にエラーが発生しました: {e}", exc_info=True)
+                logger.error(
+                    f"✗ READMEの更新中にエラーが発生しました: {e}", exc_info=True
+                )
                 success = False
 
         # AGENTS.md生成
-        if self.config.get('generation', {}).get('generate_agents_doc', True):
+        if self.config.get("generation", {}).get("generate_agents_doc", True):
             logger.info("[AGENTS.md生成]")
             try:
                 agents_generator = AgentsGenerator(
-                    self.project_root,
-                    self.detected_languages,
-                    self.config
+                    self.project_root, self.detected_languages, self.config
                 )
                 if agents_generator.generate():
                     logger.info("✓ AGENTS.mdを生成しました")
@@ -263,7 +327,9 @@ class DocGen:
                     logger.error("✗ AGENTS.mdの生成に失敗しました")
                     success = False
             except Exception as e:
-                logger.error(f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}", exc_info=True)
+                logger.error(
+                    f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}", exc_info=True
+                )
                 success = False
 
         return success
@@ -272,44 +338,27 @@ class DocGen:
 def main():
     """メインエントリーポイント"""
     import argparse
+
     try:
         from . import __version__
     except (ImportError, ValueError, SystemError):
         __version__ = "0.0.1"
 
-    parser = argparse.ArgumentParser(
-        description='汎用ドキュメント自動生成システム'
-    )
+    parser = argparse.ArgumentParser(description="汎用ドキュメント自動生成システム")
     parser.add_argument(
-        '--version',
-        action='version',
-        version=f'%(prog)s {__version__}'
+        "--version", action="version", version=f"%(prog)s {__version__}"
     )
+    parser.add_argument("--config", type=Path, help="設定ファイルのパス")
+    parser.add_argument("--detect-only", action="store_true", help="言語検出のみ実行")
     parser.add_argument(
-        '--config',
-        type=Path,
-        help='設定ファイルのパス'
+        "--no-api-doc", action="store_true", help="APIドキュメントを生成しない"
     )
+    parser.add_argument("--no-readme", action="store_true", help="READMEを更新しない")
     parser.add_argument(
-        '--detect-only',
-        action='store_true',
-        help='言語検出のみ実行'
-    )
-    parser.add_argument(
-        '--no-api-doc',
-        action='store_true',
-        help='APIドキュメントを生成しない'
-    )
-    parser.add_argument(
-        '--no-readme',
-        action='store_true',
-        help='READMEを更新しない'
-    )
-    parser.add_argument(
-        'command',
-        nargs='?',
-        choices=['commit-msg'],
-        help='実行するコマンド（commit-msg: コミットメッセージ生成）'
+        "command",
+        nargs="?",
+        choices=["commit-msg"],
+        help="実行するコマンド（commit-msg: コミットメッセージ生成）",
     )
 
     args = parser.parse_args()
@@ -319,7 +368,7 @@ def main():
     docgen = DocGen(project_root=project_root, config_path=args.config)
 
     # コミットメッセージ生成コマンド
-    if args.command == 'commit-msg':
+    if args.command == "commit-msg":
         try:
             from .generators.commit_message_generator import CommitMessageGenerator
         except (ImportError, ValueError, SystemError):
@@ -335,14 +384,16 @@ def main():
 
     if args.detect_only:
         languages = docgen.detect_languages()
-        logger.info(f"\n検出された言語: {', '.join(languages) if languages else 'なし'}")
+        logger.info(
+            f"\n検出された言語: {', '.join(languages) if languages else 'なし'}"
+        )
         return 0
 
     # 設定を一時的に上書き
     if args.no_api_doc:
-        docgen.config.setdefault('generation', {})['generate_api_doc'] = False
+        docgen.config.setdefault("generation", {})["generate_api_doc"] = False
     if args.no_readme:
-        docgen.config.setdefault('generation', {})['update_readme'] = False
+        docgen.config.setdefault("generation", {})["update_readme"] = False
 
     if docgen.generate_documents():
         return 0
@@ -350,6 +401,5 @@ def main():
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())
-
