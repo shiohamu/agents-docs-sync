@@ -1,8 +1,9 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-20 10:06:49
+自動生成日時: 2025-11-20 10:34:13
 
-GitHub にプッシュされた変更をトリガーに、テスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
+このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
+
 ---
 
 ## プロジェクト概要
@@ -77,17 +78,17 @@ uv run python3 docgen/docgen.py
 #### APIを使用する場合
 
 ```bash
-uv run python3 -m pytest test
 uv run pytest
 uv run pytest tests/ -v --tb=short
+uv run python3 -m pytest test
 ```
 
 #### ローカルLLMを使用する場合
 
 ```bash
-uv run python3 -m pytest test
 uv run pytest
 uv run pytest tests/ -v --tb=short
+uv run python3 -m pytest test
 ```
 
 **注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
@@ -122,9 +123,9 @@ uv run pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   uv run python3 -m pytest test
    uv run pytest
    uv run pytest tests/ -v --tb=short
+   uv run python3 -m pytest test
    ```
 
 4. **プルリクエストの作成**
@@ -134,4 +135,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-20 10:06:49*
+*このドキュメントは自動生成されています。最終更新: 2025-11-20 10:34:13*

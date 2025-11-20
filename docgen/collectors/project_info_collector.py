@@ -166,6 +166,36 @@ class ProjectInfoCollector:
             except (json.JSONDecodeError, KeyError):
                 pass
 
+        # Go依存関係
+        go_mod = self.project_root / "go.mod"
+        if go_mod.exists():
+            go_deps = []
+            try:
+                content = go_mod.read_text(encoding="utf-8")
+                lines = content.split("\n")
+                in_require = False
+                for line in lines:
+                    line = line.strip()
+                    if line.startswith("require ("):
+                        in_require = True
+                        continue
+                    if in_require and line == ")":
+                        in_require = False
+                        continue
+                    if in_require or line.startswith("require "):
+                        if in_require:
+                            parts = line.split()
+                            if parts:
+                                go_deps.append(parts[0])
+                        else:
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                go_deps.append(parts[1])
+                if go_deps:
+                    dependencies["go"] = go_deps
+            except Exception:
+                pass
+
         return dependencies
 
     def collect_coding_standards(self) -> Dict[str, Any]:

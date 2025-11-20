@@ -67,63 +67,33 @@ pip install -r requirements-test.txt
 # Node.jsの依存関係をインストール (必要に応じて)
 npm install
 ```
-
-### LLM環境のセットアップ
-
-#### ローカルLLMを使用する場合
-
-1. **LM Studioのインストール**
-   - [LM Studio](https://lmstudio.ai/)をダウンロードしてインストール
-   - お好みのモデルをダウンロード
-   - サーバーを起動（デフォルト: `http://localhost:1234`）
-
-2. **設定ファイルの編集**
-   - `docgen/config.yaml`を編集
-   - `llm_mode`を`local`または`both`に設定
-   - `local_llm`の`base_url`を確認
-
-#### API LLMを使用する場合
-
-1. **APIキーの設定**
-   - 環境変数に APIキーを設定
-   ```bash
-   export OPENAI_API_KEY="your-api-key"
-   # または
-   export ANTHROPIC_API_KEY="your-api-key"
-   ```
-
-2. **設定ファイルの編集**
-   - `docgen/config.yaml`を編集
-   - `llm_mode`を`api`または`both`に設定
-   - 使用するプロバイダーとモデルを指定
 <!-- MANUAL_END:setup -->
 
 ## プロジェクト構造
 
 ```
-├── .github
-│   └── workflows
-├── agents_docs_sync
-├── agents_docs_sync.egg-info
-├── docgen
-│   ├── detectors
-│   ├── generators
-│   ├── collectors
-│   ├── hooks
-│   └── templates
-├── docs
-│   └── implementation/
-├── schemas
-├── scripts
-├── tests
-│   ├── test_collectors
-│   ├── test_detectors
-│   ├── test_generators
-│   ├── test_parsers
-│   └── test_utils
-...
+.github/
+  workflows/
+agents_docs_sync.egg-info/
+  dependency_links.txt
+  entry_points.txt
+  requires.txt
+  SOURCES.txt
+  top_level.txt
+docgen/
+  collectors/
+  detectors/
+  generators/
+  hooks/
+  utils/
+docs/
+  implementation/
+  review/
+    README.md
+  api.md
+  DEVELOPER_GUIDE.md
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-19 10:48:57*
+*このREADMEは自動生成されています。最終更新: 2025-11-20 10:34:13*
