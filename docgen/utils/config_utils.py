@@ -2,7 +2,7 @@
 設定アクセスユーティリティ
 """
 
-from typing import Any, Optional
+from typing import Any
 
 
 def get_nested_config(config: dict[str, Any], *keys: str, default: Any = None) -> Any:
@@ -53,7 +53,7 @@ def get_config_bool(config: dict[str, Any], *keys: str, default: bool = False) -
     return bool(value)
 
 
-def get_config_list(config: dict[str, Any], *keys: str, default: Optional[list] = None) -> list:
+def get_config_list(config: dict[str, Any], *keys: str, default: list | None = None) -> list:
     """
     設定値をリストとして取得
 

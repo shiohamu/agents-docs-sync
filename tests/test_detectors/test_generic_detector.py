@@ -2,8 +2,9 @@
 GenericDetectorのテスト
 """
 
-from detectors.generic_detector import GenericDetector
 import pytest
+
+from docgen.detectors.generic_detector import GenericDetector
 
 
 @pytest.mark.unit

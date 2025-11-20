@@ -15,19 +15,10 @@ DOCGEN_DIR = Path(__file__).parent.resolve()
 # モジュールパスを追加（メインエントリーポイントとして実行される場合に必要）
 # 注意: このファイルは直接実行されることを想定しているため、sys.path.insertが必要
 # パッケージとしてインストールされた場合は相対インポートを使用
-try:
-    from .config_manager import ConfigManager
-    from .document_generator import DocumentGenerator
-    from .language_detector import LanguageDetector
-    from .utils.logger import get_logger
-except (ImportError, ValueError, SystemError):
-    # 直接実行される場合のフォールバック
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from config_manager import ConfigManager
-    from document_generator import DocumentGenerator
-    from language_detector import LanguageDetector
-    from utils.logger import get_logger
+from .config_manager import ConfigManager
+from .document_generator import DocumentGenerator
+from .language_detector import LanguageDetector
+from .utils.logger import get_logger
 
 # ロガーの初期化
 logger = get_logger("docgen")

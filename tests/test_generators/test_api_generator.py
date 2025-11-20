@@ -2,39 +2,38 @@
 APIGeneratorのテスト
 """
 
-from generators.api_generator import APIGenerator
 import pytest
+
+from docgen.generators.api_generator import APIGenerator
+from tests.test_utils import assert_file_contains_text, assert_file_exists_and_not_empty
 
 
 @pytest.mark.unit
 class TestAPIGenerator:
     """APIGeneratorのテストクラス"""
 
-    def test_generate_creates_api_doc(self, python_project, sample_python_file):
-        """APIドキュメントが生成されることを確認"""
-        config = {"output": {"api_doc": "docs/api.md"}, "generation": {"generate_api_doc": True}}
+    def test_initialization(self, api_generator):
+        """APIGeneratorの初期化テスト"""
+        assert api_generator.project_root.exists()
+        assert api_generator.languages == ["python"]
+        assert hasattr(api_generator, "config")
 
-        generator = APIGenerator(python_project, ["python"], config)
-        result = generator.generate()
+    def test_generate_creates_api_doc(self, api_generator, python_project, sample_python_file):
+        """APIドキュメントが生成されることを確認"""
+        result = api_generator.generate()
 
         assert result is True
-        api_doc_path = python_project / "docs" / "api.md"
-        assert api_doc_path.exists()
+        api_doc_path = api_generator.output_path
+        assert_file_exists_and_not_empty(api_doc_path)
 
-    def test_generate_api_doc_content(self, python_project, sample_python_file):
+    def test_generate_api_doc_content(self, api_generator, python_project, sample_python_file):
         """生成されたAPIドキュメントの内容を確認"""
-        config = {"output": {"api_doc": "docs/api.md"}, "generation": {"generate_api_doc": True}}
+        api_generator.generate()
 
-        generator = APIGenerator(python_project, ["python"], config)
-        generator.generate()
+        api_doc_path = api_generator.output_path
+        assert_file_contains_text(api_doc_path, "# API ドキュメント", "自動生成日時")
 
-        api_doc_path = python_project / "docs" / "api.md"
-        content = api_doc_path.read_text(encoding="utf-8")
-
-        assert "# API ドキュメント" in content
-        assert "自動生成日時" in content
-
-    def test_generate_with_multiple_languages(self, multi_language_project):
+    def test_generate_with_multiple_languages(self, temp_project, multi_language_project):
         """複数言語のAPI情報が統合されることを確認"""
         config = {"output": {"api_doc": "docs/api.md"}, "generation": {"generate_api_doc": True}}
 
@@ -42,8 +41,8 @@ class TestAPIGenerator:
         result = generator.generate()
 
         assert result is True
-        api_doc_path = multi_language_project / "docs" / "api.md"
-        assert api_doc_path.exists()
+        api_doc_path = generator.output_path
+        assert_file_exists_and_not_empty(api_doc_path)
 
     def test_generate_creates_output_directory(self, temp_project):
         """出力ディレクトリが自動作成されることを確認"""
@@ -55,8 +54,8 @@ class TestAPIGenerator:
         generator = APIGenerator(temp_project, ["python"], config)
         generator.generate()
 
-        api_doc_path = temp_project / "custom" / "docs" / "api.md"
-        assert api_doc_path.exists()
+        api_doc_path = generator.output_path
+        assert_file_exists_and_not_empty(api_doc_path)
 
     def test_generate_with_no_apis(self, temp_project):
         """APIが見つからない場合でもドキュメントが生成されることを確認"""
@@ -66,8 +65,9 @@ class TestAPIGenerator:
         result = generator.generate()
 
         assert result is True
-        api_doc_path = temp_project / "docs" / "api.md"
-        assert api_doc_path.exists()
+        api_doc_path = generator.output_path
+        assert_file_exists_and_not_empty(api_doc_path)
 
         content = api_doc_path.read_text(encoding="utf-8")
-        assert "APIが見つかりませんでした" in content or len(content) > 0
+        # APIが見つからない場合でも基本的なドキュメントは生成される
+        assert len(content.strip()) > 0

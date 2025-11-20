@@ -62,12 +62,12 @@ test = [
 default = [
     {include-group = "docgen"},
     {include-group = "test"},
-    {include-group = "dev"}
 ]
 
 # 開発ツール用の依存関係
 dev = [
     "ruff>=0.6.0",
+    {include-group = "default"},
 ]
 
 [tool.setuptools]

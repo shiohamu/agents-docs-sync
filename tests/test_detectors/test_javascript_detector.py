@@ -2,8 +2,9 @@
 JavaScriptDetectorのテスト
 """
 
-from detectors.javascript_detector import JavaScriptDetector
 import pytest
+
+from docgen.detectors.javascript_detector import JavaScriptDetector
 
 
 @pytest.mark.unit

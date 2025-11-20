@@ -5,18 +5,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-try:
-    from .detectors.generic_detector import GenericDetector
-    from .detectors.go_detector import GoDetector
-    from .detectors.javascript_detector import JavaScriptDetector
-    from .detectors.python_detector import PythonDetector
-    from .utils.logger import get_logger
-except ImportError:
-    from detectors.generic_detector import GenericDetector
-    from detectors.go_detector import GoDetector
-    from detectors.javascript_detector import JavaScriptDetector
-    from detectors.python_detector import PythonDetector
-    from utils.logger import get_logger
+from .detectors.generic_detector import GenericDetector
+from .detectors.go_detector import GoDetector
+from .detectors.javascript_detector import JavaScriptDetector
+from .detectors.python_detector import PythonDetector
+from .utils.logger import get_logger
 
 logger = get_logger("language_detector")
 

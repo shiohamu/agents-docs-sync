@@ -10,6 +10,7 @@ import pytest
 # docgenモジュールをインポート可能にする
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DOCGEN_DIR = PROJECT_ROOT / "docgen"
+sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(DOCGEN_DIR))
 
 
@@ -228,3 +229,136 @@ def multi_language_project(temp_project):
     (temp_project / "index.js").write_text('console.log("Hello");\n', encoding="utf-8")
 
     return temp_project
+
+
+@pytest.fixture
+def default_config():
+    """
+    デフォルトの設定オブジェクトを返す
+
+    Returns:
+        dict: デフォルト設定
+    """
+    return {
+        "languages": {"auto_detect": True, "preferred": []},
+        "output": {"api_doc": "docs/api.md", "readme": "README.md", "agents_doc": "AGENTS.md"},
+        "generation": {
+            "update_readme": True,
+            "generate_api_doc": True,
+            "generate_agents_doc": True,
+            "preserve_manual_sections": True,
+        },
+        "agents": {
+            "llm_mode": "both",
+            "api": {"provider": "openai", "api_key_env": "OPENAI_API_KEY"},
+            "local": {"provider": "ollama", "model": "llama3"},
+        },
+    }
+
+
+@pytest.fixture
+def agents_config():
+    """
+    AGENTSドキュメント生成用の設定を返す
+
+    Returns:
+        dict: AGENTS設定
+    """
+    return {
+        "output": {"agents_doc": "AGENTS.md"},
+        "agents": {
+            "llm_mode": "both",
+            "api": {"provider": "openai", "api_key_env": "OPENAI_API_KEY"},
+            "local": {"provider": "ollama", "model": "llama3"},
+        },
+    }
+
+
+@pytest.fixture
+def api_config():
+    """
+    APIドキュメント生成用の設定を返す
+
+    Returns:
+        dict: API設定
+    """
+    return {"output": {"api_doc": "docs/api.md"}, "generation": {"generate_api_doc": True}}
+
+
+@pytest.fixture
+def readme_config():
+    """
+    README生成用の設定を返す
+
+    Returns:
+        dict: README設定
+    """
+    return {
+        "output": {"readme": "README.md"},
+        "generation": {"update_readme": True, "preserve_manual_sections": True},
+    }
+
+
+@pytest.fixture
+def agents_generator(temp_project, agents_config):
+    """
+    AgentsGeneratorインスタンスを作成
+
+    Returns:
+        AgentsGenerator: 初期化されたジェネレーター
+    """
+    from docgen.generators.agents_generator import AgentsGenerator
+
+    return AgentsGenerator(temp_project, ["python"], agents_config)
+
+
+@pytest.fixture
+def api_generator(temp_project, api_config):
+    """
+    APIGeneratorインスタンスを作成
+
+    Returns:
+        APIGenerator: 初期化されたジェネレーター
+    """
+    from docgen.generators.api_generator import APIGenerator
+
+    return APIGenerator(temp_project, ["python"], api_config)
+
+
+@pytest.fixture
+def readme_generator(temp_project, readme_config):
+    """
+    ReadmeGeneratorインスタンスを作成
+
+    Returns:
+        ReadmeGenerator: 初期化されたジェネレーター
+    """
+    from docgen.generators.readme_generator import ReadmeGenerator
+
+    return ReadmeGenerator(temp_project, ["python"], readme_config)
+
+
+@pytest.fixture
+def config_manager(temp_project, default_config):
+    """
+    ConfigManagerインスタンスを作成
+
+    Returns:
+        ConfigManager: 初期化された設定マネージャー
+    """
+    from docgen.config_manager import ConfigManager
+
+    return ConfigManager(temp_project, temp_project)
+
+
+@pytest.fixture
+def project_info_collector(temp_project):
+    """
+    ProjectInfoCollectorインスタンスを作成
+
+    Returns:
+        ProjectInfoCollector: 初期化された情報収集器
+    """
+    from docgen.collectors.project_info_collector import ProjectInfoCollector
+
+    return ProjectInfoCollector(temp_project)

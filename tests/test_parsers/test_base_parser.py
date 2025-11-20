@@ -2,8 +2,9 @@
 BaseParserのテスト
 """
 
-from generators.parsers.python_parser import PythonParser
 import pytest
+
+from docgen.generators.parsers.python_parser import PythonParser
 
 
 @pytest.mark.unit

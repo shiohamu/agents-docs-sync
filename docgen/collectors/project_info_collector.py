@@ -174,7 +174,7 @@ class ProjectInfoCollector:
                         version_pattern = r'version = "([^"]+)"'
                         names = re.findall(name_pattern, content)
                         versions = re.findall(version_pattern, content)
-                        for name, version in zip(names, versions):
+                        for name, version in zip(names, versions, strict=True):
                             if name != "agents-docs-sync":  # プロジェクト自身を除外
                                 dep_str = f"{name}=={version}"
                                 if dep_str not in python_deps:

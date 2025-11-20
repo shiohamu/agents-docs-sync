@@ -4,8 +4,9 @@ JSParserのテスト
 
 from pathlib import Path
 
-from generators.parsers.js_parser import JSParser
 import pytest
+
+from docgen.generators.parsers.js_parser import JSParser
 
 
 @pytest.mark.unit

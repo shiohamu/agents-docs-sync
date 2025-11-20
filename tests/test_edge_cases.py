@@ -10,10 +10,10 @@ import pytest
 DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
-from detectors.python_detector import PythonDetector
-from generators.api_generator import APIGenerator
-from generators.parsers.python_parser import PythonParser
-from generators.readme_generator import ReadmeGenerator
+from docgen.detectors.python_detector import PythonDetector
+from docgen.generators.api_generator import APIGenerator
+from docgen.generators.parsers.python_parser import PythonParser
+from docgen.generators.readme_generator import ReadmeGenerator
 
 
 @pytest.mark.unit

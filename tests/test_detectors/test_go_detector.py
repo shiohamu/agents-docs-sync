@@ -2,8 +2,9 @@
 GoDetectorのテスト
 """
 
-from detectors.go_detector import GoDetector
 import pytest
+
+from docgen.detectors.go_detector import GoDetector
 
 
 @pytest.mark.unit

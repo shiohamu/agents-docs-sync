@@ -14,22 +14,15 @@ if TYPE_CHECKING:
     from .parsers.base_parser import BaseParser
 
 # ロガーのインポート
-try:
-    from ..utils.cache import CacheManager
-    from ..utils.logger import get_logger
-except ImportError:
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from utils.cache import CacheManager
-    from utils.logger import get_logger
+from ..base_generator import BaseGenerator
+from ..generators.parsers.base_parser import BaseParser
+from ..utils.cache import CacheManager
+from ..utils.logger import get_logger
 
 logger = get_logger("api_generator")
 
 
-class APIGenerator:
+class APIGenerator(BaseGenerator):
     """APIドキュメント生成クラス"""
 
     def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
@@ -41,9 +34,7 @@ class APIGenerator:
             languages: 検出された言語のリスト
             config: 設定辞書
         """
-        self.project_root = project_root
-        self.languages = languages
-        self.config = config
+        super().__init__(project_root, languages, config)
         self.output_path = Path(config.get("output", {}).get("api_doc", "docs/api.md"))
         if not self.output_path.is_absolute():
             self.output_path = project_root / self.output_path
@@ -111,7 +102,9 @@ class APIGenerator:
 
             return True
         except Exception as e:
-            logger.error(f"APIドキュメント生成に失敗しました: {e}", exc_info=True)
+            logger.error(
+                f"APIドキュメント生成中に予期しないエラーが発生しました: {e}", exc_info=True
+            )
             return False
 
     def _get_parsers(self) -> list["BaseParser"]:

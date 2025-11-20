@@ -12,10 +12,10 @@ import yaml
 DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
-from detectors.javascript_detector import JavaScriptDetector
-from detectors.python_detector import PythonDetector
-from generators.api_generator import APIGenerator
-from generators.readme_generator import ReadmeGenerator
+from docgen.detectors.javascript_detector import JavaScriptDetector
+from docgen.detectors.python_detector import PythonDetector
+from docgen.generators.api_generator import APIGenerator
+from docgen.generators.readme_generator import ReadmeGenerator
 
 
 @pytest.mark.integration

@@ -3,7 +3,6 @@
 """
 
 from pathlib import Path
-from typing import Set
 
 
 def get_project_structure(project_root: Path, max_depth: int = 2, max_items: int = 20) -> list[str]:
@@ -21,10 +20,10 @@ def get_project_structure(project_root: Path, max_depth: int = 2, max_items: int
     structure = []
 
     # 重要なディレクトリ（表示する）
-    important_dirs: Set[str] = {"docgen", ".github", "docs", "scripts", "tests"}
+    important_dirs: set[str] = {"docgen", ".github", "docs", "scripts", "tests"}
 
     # 除外するディレクトリ（キャッシュ、仮想環境など）
-    exclude_dirs: Set[str] = {
+    exclude_dirs: set[str] = {
         ".git",
         "__pycache__",
         "node_modules",
@@ -41,7 +40,7 @@ def get_project_structure(project_root: Path, max_depth: int = 2, max_items: int
     }
 
     # 重要なルートレベルのファイル
-    important_files: Set[str] = {
+    important_files: set[str] = {
         "README.md",
         "AGENTS.md",
         "pyproject.toml",

@@ -16,9 +16,12 @@ default = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pyyaml" },
-    { name = "ruff" },
 ]
 dev = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "pyyaml" },
     { name = "ruff" },
 ]
 docgen = [
@@ -39,9 +42,14 @@ default = [
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.11.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+]
+dev = [
+    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0" },
+    { name = "pytest-mock", specifier = ">=3.11.1" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "ruff", specifier = ">=0.6.0" },
 ]
-dev = [{ name = "ruff", specifier = ">=0.6.0" }]
 docgen = [{ name = "pyyaml", specifier = ">=6.0.3" }]
 test = [
     { name = "pytest", specifier = ">=7.4.0" },

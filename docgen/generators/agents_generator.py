@@ -8,25 +8,15 @@ from typing import Any
 
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
-try:
-    from ..collectors.project_info_collector import ProjectInfoCollector
-    from ..utils.logger import get_logger
-    from ..utils.uv_utils import detect_uv_usage, wrap_command_with_uv
-except ImportError:
-    # 相対インポートが失敗した場合のフォールバック
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from collectors.project_info_collector import ProjectInfoCollector
-    from utils.logger import get_logger
-    from utils.uv_utils import detect_uv_usage, wrap_command_with_uv
+from ..base_generator import BaseGenerator
+from ..collectors.project_info_collector import ProjectInfoCollector
+from ..utils.logger import get_logger
+from ..utils.uv_utils import detect_uv_usage, wrap_command_with_uv
 
 logger = get_logger("agents_generator")
 
 
-class AgentsGenerator:
+class AgentsGenerator(BaseGenerator):
     """AGENTS.md生成クラス（OpenAI仕様準拠）"""
 
     def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
@@ -38,9 +28,7 @@ class AgentsGenerator:
             languages: 検出された言語のリスト
             config: 設定辞書
         """
-        self.project_root = project_root
-        self.languages = languages
-        self.config = config
+        super().__init__(project_root, languages, config)
         self.output_path = Path(config.get("output", {}).get("agents_doc", "AGENTS.md"))
         if not self.output_path.is_absolute():
             self.output_path = project_root / self.output_path
@@ -97,7 +85,7 @@ class AgentsGenerator:
 
             return True
         except Exception as e:
-            logger.error(f"AGENTS.md生成に失敗しました: {e}", exc_info=True)
+            logger.error(f"AGENTS.md生成中に予期しないエラーが発生しました: {e}", exc_info=True)
             return False
 
     def _generate_markdown(self, project_info: dict[str, Any]) -> str:
@@ -197,44 +185,70 @@ class AgentsGenerator:
         lines.append("")
 
         # 前提条件
+        lines.extend(self._generate_prerequisites_section())
+
+        # 依存関係のインストール
+        lines.extend(self._generate_dependencies_section(project_info))
+
+        # LLM環境のセットアップ
+        lines.extend(self._generate_llm_setup_section())
+
+        return lines
+
+    def _generate_prerequisites_section(self) -> list[str]:
+        """前提条件セクションを生成"""
+        lines = []
         lines.append("### 前提条件")
         lines.append("")
         lines.append("- Python 3.12以上")
         if "javascript" in self.languages:
             lines.append("- Node.js 18以上")
         lines.append("")
+        return lines
 
-        # 依存関係のインストール
+    def _generate_dependencies_section(self, project_info: dict[str, Any]) -> list[str]:
+        """依存関係インストールセクションを生成"""
+        lines = []
         lines.append("### 依存関係のインストール")
         lines.append("")
 
         dependencies = project_info.get("dependencies", {})
+
         if "python" in dependencies:
-            lines.append("#### Python依存関係")
-            lines.append("")
-            lines.append("```bash")
-            for dep_file in [
-                "requirements.txt",
-                "requirements-docgen.txt",
-                "requirements-test.txt",
-            ]:
-                req_path = self.project_root / dep_file
-                if req_path.exists():
-                    lines.append(f"pip install -r {dep_file}")
-            lines.append("```")
-            lines.append("")
+            lines.extend(self._generate_python_dependencies())
 
         if "nodejs" in dependencies:
-            lines.append("#### Node.js依存関係")
-            lines.append("")
-            lines.append("```bash")
-            lines.append("npm install")
-            lines.append("```")
-            lines.append("")
+            lines.extend(self._generate_nodejs_dependencies())
 
-        # LLM環境のセットアップ
-        lines.extend(self._generate_llm_setup_section())
+        return lines
 
+    def _generate_python_dependencies(self) -> list[str]:
+        """Python依存関係セクションを生成"""
+        lines = []
+        lines.append("#### Python依存関係")
+        lines.append("")
+        lines.append("```bash")
+        for dep_file in [
+            "requirements.txt",
+            "requirements-docgen.txt",
+            "requirements-test.txt",
+        ]:
+            req_path = self.project_root / dep_file
+            if req_path.exists():
+                lines.append(f"pip install -r {dep_file}")
+        lines.append("```")
+        lines.append("")
+        return lines
+
+    def _generate_nodejs_dependencies(self) -> list[str]:
+        """Node.js依存関係セクションを生成"""
+        lines = []
+        lines.append("#### Node.js依存関係")
+        lines.append("")
+        lines.append("```bash")
+        lines.append("npm install")
+        lines.append("```")
+        lines.append("")
         return lines
 
     def _generate_llm_setup_section(self) -> list[str]:
@@ -244,62 +258,76 @@ class AgentsGenerator:
         lines.append("")
 
         llm_mode = self.agents_config.get("llm_mode", "both")
-        api_config = self.agents_config.get("api", {})
-        local_config = self.agents_config.get("local", {})
 
         if llm_mode in ["api", "both"]:
-            lines.append("#### APIを使用する場合")
-            lines.append("")
-            lines.append("1. **APIキーの取得と設定**")
-            lines.append("")
-
-            api_provider = api_config.get("provider", "openai")
-            api_key_env = api_config.get("api_key_env", "OPENAI_API_KEY")
-
-            if api_provider == "openai":
-                lines.append("   - OpenAI APIキーを取得: https://platform.openai.com/api-keys")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-            elif api_provider == "anthropic":
-                lines.append("   - Anthropic APIキーを取得: https://console.anthropic.com/")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-            else:
-                api_endpoint = api_config.get("endpoint", "")
-                lines.append(f"   - カスタムAPIエンドポイントを使用: {api_endpoint}")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-
-            lines.append("")
-            lines.append("2. **API使用時の注意事項**")
-            lines.append("   - APIレート制限に注意してください")
-            lines.append("   - コスト管理のために使用量を監視してください")
-            lines.append("")
+            lines.extend(self._generate_api_setup_section())
 
         if llm_mode in ["local", "both"]:
-            lines.append("#### ローカルLLMを使用する場合")
-            lines.append("")
-            lines.append("1. **ローカルLLMのインストール**")
-            lines.append("")
+            lines.extend(self._generate_local_setup_section())
 
-            local_provider = local_config.get("provider", "ollama")
-            local_model = local_config.get("model", "llama3")
-            local_base_url = local_config.get("base_url", "http://localhost:11434")
+        return lines
 
-            if local_provider == "ollama":
-                lines.append("   - Ollamaをインストール: https://ollama.ai/")
-                lines.append(f"   - モデルをダウンロード: `ollama pull {local_model}`")
-                lines.append("   - サービスを起動: `ollama serve`")
-            elif local_provider == "lmstudio":
-                lines.append("   - LM Studioをインストール: https://lmstudio.ai/")
-                lines.append("   - モデルをダウンロードして起動")
-                lines.append(f"   - ベースURL: {local_base_url}")
-            else:
-                lines.append("   - カスタムローカルLLMを設定")
-                lines.append(f"   - ベースURL: {local_base_url}")
+    def _generate_api_setup_section(self) -> list[str]:
+        """APIセットアップセクションを生成"""
+        lines = []
+        lines.append("#### APIを使用する場合")
+        lines.append("")
+        lines.append("1. **APIキーの取得と設定**")
+        lines.append("")
 
-            lines.append("")
-            lines.append("2. **ローカルLLM使用時の注意事項**")
-            lines.append("   - モデルが起動していることを確認してください")
-            lines.append("   - ローカルリソース（メモリ、CPU）を監視してください")
-            lines.append("")
+        api_config = self.agents_config.get("api", {})
+        api_provider = api_config.get("provider", "openai")
+        api_key_env = api_config.get("api_key_env", "OPENAI_API_KEY")
+
+        if api_provider == "openai":
+            lines.append("   - OpenAI APIキーを取得: https://platform.openai.com/api-keys")
+            lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
+        elif api_provider == "anthropic":
+            lines.append("   - Anthropic APIキーを取得: https://console.anthropic.com/")
+            lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
+        else:
+            api_endpoint = api_config.get("endpoint", "")
+            lines.append(f"   - カスタムAPIエンドポイントを使用: {api_endpoint}")
+            lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
+
+        lines.append("")
+        lines.append("2. **API使用時の注意事項**")
+        lines.append("   - APIレート制限に注意してください")
+        lines.append("   - コスト管理のために使用量を監視してください")
+        lines.append("")
+
+        return lines
+
+    def _generate_local_setup_section(self) -> list[str]:
+        """ローカルLLMセットアップセクションを生成"""
+        lines = []
+        lines.append("#### ローカルLLMを使用する場合")
+        lines.append("")
+        lines.append("1. **ローカルLLMのインストール**")
+        lines.append("")
+
+        local_config = self.agents_config.get("local", {})
+        local_provider = local_config.get("provider", "ollama")
+        local_model = local_config.get("model", "llama3")
+        local_base_url = local_config.get("base_url", "http://localhost:11434")
+
+        if local_provider == "ollama":
+            lines.append("   - Ollamaをインストール: https://ollama.ai/")
+            lines.append(f"   - モデルをダウンロード: `ollama pull {local_model}`")
+            lines.append("   - サービスを起動: `ollama serve`")
+        elif local_provider == "lmstudio":
+            lines.append("   - LM Studioをインストール: https://lmstudio.ai/")
+            lines.append("   - モデルをダウンロードして起動")
+            lines.append(f"   - ベースURL: {local_base_url}")
+        else:
+            lines.append("   - カスタムローカルLLMを設定")
+            lines.append(f"   - ベースURL: {local_base_url}")
+
+        lines.append("")
+        lines.append("2. **ローカルLLM使用時の注意事項**")
+        lines.append("   - モデルが起動していることを確認してください")
+        lines.append("   - ローカルリソース（メモリ、CPU）を監視してください")
+        lines.append("")
 
         return lines
 
@@ -313,6 +341,16 @@ class AgentsGenerator:
         uses_uv = detect_uv_usage(self.project_root)
 
         # ビルド手順
+        lines.extend(self._generate_build_section(project_info, uses_uv))
+
+        # テスト実行
+        lines.extend(self._generate_test_section(project_info, uses_uv))
+
+        return lines
+
+    def _generate_build_section(self, project_info: dict[str, Any], uses_uv: bool) -> list[str]:
+        """ビルド手順セクションを生成"""
+        lines = []
         lines.append("### ビルド手順")
         lines.append("")
         build_commands = project_info.get("build_commands", [])
@@ -321,7 +359,21 @@ class AgentsGenerator:
         if uses_uv:
             build_commands = [wrap_command_with_uv(cmd) for cmd in build_commands]
 
-        # テスト実行
+        # ビルドコマンドがある場合は表示
+        if build_commands:
+            lines.append("```bash")
+            for cmd in build_commands:
+                lines.append(cmd)
+            lines.append("```")
+        else:
+            lines.append("ビルドコマンドは設定されていません。")
+
+        lines.append("")
+        return lines
+
+    def _generate_test_section(self, project_info: dict[str, Any], uses_uv: bool) -> list[str]:
+        """テスト実行セクションを生成"""
+        lines = []
         lines.append("### テスト実行")
         lines.append("")
         test_commands = project_info.get("test_commands", [])
@@ -331,55 +383,69 @@ class AgentsGenerator:
             test_commands = [wrap_command_with_uv(cmd) for cmd in test_commands]
 
         if test_commands:
-            llm_mode = self.agents_config.get("llm_mode", "both")
-
-            if llm_mode in ["api", "both"]:
-                lines.append("#### APIを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                for cmd in test_commands:
-                    lines.append(cmd)
-                lines.append("```")
-                lines.append("")
-
-            if llm_mode in ["local", "both"]:
-                lines.append("#### ローカルLLMを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                for cmd in test_commands:
-                    lines.append(cmd)
-                lines.append("```")
-                lines.append("")
-                lines.append(
-                    "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
-                )
-                lines.append("")
+            lines.extend(self._generate_test_commands_by_mode(test_commands))
         elif uses_uv:
             # uvを使用している場合のデフォルトテストコマンド
-            llm_mode = self.agents_config.get("llm_mode", "both")
-
-            if llm_mode in ["api", "both"]:
-                lines.append("#### APIを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                lines.append("uv run pytest tests/ -v --tb=short")
-                lines.append("```")
-                lines.append("")
-
-            if llm_mode in ["local", "both"]:
-                lines.append("#### ローカルLLMを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                lines.append("uv run pytest tests/ -v --tb=short")
-                lines.append("```")
-                lines.append("")
-                lines.append(
-                    "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
-                )
-                lines.append("")
+            lines.extend(self._generate_default_test_commands())
         else:
             lines.append("テストコマンドは設定されていません。")
+
         lines.append("")
+        return lines
+
+    def _generate_test_commands_by_mode(self, test_commands: list[str]) -> list[str]:
+        """LLMモード別のテストコマンドを生成"""
+        lines = []
+        llm_mode = self.agents_config.get("llm_mode", "both")
+
+        if llm_mode in ["api", "both"]:
+            lines.append("#### APIを使用する場合")
+            lines.append("")
+            lines.append("```bash")
+            for cmd in test_commands:
+                lines.append(cmd)
+            lines.append("```")
+            lines.append("")
+
+        if llm_mode in ["local", "both"]:
+            lines.append("#### ローカルLLMを使用する場合")
+            lines.append("")
+            lines.append("```bash")
+            for cmd in test_commands:
+                lines.append(cmd)
+            lines.append("```")
+            lines.append("")
+            lines.append(
+                "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
+            )
+            lines.append("")
+
+        return lines
+
+    def _generate_default_test_commands(self) -> list[str]:
+        """デフォルトのテストコマンドを生成"""
+        lines = []
+        llm_mode = self.agents_config.get("llm_mode", "both")
+
+        if llm_mode in ["api", "both"]:
+            lines.append("#### APIを使用する場合")
+            lines.append("")
+            lines.append("```bash")
+            lines.append("uv run pytest tests/ -v --tb=short")
+            lines.append("```")
+            lines.append("")
+
+        if llm_mode in ["local", "both"]:
+            lines.append("#### ローカルLLMを使用する場合")
+            lines.append("")
+            lines.append("```bash")
+            lines.append("uv run pytest tests/ -v --tb=short")
+            lines.append("```")
+            lines.append("")
+            lines.append(
+                "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
+            )
+            lines.append("")
 
         return lines
 
@@ -392,42 +458,9 @@ class AgentsGenerator:
         coding_standards = project_info.get("coding_standards", {})
 
         if coding_standards:
-            # フォーマッター
-            formatter = coding_standards.get("formatter")
-            if formatter:
-                lines.append("### フォーマッター")
-                lines.append("")
-                lines.append(f"- **{formatter}** を使用")
-                if formatter == "black":
-                    lines.append("  ```bash")
-                    lines.append("  black .")
-                    lines.append("  ```")
-                elif formatter == "prettier":
-                    lines.append("  ```bash")
-                    lines.append("  npx prettier --write .")
-                    lines.append("  ```")
-                lines.append("")
-
-            # リンター
-            linter = coding_standards.get("linter")
-            if linter:
-                lines.append("### リンター")
-                lines.append("")
-                lines.append(f"- **{linter}** を使用")
-                if linter == "ruff":
-                    lines.append("  ```bash")
-                    lines.append("  ruff check .")
-                    lines.append("  ruff format .")
-                    lines.append("  ```")
-                lines.append("")
-
-            # スタイルガイド
-            style_guide = coding_standards.get("style_guide")
-            if style_guide:
-                lines.append("### スタイルガイド")
-                lines.append("")
-                lines.append(f"- {style_guide} に準拠")
-                lines.append("")
+            lines.extend(self._generate_formatter_section(coding_standards))
+            lines.extend(self._generate_linter_section(coding_standards))
+            lines.extend(self._generate_style_guide_section(coding_standards))
         else:
             lines.append(
                 "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
@@ -435,6 +468,55 @@ class AgentsGenerator:
             lines.append("")
 
         return lines
+
+    def _generate_formatter_section(self, coding_standards: dict[str, Any]) -> list[str]:
+        """フォーマッターセクションを生成"""
+        lines = []
+        formatter = coding_standards.get("formatter")
+        if formatter:
+            lines.append("### フォーマッター")
+            lines.append("")
+            lines.append(f"- **{formatter}** を使用")
+            lines.extend(self._get_formatter_commands(formatter))
+            lines.append("")
+        return lines
+
+    def _generate_linter_section(self, coding_standards: dict[str, Any]) -> list[str]:
+        """リンターセクションを生成"""
+        lines = []
+        linter = coding_standards.get("linter")
+        if linter:
+            lines.append("### リンター")
+            lines.append("")
+            lines.append(f"- **{linter}** を使用")
+            lines.extend(self._get_linter_commands(linter))
+            lines.append("")
+        return lines
+
+    def _generate_style_guide_section(self, coding_standards: dict[str, Any]) -> list[str]:
+        """スタイルガイドセクションを生成"""
+        lines = []
+        style_guide = coding_standards.get("style_guide")
+        if style_guide:
+            lines.append("### スタイルガイド")
+            lines.append("")
+            lines.append(f"- {style_guide} に準拠")
+            lines.append("")
+        return lines
+
+    def _get_formatter_commands(self, formatter: str) -> list[str]:
+        """フォーマッターのコマンドを取得"""
+        if formatter == "black":
+            return ["  ```bash", "  black .", "  ```"]
+        elif formatter == "prettier":
+            return ["  ```bash", "  npx prettier --write .", "  ```"]
+        return []
+
+    def _get_linter_commands(self, linter: str) -> list[str]:
+        """リンターのコマンドを取得"""
+        if linter == "ruff":
+            return ["  ```bash", "  ruff check .", "  ruff format .", "  ```"]
+        return []
 
     def _generate_pr_section(self, project_info: dict[str, Any]) -> list[str]:
         """プルリクエストセクションを生成"""

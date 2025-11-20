@@ -44,7 +44,7 @@ class TestDocGen:
     def test_detect_languages_python(self, python_project):
         """Pythonプロジェクトの言語検出を確認"""
         # PythonDetectorを直接使用してテスト
-        from detectors.python_detector import PythonDetector
+        from docgen.detectors.python_detector import PythonDetector
 
         detector = PythonDetector(python_project)
         assert detector.detect() is True
@@ -60,9 +60,9 @@ class TestDocGen:
 
     def test_detect_languages_empty_project(self, temp_project):
         """空のプロジェクトで言語が検出されないことを確認"""
-        from detectors.go_detector import GoDetector
-        from detectors.javascript_detector import JavaScriptDetector
-        from detectors.python_detector import PythonDetector
+        from docgen.detectors.go_detector import GoDetector
+        from docgen.detectors.javascript_detector import JavaScriptDetector
+        from docgen.detectors.python_detector import PythonDetector
 
         # 空のプロジェクトでは言語が検出されないことを確認
         python_detector = PythonDetector(temp_project)
@@ -94,9 +94,9 @@ class TestDocGen:
             },
         }
 
-        from generators.agents_generator import AgentsGenerator
-        from generators.api_generator import APIGenerator
-        from generators.readme_generator import ReadmeGenerator
+        from docgen.generators.agents_generator import AgentsGenerator
+        from docgen.generators.api_generator import APIGenerator
+        from docgen.generators.readme_generator import ReadmeGenerator
 
         # API生成をテスト
         api_generator = APIGenerator(python_project, ["python"], config)
@@ -188,7 +188,7 @@ class TestDocGen:
                 "generate_agents_doc": True,
             }
         }
-        from generators.readme_generator import ReadmeGenerator
+        from docgen.generators.readme_generator import ReadmeGenerator
 
         readme_generator = ReadmeGenerator(python_project, ["python"], config)
         assert readme_generator.generate() is True
@@ -202,7 +202,7 @@ class TestDocGen:
                 "generate_agents_doc": True,
             }
         }
-        from generators.api_generator import APIGenerator
+        from docgen.generators.api_generator import APIGenerator
 
         api_generator = APIGenerator(python_project, ["python"], config)
         assert api_generator.generate() is True

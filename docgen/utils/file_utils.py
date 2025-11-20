@@ -3,9 +3,8 @@
 """
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 try:
     import tomllib
@@ -18,7 +17,7 @@ except ImportError:
     yaml = None
 
 
-def safe_read_file(file_path: Path, encoding: str = "utf-8") -> Optional[str]:
+def safe_read_file(file_path: Path, encoding: str = "utf-8") -> str | None:
     """
     ファイルを安全に読み込む
 
@@ -57,7 +56,7 @@ def safe_write_file(file_path: Path, content: str, encoding: str = "utf-8") -> b
         return False
 
 
-def safe_read_json(file_path: Path) -> Optional[Any]:
+def safe_read_json(file_path: Path) -> Any | None:
     """
     JSONファイルを安全に読み込む
 
@@ -70,13 +69,13 @@ def safe_read_json(file_path: Path) -> Optional[Any]:
     try:
         if not file_path.exists():
             return None
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             return json.load(f)
     except (OSError, json.JSONDecodeError):
         return None
 
 
-def safe_read_yaml(file_path: Path) -> Optional[Any]:
+def safe_read_yaml(file_path: Path) -> Any | None:
     """
     YAMLファイルを安全に読み込む
 
@@ -91,13 +90,13 @@ def safe_read_yaml(file_path: Path) -> Optional[Any]:
     try:
         if not file_path.exists():
             return None
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             return yaml.safe_load(f)
     except (OSError, yaml.YAMLError):
         return None
 
 
-def safe_read_toml(file_path: Path) -> Optional[Any]:
+def safe_read_toml(file_path: Path) -> Any | None:
     """
     TOMLファイルを安全に読み込む
 
@@ -119,7 +118,7 @@ def safe_read_toml(file_path: Path) -> Optional[Any]:
 
 
 def find_files_with_extensions(
-    project_root: Path, extensions: list[str], exclude_dirs: Optional[list[str]] = None
+    project_root: Path, extensions: list[str], exclude_dirs: list[str] | None = None
 ) -> list[Path]:
     """
     指定された拡張子のファイルを検索

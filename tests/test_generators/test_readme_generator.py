@@ -2,44 +2,36 @@
 ReadmeGeneratorのテスト
 """
 
-from generators.readme_generator import ReadmeGenerator
 import pytest
+
+from docgen.generators.readme_generator import ReadmeGenerator
+from tests.test_utils import assert_file_contains_text, assert_file_exists_and_not_empty
 
 
 @pytest.mark.unit
 class TestReadmeGenerator:
     """ReadmeGeneratorのテストクラス"""
 
-    def test_generate_creates_readme(self, python_project):
-        """READMEが生成されることを確認"""
-        config = {
-            "output": {"readme": "README.md"},
-            "generation": {"update_readme": True, "preserve_manual_sections": True},
-        }
+    def test_initialization(self, readme_generator):
+        """ReadmeGeneratorの初期化テスト"""
+        assert readme_generator.project_root.exists()
+        assert readme_generator.languages == ["python"]
+        assert hasattr(readme_generator, "config")
 
-        generator = ReadmeGenerator(python_project, ["python"], config)
-        result = generator.generate()
+    def test_generate_creates_readme(self, readme_generator, python_project):
+        """READMEが生成されることを確認"""
+        result = readme_generator.generate()
 
         assert result is True
-        readme_path = python_project / "README.md"
-        assert readme_path.exists()
+        readme_path = readme_generator.readme_path
+        assert_file_exists_and_not_empty(readme_path)
 
-    def test_generate_readme_content(self, python_project):
+    def test_generate_readme_content(self, readme_generator, python_project):
         """生成されたREADMEの内容を確認"""
-        config = {
-            "output": {"readme": "README.md"},
-            "generation": {"update_readme": True, "preserve_manual_sections": True},
-        }
+        readme_generator.generate()
 
-        generator = ReadmeGenerator(python_project, ["python"], config)
-        generator.generate()
-
-        readme_path = python_project / "README.md"
-        content = readme_path.read_text(encoding="utf-8")
-
-        assert "#" in content  # タイトルがある
-        assert "使用技術" in content
-        assert "Python" in content
+        readme_path = readme_generator.readme_path
+        assert_file_contains_text(readme_path, "#", "使用技術", "Python")
 
     def test_extract_manual_sections(self, temp_project):
         """手動セクションが正しく抽出されることを確認"""

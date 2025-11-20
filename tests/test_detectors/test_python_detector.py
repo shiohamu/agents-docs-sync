@@ -2,8 +2,9 @@
 PythonDetectorのテスト
 """
 
-from detectors.python_detector import PythonDetector
 import pytest
+
+from docgen.detectors.python_detector import PythonDetector
 
 
 @pytest.mark.unit

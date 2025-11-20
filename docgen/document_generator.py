@@ -5,12 +5,8 @@
 from pathlib import Path
 from typing import Any
 
-try:
-    from .generator_factory import GeneratorFactory
-    from .utils.logger import get_logger
-except ImportError:
-    from generator_factory import GeneratorFactory
-    from utils.logger import get_logger
+from .generator_factory import GeneratorFactory
+from .utils.logger import get_logger
 
 logger = get_logger("document_generator")
 

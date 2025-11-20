@@ -2,36 +2,16 @@
 ジェネレーターファクトリーモジュール
 """
 
-from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-try:
-    from .generators.agents_generator import AgentsGenerator
-    from .generators.api_generator import APIGenerator
-    from .generators.readme_generator import ReadmeGenerator
-    from .utils.logger import get_logger
-except ImportError:
-    from generators.agents_generator import AgentsGenerator
-    from generators.api_generator import APIGenerator
-    from generators.readme_generator import ReadmeGenerator
-    from utils.logger import get_logger
+from .base_generator import BaseGenerator
+from .generators.agents_generator import AgentsGenerator
+from .generators.api_generator import APIGenerator
+from .generators.readme_generator import ReadmeGenerator
+from .utils.logger import get_logger
 
 logger = get_logger("generator_factory")
-
-
-class BaseGenerator(ABC):
-    """ジェネレーターの基底クラス"""
-
-    def __init__(self, project_root: Path, detected_languages: list[str], config: dict[str, Any]):
-        self.project_root = project_root
-        self.detected_languages = detected_languages
-        self.config = config
-
-    @abstractmethod
-    def generate(self) -> bool:
-        """ドキュメントを生成"""
-        pass
 
 
 class GeneratorFactory:

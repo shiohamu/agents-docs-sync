@@ -6,12 +6,8 @@ from pathlib import Path
 import shutil
 from typing import Any
 
-try:
-    from .utils.logger import get_logger
-    from .utils.file_utils import safe_read_yaml
-except ImportError:
-    from utils.logger import get_logger
-    from utils.file_utils import safe_read_yaml
+from .utils.file_utils import safe_read_yaml
+from .utils.logger import get_logger
 
 logger = get_logger("config_manager")
 
@@ -43,22 +39,31 @@ class ConfigManager:
         config = safe_read_yaml(self.config_path)
         if config is not None:
             return config
-        else:
-            # 設定ファイルが存在しない場合、sampleからコピーを試みる
-            sample_path = self.docgen_dir / "config.yaml.sample"
-            if sample_path.exists():
-                try:
-                    shutil.copy2(sample_path, self.config_path)
-                    logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
-                    config = safe_read_yaml(self.config_path)
-                    return config if config is not None else self._get_default_config()
-                except Exception as e:
-                    logger.warning(f"設定ファイルの作成に失敗しました: {e}")
-                    logger.info("デフォルト設定を使用します。")
-            else:
-                logger.warning(f"設定ファイルが見つかりません: {self.config_path}")
-                logger.info("デフォルト設定を使用します。")
-            return self._get_default_config()
+
+        return self._create_default_config()
+
+    def _create_default_config(self) -> dict[str, Any]:
+        """デフォルト設定を作成して返す"""
+        sample_path = self.docgen_dir / "config.yaml.sample"
+        if sample_path.exists():
+            if self._copy_sample_config(sample_path):
+                config = safe_read_yaml(self.config_path)
+                return config if config is not None else self._get_default_config()
+
+        logger.warning(f"設定ファイルが見つかりません: {self.config_path}")
+        logger.info("デフォルト設定を使用します。")
+        return self._get_default_config()
+
+    def _copy_sample_config(self, sample_path: Path) -> bool:
+        """サンプル設定ファイルをコピー"""
+        try:
+            shutil.copy2(sample_path, self.config_path)
+            logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
+            return True
+        except Exception as e:
+            logger.error(f"設定ファイルの作成に失敗しました: {e}", exc_info=True)
+            logger.info("デフォルト設定を使用します。")
+            return False
 
     def _get_default_config(self) -> dict[str, Any]:
         """デフォルト設定を返す"""
@@ -84,7 +89,10 @@ class ConfigManager:
     def update_config(self, key: str, value: Any):
         """設定を更新"""
         keys = key.split(".")
-        config = self.config
-        for k in keys[:-1]:
-            config = config.setdefault(k, {})
+        self._set_nested_value(self.config, keys, value)
+
+    def _set_nested_value(self, config: dict[str, Any], keys: list[str], value: Any):
+        """ネストされた辞書に値を設定"""
+        for key in keys[:-1]:
+            config = config.setdefault(key, {})
         config[keys[-1]] = value

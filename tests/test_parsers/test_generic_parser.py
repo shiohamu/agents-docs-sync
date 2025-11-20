@@ -4,8 +4,9 @@ GenericParserのテスト
 
 from pathlib import Path
 
-from generators.parsers.generic_parser import GenericParser
 import pytest
+
+from docgen.generators.parsers.generic_parser import GenericParser
 
 
 @pytest.mark.unit

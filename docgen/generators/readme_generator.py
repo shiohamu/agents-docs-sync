@@ -8,24 +8,15 @@ import re
 from typing import Any
 
 # ロガーのインポート
-try:
-    from ..utils.logger import get_logger
-    from ..utils.uv_utils import detect_uv_usage
-    from ..utils.project_utils import get_project_structure
-except ImportError:
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from utils.logger import get_logger
-    from utils.uv_utils import detect_uv_usage
-    from utils.project_utils import get_project_structure
+from ..base_generator import BaseGenerator
+from ..utils.logger import get_logger
+from ..utils.project_utils import get_project_structure
+from ..utils.uv_utils import detect_uv_usage
 
 logger = get_logger("readme_generator")
 
 
-class ReadmeGenerator:
+class ReadmeGenerator(BaseGenerator):
     """README生成クラス"""
 
     def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
@@ -37,28 +28,9 @@ class ReadmeGenerator:
             languages: 検出された言語のリスト
             config: 設定辞書
         """
-        self.project_root = project_root
-        self.languages = languages
-        self.config = config
+        super().__init__(project_root, languages, config)
         self.readme_path = project_root / "README.md"
         self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
-
-        try:
-            import tomllib
-
-            with open(pyproject, "rb") as f:
-                data = tomllib.load(f)
-                return "tool" in data and "uv" in data["tool"]
-        except ImportError:
-            # tomllibが利用できない場合、テキスト検索で確認
-            try:
-                with open(pyproject, encoding="utf-8") as f:
-                    content = f.read()
-                    return "[tool.uv]" in content
-            except Exception:
-                return False
-        except Exception:
-            return False
 
     def generate(self) -> bool:
         """
@@ -83,7 +55,7 @@ class ReadmeGenerator:
 
             return True
         except Exception as e:
-            logger.error(f"README生成に失敗しました: {e}", exc_info=True)
+            logger.error(f"README生成中に予期しないエラーが発生しました: {e}", exc_info=True)
             return False
 
     def _extract_manual_sections(self, content: str) -> dict[str, str]:
