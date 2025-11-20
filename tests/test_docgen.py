@@ -2,8 +2,6 @@
 DocGenメインクラスのテスト
 """
 
-import pytest
-import yaml
 from pathlib import Path
 import sys
 
@@ -29,8 +27,9 @@ class TestDocGen:
 
     def test_get_default_config(self, temp_project):
         """デフォルト設定が正しいことを確認"""
-        docgen = DocGen()
-        default_config = docgen._get_default_config()
+        # 設定ファイルが存在しない場合、デフォルト設定が返される
+        docgen = DocGen(config_path=temp_project / "nonexistent.yaml")
+        config = docgen.get_config()
 
         assert "languages" in default_config
         assert "output" in default_config
@@ -41,7 +40,7 @@ class TestDocGen:
     def test_detect_languages_python(self, python_project):
         """Pythonプロジェクトの言語検出を確認"""
         # PythonDetectorを直接使用してテスト
-        from detectors.python_detector import PythonDetector
+        from docgen.detectors.python_detector import PythonDetector
 
         detector = PythonDetector(python_project)
         assert detector.detect() is True
@@ -57,9 +56,9 @@ class TestDocGen:
 
     def test_detect_languages_empty_project(self, temp_project):
         """空のプロジェクトで言語が検出されないことを確認"""
-        from detectors.python_detector import PythonDetector
-        from detectors.javascript_detector import JavaScriptDetector
-        from detectors.go_detector import GoDetector
+        from docgen.detectors.go_detector import GoDetector
+        from docgen.detectors.javascript_detector import JavaScriptDetector
+        from docgen.detectors.python_detector import PythonDetector
 
         # 空のプロジェクトでは言語が検出されないことを確認
         python_detector = PythonDetector(temp_project)
@@ -91,9 +90,9 @@ class TestDocGen:
             },
         }
 
-        from generators.api_generator import APIGenerator
-        from generators.readme_generator import ReadmeGenerator
-        from generators.agents_generator import AgentsGenerator
+        from docgen.generators.agents_generator import AgentsGenerator
+        from docgen.generators.api_generator import APIGenerator
+        from docgen.generators.readme_generator import ReadmeGenerator
 
         # API生成をテスト
         api_generator = APIGenerator(python_project, ["python"], config)
@@ -145,7 +144,8 @@ class TestDocGen:
         config_path = temp_project / "docgen" / "config.yaml"
         docgen = DocGen(config_path=config_path)
         # デフォルト設定が使用されることを確認
-        assert docgen.config is not None
+        config = docgen.get_config()
+        assert config is not None
 
     def test_detect_languages_parallel(self, python_project):
         """並列処理で言語検出"""
@@ -183,8 +183,7 @@ class TestDocGen:
                 "generate_agents_doc": True,
             }
         }
-        from generators.readme_generator import ReadmeGenerator
-        from generators.agents_generator import AgentsGenerator
+        from docgen.generators.readme_generator import ReadmeGenerator
 
         readme_generator = ReadmeGenerator(python_project, ["python"], config)
         assert readme_generator.generate() is True
@@ -198,15 +197,15 @@ class TestDocGen:
                 "generate_agents_doc": True,
             }
         }
-        from generators.api_generator import APIGenerator
+        from docgen.generators.api_generator import APIGenerator
 
         api_generator = APIGenerator(python_project, ["python"], config)
         assert api_generator.generate() is True
 
     def test_main_function_detect_only(self, temp_project, monkeypatch):
         """main()関数の--detect-onlyオプションをテスト"""
-        import sys
         from io import StringIO
+        import sys
 
         # コマンドライン引数をモック
         test_args = ["docgen.py", "--detect-only"]

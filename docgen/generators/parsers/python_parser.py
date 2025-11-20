@@ -4,10 +4,10 @@ docstringを抽出してAPI情報を生成
 """
 
 import ast
-import inspect
-import sys
 from pathlib import Path
-from typing import List, Dict, Any
+import sys
+from typing import Any
+
 from .base_parser import BaseParser
 
 # Python 3.9+ では ast.unparse が利用可能
@@ -30,7 +30,7 @@ else:
 class PythonParser(BaseParser):
     """Pythonコード解析クラス"""
 
-    def parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
+    def parse_file(self, file_path: Path) -> list[dict[str, Any]]:
         """
         Pythonファイルを解析
 
@@ -41,7 +41,7 @@ class PythonParser(BaseParser):
             API情報のリスト
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
@@ -64,10 +64,11 @@ class PythonParser(BaseParser):
         except Exception as e:
             # base_parserのloggerを使用
             from .base_parser import logger
+
             logger.warning(f"{file_path} の解析エラー: {e}")
             return []
 
-    def _parse_function(self, node: ast.FunctionDef, file_path: Path) -> Dict[str, Any]:
+    def _parse_function(self, node: ast.FunctionDef, file_path: Path) -> dict[str, Any]:
         """
         関数ノードを解析
 
@@ -79,22 +80,22 @@ class PythonParser(BaseParser):
             API情報の辞書
         """
         # プライベート関数（_で始まる）はスキップ（オプション）
-        if node.name.startswith('_') and not node.name.startswith('__'):
+        if node.name.startswith("_") and not node.name.startswith("__"):
             return None
 
         signature = self._get_function_signature(node)
         docstring = ast.get_docstring(node) or ""
 
         return {
-            'name': node.name,
-            'type': 'function',
-            'signature': signature,
-            'docstring': docstring,
-            'line': node.lineno,
-            'file': str(file_path.relative_to(self.project_root))
+            "name": node.name,
+            "type": "function",
+            "signature": signature,
+            "docstring": docstring,
+            "line": node.lineno,
+            "file": str(file_path.relative_to(self.project_root)),
         }
 
-    def _parse_class(self, node: ast.ClassDef, file_path: Path) -> Dict[str, Any]:
+    def _parse_class(self, node: ast.ClassDef, file_path: Path) -> dict[str, Any]:
         """
         クラスノードを解析
 
@@ -106,19 +107,19 @@ class PythonParser(BaseParser):
             API情報の辞書
         """
         # プライベートクラス（_で始まる）はスキップ（オプション）
-        if node.name.startswith('_') and not node.name.startswith('__'):
+        if node.name.startswith("_") and not node.name.startswith("__"):
             return None
 
         signature = self._get_class_signature(node)
         docstring = ast.get_docstring(node) or ""
 
         return {
-            'name': node.name,
-            'type': 'class',
-            'signature': signature,
-            'docstring': docstring,
-            'line': node.lineno,
-            'file': str(file_path.relative_to(self.project_root))
+            "name": node.name,
+            "type": "class",
+            "signature": signature,
+            "docstring": docstring,
+            "line": node.lineno,
+            "file": str(file_path.relative_to(self.project_root)),
         }
 
     def _get_function_signature(self, node: ast.FunctionDef) -> str:
@@ -164,7 +165,6 @@ class PythonParser(BaseParser):
 
         return signature
 
-    def get_supported_extensions(self) -> List[str]:
+    def get_supported_extensions(self) -> list[str]:
         """サポートする拡張子を返す"""
-        return ['.py', '.pyw']
-
+        return [".py", ".pyw"]

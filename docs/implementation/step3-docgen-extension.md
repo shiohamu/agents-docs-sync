@@ -6,7 +6,7 @@
 
 ## 作業内容
 
-### 1. `.docgen/docgen.py`を編集
+### 1. `docgen/docgen.py`を編集
 
 #### a. インポート文の追加（25行目付近）
 
@@ -80,7 +80,7 @@ return success
 - [ ] 既存の機能が壊れていないか
 - [ ] 手動実行でAGENTS.mdが生成されるか
   ```bash
-  python3 .docgen/docgen.py
+  python3 docgen/docgen.py
   ```
 
 ## 次のステップ

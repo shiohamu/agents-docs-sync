@@ -4,15 +4,12 @@
 """
 
 import logging
-import sys
 from pathlib import Path
-from typing import Optional
+import sys
 
 
 def setup_logger(
-    name: str = "docgen",
-    level: Optional[str] = None,
-    log_file: Optional[Path] = None
+    name: str = "docgen", level: str | None = None, log_file: Path | None = None
 ) -> logging.Logger:
     """
     ロガーを設定して返す
@@ -35,6 +32,7 @@ def setup_logger(
     # ログレベルの設定
     if level is None:
         import os
+
         level = os.environ.get("DOCGEN_LOG_LEVEL", "INFO").upper()
 
     log_level = getattr(logging, level, logging.INFO)
@@ -42,8 +40,7 @@ def setup_logger(
 
     # フォーマッターの設定
     formatter = logging.Formatter(
-        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
     # 標準出力ハンドラー
@@ -54,7 +51,7 @@ def setup_logger(
 
     # ファイルハンドラー（指定されている場合）
     if log_file:
-        file_handler = logging.FileHandler(log_file, encoding='utf-8')
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setLevel(log_level)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -62,7 +59,7 @@ def setup_logger(
     return logger
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str | None = None) -> logging.Logger:
     """
     ロガーを取得する（既に設定されている場合はそれを返す）
 
@@ -80,4 +77,3 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
         return setup_logger(logger_name)
 
     return logger
-

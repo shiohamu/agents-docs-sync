@@ -61,7 +61,7 @@ jobs:
 
       - name: Generate documents
         run: |
-          python3 .docgen/docgen.py
+          python3 docgen/docgen.py
 
       - name: Check for changes
         id: verify-changed-files

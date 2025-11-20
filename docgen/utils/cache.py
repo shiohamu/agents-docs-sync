@@ -3,12 +3,12 @@
 ファイル解析結果をキャッシュして、パフォーマンスを向上させます
 """
 
+from datetime import datetime
 import hashlib
 import json
-import sys
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from datetime import datetime
+import sys
+from typing import Any
 
 # モジュールパスを追加（utils.loggerをインポートするため）
 DOCGEN_DIR = Path(__file__).parent.parent.parent.resolve()
@@ -71,7 +71,7 @@ class CacheManager:
             with open(self.cache_file, "w", encoding="utf-8") as f:
                 json.dump(self._cache_data, f, indent=2, ensure_ascii=False)
             logger.debug(f"キャッシュを保存しました: {len(self._cache_data)} エントリ")
-        except IOError as e:
+        except OSError as e:
             logger.warning(f"キャッシュファイルの保存に失敗しました: {e}")
 
     def get_file_hash(self, file_path: Path) -> str:
@@ -91,7 +91,7 @@ class CacheManager:
                 while chunk := f.read(8192):
                     file_hash.update(chunk)
                 return file_hash.hexdigest()
-        except (IOError, OSError) as e:
+        except OSError as e:
             logger.warning(f"ファイルのハッシュ計算に失敗しました ({file_path}): {e}")
             return ""
 
@@ -188,7 +188,7 @@ class CacheManager:
 
         try:
             file_mtime = file_path.stat().st_mtime
-        except (OSError, IOError):
+        except OSError:
             return
 
         self._cache_data[cache_key] = {
@@ -249,7 +249,7 @@ class CacheManager:
         """キャッシュを保存（明示的に保存する場合）"""
         self._save_cache()
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         キャッシュの統計情報を取得
 

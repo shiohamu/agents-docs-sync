@@ -2,11 +2,11 @@
 
 ## 目的
 
-AGENTS.md生成の設定を`.docgen/config.yaml`に追加します。
+AGENTS.md生成の設定を`docgen/config.yaml`に追加します。
 
 ## 作業内容
 
-### 1. `.docgen/config.yaml`を編集
+### 1. `docgen/config.yaml`を編集
 
 `output`セクションと`generation`セクションに以下を追加：
 

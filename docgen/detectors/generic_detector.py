@@ -3,7 +3,6 @@
 一般的なコメント形式をサポートする言語を検出
 """
 
-from pathlib import Path
 from .base_detector import BaseDetector
 
 
@@ -12,22 +11,22 @@ class GenericDetector(BaseDetector):
 
     # サポートする言語とその拡張子
     SUPPORTED_LANGUAGES = {
-        'rust': ['.rs'],
-        'java': ['.java'],
-        'kotlin': ['.kt', '.kts'],
-        'scala': ['.scala'],
-        'ruby': ['.rb'],
-        'php': ['.php'],
-        'c': ['.c', '.h'],
-        'cpp': ['.cpp', '.cc', '.cxx', '.hpp', '.hxx'],
-        'csharp': ['.cs'],
-        'swift': ['.swift'],
-        'dart': ['.dart'],
-        'r': ['.r', '.R'],
-        'lua': ['.lua'],
-        'perl': ['.pl', '.pm'],
-        'shell': ['.sh', '.bash', '.zsh'],
-        'powershell': ['.ps1'],
+        "rust": [".rs"],
+        "java": [".java"],
+        "kotlin": [".kt", ".kts"],
+        "scala": [".scala"],
+        "ruby": [".rb"],
+        "php": [".php"],
+        "c": [".c", ".h"],
+        "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".hxx"],
+        "csharp": [".cs"],
+        "swift": [".swift"],
+        "dart": [".dart"],
+        "r": [".r", ".R"],
+        "lua": [".lua"],
+        "perl": [".pl", ".pm"],
+        "shell": [".sh", ".bash", ".zsh"],
+        "powershell": [".ps1"],
     }
 
     def detect(self) -> bool:
@@ -37,7 +36,7 @@ class GenericDetector(BaseDetector):
         Returns:
             サポート言語が検出された場合True
         """
-        for lang, extensions in self.SUPPORTED_LANGUAGES.items():
+        for _lang, extensions in self.SUPPORTED_LANGUAGES.items():
             if self._has_files_with_ext(*extensions):
                 return True
         return False
@@ -53,7 +52,7 @@ class GenericDetector(BaseDetector):
         for lang, extensions in self.SUPPORTED_LANGUAGES.items():
             if self._has_files_with_ext(*extensions):
                 return lang
-        return 'generic'
+        return "generic"
 
     def get_all_detected_languages(self) -> list:
         """
@@ -67,4 +66,3 @@ class GenericDetector(BaseDetector):
             if self._has_files_with_ext(*extensions):
                 detected.append(lang)
         return detected
-

@@ -209,413 +209,124 @@ Returns:
 ---
 
 
-## tests/test_collectors/test_project_info_collector.py
+## tests/test_config_manager.py
 
-### TestProjectInfoCollector
+### TestConfigManager
 
 **型**: `class`
 
 **シグネチャ**:
 ```
-class TestProjectInfoCollector
+class TestConfigManager
 ```
 
 **説明**:
 
-ProjectInfoCollectorのテストクラス
+ConfigManagerのテストクラス
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:13*
+*定義場所: tests/test_config_manager.py:13*
 
 ---
 
-### test_collect_all
+### test_initialization
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_collect_all(self, temp_project)
+def test_initialization(self, config_manager)
 ```
 
 **説明**:
 
-collect_all()がすべての情報を収集することを確認
+ConfigManagerの初期化テスト
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:16*
+*定義場所: tests/test_config_manager.py:16*
 
 ---
 
-### test_collect_build_commands_from_makefile
+### test_load_config_success
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_collect_build_commands_from_makefile(self, temp_project)
+def test_load_config_success(self, temp_project)
 ```
 
 **説明**:
 
-Makefileからビルドコマンドを収集
+設定ファイルの読み込み成功
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:32*
+*定義場所: tests/test_config_manager.py:22*
 
 ---
 
-### test_collect_build_commands_from_package_json
+### test_load_config_invalid_yaml
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_collect_build_commands_from_package_json(self, temp_project)
+def test_load_config_invalid_yaml(self, temp_project)
 ```
 
 **説明**:
 
-package.jsonからビルドコマンドを収集
+無効なYAMLファイルの場合、デフォルト設定を使用
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:50*
+*定義場所: tests/test_config_manager.py:30*
 
 ---
 
-### test_collect_build_commands_from_script
+### test_get_default_config
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_collect_build_commands_from_script(self, temp_project)
+def test_get_default_config(self, temp_project)
 ```
 
 **説明**:
 
-scripts/run_pipeline.shからビルドコマンドを収集
+デフォルト設定の内容を確認
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:66*
+*定義場所: tests/test_config_manager.py:43*
 
 ---
 
-### test_collect_test_commands_from_pytest_ini
+### test_update_config
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_collect_test_commands_from_pytest_ini(self, temp_project)
+def test_update_config(self, temp_project, key, value)
 ```
 
 **説明**:
 
-pytest.iniからテストコマンドを収集
+設定更新のテスト（パラメータ化）
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:77*
+*定義場所: tests/test_config_manager.py:64*
 
 ---
 
-### test_collect_test_commands_from_package_json
+### test_load_config_read_failure
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_collect_test_commands_from_package_json(self, temp_project)
+def test_load_config_read_failure(self, mock_read_yaml, temp_project)
 ```
 
 **説明**:
 
-package.jsonからテストコマンドを収集
+設定ファイル読み込み失敗
 
-*定義場所: tests/test_collectors/test_project_info_collector.py:86*
-
----
-
-### test_collect_test_commands_from_script
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_test_commands_from_script(self, temp_project)
-```
-
-**説明**:
-
-scripts/run_tests.shからテストコマンドを収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:100*
-
----
-
-### test_collect_dependencies_python
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_dependencies_python(self, temp_project)
-```
-
-**説明**:
-
-Python依存関係を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:111*
-
----
-
-### test_collect_dependencies_nodejs
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_dependencies_nodejs(self, temp_project)
-```
-
-**説明**:
-
-Node.js依存関係を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:124*
-
----
-
-### test_collect_dependencies_invalid_json
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_dependencies_invalid_json(self, temp_project)
-```
-
-**説明**:
-
-無効なJSONファイルを処理
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:141*
-
----
-
-### test_collect_coding_standards_from_pyproject_toml
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_coding_standards_from_pyproject_toml(self, temp_project)
-```
-
-**説明**:
-
-pyproject.tomlからコーディング規約を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:151*
-
----
-
-### test_collect_coding_standards_invalid_toml
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_coding_standards_invalid_toml(self, temp_project)
-```
-
-**説明**:
-
-無効なTOMLファイルの処理（フォールバック処理をテスト）
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:167*
-
----
-
-### test_collect_coding_standards_toml_with_black_and_ruff
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_coding_standards_toml_with_black_and_ruff(self, temp_project)
-```
-
-**説明**:
-
-pyproject.tomlにblackとruffの両方が含まれる場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:182*
-
----
-
-### test_collect_coding_standards_from_editorconfig
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_coding_standards_from_editorconfig(self, temp_project)
-```
-
-**説明**:
-
-`.editorconfig`からコーディング規約を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:198*
-
----
-
-### test_collect_coding_standards_from_prettier
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_coding_standards_from_prettier(self, temp_project)
-```
-
-**説明**:
-
-Prettier設定ファイルからコーディング規約を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:207*
-
----
-
-### test_collect_ci_cd_info_github_actions
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_ci_cd_info_github_actions(self, temp_project)
-```
-
-**説明**:
-
-GitHub Actionsの情報を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:216*
-
----
-
-### test_collect_project_structure
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_project_structure(self, temp_project)
-```
-
-**説明**:
-
-プロジェクト構造を収集
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:230*
-
----
-
-### test_collect_project_structure_no_languages
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_project_structure_no_languages(self, temp_project)
-```
-
-**説明**:
-
-言語が検出されない場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:249*
-
----
-
-### test_collect_build_commands_empty
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_build_commands_empty(self, temp_project)
-```
-
-**説明**:
-
-ビルドコマンドが存在しない場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:257*
-
----
-
-### test_collect_test_commands_empty
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_test_commands_empty(self, temp_project)
-```
-
-**説明**:
-
-テストコマンドが存在しない場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:265*
-
----
-
-### test_collect_dependencies_empty
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_dependencies_empty(self, temp_project)
-```
-
-**説明**:
-
-依存関係が存在しない場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:272*
-
----
-
-### test_collect_coding_standards_empty
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_coding_standards_empty(self, temp_project)
-```
-
-**説明**:
-
-コーディング規約が存在しない場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:280*
-
----
-
-### test_collect_ci_cd_info_empty
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def test_collect_ci_cd_info_empty(self, temp_project)
-```
-
-**説明**:
-
-CI/CD情報が存在しない場合
-
-*定義場所: tests/test_collectors/test_project_info_collector.py:288*
+*定義場所: tests/test_config_manager.py:76*
 
 ---
 
@@ -1089,7 +800,7 @@ class TestDocGen
 
 DocGenのテストクラス
 
-*定義場所: tests/test_docgen.py:18*
+*定義場所: tests/test_docgen.py:19*
 
 ---
 
@@ -1106,7 +817,7 @@ def test_load_config_from_file(self, temp_project, sample_config)
 
 設定ファイルから設定を読み込めることを確認
 
-*定義場所: tests/test_docgen.py:21*
+*定義場所: tests/test_docgen.py:22*
 
 ---
 
@@ -1123,7 +834,7 @@ def test_get_default_config(self, temp_project)
 
 デフォルト設定が正しいことを確認
 
-*定義場所: tests/test_docgen.py:30*
+*定義場所: tests/test_docgen.py:32*
 
 ---
 
@@ -1140,7 +851,7 @@ def test_detect_languages_python(self, python_project)
 
 Pythonプロジェクトの言語検出を確認
 
-*定義場所: tests/test_docgen.py:41*
+*定義場所: tests/test_docgen.py:44*
 
 ---
 
@@ -1157,7 +868,7 @@ def test_detect_languages_empty_project(self, temp_project)
 
 空のプロジェクトで言語が検出されないことを確認
 
-*定義場所: tests/test_docgen.py:58*
+*定義場所: tests/test_docgen.py:61*
 
 ---
 
@@ -1174,7 +885,7 @@ def test_generate_documents(self, python_project, sample_config)
 
 ドキュメント生成が実行されることを確認
 
-*定義場所: tests/test_docgen.py:73*
+*定義場所: tests/test_docgen.py:76*
 
 ---
 
@@ -1191,7 +902,7 @@ def test_config_merges_with_defaults(self, temp_project)
 
 部分的な設定がデフォルトとマージされることを確認
 
-*定義場所: tests/test_docgen.py:116*
+*定義場所: tests/test_docgen.py:119*
 
 ---
 
@@ -2047,7 +1758,7 @@ class TestEdgeCases
 
 エッジケースとエラーハンドリングのテストクラス
 
-*定義場所: tests/test_edge_cases.py:19*
+*定義場所: tests/test_edge_cases.py:20*
 
 ---
 
@@ -2064,7 +1775,7 @@ def test_detector_with_nonexistent_directory(self, tmp_path)
 
 存在しないディレクトリでの検出をテスト
 
-*定義場所: tests/test_edge_cases.py:22*
+*定義場所: tests/test_edge_cases.py:23*
 
 ---
 
@@ -2081,7 +1792,7 @@ def test_parser_with_nonexistent_file(self, temp_project)
 
 存在しないファイルの解析をテスト
 
-*定義場所: tests/test_edge_cases.py:30*
+*定義場所: tests/test_edge_cases.py:31*
 
 ---
 
@@ -2098,7 +1809,7 @@ def test_parser_with_syntax_error(self, temp_project)
 
 構文エラーを含むファイルの解析をテスト
 
-*定義場所: tests/test_edge_cases.py:38*
+*定義場所: tests/test_edge_cases.py:39*
 
 ---
 
@@ -2115,7 +1826,7 @@ def test_parser_with_empty_file(self, temp_project)
 
 空のファイルの解析をテスト
 
-*定義場所: tests/test_edge_cases.py:49*
+*定義場所: tests/test_edge_cases.py:50*
 
 ---
 
@@ -2132,7 +1843,7 @@ def test_api_generator_with_empty_project(self, temp_project)
 
 空のプロジェクトでのAPI生成をテスト
 
-*定義場所: tests/test_edge_cases.py:58*
+*定義場所: tests/test_edge_cases.py:59*
 
 ---
 
@@ -2149,7 +1860,7 @@ def test_readme_generator_with_no_dependencies(self, temp_project)
 
 依存関係がないプロジェクトでのREADME生成をテスト
 
-*定義場所: tests/test_edge_cases.py:76*
+*定義場所: tests/test_edge_cases.py:73*
 
 ---
 
@@ -2166,7 +1877,7 @@ def test_readme_generator_with_invalid_manual_section(self, temp_project)
 
 無効な手動セクションマーカーの処理をテスト
 
-*定義場所: tests/test_edge_cases.py:98*
+*定義場所: tests/test_edge_cases.py:90*
 
 ---
 
@@ -2183,7 +1894,7 @@ def test_api_generator_with_custom_output_path(self, temp_project)
 
 カスタム出力パスでのAPI生成をテスト
 
-*定義場所: tests/test_edge_cases.py:124*
+*定義場所: tests/test_edge_cases.py:111*
 
 ---
 
@@ -2200,7 +1911,7 @@ def test_parser_excludes_directories(self, temp_project)
 
 除外ディレクトリが正しく除外されることを確認
 
-*定義場所: tests/test_edge_cases.py:142*
+*定義場所: tests/test_edge_cases.py:125*
 
 ---
 
@@ -2217,7 +1928,7 @@ def test_readme_generator_with_missing_config(self, temp_project)
 
 設定が不完全な場合の処理をテスト
 
-*定義場所: tests/test_edge_cases.py:159*
+*定義場所: tests/test_edge_cases.py:142*
 
 ---
 
@@ -2234,7 +1945,7 @@ def test_api_generator_with_no_languages(self, temp_project)
 
 言語が指定されていない場合の処理をテスト
 
-*定義場所: tests/test_edge_cases.py:168*
+*定義場所: tests/test_edge_cases.py:151*
 
 ---
 
@@ -2856,13 +2567,30 @@ def test_exception_raising(self)
 
 ## tests/test_generators/test_agents_generator.py
 
-### test_agents_generator_initialization
+### TestAgentsGenerator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestAgentsGenerator
+```
+
+**説明**:
+
+AgentsGeneratorのテストクラス
+
+*定義場所: tests/test_generators/test_agents_generator.py:11*
+
+---
+
+### test_initialization
 
 **型**: `function`
 
 **シグネチャ**:
 ```
-def test_agents_generator_initialization(temp_project)
+def test_initialization(self, agents_generator)
 ```
 
 **説明**:
@@ -2879,7 +2607,7 @@ AgentsGeneratorの初期化テスト
 
 **シグネチャ**:
 ```
-def test_generate_agents_md(temp_project)
+def test_generate_agents_md(self, agents_generator, python_project)
 ```
 
 **説明**:
@@ -3966,7 +3694,24 @@ class TestAPIGenerator
 
 APIGeneratorのテストクラス
 
-*定義場所: tests/test_generators/test_api_generator.py:11*
+*定義場所: tests/test_generators/test_api_generator.py:12*
+
+---
+
+### test_initialization
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_initialization(self, api_generator)
+```
+
+**説明**:
+
+APIGeneratorの初期化テスト
+
+*定義場所: tests/test_generators/test_api_generator.py:15*
 
 ---
 
@@ -3976,14 +3721,14 @@ APIGeneratorのテストクラス
 
 **シグネチャ**:
 ```
-def test_generate_creates_api_doc(self, python_project, sample_python_file)
+def test_generate_creates_api_doc(self, api_generator, python_project, sample_python_file)
 ```
 
 **説明**:
 
 APIドキュメントが生成されることを確認
 
-*定義場所: tests/test_generators/test_api_generator.py:14*
+*定義場所: tests/test_generators/test_api_generator.py:21*
 
 ---
 
@@ -3993,14 +3738,14 @@ APIドキュメントが生成されることを確認
 
 **シグネチャ**:
 ```
-def test_generate_api_doc_content(self, python_project, sample_python_file)
+def test_generate_api_doc_content(self, api_generator, python_project, sample_python_file)
 ```
 
 **説明**:
 
 生成されたAPIドキュメントの内容を確認
 
-*定義場所: tests/test_generators/test_api_generator.py:32*
+*定義場所: tests/test_generators/test_api_generator.py:29*
 
 ---
 
@@ -4010,14 +3755,14 @@ def test_generate_api_doc_content(self, python_project, sample_python_file)
 
 **シグネチャ**:
 ```
-def test_generate_with_multiple_languages(self, multi_language_project)
+def test_generate_with_multiple_languages(self, temp_project, multi_language_project)
 ```
 
 **説明**:
 
 複数言語のAPI情報が統合されることを確認
 
-*定義場所: tests/test_generators/test_api_generator.py:52*
+*定義場所: tests/test_generators/test_api_generator.py:36*
 
 ---
 
@@ -4034,7 +3779,7 @@ def test_generate_creates_output_directory(self, temp_project)
 
 出力ディレクトリが自動作成されることを確認
 
-*定義場所: tests/test_generators/test_api_generator.py:70*
+*定義場所: tests/test_generators/test_api_generator.py:47*
 
 ---
 
@@ -4051,7 +3796,7 @@ def test_generate_with_no_apis(self, temp_project)
 
 APIが見つからない場合でもドキュメントが生成されることを確認
 
-*定義場所: tests/test_generators/test_api_generator.py:87*
+*定義場所: tests/test_generators/test_api_generator.py:60*
 
 ---
 
@@ -4354,7 +4099,7 @@ ReadmeGeneratorのテストクラス
 
 **シグネチャ**:
 ```
-def test_generate_creates_readme(self, python_project)
+def test_generate_creates_readme(self, readme_generator, python_project)
 ```
 
 **説明**:
@@ -4371,7 +4116,7 @@ READMEが生成されることを確認
 
 **シグネチャ**:
 ```
-def test_generate_readme_content(self, python_project)
+def test_generate_readme_content(self, readme_generator, python_project)
 ```
 
 **説明**:
@@ -5390,7 +5135,7 @@ def test_multiple_languages_detection(self, multi_language_project)
 
 複数言語プロジェクトでの検出をテスト
 
-*定義場所: tests/test_integration.py:68*
+*定義場所: tests/test_integration.py:63*
 
 ---
 
@@ -5407,7 +5152,7 @@ def test_readme_preserves_manual_sections(self, temp_project)
 
 READMEの手動セクションが保持されることを統合テストで確認
 
-*定義場所: tests/test_integration.py:76*
+*定義場所: tests/test_integration.py:71*
 
 ---
 
@@ -5424,7 +5169,7 @@ def test_api_doc_includes_all_languages(self, multi_language_project)
 
 複数言語のAPI情報が統合されることを確認
 
-*定義場所: tests/test_integration.py:118*
+*定義場所: tests/test_integration.py:107*
 
 ---
 
@@ -5580,7 +5325,7 @@ class TestBaseParser
 
 BaseParserのテストクラス
 
-*定義場所: tests/test_parsers/test_base_parser.py:12*
+*定義場所: tests/test_parsers/test_base_parser.py:11*
 
 ---
 
@@ -5597,7 +5342,7 @@ def test_parse_project_exclude_dirs(self, temp_project)
 
 除外ディレクトリが正しく除外されることを確認
 
-*定義場所: tests/test_parsers/test_base_parser.py:15*
+*定義場所: tests/test_parsers/test_base_parser.py:14*
 
 ---
 
@@ -5614,7 +5359,7 @@ def test_parse_project_custom_exclude_dirs(self, temp_project)
 
 カスタム除外ディレクトリが正しく除外されることを確認
 
-*定義場所: tests/test_parsers/test_base_parser.py:30*
+*定義場所: tests/test_parsers/test_base_parser.py:29*
 
 ---
 
@@ -5631,7 +5376,7 @@ def test_parse_project_parallel(self, temp_project)
 
 並列処理でプロジェクトを解析
 
-*定義場所: tests/test_parsers/test_base_parser.py:42*
+*定義場所: tests/test_parsers/test_base_parser.py:41*
 
 ---
 
@@ -5648,7 +5393,7 @@ def test_parse_project_sequential(self, temp_project)
 
 逐次処理でプロジェクトを解析
 
-*定義場所: tests/test_parsers/test_base_parser.py:53*
+*定義場所: tests/test_parsers/test_base_parser.py:52*
 
 ---
 
@@ -5665,7 +5410,7 @@ def test_parse_project_few_files_sequential(self, temp_project)
 
 ファイル数が少ない場合は逐次処理になることを確認
 
-*定義場所: tests/test_parsers/test_base_parser.py:62*
+*定義場所: tests/test_parsers/test_base_parser.py:61*
 
 ---
 
@@ -5682,7 +5427,7 @@ def test_parse_file_safe_with_error(self, temp_project)
 
 エラーが発生した場合の安全な処理
 
-*定義場所: tests/test_parsers/test_base_parser.py:73*
+*定義場所: tests/test_parsers/test_base_parser.py:72*
 
 ---
 
@@ -5699,7 +5444,7 @@ def test_parse_project_symlink_skipped(self, temp_project)
 
 シンボリックリンクがスキップされることを確認
 
-*定義場所: tests/test_parsers/test_base_parser.py:85*
+*定義場所: tests/test_parsers/test_base_parser.py:84*
 
 ---
 
@@ -5716,7 +5461,7 @@ def test_parse_project_permission_error(self, temp_project)
 
 権限エラーが発生した場合の処理
 
-*定義場所: tests/test_parsers/test_base_parser.py:96*
+*定義場所: tests/test_parsers/test_base_parser.py:95*
 
 ---
 
@@ -5733,7 +5478,7 @@ def test_parse_project_max_workers(self, temp_project)
 
 max_workersが指定された場合の処理
 
-*定義場所: tests/test_parsers/test_base_parser.py:107*
+*定義場所: tests/test_parsers/test_base_parser.py:106*
 
 ---
 
@@ -5750,7 +5495,7 @@ def test_parse_project_parallel_with_exception(self, temp_project)
 
 並列処理で例外が発生した場合の処理
 
-*定義場所: tests/test_parsers/test_base_parser.py:117*
+*定義場所: tests/test_parsers/test_base_parser.py:116*
 
 ---
 
@@ -5767,7 +5512,7 @@ def test_parse_file_safe_exception_handling(self, temp_project)
 
 _parse_file_safeで例外が発生した場合の処理
 
-*定義場所: tests/test_parsers/test_base_parser.py:134*
+*定義場所: tests/test_parsers/test_base_parser.py:133*
 
 ---
 
@@ -5787,7 +5532,7 @@ class TestGenericParser
 
 GenericParserのテストクラス
 
-*定義場所: tests/test_parsers/test_generic_parser.py:11*
+*定義場所: tests/test_parsers/test_generic_parser.py:13*
 
 ---
 
@@ -5804,7 +5549,7 @@ def test_parse_file_rust(self, temp_project)
 
 Rustファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_generic_parser.py:14*
+*定義場所: tests/test_parsers/test_generic_parser.py:16*
 
 ---
 
@@ -5821,7 +5566,7 @@ def test_parse_file_java(self, temp_project)
 
 Javaファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_generic_parser.py:29*
+*定義場所: tests/test_parsers/test_generic_parser.py:31*
 
 ---
 
@@ -5838,7 +5583,7 @@ def test_parse_file_ruby(self, temp_project)
 
 Rubyファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_generic_parser.py:53*
+*定義場所: tests/test_parsers/test_generic_parser.py:55*
 
 ---
 
@@ -5855,7 +5600,7 @@ def test_get_supported_extensions_rust(self)
 
 Rustの拡張子が正しいことを確認
 
-*定義場所: tests/test_parsers/test_generic_parser.py:71*
+*定義場所: tests/test_parsers/test_generic_parser.py:73*
 
 ---
 
@@ -5872,7 +5617,7 @@ def test_get_supported_extensions_java(self)
 
 Javaの拡張子が正しいことを確認
 
-*定義場所: tests/test_parsers/test_generic_parser.py:78*
+*定義場所: tests/test_parsers/test_generic_parser.py:80*
 
 ---
 
@@ -5889,7 +5634,7 @@ def test_parse_project(self, temp_project)
 
 プロジェクト全体を解析できることを確認
 
-*定義場所: tests/test_parsers/test_generic_parser.py:85*
+*定義場所: tests/test_parsers/test_generic_parser.py:87*
 
 ---
 
@@ -5909,7 +5654,7 @@ class TestJSParser
 
 JSParserのテストクラス
 
-*定義場所: tests/test_parsers/test_js_parser.py:11*
+*定義場所: tests/test_parsers/test_js_parser.py:13*
 
 ---
 
@@ -5926,7 +5671,7 @@ def test_parse_file_with_jsdoc(self, sample_javascript_file)
 
 JSDocコメントを含むファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:14*
+*定義場所: tests/test_parsers/test_js_parser.py:16*
 
 ---
 
@@ -5943,7 +5688,7 @@ def test_parse_file_extracts_jsdoc(self, sample_javascript_file)
 
 JSDocコメントが正しく抽出されることを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:24*
+*定義場所: tests/test_parsers/test_js_parser.py:26*
 
 ---
 
@@ -5960,7 +5705,7 @@ def test_parse_file_with_class(self, sample_javascript_file)
 
 クラスを含むファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:36*
+*定義場所: tests/test_parsers/test_js_parser.py:38*
 
 ---
 
@@ -5977,7 +5722,7 @@ def test_parse_file_extracts_signature(self, sample_javascript_file)
 
 シグネチャが正しく抽出されることを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:45*
+*定義場所: tests/test_parsers/test_js_parser.py:47*
 
 ---
 
@@ -5994,7 +5739,7 @@ def test_parse_project(self, javascript_project)
 
 プロジェクト全体を解析できることを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:55*
+*定義場所: tests/test_parsers/test_js_parser.py:57*
 
 ---
 
@@ -6011,7 +5756,7 @@ def test_get_supported_extensions(self)
 
 サポートする拡張子が正しいことを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:62*
+*定義場所: tests/test_parsers/test_js_parser.py:64*
 
 ---
 
@@ -6028,7 +5773,7 @@ def test_parse_file_without_jsdoc(self, temp_project)
 
 JSDocなしの関数も解析できることを確認
 
-*定義場所: tests/test_parsers/test_js_parser.py:72*
+*定義場所: tests/test_parsers/test_js_parser.py:74*
 
 ---
 
@@ -6048,7 +5793,7 @@ class TestPythonParser
 
 PythonParserのテストクラス
 
-*定義場所: tests/test_parsers/test_python_parser.py:11*
+*定義場所: tests/test_parsers/test_python_parser.py:13*
 
 ---
 
@@ -6065,7 +5810,7 @@ def test_parse_file_with_function(self, sample_python_file)
 
 関数を含むファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:14*
+*定義場所: tests/test_parsers/test_python_parser.py:16*
 
 ---
 
@@ -6082,7 +5827,7 @@ def test_parse_file_with_class(self, sample_python_file)
 
 クラスを含むファイルを解析できることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:27*
+*定義場所: tests/test_parsers/test_python_parser.py:29*
 
 ---
 
@@ -6099,7 +5844,7 @@ def test_parse_file_extracts_signature(self, sample_python_file)
 
 シグネチャが正しく抽出されることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:37*
+*定義場所: tests/test_parsers/test_python_parser.py:39*
 
 ---
 
@@ -6116,7 +5861,7 @@ def test_parse_file_extracts_docstring(self, sample_python_file)
 
 docstringが正しく抽出されることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:47*
+*定義場所: tests/test_parsers/test_python_parser.py:49*
 
 ---
 
@@ -6133,7 +5878,7 @@ def test_parse_file_includes_line_number(self, sample_python_file)
 
 行番号が含まれることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:57*
+*定義場所: tests/test_parsers/test_python_parser.py:59*
 
 ---
 
@@ -6150,7 +5895,7 @@ def test_parse_project(self, python_project)
 
 プロジェクト全体を解析できることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:65*
+*定義場所: tests/test_parsers/test_python_parser.py:67*
 
 ---
 
@@ -6167,7 +5912,7 @@ def test_parse_file_skips_private_functions(self, temp_project)
 
 プライベート関数（_で始まる）がスキップされることを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:74*
+*定義場所: tests/test_parsers/test_python_parser.py:76*
 
 ---
 
@@ -6184,7 +5929,7 @@ def test_get_supported_extensions(self)
 
 サポートする拡張子が正しいことを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:92*
+*定義場所: tests/test_parsers/test_python_parser.py:94*
 
 ---
 
@@ -6201,7 +5946,500 @@ def test_parse_file_with_syntax_error(self, temp_project)
 
 構文エラーがあるファイルでもエラーが発生しないことを確認
 
-*定義場所: tests/test_parsers/test_python_parser.py:100*
+*定義場所: tests/test_parsers/test_python_parser.py:102*
+
+---
+
+
+## tests/test_project_info_collector.py
+
+### TestProjectInfoCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestProjectInfoCollector
+```
+
+**説明**:
+
+ProjectInfoCollectorのテストクラス
+
+*定義場所: tests/test_project_info_collector.py:8*
+
+---
+
+### test_init
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_init(self, temp_project)
+```
+
+**説明**:
+
+初期化テスト
+
+*定義場所: tests/test_project_info_collector.py:11*
+
+---
+
+### test_collect_all
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_all(self, temp_project)
+```
+
+**説明**:
+
+全情報収集テスト
+
+*定義場所: tests/test_project_info_collector.py:16*
+
+---
+
+### test_collect_build_commands_from_script
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_from_script(self, temp_project)
+```
+
+**説明**:
+
+スクリプトからのビルドコマンド収集
+
+*定義場所: tests/test_project_info_collector.py:34*
+
+---
+
+### test_collect_build_commands_no_script
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_no_script(self, temp_project)
+```
+
+**説明**:
+
+スクリプトが存在しない場合
+
+*定義場所: tests/test_project_info_collector.py:52*
+
+---
+
+### test_collect_test_commands_from_script
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_from_script(self, temp_project)
+```
+
+**説明**:
+
+スクリプトからのテストコマンド収集
+
+*定義場所: tests/test_project_info_collector.py:59*
+
+---
+
+### test_collect_test_commands_no_script
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_no_script(self, temp_project)
+```
+
+**説明**:
+
+テストスクリプトが存在しない場合
+
+*定義場所: tests/test_project_info_collector.py:76*
+
+---
+
+### test_collect_dependencies_python
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_python(self, temp_project)
+```
+
+**説明**:
+
+Python依存関係の収集
+
+*定義場所: tests/test_project_info_collector.py:83*
+
+---
+
+### test_collect_dependencies_nodejs
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_nodejs(self, temp_project)
+```
+
+**説明**:
+
+Node.js依存関係の収集
+
+*定義場所: tests/test_project_info_collector.py:97*
+
+---
+
+### test_collect_dependencies_go
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_go(self, temp_project)
+```
+
+**説明**:
+
+Go依存関係の収集
+
+*定義場所: tests/test_project_info_collector.py:115*
+
+---
+
+### test_collect_dependencies_no_files
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_dependencies_no_files(self, temp_project)
+```
+
+**説明**:
+
+依存関係ファイルが存在しない場合
+
+*定義場所: tests/test_project_info_collector.py:135*
+
+---
+
+### test_collect_coding_standards_with_pyproject
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_with_pyproject(self, temp_project)
+```
+
+**説明**:
+
+pyproject.tomlからのコーディング規約収集
+
+*定義場所: tests/test_project_info_collector.py:142*
+
+---
+
+### test_collect_coding_standards_no_files
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_coding_standards_no_files(self, temp_project)
+```
+
+**説明**:
+
+コーディング規約ファイルが存在しない場合
+
+*定義場所: tests/test_project_info_collector.py:159*
+
+---
+
+### test_collect_ci_cd_info_with_github_actions
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_ci_cd_info_with_github_actions(self, temp_project)
+```
+
+**説明**:
+
+GitHub ActionsからのCI/CD情報収集
+
+*定義場所: tests/test_project_info_collector.py:166*
+
+---
+
+### test_collect_ci_cd_info_no_files
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_ci_cd_info_no_files(self, temp_project)
+```
+
+**説明**:
+
+CI/CDファイルが存在しない場合
+
+*定義場所: tests/test_project_info_collector.py:187*
+
+---
+
+### test_collect_project_structure
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def test_collect_project_structure(self, temp_project)
+```
+
+**説明**:
+
+プロジェクト構造の収集
+
+*定義場所: tests/test_project_info_collector.py:194*
+
+---
+
+
+## tests/test_utils.py
+
+### create_sample_python_file
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_sample_python_file(project_root: Path, filename: str) -> Path
+```
+
+**説明**:
+
+サンプルPythonファイルを作成
+
+Args:
+    project_root: プロジェクトルート
+    filename: ファイル名
+
+Returns:
+    Path: 作成されたファイルのパス
+
+*定義場所: tests/test_utils.py:12*
+
+---
+
+### create_sample_javascript_file
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_sample_javascript_file(project_root: Path, filename: str) -> Path
+```
+
+**説明**:
+
+サンプルJavaScriptファイルを作成
+
+Args:
+    project_root: プロジェクトルート
+    filename: ファイル名
+
+Returns:
+    Path: 作成されたファイルのパス
+
+*定義場所: tests/test_utils.py:66*
+
+---
+
+### create_python_project_structure
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_python_project_structure(project_root: Path) -> None
+```
+
+**説明**:
+
+Pythonプロジェクトの基本構造を作成
+
+Args:
+    project_root: プロジェクトルート
+
+*定義場所: tests/test_utils.py:121*
+
+---
+
+### create_javascript_project_structure
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_javascript_project_structure(project_root: Path) -> None
+```
+
+**説明**:
+
+JavaScriptプロジェクトの基本構造を作成
+
+Args:
+    project_root: プロジェクトルート
+
+*定義場所: tests/test_utils.py:161*
+
+---
+
+### create_go_project_structure
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_go_project_structure(project_root: Path) -> None
+```
+
+**説明**:
+
+Goプロジェクトの基本構造を作成
+
+Args:
+    project_root: プロジェクトルート
+
+*定義場所: tests/test_utils.py:181*
+
+---
+
+### create_config_file
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_config_file(project_root: Path, config: dict[str, Any], filename: str) -> Path
+```
+
+**説明**:
+
+設定ファイルを作成
+
+Args:
+    project_root: プロジェクトルート
+    config: 設定内容
+    filename: ファイル名
+
+Returns:
+    Path: 作成されたファイルのパス
+
+*定義場所: tests/test_utils.py:235*
+
+---
+
+### assert_file_exists_and_not_empty
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def assert_file_exists_and_not_empty(file_path: Path) -> None
+```
+
+**説明**:
+
+ファイルが存在し、空でないことを確認
+
+Args:
+    file_path: 確認するファイルのパス
+
+*定義場所: tests/test_utils.py:259*
+
+---
+
+### assert_file_contains_text
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def assert_file_contains_text(file_path: Path) -> None
+```
+
+**説明**:
+
+ファイルが指定されたテキストを含むことを確認
+
+Args:
+    file_path: 確認するファイルのパス
+    texts: 含まれるべきテキスト
+
+*定義場所: tests/test_utils.py:271*
+
+---
+
+### assert_file_not_contains_text
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def assert_file_not_contains_text(file_path: Path) -> None
+```
+
+**説明**:
+
+ファイルが指定されたテキストを含まないことを確認
+
+Args:
+    file_path: 確認するファイルのパス
+    texts: 含まれないべきテキスト
+
+*定義場所: tests/test_utils.py:284*
+
+---
+
+### create_test_data_factory
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_test_data_factory()
+```
+
+**説明**:
+
+テストデータ作成のファクトリ関数を返す
+
+Returns:
+    dict: 言語ごとのデータ作成関数
+
+*定義場所: tests/test_utils.py:297*
 
 ---
 

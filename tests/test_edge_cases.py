@@ -2,17 +2,16 @@
 エッジケースとエラーハンドリングのテスト
 """
 
-import pytest
 from pathlib import Path
 import sys
 
 DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
-from detectors.python_detector import PythonDetector
-from generators.parsers.python_parser import PythonParser
-from generators.api_generator import APIGenerator
-from generators.readme_generator import ReadmeGenerator
+from docgen.detectors.python_detector import PythonDetector
+from docgen.generators.api_generator import APIGenerator
+from docgen.generators.parsers.python_parser import PythonParser
+from docgen.generators.readme_generator import ReadmeGenerator
 
 
 @pytest.mark.unit
@@ -39,7 +38,7 @@ class TestEdgeCases:
         """構文エラーを含むファイルの解析をテスト"""
         code = "def invalid syntax here\n"
         file_path = temp_project / "invalid.py"
-        file_path.write_text(code, encoding='utf-8')
+        file_path.write_text(code, encoding="utf-8")
 
         parser = PythonParser(temp_project)
         # 構文エラーがあっても例外が発生しないことを確認
@@ -49,7 +48,7 @@ class TestEdgeCases:
     def test_parser_with_empty_file(self, temp_project):
         """空のファイルの解析をテスト"""
         file_path = temp_project / "empty.py"
-        file_path.write_text("", encoding='utf-8')
+        file_path.write_text("", encoding="utf-8")
 
         parser = PythonParser(temp_project)
         apis = parser.parse_file(file_path)
@@ -58,15 +57,11 @@ class TestEdgeCases:
     def test_api_generator_with_empty_project(self, temp_project):
         """空のプロジェクトでのAPI生成をテスト"""
         config = {
-            'output': {
-                'api_doc': 'docs/api.md'
-            },
-            'generation': {
-                'generate_api_doc': True
-            }
+            "output": {"api_doc": "docs/api.md"},
+            "generation": {"generate_api_doc": True},
         }
 
-        generator = APIGenerator(temp_project, ['python'], config)
+        generator = APIGenerator(temp_project, ["python"], config)
         result = generator.generate()
 
         assert result is True
@@ -76,13 +71,8 @@ class TestEdgeCases:
     def test_readme_generator_with_no_dependencies(self, temp_project):
         """依存関係がないプロジェクトでのREADME生成をテスト"""
         config = {
-            'output': {
-                'readme': 'README.md'
-            },
-            'generation': {
-                'update_readme': True,
-                'preserve_manual_sections': True
-            }
+            "output": {"readme": "README.md"},
+            "generation": {"update_readme": True, "preserve_manual_sections": True},
         }
 
         generator = ReadmeGenerator(temp_project, [], config)
@@ -92,7 +82,7 @@ class TestEdgeCases:
         readme_path = temp_project / "README.md"
         assert readme_path.exists()
 
-        content = readme_path.read_text(encoding='utf-8')
+        content = readme_path.read_text(encoding="utf-8")
         assert len(content) > 0
 
     def test_readme_generator_with_invalid_manual_section(self, temp_project):
@@ -104,19 +94,14 @@ class TestEdgeCases:
 <!-- MANUAL_END:other -->
 """
         readme_path = temp_project / "README.md"
-        readme_path.write_text(readme_content, encoding='utf-8')
+        readme_path.write_text(readme_content, encoding="utf-8")
 
         config = {
-            'output': {
-                'readme': 'README.md'
-            },
-            'generation': {
-                'update_readme': True,
-                'preserve_manual_sections': True
-            }
+            "output": {"readme": "README.md"},
+            "generation": {"update_readme": True, "preserve_manual_sections": True},
         }
 
-        generator = ReadmeGenerator(temp_project, ['python'], config)
+        generator = ReadmeGenerator(temp_project, ["python"], config)
         # エラーが発生しないことを確認
         result = generator.generate()
         assert result is True
@@ -124,15 +109,11 @@ class TestEdgeCases:
     def test_api_generator_with_custom_output_path(self, temp_project):
         """カスタム出力パスでのAPI生成をテスト"""
         config = {
-            'output': {
-                'api_doc': 'custom/path/api.md'
-            },
-            'generation': {
-                'generate_api_doc': True
-            }
+            "output": {"api_doc": "custom/path/api.md"},
+            "generation": {"generate_api_doc": True},
         }
 
-        generator = APIGenerator(temp_project, ['python'], config)
+        generator = APIGenerator(temp_project, ["python"], config)
         result = generator.generate()
 
         assert result is True
@@ -143,24 +124,24 @@ class TestEdgeCases:
         """除外ディレクトリが正しく除外されることを確認"""
         # 除外ディレクトリにファイルを作成
         (temp_project / ".git" / "file.py").parent.mkdir()
-        (temp_project / ".git" / "file.py").write_text("def test(): pass\n", encoding='utf-8')
+        (temp_project / ".git" / "file.py").write_text("def test(): pass\n", encoding="utf-8")
 
         # 通常のファイルを作成
-        (temp_project / "main.py").write_text("def main(): pass\n", encoding='utf-8')
+        (temp_project / "main.py").write_text("def main(): pass\n", encoding="utf-8")
 
         parser = PythonParser(temp_project)
-        apis = parser.parse_project(exclude_dirs=['.git'])
+        apis = parser.parse_project(exclude_dirs=[".git"])
 
         # .git内のファイルは除外される
-        files = [api['file'] for api in apis]
-        assert '.git/file.py' not in files
-        assert 'main.py' in files or len(apis) >= 0
+        files = [api["file"] for api in apis]
+        assert ".git/file.py" not in files
+        assert "main.py" in files or len(apis) >= 0
 
     def test_readme_generator_with_missing_config(self, temp_project):
         """設定が不完全な場合の処理をテスト"""
         config = {}  # 空の設定
 
-        generator = ReadmeGenerator(temp_project, ['python'], config)
+        generator = ReadmeGenerator(temp_project, ["python"], config)
         # デフォルト値が使用されることを確認
         result = generator.generate()
         assert result is True
@@ -168,12 +149,8 @@ class TestEdgeCases:
     def test_api_generator_with_no_languages(self, temp_project):
         """言語が指定されていない場合の処理をテスト"""
         config = {
-            'output': {
-                'api_doc': 'docs/api.md'
-            },
-            'generation': {
-                'generate_api_doc': True
-            }
+            "output": {"api_doc": "docs/api.md"},
+            "generation": {"generate_api_doc": True},
         }
 
         generator = APIGenerator(temp_project, [], config)
@@ -186,10 +163,10 @@ class TestEdgeCases:
     def test_config_file_nonexistent(self, tmp_path):
         """存在しない設定ファイルの処理テスト"""
         from docgen.docgen import DocGen
-        
+
         nonexistent_config = tmp_path / "nonexistent.yaml"
         docgen = DocGen(project_root=tmp_path, config_path=nonexistent_config)
-        
+
         # デフォルト設定が使用されることを確認
         assert "generation" in docgen.config
         assert "output" in docgen.config
@@ -197,12 +174,12 @@ class TestEdgeCases:
     def test_config_file_invalid_yaml(self, tmp_path):
         """無効なYAML設定ファイルの処理テスト"""
         from docgen.docgen import DocGen
-        
+
         invalid_config = tmp_path / "invalid.yaml"
         invalid_config.write_text("invalid: yaml: content: [\n", encoding="utf-8")
-        
+
         docgen = DocGen(project_root=tmp_path, config_path=invalid_config)
-        
+
         # デフォルト設定が使用されることを確認
         assert "generation" in docgen.config
 
@@ -212,10 +189,10 @@ class TestEdgeCases:
         for i in range(50):
             file_path = temp_project / f"module_{i}.py"
             file_path.write_text(f"def function_{i}():\n    pass\n", encoding="utf-8")
-        
+
         from docgen.docgen import DocGen
         docgen = DocGen(project_root=temp_project)
-        
+
         # 言語検出が正常に動作することを確認
         languages = docgen.detect_languages()
         assert "python" in languages
@@ -234,10 +211,10 @@ class ClassWithSpecialChars:
 '''
         file_path = temp_project / "special_chars.py"
         file_path.write_text(special_code, encoding="utf-8")
-        
+
         from generators.parsers.python_parser import PythonParser
         parser = PythonParser(temp_project)
-        
+
         # 特殊文字があっても正常に解析されることを確認
         apis = parser.parse_file(file_path)
         assert isinstance(apis, list)
@@ -246,18 +223,18 @@ class ClassWithSpecialChars:
     def test_network_error_fallback(self, temp_project, monkeypatch):
         """ネットワークエラー時のLLMフォールバックテスト"""
         from generators.agents_generator import AgentsGenerator
-        
+
         config = {
             "output": {"agents_doc": "AGENTS.md"},
             "agents": {"llm_mode": "api"}
         }
-        
+
         generator = AgentsGenerator(temp_project, ["python"], config)
-        
+
         # LLMClientFactoryがNoneを返すようにモック（ネットワークエラー）
         with monkeypatch.MagicMock() as mock_factory:
             mock_factory.create_client_with_fallback.return_value = None
-            
+
             # _generate_with_llmがNoneを返すことを確認
             result = generator._generate_with_llm({})
             assert result is None
@@ -266,21 +243,21 @@ class ClassWithSpecialChars:
         """複数言語混在プロジェクトの処理テスト"""
         # Pythonファイル
         (temp_project / "main.py").write_text("def main():\n    pass\n", encoding="utf-8")
-        
+
         # JavaScriptファイル
         (temp_project / "app.js").write_text("console.log('hello');\n", encoding="utf-8")
-        
+
         # Goファイル
         (temp_project / "main.go").write_text("package main\n\nfunc main() {}\n", encoding="utf-8")
-        
+
         from docgen.docgen import DocGen
         docgen = DocGen(project_root=temp_project)
-        
+
         languages = docgen.detect_languages()
-        
+
         # すべての言語が検出されることを確認
         assert "python" in languages
-        assert "javascript" in languages  
+        assert "javascript" in languages
         assert "go" in languages
 
     def test_deeply_nested_directory_structure(self, temp_project):
@@ -290,14 +267,14 @@ class ClassWithSpecialChars:
         for i in range(10):
             deep_dir = deep_dir / f"level_{i}"
             deep_dir.mkdir()
-        
+
         # 最深部にファイルを作成
         deep_file = deep_dir / "deep.py"
         deep_file.write_text("def deep_function():\n    pass\n", encoding="utf-8")
-        
+
         from docgen.docgen import DocGen
         docgen = DocGen(project_root=temp_project)
-        
+
         languages = docgen.detect_languages()
         assert "python" in languages
 
@@ -306,14 +283,14 @@ class ClassWithSpecialChars:
         # バイナリファイルを作成
         binary_file = temp_project / "binary.dat"
         binary_file.write_bytes(b"\x00\x01\x02\x03\xff\xfe\xfd")
-        
+
         # Pythonファイルも作成
         py_file = temp_project / "script.py"
         py_file.write_text("def func():\n    pass\n", encoding="utf-8")
-        
+
         from docgen.docgen import DocGen
         docgen = DocGen(project_root=temp_project)
-        
+
         languages = docgen.detect_languages()
         assert "python" in languages
 
@@ -330,10 +307,10 @@ def func():
 '''
         file_path = temp_project / "circular.py"
         file_path.write_text(circular_code, encoding="utf-8")
-        
+
         from generators.parsers.python_parser import PythonParser
         parser = PythonParser(temp_project)
-        
+
         # 循環インポートがあってもクラッシュしないことを確認
         apis = parser.parse_file(file_path)
         assert isinstance(apis, list)
@@ -344,10 +321,10 @@ def func():
         long_code = "\n".join([f"def func_{i}():\n    pass" for i in range(1000)])
         file_path = temp_project / "long_file.py"
         file_path.write_text(long_code, encoding="utf-8")
-        
+
         from generators.parsers.python_parser import PythonParser
         parser = PythonParser(temp_project)
-        
+
         # 長いファイルでも正常に処理されることを確認
         apis = parser.parse_file(file_path)
         assert isinstance(apis, list)
@@ -358,10 +335,10 @@ def func():
         # Unicodeファイル名
         unicode_file = temp_project / "テストファイル.py"
         unicode_file.write_text("def test():\n    pass\n", encoding="utf-8")
-        
+
         from docgen.docgen import DocGen
         docgen = DocGen(project_root=temp_project)
-        
+
         languages = docgen.detect_languages()
         assert "python" in languages
 
@@ -370,13 +347,13 @@ def func():
         # 隠しファイルを作成
         hidden_file = temp_project / ".hidden.py"
         hidden_file.write_text("def hidden():\n    pass\n", encoding="utf-8")
-        
+
         # 通常ファイルも作成
         normal_file = temp_project / "normal.py"
         normal_file.write_text("def normal():\n    pass\n", encoding="utf-8")
-        
+
         from docgen.docgen import DocGen
         docgen = DocGen(project_root=temp_project)
-        
+
         languages = docgen.detect_languages()
         assert "python" in languages

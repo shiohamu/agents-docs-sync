@@ -197,7 +197,7 @@
 ```bash
 # Bandit（Pythonセキュリティチェック）
 pip install bandit
-bandit -r .docgen/
+bandit -r docgen/
 
 # Safety（依存関係の脆弱性チェック）
 pip install safety
@@ -207,11 +207,11 @@ safety check
 ### パフォーマンスプロファイリング（オプション）
 ```bash
 # cProfileを使用
-python -m cProfile -o profile.stats .docgen/docgen.py
+python -m cProfile -o profile.stats docgen/docgen.py
 
 # line_profilerを使用（必要に応じて）
 pip install line_profiler
-kernprof -l -v .docgen/docgen.py
+kernprof -l -v docgen/docgen.py
 ```
 
 ## 次のステップ

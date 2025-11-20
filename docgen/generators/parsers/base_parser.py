@@ -2,12 +2,12 @@
 パーサーのベースクラス
 """
 
-import sys
-import copy
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import copy
+from pathlib import Path
+import sys
+from typing import TYPE_CHECKING, Any, Optional
 
 # モジュールパスを追加（utils.loggerをインポートするため）
 # 注意: このモジュールはdocgenパッケージ内で実行されることを想定
@@ -37,7 +37,7 @@ class BaseParser(ABC):
         self.project_root: Path = project_root
 
     @abstractmethod
-    def parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
+    def parse_file(self, file_path: Path) -> list[dict[str, Any]]:
         """
         ファイルを解析してAPI情報を抽出
 
@@ -56,7 +56,7 @@ class BaseParser(ABC):
         pass
 
     @abstractmethod
-    def get_supported_extensions(self) -> List[str]:
+    def get_supported_extensions(self) -> list[str]:
         """
         サポートするファイル拡張子を返す
 
@@ -85,9 +85,9 @@ class BaseParser(ABC):
 
     def parse_project(
         self,
-        exclude_dirs: Optional[List[str]] = None,
+        exclude_dirs: list[str] | None = None,
         use_parallel: bool = True,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         use_cache: bool = True,
         cache_manager: Optional["CacheManager"] = None,
     ) -> List[Dict[str, Any]]:

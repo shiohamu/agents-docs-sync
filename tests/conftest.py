@@ -2,8 +2,9 @@
 pytest設定と共通フィクスチャ
 """
 
-import sys
 from pathlib import Path
+import sys
+
 import pytest
 
 # docgenモジュールをインポート可能にする

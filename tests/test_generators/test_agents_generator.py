@@ -18,6 +18,11 @@ def test_agents_generator_initialization(temp_project):
     assert generator.project_root == temp_project
     assert generator.languages == ["python"]
 
+    def test_initialization(self, agents_generator):
+        """AgentsGeneratorの初期化テスト"""
+        assert agents_generator.project_root.exists()
+        assert agents_generator.languages == ["python"]
+        assert hasattr(agents_generator, "config")
 
 def test_generate_agents_md(temp_project):
     """AGENTS.md生成テスト"""
@@ -208,7 +213,9 @@ def test_llm_mode_local_only(temp_project):
 
 def test_custom_instructions(temp_project):
     """カスタム指示のテスト"""
-    custom_instructions = "- すべての関数にはdocstringを記述すること\n- テストカバレッジは80%以上を維持すること"
+    custom_instructions = (
+        "- すべての関数にはdocstringを記述すること\n- テストカバレッジは80%以上を維持すること"
+    )
 
     config = {
         "output": {"agents_doc": "AGENTS.md"},

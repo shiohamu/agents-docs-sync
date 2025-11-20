@@ -6,10 +6,10 @@ OpenAI仕様に準拠したAGENTS.mdのテンプレートを作成します。
 
 ## 作業内容
 
-### 1. `.docgen/templates/`ディレクトリを作成
+### 1. `docgen/templates/`ディレクトリを作成
 
 ```bash
-mkdir -p .docgen/templates
+mkdir -p docgen/templates
 ```
 
 ### 2. テンプレートの構造

@@ -17,7 +17,7 @@
 
 ```
 agents-docs-sync/
-├── .docgen/                    # メインのドキュメント生成システム
+├── docgen/                    # メインのドキュメント生成システム
 │   ├── detectors/              # 言語検出モジュール
 │   │   ├── base_detector.py   # 基底クラス
 │   │   ├── python_detector.py
@@ -111,7 +111,7 @@ pip install -r requirements-test.txt
 4. **設定ファイルの作成**
 
 ```bash
-cp .docgen/config.yaml.sample .docgen/config.yaml
+cp docgen/config.yaml.sample docgen/config.yaml
 # 必要に応じて設定を編集
 ```
 
@@ -179,7 +179,7 @@ pip install -e .
 
 1. **Detectorの実装**
 
-`.docgen/detectors/`に新しい検出器を作成：
+`docgen/detectors/`に新しい検出器を作成：
 
 ```python
 from .base_detector import BaseDetector
@@ -197,7 +197,7 @@ class NewLanguageDetector(BaseDetector):
 
 2. **Parserの実装**
 
-`.docgen/generators/parsers/`に新しいパーサーを作成：
+`docgen/generators/parsers/`に新しいパーサーを作成：
 
 ```python
 from .base_parser import BaseParser
@@ -218,7 +218,7 @@ class NewLanguageParser(BaseParser):
 
 3. **DocGenクラスに登録**
 
-`.docgen/docgen.py`の`detect_languages()`メソッドに検出器を追加：
+`docgen/docgen.py`の`detect_languages()`メソッドに検出器を追加：
 
 ```python
 from .detectors.new_language_detector import NewLanguageDetector
@@ -286,7 +286,7 @@ pytest tests/test_docgen.py::test_detect_languages
 ### カバレッジ付きで実行
 
 ```bash
-pytest --cov=.docgen --cov-report=html --cov-report=term-missing
+pytest --cov=docgen --cov-report=html --cov-report=term-missing
 ```
 
 カバレッジレポートは`htmlcov/index.html`で確認できます。
@@ -294,7 +294,7 @@ pytest --cov=.docgen --cov-report=html --cov-report=term-missing
 ### カバレッジ閾値の確認
 
 ```bash
-pytest --cov=.docgen --cov-fail-under=80
+pytest --cov=docgen --cov-fail-under=80
 ```
 
 ---
@@ -392,9 +392,9 @@ GitHubでプルリクエストを作成し、以下を含めてください：
 **問題**: `docs/api.md`や`README.md`が更新されない
 
 **解決策**:
-- `.docgen/config.yaml`が存在し、正しく設定されているか確認
-- ログを確認: `python3 .docgen/docgen.py --verbose`
-- プロジェクトの言語が正しく検出されているか確認: `python3 .docgen/docgen.py --detect-only`
+- `docgen/config.yaml`が存在し、正しく設定されているか確認
+- ログを確認: `python3 docgen/docgen.py --verbose`
+- プロジェクトの言語が正しく検出されているか確認: `python3 docgen/docgen.py --detect-only`
 
 ---
 

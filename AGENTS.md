@@ -1,9 +1,8 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-19 10:49:33
+自動生成日時: 2025-11-20 10:06:49
 
-このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
-
+GitHub にプッシュされた変更をトリガーに、テスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 ---
 
 ## プロジェクト概要
@@ -69,17 +68,26 @@ pip install -r requirements-test.txt
 ### ビルド手順
 
 ```bash
-python3 docgen/docgen.py
+uv sync
+uv run python3 docgen/docgen.py
 ```
 
 ### テスト実行
 
+#### APIを使用する場合
+
+```bash
+uv run python3 -m pytest test
+uv run pytest
+uv run pytest tests/ -v --tb=short
+```
+
 #### ローカルLLMを使用する場合
 
 ```bash
-python3 -m pytest test
-pytest
-pytest tests/ -v --tb=short
+uv run python3 -m pytest test
+uv run pytest
+uv run pytest tests/ -v --tb=short
 ```
 
 **注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
@@ -90,7 +98,13 @@ pytest tests/ -v --tb=short
 
 ## コーディング規約
 
-コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。
+### リンター
+
+- **ruff** を使用
+  ```bash
+  ruff check .
+  ruff format .
+  ```
 
 
 ---
@@ -108,9 +122,9 @@ pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   python3 -m pytest test
-   pytest
-   pytest tests/ -v --tb=short
+   uv run python3 -m pytest test
+   uv run pytest
+   uv run pytest tests/ -v --tb=short
    ```
 
 4. **プルリクエストの作成**
@@ -120,4 +134,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-19 10:49:33*
+*このドキュメントは自動生成されています。最終更新: 2025-11-20 10:06:49*

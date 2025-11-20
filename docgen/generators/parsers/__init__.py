@@ -3,14 +3,8 @@
 """
 
 from .base_parser import BaseParser
-from .python_parser import PythonParser
-from .js_parser import JSParser
 from .generic_parser import GenericParser
+from .js_parser import JSParser
+from .python_parser import PythonParser
 
-__all__ = [
-    'BaseParser',
-    'PythonParser',
-    'JSParser',
-    'GenericParser'
-]
-
+__all__ = ["BaseParser", "PythonParser", "JSParser", "GenericParser"]

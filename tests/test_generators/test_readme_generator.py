@@ -23,10 +23,10 @@ class TestReadmeGenerator:
         result = generator.generate()
 
         assert result is True
-        readme_path = python_project / "README.md"
-        assert readme_path.exists()
+        readme_path = readme_generator.readme_path
+        assert_file_exists_and_not_empty(readme_path)
 
-    def test_generate_readme_content(self, python_project):
+    def test_generate_readme_content(self, readme_generator, python_project):
         """生成されたREADMEの内容を確認"""
         config = {
             "output": {"readme": "README.md"},
