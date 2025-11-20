@@ -1,3 +1,1 @@
-"""
-ドキュメント生成モジュールのテスト
-"""
+# Test generators package

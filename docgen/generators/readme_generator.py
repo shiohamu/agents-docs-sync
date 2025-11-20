@@ -3,10 +3,11 @@ README生成モジュール
 Outlines統合で構造化出力を実現
 """
 
-import re
-from pathlib import Path
-from typing import List, Dict, Any, Optional
 from datetime import datetime
+import os
+from pathlib import Path
+import re
+from typing import Any
 
 try:
     from pydantic import BaseModel, Field
@@ -27,14 +28,11 @@ except ImportError:
 # フォールバック: 絶対インポート
 try:
     from ..collectors.project_info_collector import ProjectInfoCollector
-    from ..utils.logger import get_logger
     from ..utils.llm_client import LLMClientFactory
+    from ..utils.logger import get_logger
     from ..utils.outlines_utils import (
-        should_use_outlines,
         create_outlines_model,
-        get_llm_client_with_fallback,
-        clean_llm_output,
-        validate_output,
+        should_use_outlines,
     )
 except ImportError:
     # 相対インポートが失敗した場合のフォールバック
@@ -44,14 +42,11 @@ except ImportError:
     if str(DOCGEN_DIR) not in sys.path:
         sys.path.insert(0, str(DOCGEN_DIR))
     from collectors.project_info_collector import ProjectInfoCollector
-    from utils.logger import get_logger
     from utils.llm_client import LLMClientFactory
+    from utils.logger import get_logger
     from utils.outlines_utils import (
-        should_use_outlines,
         create_outlines_model,
-        get_llm_client_with_fallback,
-        clean_llm_output,
-        validate_output,
+        should_use_outlines,
     )
 
 logger = get_logger("readme_generator")
@@ -62,21 +57,15 @@ class ReadmeDocument(BaseModel):
 
     title: str = Field(description="プロジェクトタイトル")
     description: str = Field(description="プロジェクト説明")
-    technologies: List[str] = Field(description="使用技術", default_factory=list)
-    dependencies: Dict[str, List[str]] = Field(
+    technologies: list[str] = Field(description="使用技術", default_factory=list)
+    dependencies: dict[str, list[str]] = Field(
         description="言語ごとの依存関係", default_factory=dict
     )
-    setup_instructions: Dict[str, Any] = Field(
-        description="セットアップ手順", default_factory=dict
-    )
-    project_structure: List[str] = Field(
-        description="プロジェクト構造の説明", default_factory=list
-    )
-    build_commands: List[str] = Field(
-        description="ビルドコマンド", default_factory=list
-    )
-    test_commands: List[str] = Field(description="テストコマンド", default_factory=list)
-    manual_sections: Dict[str, str] = Field(
+    setup_instructions: dict[str, Any] = Field(description="セットアップ手順", default_factory=dict)
+    project_structure: list[str] = Field(description="プロジェクト構造の説明", default_factory=list)
+    build_commands: list[str] = Field(description="ビルドコマンド", default_factory=list)
+    test_commands: list[str] = Field(description="テストコマンド", default_factory=list)
+    manual_sections: dict[str, str] = Field(
         description="手動で記述されたセクション", default_factory=dict
     )
 
@@ -84,9 +73,7 @@ class ReadmeDocument(BaseModel):
 class ReadmeGenerator:
     """README生成クラス"""
 
-    def __init__(
-        self, project_root: Path, languages: List[str], config: Dict[str, Any]
-    ):
+    def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
         """
         初期化
 
@@ -98,10 +85,10 @@ class ReadmeGenerator:
         self.project_root = project_root
         self.languages = languages
         self.config = config
-        self.readme_path = project_root / "README.md"
-        self.preserve_manual = config.get("generation", {}).get(
-            "preserve_manual_sections", True
-        )
+        output_config = config.get("output", {})
+        readme_filename = output_config.get("readme", "README.md")
+        self.readme_path = project_root / readme_filename
+        self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
         self.agents_config = config.get("agents", {})
         self.collector = ProjectInfoCollector(project_root)
 
@@ -131,7 +118,7 @@ class ReadmeGenerator:
             logger.error(f"README生成に失敗しました: {e}", exc_info=True)
             return False
 
-    def _extract_manual_sections(self, content: str) -> Dict[str, str]:
+    def _extract_manual_sections(self, content: str) -> dict[str, str]:
         """
         既存READMEから手動セクションを抽出
 
@@ -153,7 +140,7 @@ class ReadmeGenerator:
 
         return sections
 
-    def _generate_readme(self, manual_sections: Dict[str, str]) -> str:
+    def _generate_readme(self, manual_sections: dict[str, str]) -> str:
         """
         READMEを生成（Outlinesで構造化出力）
 
@@ -188,7 +175,7 @@ class ReadmeGenerator:
         # 設定でOutlinesが有効になっているかチェック
         return should_use_outlines(self.config)
 
-    def _generate_with_outlines_readme(self, manual_sections: Dict[str, str]) -> str:
+    def _generate_with_outlines_readme(self, manual_sections: dict[str, str]) -> str:
         """
         Outlinesを使用して構造化されたREADMEを生成
 
@@ -249,7 +236,7 @@ class ReadmeGenerator:
         """
         return create_outlines_model(client)
 
-    def _create_readme_prompt(self, manual_sections: Dict[str, str]) -> str:
+    def _create_readme_prompt(self, manual_sections: dict[str, str]) -> str:
         """
         README用のプロンプトを作成
 
@@ -287,9 +274,7 @@ class ReadmeGenerator:
 
         return prompt
 
-    def _format_project_info_for_readme_prompt(
-        self, project_info: Dict[str, Any]
-    ) -> str:
+    def _format_project_info_for_readme_prompt(self, project_info: dict[str, Any]) -> str:
         """
         プロジェクト情報をREADMEプロンプト用にフォーマット
 
@@ -325,9 +310,7 @@ class ReadmeGenerator:
 
         return "\n".join(lines)
 
-    def _format_manual_sections_for_prompt(
-        self, manual_sections: Dict[str, str]
-    ) -> str:
+    def _format_manual_sections_for_prompt(self, manual_sections: dict[str, str]) -> str:
         """
         手動セクションをプロンプト用にフォーマット
 
@@ -347,7 +330,7 @@ class ReadmeGenerator:
         return "\n".join(lines)
 
     def _convert_readme_structured_data_to_markdown(
-        self, data: ReadmeDocument, manual_sections: Dict[str, str]
+        self, data: ReadmeDocument, manual_sections: dict[str, str]
     ) -> str:
         """
         READMEの構造化データをマークダウン形式に変換
@@ -447,7 +430,7 @@ class ReadmeGenerator:
 
         return "\n".join(lines)
 
-    def _generate_readme_legacy(self, manual_sections: Dict[str, str]) -> str:
+    def _generate_readme_legacy(self, manual_sections: dict[str, str]) -> str:
         """
         従来のREADME生成（Outlinesなし）
 
@@ -471,7 +454,7 @@ class ReadmeGenerator:
             # テンプレート生成（デフォルト）
             return self._generate_template(manual_sections)
 
-    def _generate_template(self, manual_sections: Dict[str, str]) -> str:
+    def _generate_template(self, manual_sections: dict[str, str]) -> str:
         """
         テンプレートベースでREADMEを生成（既存の実装）
 
@@ -619,7 +602,7 @@ class ReadmeGenerator:
 
         return "\n".join(lines)
 
-    def _generate_with_llm(self, manual_sections: Dict[str, str]) -> str:
+    def _generate_with_llm(self, manual_sections: dict[str, str]) -> str:
         """
         LLMを使用してREADME.mdを生成
 
@@ -653,9 +636,7 @@ class ReadmeGenerator:
             project_info = self.collector.collect_all()
 
             # プロンプトを作成
-            prompt = self._create_llm_prompt(
-                project_info, existing_readme, manual_sections
-            )
+            prompt = self._create_llm_prompt(project_info, existing_readme, manual_sections)
 
             # システムプロンプト
             system_prompt = """あなたは技術ドキュメント作成の専門家です。
@@ -680,14 +661,10 @@ class ReadmeGenerator:
                     return self._generate_template(manual_sections)
 
                 # 手動セクションを確実に保持
-                result = self._preserve_manual_sections_in_generated(
-                    cleaned_text, manual_sections
-                )
+                result = self._preserve_manual_sections_in_generated(cleaned_text, manual_sections)
                 return result
             else:
-                logger.warning(
-                    "LLM生成が空でした。テンプレート生成にフォールバックします。"
-                )
+                logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
                 return self._generate_template(manual_sections)
 
         except Exception as e:
@@ -697,7 +674,7 @@ class ReadmeGenerator:
             )
             return self._generate_template(manual_sections)
 
-    def _generate_hybrid(self, manual_sections: Dict[str, str]) -> str:
+    def _generate_hybrid(self, manual_sections: dict[str, str]) -> str:
         """
         テンプレートとLLMを組み合わせて生成
 
@@ -727,9 +704,7 @@ class ReadmeGenerator:
 
             # 説明セクションのみLLMで改善
             project_info = self.collector.collect_all()
-            description = (
-                project_info.get("description") or self._collect_project_description()
-            )
+            description = project_info.get("description") or self._collect_project_description()
 
             prompt = f"""以下のプロジェクト情報を基に、README.mdの「概要」セクションを改善してください。
 既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
@@ -758,9 +733,7 @@ class ReadmeGenerator:
 
                 # 出力を検証
                 if not self._validate_output(cleaned_description):
-                    logger.warning(
-                        "LLM出力の検証に失敗しました。テンプレートのみを使用します。"
-                    )
+                    logger.warning("LLM出力の検証に失敗しました。テンプレートのみを使用します。")
                     return template_content
 
                 # テンプレートの説明セクションを置き換え
@@ -795,9 +768,9 @@ class ReadmeGenerator:
 
     def _create_llm_prompt(
         self,
-        project_info: Dict[str, Any],
+        project_info: dict[str, Any],
         existing_readme: str,
-        manual_sections: Dict[str, str],
+        manual_sections: dict[str, str],
     ) -> str:
         """
         LLM用のプロンプトを作成
@@ -843,7 +816,7 @@ class ReadmeGenerator:
         return prompt
 
     def _preserve_manual_sections_in_generated(
-        self, generated_text: str, manual_sections: Dict[str, str]
+        self, generated_text: str, manual_sections: dict[str, str]
     ) -> str:
         """
         生成されたテキストに手動セクションを保持
@@ -869,9 +842,7 @@ class ReadmeGenerator:
                     new_lines.append(line)
                     new_lines.append("")
                     # 既存の手動セクション内容を使用（思考過程を除外）
-                    cleaned_content = self._clean_manual_section_content(
-                        section_content
-                    )
+                    cleaned_content = self._clean_manual_section_content(section_content)
                     new_lines.append(cleaned_content)
                     # 次のMANUAL_ENDまでスキップ
                     line_index += 1
@@ -966,14 +937,12 @@ class ReadmeGenerator:
 
         lines = text.split("\n")
         cleaned_lines = []
-        skip_block = False
         in_code_block = False
         code_block_lang = None
 
         i = 0
         while i < len(lines):
             line = lines[i]
-            original_line = line
 
             # コードブロックの開始/終了を検出
             if line.strip().startswith("```"):
@@ -982,14 +951,12 @@ class ReadmeGenerator:
                     code_block_lang = line.strip()[3:].strip().lower()
                     # マークダウンコードブロック内の思考過程をスキップ
                     if "markdown" in code_block_lang:
-                        skip_block = True
                         i += 1
                         # 次の```までスキップ
                         while i < len(lines) and not lines[i].strip().startswith("```"):
                             i += 1
                         if i < len(lines):
                             i += 1  # ```をスキップ
-                        skip_block = False
                         in_code_block = False
                         continue
                     else:
@@ -1174,11 +1141,7 @@ class ReadmeGenerator:
         text_lower = text.lower()
 
         # 特殊なマーカーパターンをチェック
-        if (
-            "<|channel|>" in text
-            or "<|message|>" in text
-            or "commentary/analysis" in text_lower
-        ):
+        if "<|channel|>" in text or "<|message|>" in text or "commentary/analysis" in text_lower:
             logger.warning("特殊なマーカーパターンが検出されました")
             return False
 
@@ -1248,9 +1211,7 @@ class ReadmeGenerator:
                     in_markdown_block = False
             elif in_markdown_block:
                 if any(pattern in line.lower() for pattern in thinking_patterns):
-                    logger.warning(
-                        "マークダウンコードブロック内に思考過程が検出されました"
-                    )
+                    logger.warning("マークダウンコードブロック内に思考過程が検出されました")
                     return False
 
         return True
@@ -1280,7 +1241,7 @@ class ReadmeGenerator:
 
         return "\n".join(description_lines)
 
-    def _detect_dependencies(self) -> Dict[str, List[str]]:
+    def _detect_dependencies(self) -> dict[str, list[str]]:
         """
         依存関係を検出
 
@@ -1333,7 +1294,7 @@ class ReadmeGenerator:
                 import json
 
                 try:
-                    with open(package_file, "r", encoding="utf-8") as f:
+                    with open(package_file, encoding="utf-8") as f:
                         package_data = json.load(f)
                         deps = []
                         if "dependencies" in package_data:
@@ -1376,9 +1337,7 @@ class ReadmeGenerator:
                             deps.append(parts[0])
 
                     # 単一行のrequireを検出
-                    elif line.startswith("require ") and not line.startswith(
-                        "require ("
-                    ):
+                    elif line.startswith("require ") and not line.startswith("require ("):
                         parts = line.split()
                         if len(parts) >= 2:
                             deps.append(parts[1])
@@ -1388,6 +1347,16 @@ class ReadmeGenerator:
 
         return dependencies
 
+    def _collect_project_description(self) -> str | None:
+        """
+        プロジェクトの説明を収集
+
+        Returns:
+            プロジェクトの説明文（見つからない場合はNone）
+        """
+        collector = ProjectInfoCollector(self.project_root)
+        return collector.collect_project_description()
+
     def _get_project_structure(self) -> list[str]:
         """
         プロジェクト構造を取得
@@ -1395,4 +1364,23 @@ class ReadmeGenerator:
         Returns:
             プロジェクト構造のリスト
         """
-        return get_project_structure(self.project_root)
+        structure = []
+        try:
+            for root, dirs, files in os.walk(self.project_root):
+                # 隠しディレクトリとキャッシュディレクトリを除外
+                dirs[:] = [
+                    d
+                    for d in dirs
+                    if not d.startswith(".") and d not in ["__pycache__", "node_modules", ".git"]
+                ]
+                level = root.replace(str(self.project_root), "").count(os.sep)
+                indent = "  " * level
+                structure.append(f"{indent}{os.path.basename(root)}/")
+                subindent = "  " * (level + 1)
+                for file in files:
+                    if not file.startswith(".") and file != ".DS_Store":
+                        structure.append(f"{subindent}{file}")
+        except Exception as e:
+            logger.warning(f"プロジェクト構造の取得に失敗しました: {e}")
+            structure = ["プロジェクト構造の取得に失敗しました"]
+        return structure

@@ -3,13 +3,11 @@
 ドキュメント生成システムで使用する例外を定義
 """
 
-from typing import Optional
-
 
 class DocGenError(Exception):
     """ドキュメント生成システムの基本例外クラス"""
 
-    def __init__(self, message: str, details: Optional[str] = None):
+    def __init__(self, message: str, details: str | None = None):
         super().__init__(message)
         self.message = message
         self.details = details

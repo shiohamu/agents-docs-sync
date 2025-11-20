@@ -45,19 +45,10 @@ class PythonParser(BaseParser):
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
-            apis = []
+            visitor = PythonASTVisitor(file_path, self.project_root)
+            visitor.visit(tree)
 
-            for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef):
-                    api_info = self._parse_function(node, file_path)
-                    if api_info:
-                        apis.append(api_info)
-                elif isinstance(node, ast.ClassDef):
-                    api_info = self._parse_class(node, file_path)
-                    if api_info:
-                        apis.append(api_info)
-
-            return apis
+            return visitor.apis
         except SyntaxError:
             # 構文エラーは無視
             return []
@@ -68,66 +59,89 @@ class PythonParser(BaseParser):
             logger.warning(f"{file_path} の解析エラー: {e}")
             return []
 
-    def _parse_function(self, node: ast.FunctionDef, file_path: Path) -> dict[str, Any]:
-        """
-        関数ノードを解析
+    def get_supported_extensions(self) -> list[str]:
+        """サポートする拡張子を返す"""
+        return [".py", ".pyw"]
 
-        Args:
-            node: AST関数ノード
-            file_path: ファイルパス
 
-        Returns:
-            API情報の辞書
-        """
-        # プライベート関数（_で始まる）はスキップ（オプション）
-        if node.name.startswith("_") and not node.name.startswith("__"):
-            return None
+class PythonASTVisitor(ast.NodeVisitor):
+    """Python AST訪問クラス"""
 
-        signature = self._get_function_signature(node)
-        docstring = ast.get_docstring(node) or ""
+    def __init__(self, file_path: Path, project_root: Path):
+        self.file_path = file_path
+        self.project_root = project_root
+        self.apis = []
+        self.class_stack = []
 
-        return {
-            "name": node.name,
-            "type": "function",
-            "signature": signature,
-            "docstring": docstring,
-            "line": node.lineno,
-            "file": str(file_path.relative_to(self.project_root)),
-        }
-
-    def _parse_class(self, node: ast.ClassDef, file_path: Path) -> dict[str, Any]:
-        """
-        クラスノードを解析
-
-        Args:
-            node: ASTクラスノード
-            file_path: ファイルパス
-
-        Returns:
-            API情報の辞書
-        """
+    def visit_ClassDef(self, node: ast.ClassDef):
         # プライベートクラス（_で始まる）はスキップ（オプション）
         if node.name.startswith("_") and not node.name.startswith("__"):
-            return None
+            return
 
         signature = self._get_class_signature(node)
         docstring = ast.get_docstring(node) or ""
 
-        return {
-            "name": node.name,
-            "type": "class",
-            "signature": signature,
-            "docstring": docstring,
-            "line": node.lineno,
-            "file": str(file_path.relative_to(self.project_root)),
-        }
+        self.apis.append(
+            {
+                "name": node.name,
+                "type": "class",
+                "signature": signature,
+                "docstring": docstring,
+                "line": node.lineno,
+                "file": str(self.file_path.relative_to(self.project_root)),
+            }
+        )
 
-    def _get_function_signature(self, node: ast.FunctionDef) -> str:
+        self.class_stack.append(node.name)
+        self.generic_visit(node)
+        self.class_stack.pop()
+
+    def visit_FunctionDef(self, node):
+        self._visit_function(node, "function")
+
+    def visit_AsyncFunctionDef(self, node):
+        self._visit_function(node, "function")
+
+    def _visit_function(self, node, base_type: str):
+        # プライベート関数（_で始まる）はスキップ（オプション）
+        if node.name.startswith("_") and not node.name.startswith("__"):
+            return
+
+        api_type = "method" if self.class_stack else base_type
+        signature = self._get_function_signature(node)
+        docstring = ast.get_docstring(node) or ""
+
+        # パラメータと戻り値の型を取得
+        parameters = []
+        for arg in node.args.args:
+            param_str = arg.arg
+            if arg.annotation:
+                param_str += f": {_ast_unparse(arg.annotation)}"
+            parameters.append(param_str)
+
+        return_type = ""
+        if node.returns:
+            return_type = _ast_unparse(node.returns)
+
+        self.apis.append(
+            {
+                "name": node.name,
+                "type": api_type,
+                "signature": signature,
+                "docstring": docstring,
+                "parameters": parameters,
+                "return_type": return_type,
+                "line": node.lineno,
+                "file": str(self.file_path.relative_to(self.project_root)),
+            }
+        )
+
+    def _get_function_signature(self, node) -> str:
         """
         関数のシグネチャを文字列として取得
 
         Args:
-            node: AST関数ノード
+            node: AST関数ノード (FunctionDef or AsyncFunctionDef)
 
         Returns:
             シグネチャ文字列
@@ -139,9 +153,11 @@ class PythonParser(BaseParser):
                 arg_str += f": {_ast_unparse(arg.annotation)}"
             args.append(arg_str)
 
-        signature = f"def {node.name}({', '.join(args)})"
+        def_type = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
+        signature = f"{def_type} {node.name}({', '.join(args)})"
         if node.returns:
             signature += f" -> {_ast_unparse(node.returns)}"
+        signature += ":"
 
         return signature
 
@@ -155,16 +171,4 @@ class PythonParser(BaseParser):
         Returns:
             シグネチャ文字列
         """
-        bases = []
-        for base in node.bases:
-            bases.append(_ast_unparse(base))
-
-        signature = f"class {node.name}"
-        if bases:
-            signature += f"({', '.join(bases)})"
-
-        return signature
-
-    def get_supported_extensions(self) -> list[str]:
-        """サポートする拡張子を返す"""
-        return [".py", ".pyw"]
+        return f"class {node.name}:"

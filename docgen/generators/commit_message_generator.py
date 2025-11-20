@@ -3,20 +3,21 @@
 LLMを使用してGitのコミットメッセージを自動生成
 """
 
-import subprocess
 from pathlib import Path
-from typing import Dict, Any, Optional
+import subprocess
+from typing import Any
 
 try:
-    from ..utils.logger import get_logger
     from ..utils.llm_client import LLMClientFactory
+    from ..utils.logger import get_logger
 except ImportError:
     import sys
+
     DOCGEN_DIR = Path(__file__).parent.parent.resolve()
     if str(DOCGEN_DIR) not in sys.path:
         sys.path.insert(0, str(DOCGEN_DIR))
-    from utils.logger import get_logger
     from utils.llm_client import LLMClientFactory
+    from utils.logger import get_logger
 
 logger = get_logger("commit_message_generator")
 
@@ -24,7 +25,7 @@ logger = get_logger("commit_message_generator")
 class CommitMessageGenerator:
     """コミットメッセージ生成クラス"""
 
-    def __init__(self, project_root: Path, config: Dict[str, Any]):
+    def __init__(self, project_root: Path, config: dict[str, Any]):
         """
         初期化
 
@@ -34,9 +35,9 @@ class CommitMessageGenerator:
         """
         self.project_root = project_root
         self.config = config
-        self.agents_config = config.get('agents', {})
+        self.agents_config = config.get("agents", {})
 
-    def generate(self) -> Optional[str]:
+    def generate(self) -> str | None:
         """
         コミットメッセージを生成
 
@@ -52,12 +53,11 @@ class CommitMessageGenerator:
                 return None
 
             # LLMクライアントを取得
-            llm_mode = self.agents_config.get('llm_mode', 'api')
-            preferred_mode = 'api' if llm_mode in ['api', 'both'] else 'local'
+            llm_mode = self.agents_config.get("llm_mode", "api")
+            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
 
             client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config,
-                preferred_mode=preferred_mode
+                self.agents_config, preferred_mode=preferred_mode
             )
 
             if not client:
@@ -79,7 +79,7 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
 
             if generated_message:
                 # 生成されたメッセージをクリーンアップ（改行を削除、先頭・末尾の空白を削除）
-                message = generated_message.strip().split('\n')[0].strip()
+                message = generated_message.strip().split("\n")[0].strip()
                 return message
             else:
                 logger.warning("LLM生成が空でした。")
@@ -89,7 +89,7 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
             logger.error(f"コミットメッセージ生成中にエラーが発生しました: {e}", exc_info=True)
             return None
 
-    def _get_staged_changes(self) -> Optional[str]:
+    def _get_staged_changes(self) -> str | None:
         """
         ステージング済みの変更を取得
 
@@ -98,11 +98,11 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
         """
         try:
             result = subprocess.run(
-                ['git', 'diff', '--cached', '--stat'],
+                ["git", "diff", "--cached", "--stat"],
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
 
             if result.returncode != 0:
@@ -114,11 +114,11 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
 
             # 詳細なdiffも取得
             diff_result = subprocess.run(
-                ['git', 'diff', '--cached'],
+                ["git", "diff", "--cached"],
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
 
             if diff_result.returncode == 0:
@@ -157,4 +157,3 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
 簡潔で明確なメッセージにしてください。"""
 
         return prompt
-

@@ -3,9 +3,9 @@ AGENTS.md生成モジュール（OpenAI仕様準拠）
 Outlines統合で構造化出力を実現
 """
 
-from pathlib import Path
-from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from datetime import datetime
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pydantic import BaseModel, Field
@@ -29,13 +29,12 @@ else:
 # フォールバック: 絶対インポート
 try:
     from ..collectors.project_info_collector import ProjectInfoCollector
-    from ..utils.logger import get_logger
     from ..utils.llm_client import LLMClientFactory
+    from ..utils.logger import get_logger
     from ..utils.outlines_utils import (
-        should_use_outlines,
-        create_outlines_model,
-        get_llm_client_with_fallback,
         clean_llm_output,
+        create_outlines_model,
+        should_use_outlines,
         validate_output,
     )
 except ImportError:
@@ -46,13 +45,12 @@ except ImportError:
     if str(DOCGEN_DIR) not in sys.path:
         sys.path.insert(0, str(DOCGEN_DIR))
     from collectors.project_info_collector import ProjectInfoCollector
-    from utils.logger import get_logger
     from utils.llm_client import LLMClientFactory
+    from utils.logger import get_logger
     from utils.outlines_utils import (
-        should_use_outlines,
-        create_outlines_model,
-        get_llm_client_with_fallback,
         clean_llm_output,
+        create_outlines_model,
+        should_use_outlines,
         validate_output,
     )
 
@@ -64,20 +62,18 @@ class AgentsDocument(BaseModel):
 
     title: str = Field(description="ドキュメントのタイトル")
     description: str = Field(description="プロジェクトの説明")
-    project_overview: Dict[str, Any] = Field(description="プロジェクト概要情報")
-    setup_instructions: Dict[str, Any] = Field(description="セットアップ手順")
-    build_test_instructions: Dict[str, Any] = Field(description="ビルド/テスト手順")
-    coding_standards: Dict[str, Any] = Field(description="コーディング規約")
-    pr_guidelines: Dict[str, Any] = Field(description="プルリクエスト手順")
+    project_overview: dict[str, Any] = Field(description="プロジェクト概要情報")
+    setup_instructions: dict[str, Any] = Field(description="セットアップ手順")
+    build_test_instructions: dict[str, Any] = Field(description="ビルド/テスト手順")
+    coding_standards: dict[str, Any] = Field(description="コーディング規約")
+    pr_guidelines: dict[str, Any] = Field(description="プルリクエスト手順")
     auto_generated_note: str = Field(description="自動生成に関する注意書き")
 
 
 class AgentsGenerator:
     """AGENTS.md生成クラス（OpenAI仕様準拠）"""
 
-    def __init__(
-        self, project_root: Path, languages: List[str], config: Dict[str, Any]
-    ):
+    def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
         """
         初期化
 
@@ -87,11 +83,9 @@ class AgentsGenerator:
             config: 設定辞書
         """
         self.project_root: Path = project_root
-        self.languages: List[str] = languages
-        self.config: Dict[str, Any] = config
-        self.output_path: Path = Path(
-            config.get("output", {}).get("agents_doc", "AGENTS.md")
-        )
+        self.languages: list[str] = languages
+        self.config: dict[str, Any] = config
+        self.output_path: Path = Path(config.get("output", {}).get("agents_doc", "AGENTS.md"))
         if not self.output_path.is_absolute():
             self.output_path = project_root / self.output_path
 
@@ -99,7 +93,7 @@ class AgentsGenerator:
         self.collector: ProjectInfoCollector = ProjectInfoCollector(project_root)
 
         # AGENTS設定
-        self.agents_config: Dict[str, Any] = config.get("agents", {})
+        self.agents_config: dict[str, Any] = config.get("agents", {})
 
     def generate(self) -> bool:
         """
@@ -127,7 +121,7 @@ class AgentsGenerator:
             logger.error(f"AGENTS.md生成に失敗しました: {e}", exc_info=True)
             return False
 
-    def _generate_markdown(self, project_info: Dict[str, Any]) -> str:
+    def _generate_markdown(self, project_info: dict[str, Any]) -> str:
         """
         プロジェクト情報からマークダウンを生成
 
@@ -151,7 +145,7 @@ class AgentsGenerator:
             # テンプレート生成（デフォルト）
             return self._generate_template(project_info)
 
-    def _generate_template(self, project_info: Dict[str, Any]) -> str:
+    def _generate_template(self, project_info: dict[str, Any]) -> str:
         """
         テンプレートベースでマークダウンを生成（既存の実装）
 
@@ -208,9 +202,7 @@ class AgentsGenerator:
         # カスタム指示
         custom_instructions = self.agents_config.get("custom_instructions")
         if custom_instructions:
-            lines.extend(
-                self._generate_custom_instructions_section(custom_instructions)
-            )
+            lines.extend(self._generate_custom_instructions_section(custom_instructions))
             lines.append("")
             lines.append("---")
             lines.append("")
@@ -223,7 +215,7 @@ class AgentsGenerator:
 
         return "\n".join(lines)
 
-    def _generate_with_llm(self, project_info: Dict[str, Any]) -> str:
+    def _generate_with_llm(self, project_info: dict[str, Any]) -> str:
         """
         LLMを使用してAGENTS.mdを生成（Outlinesで構造化出力）
 
@@ -258,7 +250,21 @@ class AgentsGenerator:
         # 設定でOutlinesが有効になっているかチェック
         return should_use_outlines(self.config)
 
-    def _generate_with_outlines(self, project_info: Dict[str, Any]) -> str:
+    def _get_llm_client_with_fallback(self) -> Any:
+        """
+        LLMクライアントを取得（フォールバック付き）
+
+        Returns:
+            LLMクライアント（取得できない場合はNone）
+        """
+        llm_mode = self.agents_config.get("llm_mode", "api")
+        preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
+
+        return LLMClientFactory.create_client_with_fallback(
+            self.agents_config, preferred_mode=preferred_mode
+        )
+
+    def _generate_with_outlines(self, project_info: dict[str, Any]) -> str:
         """
         Outlinesを使用して構造化されたAGENTS.mdを生成
 
@@ -270,12 +276,7 @@ class AgentsGenerator:
         """
         try:
             # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
+            client = self._get_llm_client_with_fallback()
 
             if not client:
                 logger.warning(
@@ -294,9 +295,7 @@ class AgentsGenerator:
             structured_data = outlines_model(prompt, AgentsDocument)
 
             # 構造化データをマークダウンに変換
-            markdown = self._convert_structured_data_to_markdown(
-                structured_data, project_info
-            )
+            markdown = self._convert_structured_data_to_markdown(structured_data, project_info)
 
             return markdown
 
@@ -319,7 +318,7 @@ class AgentsGenerator:
         """
         return create_outlines_model(client)
 
-    def _generate_with_llm_legacy(self, project_info: Dict[str, Any]) -> str:
+    def _generate_with_llm_legacy(self, project_info: dict[str, Any]) -> str:
         """
         従来のLLM生成（Outlinesなし）
 
@@ -331,12 +330,7 @@ class AgentsGenerator:
         """
         try:
             # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
+            client = self._get_llm_client_with_fallback()
 
             if not client:
                 logger.warning(
@@ -379,9 +373,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                     )
                 return "\n".join(lines)
             else:
-                logger.warning(
-                    "LLM生成が空でした。テンプレート生成にフォールバックします。"
-                )
+                logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
                 return self._generate_template(project_info)
 
         except Exception as e:
@@ -391,7 +383,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
             )
             return self._generate_template(project_info)
 
-    def _generate_hybrid(self, project_info: Dict[str, Any]) -> str:
+    def _generate_hybrid(self, project_info: dict[str, Any]) -> str:
         """
         テンプレートとLLMを組み合わせて生成
 
@@ -445,20 +437,16 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
                 # 出力を検証
                 if not validate_output(cleaned_overview):
-                    logger.warning(
-                        "LLM出力の検証に失敗しました。テンプレートのみを使用します。"
-                    )
+                    logger.warning("LLM出力の検証に失敗しました。テンプレートのみを使用します。")
                     return template_content
 
                 # テンプレートのプロジェクト概要セクションを置き換え
                 lines = template_content.split("\n")
                 new_lines = []
                 skip_until_end = False
-                in_overview = False
 
-                for i, line in enumerate(lines):
+                for _i, line in enumerate(lines):
                     if "## プロジェクト概要" in line:
-                        in_overview = True
                         new_lines.append(line)
                         new_lines.append("")
                         # 改善された概要を挿入
@@ -482,7 +470,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
             )
             return template_content
 
-    def _create_llm_prompt(self, project_info: Dict[str, Any]) -> str:
+    def _create_llm_prompt(self, project_info: dict[str, Any]) -> str:
         """
         LLM用のプロンプトを作成
 
@@ -509,7 +497,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return prompt
 
-    def _format_project_info_for_prompt(self, project_info: Dict[str, Any]) -> str:
+    def _format_project_info_for_prompt(self, project_info: dict[str, Any]) -> str:
         """
         プロジェクト情報をプロンプト用にフォーマット
 
@@ -521,9 +509,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         """
         lines = []
         lines.append(f"プロジェクト名: {self.project_root.name}")
-        lines.append(
-            f"使用言語: {', '.join(self.languages) if self.languages else '不明'}"
-        )
+        lines.append(f"使用言語: {', '.join(self.languages) if self.languages else '不明'}")
 
         description = project_info.get("description")
         if description:
@@ -563,7 +549,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return "\n".join(lines)
 
-    def _generate_project_overview(self, project_info: Dict[str, Any]) -> List[str]:
+    def _generate_project_overview(self, project_info: dict[str, Any]) -> list[str]:
         """プロジェクト概要セクションを生成"""
         lines = []
         lines.append("## プロジェクト概要")
@@ -590,22 +576,17 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                         and not line_stripped.startswith("<!--")
                     ):
                         # 汎用的なテンプレート文をスキップ
-                        if (
-                            "このプロジェクトの説明をここに記述してください"
-                            not in line_stripped
-                        ):
+                        if "このプロジェクトの説明をここに記述してください" not in line_stripped:
                             lines.append(line)
                             break
 
         lines.append("")
-        lines.append(
-            f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}"
-        )
+        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}")
         lines.append("")
         lines.append("<!-- MANUAL_END:description -->")
         return lines
 
-    def _generate_setup_section(self, project_info: Dict[str, Any]) -> List[str]:
+    def _generate_setup_section(self, project_info: dict[str, Any]) -> list[str]:
         """開発環境セットアップセクションを生成"""
         lines = []
         lines.append("## 開発環境のセットアップ")
@@ -652,7 +633,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_llm_setup_section(self) -> List[str]:
+    def _generate_llm_setup_section(self) -> list[str]:
         """LLM環境セットアップセクションを生成"""
         lines = []
         lines.append("### LLM環境のセットアップ")
@@ -673,25 +654,15 @@ AIコーディングエージェントがプロジェクトで効果的に作業
             api_key_env = api_config.get("api_key_env", "OPENAI_API_KEY")
 
             if api_provider == "openai":
-                lines.append(
-                    "   - OpenAI APIキーを取得: https://platform.openai.com/api-keys"
-                )
-                lines.append(
-                    f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`"
-                )
+                lines.append("   - OpenAI APIキーを取得: https://platform.openai.com/api-keys")
+                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
             elif api_provider == "anthropic":
-                lines.append(
-                    "   - Anthropic APIキーを取得: https://console.anthropic.com/"
-                )
-                lines.append(
-                    f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`"
-                )
+                lines.append("   - Anthropic APIキーを取得: https://console.anthropic.com/")
+                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
             else:
                 api_endpoint = api_config.get("endpoint", "")
                 lines.append(f"   - カスタムAPIエンドポイントを使用: {api_endpoint}")
-                lines.append(
-                    f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`"
-                )
+                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
 
             lines.append("")
             lines.append("2. **API使用時の注意事項**")
@@ -730,7 +701,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_build_test_section(self, project_info: Dict[str, Any]) -> List[str]:
+    def _generate_build_test_section(self, project_info: dict[str, Any]) -> list[str]:
         """ビルド/テストセクションを生成"""
         lines = []
         lines.append("## ビルドおよびテスト手順")
@@ -783,9 +754,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_coding_standards_section(
-        self, project_info: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_coding_standards_section(self, project_info: dict[str, Any]) -> list[str]:
         """コーディング規約セクションを生成"""
         lines = []
         lines.append("## コーディング規約")
@@ -838,7 +807,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_pr_section(self, project_info: Dict[str, Any]) -> List[str]:
+    def _generate_pr_section(self, project_info: dict[str, Any]) -> list[str]:
         """プルリクエストセクションを生成"""
         lines = []
         lines.append("## プルリクエストの手順")
@@ -869,18 +838,28 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         return lines
 
     def _generate_custom_instructions_section(
-        self, custom_instructions: str
-    ) -> List[str]:
+        self, custom_instructions: str | dict[str, Any]
+    ) -> list[str]:
         """カスタム指示セクションを生成"""
         lines = []
         lines.append("## プロジェクト固有の指示")
         lines.append("")
-        lines.append(custom_instructions)
+
+        if isinstance(custom_instructions, str):
+            lines.append(custom_instructions)
+        elif isinstance(custom_instructions, dict):
+            # dictの場合はキーをセクションとして扱う
+            for key, value in custom_instructions.items():
+                lines.append(f"### {key}")
+                lines.append("")
+                lines.append(str(value))
+                lines.append("")
+
         lines.append("")
         return lines
 
     def _convert_structured_data_to_markdown(
-        self, data: AgentsDocument, project_info: Dict[str, Any]
+        self, data: AgentsDocument, project_info: dict[str, Any]
     ) -> str:
         """
         構造化データをマークダウン形式に変換
@@ -913,9 +892,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("")
         lines.append(data.description)
         lines.append("")
-        lines.append(
-            f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}"
-        )
+        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}")
         lines.append("")
         lines.append("<!-- MANUAL_END:description -->")
         lines.append("")
@@ -923,27 +900,21 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("")
 
         # 開発環境のセットアップ
-        lines.extend(
-            self._generate_setup_section_from_structured(data.setup_instructions)
-        )
+        lines.extend(self._generate_setup_section_from_structured(data.setup_instructions))
         lines.append("")
         lines.append("---")
         lines.append("")
 
         # ビルドおよびテスト手順
         lines.extend(
-            self._generate_build_test_section_from_structured(
-                data.build_test_instructions
-            )
+            self._generate_build_test_section_from_structured(data.build_test_instructions)
         )
         lines.append("")
         lines.append("---")
         lines.append("")
 
         # コーディング規約
-        lines.extend(
-            self._generate_coding_standards_from_structured(data.coding_standards)
-        )
+        lines.extend(self._generate_coding_standards_from_structured(data.coding_standards))
         lines.append("")
         lines.append("---")
         lines.append("")
@@ -957,9 +928,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         # カスタム指示
         custom_instructions = self.agents_config.get("custom_instructions")
         if custom_instructions:
-            lines.extend(
-                self._generate_custom_instructions_section(custom_instructions)
-            )
+            lines.extend(self._generate_custom_instructions_section(custom_instructions))
             lines.append("")
             lines.append("---")
             lines.append("")
@@ -970,9 +939,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return "\n".join(lines)
 
-    def _generate_setup_section_from_structured(
-        self, setup_data: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_setup_section_from_structured(self, setup_data: dict[str, Any]) -> list[str]:
         """構造化データからセットアップセクションを生成"""
         lines = []
         lines.append("## 開発環境のセットアップ")
@@ -1004,8 +971,8 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         return lines
 
     def _generate_build_test_section_from_structured(
-        self, build_test_data: Dict[str, Any]
-    ) -> List[str]:
+        self, build_test_data: dict[str, Any]
+    ) -> list[str]:
         """構造化データからビルド/テストセクションを生成"""
         lines = []
         lines.append("## ビルドおよびテスト手順")
@@ -1059,8 +1026,8 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         return lines
 
     def _generate_coding_standards_from_structured(
-        self, standards_data: Dict[str, Any]
-    ) -> List[str]:
+        self, standards_data: dict[str, Any]
+    ) -> list[str]:
         """構造化データからコーディング規約セクションを生成"""
         lines = []
         lines.append("## コーディング規約")
@@ -1079,22 +1046,18 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_pr_section_from_structured(
-        self, pr_data: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_pr_section_from_structured(self, pr_data: dict[str, Any]) -> list[str]:
         """構造化データからプルリクエストセクションを生成"""
         lines = []
         lines.append("## プルリクエストの手順")
         lines.append("")
 
         branch_creation = pr_data.get("branch_creation", "ブランチを作成")
-        lines.append(f"1. **ブランチの作成**")
+        lines.append("1. **ブランチの作成**")
         lines.append(f"   {branch_creation}")
         lines.append("")
 
-        commit_guidelines = pr_data.get(
-            "commit_guidelines", "コミットメッセージは明確で説明的に"
-        )
+        commit_guidelines = pr_data.get("commit_guidelines", "コミットメッセージは明確で説明的に")
         lines.append("2. **変更のコミット**")
         lines.append(f"   - {commit_guidelines}")
         lines.append("")
@@ -1127,14 +1090,12 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         lines = text.split("\n")
         cleaned_lines = []
-        skip_block = False
         in_code_block = False
         code_block_lang = None
 
         i = 0
         while i < len(lines):
             line = lines[i]
-            original_line = line
 
             # コードブロックの開始/終了を検出
             if line.strip().startswith("```"):
@@ -1143,14 +1104,12 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                     code_block_lang = line.strip()[3:].strip().lower()
                     # マークダウンコードブロック内の思考過程をスキップ
                     if "markdown" in code_block_lang:
-                        skip_block = True
                         i += 1
                         # 次の```までスキップ
                         while i < len(lines) and not lines[i].strip().startswith("```"):
                             i += 1
                         if i < len(lines):
                             i += 1  # ```をスキップ
-                        skip_block = False
                         in_code_block = False
                         continue
                     else:
@@ -1340,11 +1299,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         text_lower = text.lower()
 
         # 特殊なマーカーパターンをチェック
-        if (
-            "<|channel|>" in text
-            or "<|message|>" in text
-            or "commentary/analysis" in text_lower
-        ):
+        if "<|channel|>" in text or "<|message|>" in text or "commentary/analysis" in text_lower:
             logger.warning("特殊なマーカーパターンが検出されました")
             return False
 
@@ -1424,9 +1379,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                     in_markdown_block = False
             elif in_markdown_block:
                 if any(pattern in line.lower() for pattern in thinking_patterns):
-                    logger.warning(
-                        "マークダウンコードブロック内に思考過程が検出されました"
-                    )
+                    logger.warning("マークダウンコードブロック内に思考過程が検出されました")
                     return False
 
         return True

@@ -1,8 +1,5 @@
 # agents-docs-sync
 
-
-## 概要
-
 <!-- MANUAL_START:description -->
 **agents‑docs-sync** は、Python・JavaScript（TypeScript もサポート）と C の三言語で構築された軽量 CI/CD パイプラインです。
 AI コーディングエージェントがプロジェクトを迅速に理解し協調できるよう設計されており、コード変更時のテスト実行・ドキュメント生成／同期を自動化します。
@@ -72,28 +69,29 @@ npm install
 ## プロジェクト構造
 
 ```
-.github/
-  workflows/
-agents_docs_sync.egg-info/
-  dependency_links.txt
-  entry_points.txt
-  requires.txt
-  SOURCES.txt
-  top_level.txt
-docgen/
-  collectors/
-  detectors/
-  generators/
-  hooks/
-  utils/
-docs/
-  implementation/
-  review/
-    README.md
-  api.md
-  DEVELOPER_GUIDE.md
+agents-docs-sync/
+  uv.lock
+  PROJECT_MANAGEMENT_GUIDE.md
+  sitecustomize.py
+  README.md
+  REVIEW_REPORT.md
+  requirements-docgen.txt
+  RELEASE.md
+  requirements-test.txt
+  pyproject.toml
+  pytest.ini
+  AGENTS.md
+  install.sh
+  LICENSE
+  Dockerfile
+  setup.sh
+  MANIFEST.in
+  schemas/
+    agents_schema.json
+    readme_schema.json
+...
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-20 10:34:13*
+*このREADMEは自動生成されています。最終更新: 2025-11-20 21:07:17*

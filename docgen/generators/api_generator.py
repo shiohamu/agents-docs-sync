@@ -63,10 +63,21 @@ class APIGenerator(BaseGenerator):
             parsers = self._get_parsers()
 
             # 除外ディレクトリとファイルパターンを設定
-            exclude_dirs = self.config.get('exclude', {}).get('directories', [
-                '.git', 'docgen', '__pycache__', 'node_modules', '.venv', 'venv',
-                'htmlcov', '.pytest_cache', 'dist', 'build'
-            ])
+            exclude_dirs = self.config.get("exclude", {}).get(
+                "directories",
+                [
+                    ".git",
+                    "docgen",
+                    "__pycache__",
+                    "node_modules",
+                    ".venv",
+                    "venv",
+                    "htmlcov",
+                    ".pytest_cache",
+                    "dist",
+                    "build",
+                ],
+            )
 
             # キャッシュの使用設定
             use_cache = self.config.get("cache", {}).get("enabled", True)

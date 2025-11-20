@@ -90,7 +90,7 @@ class BaseParser(ABC):
         max_workers: int | None = None,
         use_cache: bool = True,
         cache_manager: Optional["CacheManager"] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         プロジェクト全体を解析
 
@@ -138,14 +138,10 @@ class BaseParser(ABC):
 
                     # プロジェクトルート外へのアクセスを防止
                     try:
-                        file_path_relative = file_path_resolved.relative_to(
-                            project_root_resolved
-                        )
+                        file_path_relative = file_path_resolved.relative_to(project_root_resolved)
                     except ValueError:
                         # プロジェクトルート外のファイルはスキップ
-                        logger.debug(
-                            f"プロジェクトルート外のファイルをスキップ: {file_path}"
-                        )
+                        logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
                         continue
 
                     # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
@@ -168,9 +164,7 @@ class BaseParser(ABC):
                     continue
 
         # 並列処理または逐次処理で解析
-        if (
-            use_parallel and len(files_to_parse) > 10
-        ):  # ファイル数が10を超える場合のみ並列処理
+        if use_parallel and len(files_to_parse) > 10:  # ファイル数が10を超える場合のみ並列処理
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_file = {
                     executor.submit(
@@ -218,8 +212,8 @@ class BaseParser(ABC):
         file_path: Path,
         file_path_relative: Path,
         cache_manager: Optional["CacheManager"] = None,
-        parser_type: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+        parser_type: str | None = None,
+    ) -> list[dict[str, Any]]:
         """
         ファイルを安全に解析（内部メソッド）
 

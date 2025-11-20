@@ -1,3 +1,1 @@
-"""
-パーサーモジュールのテスト
-"""
+# Test parsers package

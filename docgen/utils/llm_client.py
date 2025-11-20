@@ -3,17 +3,15 @@ LLMクライアントモジュール
 OpenAI、Anthropic、ローカルLLM（Ollama、LM Studio）に対応
 """
 
-import os
-import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+import os
 from pathlib import Path
-from typing import Dict, Any, Optional, List
-from datetime import datetime
+import time
+from typing import Any
 
 try:
-    from ..utils.logger import get_logger
     from ..utils.exceptions import ConfigError, LLMError
+    from ..utils.logger import get_logger
 except ImportError:
     import sys
 
@@ -36,22 +34,20 @@ logger = get_logger("llm_client")
 class BaseLLMClient(ABC):
     """LLMクライアントの抽象基底クラス"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         初期化
 
         Args:
             config: LLM設定辞書
         """
-        self.config: Dict[str, Any] = config
+        self.config: dict[str, Any] = config
         self.timeout: int = config.get("timeout", 30)
         self.max_retries: int = config.get("max_retries", 3)
         self.retry_delay: float = config.get("retry_delay", 1.0)
 
     @abstractmethod
-    def generate(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs
-    ) -> Optional[str]:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """
         テキストを生成
 
@@ -128,7 +124,7 @@ class BaseLLMClient(ABC):
 class OpenAIClient(BaseLLMClient):
     """OpenAI APIクライアント"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         try:
             import openai
@@ -141,13 +137,11 @@ class OpenAIClient(BaseLLMClient):
         except ImportError:
             raise ImportError(
                 "openaiパッケージが必要です。`pip install openai`でインストールしてください。"
-            )
+            ) from None
         except Exception as e:
-            raise ConfigError(f"OpenAIクライアントの初期化に失敗しました: {e}")
+            raise ConfigError(f"OpenAIクライアントの初期化に失敗しました: {e}") from e
 
-    def generate(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs
-    ) -> Optional[str]:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """OpenAI APIを使用してテキストを生成"""
         try:
             messages = []
@@ -182,7 +176,7 @@ class OpenAIClient(BaseLLMClient):
 class AnthropicClient(BaseLLMClient):
     """Anthropic APIクライアント"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         try:
             import anthropic
@@ -194,13 +188,11 @@ class AnthropicClient(BaseLLMClient):
         except ImportError:
             raise ImportError(
                 "anthropicパッケージが必要です。`pip install anthropic`でインストールしてください。"
-            )
+            ) from None
         except Exception as e:
-            raise ValueError(f"Anthropicクライアントの初期化に失敗しました: {e}")
+            raise ValueError(f"Anthropicクライアントの初期化に失敗しました: {e}") from e
 
-    def generate(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs
-    ) -> Optional[str]:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """Anthropic APIを使用してテキストを生成"""
         try:
             messages = [{"role": "user", "content": prompt}]
@@ -215,9 +207,7 @@ class AnthropicClient(BaseLLMClient):
             if system_prompt:
                 api_kwargs["system"] = system_prompt
 
-            response = self._retry_with_backoff(
-                self.client.messages.create, **api_kwargs
-            )
+            response = self._retry_with_backoff(self.client.messages.create, **api_kwargs)
 
             if response and response.content:
                 # Anthropicのレスポンス形式に合わせて処理
@@ -247,7 +237,7 @@ class AnthropicClient(BaseLLMClient):
 class LocalLLMClient(BaseLLMClient):
     """ローカルLLMクライアント（Ollama、LM Studio対応）"""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         super().__init__(config)
         try:
             import httpx
@@ -256,7 +246,7 @@ class LocalLLMClient(BaseLLMClient):
         except ImportError:
             raise ImportError(
                 "httpxパッケージが必要です。`pip install httpx`でインストールしてください。"
-            )
+            ) from None
 
         self.base_url: str = config.get("base_url", "http://localhost:11434")
         self.model: str = config.get("model", "llama3")
@@ -265,9 +255,7 @@ class LocalLLMClient(BaseLLMClient):
         # ベースURLの正規化（末尾のスラッシュを削除）
         self.base_url = self.base_url.rstrip("/")
 
-    def generate(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs
-    ) -> Optional[str]:
+    def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """ローカルLLMを使用してテキストを生成"""
         try:
             if self.provider == "ollama":
@@ -293,8 +281,8 @@ class LocalLLMClient(BaseLLMClient):
         return outlines.from_openai(openai_client, self.model)
 
     def _generate_ollama(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs
-    ) -> Optional[str]:
+        self, prompt: str, system_prompt: str | None = None, **kwargs
+    ) -> str | None:
         """Ollama APIを使用してテキストを生成"""
         try:
             # OllamaのAPI形式
@@ -317,17 +305,15 @@ class LocalLLMClient(BaseLLMClient):
                 data = response.json()
                 return data.get("response", "").strip()
             else:
-                logger.error(
-                    f"Ollama APIエラー: {response.status_code} - {response.text}"
-                )
+                logger.error(f"Ollama APIエラー: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
             logger.error(f"Ollama API呼び出しエラー: {e}")
             return None
 
     def _generate_openai_compatible(
-        self, prompt: str, system_prompt: Optional[str] = None, **kwargs
-    ) -> Optional[str]:
+        self, prompt: str, system_prompt: str | None = None, **kwargs
+    ) -> str | None:
         """OpenAI互換APIを使用してテキストを生成（LM Studio等）"""
         try:
             # OpenAI互換のAPI形式
@@ -355,9 +341,7 @@ class LocalLLMClient(BaseLLMClient):
                     return data["choices"][0]["message"]["content"].strip()
                 return None
             else:
-                logger.error(
-                    f"OpenAI互換APIエラー: {response.status_code} - {response.text}"
-                )
+                logger.error(f"OpenAI互換APIエラー: {response.status_code} - {response.text}")
                 return None
         except Exception as e:
             logger.error(f"OpenAI互換API呼び出しエラー: {e}")
@@ -368,9 +352,7 @@ class LLMClientFactory:
     """LLMクライアントのファクトリークラス"""
 
     @staticmethod
-    def create_client(
-        config: Dict[str, Any], mode: str = "api"
-    ) -> Optional[BaseLLMClient]:
+    def create_client(config: dict[str, Any], mode: str = "api") -> BaseLLMClient | None:
         """
         LLMクライアントを作成
 
@@ -413,8 +395,8 @@ class LLMClientFactory:
 
     @staticmethod
     def create_client_with_fallback(
-        config: Dict[str, Any], preferred_mode: str = "api"
-    ) -> Optional[BaseLLMClient]:
+        config: dict[str, Any], preferred_mode: str = "api"
+    ) -> BaseLLMClient | None:
         """
         LLMクライアントを作成（フォールバック付き）
 
@@ -432,7 +414,5 @@ class LLMClientFactory:
 
         # フォールバック: もう一方のモードを試す
         fallback_mode = "local" if preferred_mode == "api" else "api"
-        logger.info(
-            f"{preferred_mode}モードが失敗したため、{fallback_mode}モードを試します..."
-        )
+        logger.info(f"{preferred_mode}モードが失敗したため、{fallback_mode}モードを試します...")
         return LLMClientFactory.create_client(config, fallback_mode)

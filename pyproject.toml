@@ -78,7 +78,7 @@ dev = [
 
 [tool.setuptools]
 package-dir = {"docgen" = "docgen"}
-packages = ["docgen", "docgen.collectors", "docgen.detectors", "docgen.generators", "docgen.generators.parsers", "docgen.utils"]
+packages = {find = {}}
 
 [tool.setuptools.package-data]
 "docgen" = [

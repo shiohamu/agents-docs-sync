@@ -4,108 +4,212 @@ PythonParserのテスト
 
 from pathlib import Path
 
-import pytest
+# docgenモジュールをインポート可能にする
+PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
+DOCGEN_DIR = PROJECT_ROOT / "docgen"
+import sys
+
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.generators.parsers.python_parser import PythonParser
 
 
-@pytest.mark.unit
 class TestPythonParser:
-    """PythonParserのテストクラス"""
+    """PythonParserクラスのテスト"""
 
-    def test_parse_file_with_function(self, sample_python_file):
-        """関数を含むファイルを解析できることを確認"""
-        parser = PythonParser(sample_python_file.parent)
-        apis = parser.parse_file(sample_python_file)
+    def test_parse_file_with_function(self, temp_project):
+        """関数定義を含むPythonファイルの解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("""
+def hello_world(name: str) -> str:
+    '''Say hello to the world.
 
-        assert len(apis) >= 1
-        hello_func = next((api for api in apis if api["name"] == "hello_world"), None)
-        assert hello_func is not None
-        assert hello_func["type"] == "function"
-        assert "name" in hello_func
-        assert "docstring" in hello_func
-        assert hello_func["docstring"] != ""
+    Args:
+        name: The name to greet
 
-    def test_parse_file_with_class(self, sample_python_file):
-        """クラスを含むファイルを解析できることを確認"""
-        parser = PythonParser(sample_python_file.parent)
-        apis = parser.parse_file(sample_python_file)
+    Returns:
+        A greeting message
+    '''
+    return f"Hello, {name}!"
 
-        sample_class = next((api for api in apis if api["name"] == "SampleClass"), None)
-        assert sample_class is not None
-        assert sample_class["type"] == "class"
-        assert "docstring" in sample_class
+def add_numbers(a: int, b: int) -> int:
+    '''Add two numbers.
 
-    def test_parse_file_extracts_signature(self, sample_python_file):
-        """シグネチャが正しく抽出されることを確認"""
-        parser = PythonParser(sample_python_file.parent)
-        apis = parser.parse_file(sample_python_file)
+    Args:
+        a: First number
+        b: Second number
 
-        hello_func = next((api for api in apis if api["name"] == "hello_world"), None)
-        assert hello_func is not None
-        assert "signature" in hello_func
-        assert "hello_world" in hello_func["signature"]
-
-    def test_parse_file_extracts_docstring(self, sample_python_file):
-        """docstringが正しく抽出されることを確認"""
-        parser = PythonParser(sample_python_file.parent)
-        apis = parser.parse_file(sample_python_file)
-
-        hello_func = next((api for api in apis if api["name"] == "hello_world"), None)
-        assert hello_func is not None
-        assert "docstring" in hello_func
-        assert "挨拶を返す関数" in hello_func["docstring"]
-
-    def test_parse_file_includes_line_number(self, sample_python_file):
-        """行番号が含まれることを確認"""
-        parser = PythonParser(sample_python_file.parent)
-        apis = parser.parse_file(sample_python_file)
-
-        assert all("line" in api for api in apis)
-        assert all(isinstance(api["line"], int) for api in apis)
-
-    def test_parse_project(self, python_project):
-        """プロジェクト全体を解析できることを確認"""
-        parser = PythonParser(python_project)
-        apis = parser.parse_project()
-
-        assert isinstance(apis, list)
-        # main.pyの関数が解析される
-        assert len(apis) >= 0
-
-    def test_parse_file_skips_private_functions(self, temp_project):
-        """プライベート関数（_で始まる）がスキップされることを確認"""
-        code = """def public_func():
-    pass
-
-def _private_func():
-    pass
-"""
-        file_path = temp_project / "test.py"
-        file_path.write_text(code, encoding="utf-8")
+    Returns:
+        The sum of a and b
+    '''
+    return a + b
+""")
 
         parser = PythonParser(temp_project)
-        apis = parser.parse_file(file_path)
+        apis = parser.parse_file(python_file)
 
-        names = [api["name"] for api in apis]
-        assert "public_func" in names
-        assert "_private_func" not in names
+        assert len(apis) == 2
 
-    def test_get_supported_extensions(self):
-        """サポートする拡張子が正しいことを確認"""
-        parser = PythonParser(Path("/tmp"))
-        extensions = parser.get_supported_extensions()
+        # hello_world関数のチェック
+        hello_api = next(api for api in apis if api.get("name") == "hello_world")
+        assert hello_api["type"] == "function"
+        assert hello_api["signature"] == "def hello_world(name: str) -> str:"
+        assert "Say hello to the world" in hello_api["docstring"]
+        assert hello_api["parameters"] == ["name: str"]
+        assert hello_api["return_type"] == "str"
 
-        assert ".py" in extensions
-        assert ".pyw" in extensions
+        # add_numbers関数のチェック
+        add_api = next(api for api in apis if api.get("name") == "add_numbers")
+        assert add_api["type"] == "function"
+        assert add_api["signature"] == "def add_numbers(a: int, b: int) -> int:"
+        assert "Add two numbers" in add_api["docstring"]
+        assert add_api["parameters"] == ["a: int", "b: int"]
+        assert add_api["return_type"] == "int"
 
-    def test_parse_file_with_syntax_error(self, temp_project):
-        """構文エラーがあるファイルでもエラーが発生しないことを確認"""
-        code = "def invalid syntax\n"
-        file_path = temp_project / "invalid.py"
-        file_path.write_text(code, encoding="utf-8")
+    def test_parse_file_with_class(self, temp_project):
+        """クラス定義を含むPythonファイルの解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("""
+class Calculator:
+    '''A simple calculator class.'''
+
+    def __init__(self, initial_value: int = 0):
+        '''Initialize calculator.
+
+        Args:
+            initial_value: Starting value
+        '''
+        self.value = initial_value
+
+    def add(self, x: int) -> int:
+        '''Add x to current value.
+
+        Args:
+            x: Value to add
+
+        Returns:
+            New value
+        '''
+        self.value += x
+        return self.value
+""")
 
         parser = PythonParser(temp_project)
-        # 構文エラーがあっても例外が発生しない
-        apis = parser.parse_file(file_path)
-        assert isinstance(apis, list)
+        apis = parser.parse_file(python_file)
+
+        # クラスとメソッドが含まれるはず
+        class_api = next(api for api in apis if api.get("type") == "class")
+        assert class_api["name"] == "Calculator"
+        assert "A simple calculator class" in class_api["docstring"]
+
+        # メソッドのチェック
+        methods = [api for api in apis if api.get("type") == "method"]
+        assert len(methods) >= 2  # __init__ と add
+
+        init_method = next(m for m in methods if m.get("name") == "__init__")
+        assert "Initialize calculator" in init_method["docstring"]
+
+        add_method = next(m for m in methods if m.get("name") == "add")
+        assert "Add x to current value" in add_method["docstring"]
+
+    def test_parse_file_no_docstring(self, temp_project):
+        """docstringのない関数の解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("""
+def simple_function(x, y):
+    return x + y
+
+class SimpleClass:
+    pass
+""")
+
+        parser = PythonParser(temp_project)
+        apis = parser.parse_file(python_file)
+
+        # docstringがない場合でも基本情報は取得される
+        func_api = next(api for api in apis if api.get("name") == "simple_function")
+        assert func_api["type"] == "function"
+        assert func_api["docstring"] == ""
+
+        class_api = next(api for api in apis if api.get("name") == "SimpleClass")
+        assert class_api["type"] == "class"
+        assert class_api["docstring"] == ""
+
+    def test_parse_file_syntax_error(self, temp_project):
+        """構文エラーのあるファイルの解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("""
+def broken_function(
+    return "broken"  # 構文エラー
+""")
+
+        parser = PythonParser(temp_project)
+        apis = parser.parse_file(python_file)
+
+        # 構文エラーの場合は空のリストが返される
+        assert apis == []
+
+    def test_parse_file_empty(self, temp_project):
+        """空のファイルの解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("")
+
+        parser = PythonParser(temp_project)
+        apis = parser.parse_file(python_file)
+
+        assert apis == []
+
+    def test_parse_file_with_async_function(self, temp_project):
+        """async関数の解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("""
+async def async_function(delay: float) -> None:
+    '''Async function that waits.
+
+    Args:
+        delay: Time to wait in seconds
+    '''
+    import asyncio
+    await asyncio.sleep(delay)
+""")
+
+        parser = PythonParser(temp_project)
+        apis = parser.parse_file(python_file)
+
+        async_api = next(api for api in apis if api.get("name") == "async_function")
+        assert async_api["type"] == "function"
+        assert "async def async_function(delay: float) -> None:" in async_api["signature"]
+        assert "Async function that waits" in async_api["docstring"]
+
+    def test_parse_file_with_complex_types(self, temp_project):
+        """複雑な型ヒントを含む関数の解析テスト"""
+        python_file = temp_project / "test.py"
+        python_file.write_text("""
+from typing import List, Dict, Optional
+
+def complex_function(
+    items: List[str],
+    mapping: Dict[str, int],
+    optional_param: Optional[str] = None
+) -> Dict[str, List[int]]:
+    '''Function with complex type hints.
+
+    Args:
+        items: List of strings
+        mapping: Dictionary mapping strings to ints
+        optional_param: Optional string parameter
+
+    Returns:
+        Complex return type
+    '''
+    return {}
+""")
+
+        parser = PythonParser(temp_project)
+        apis = parser.parse_file(python_file)
+
+        complex_api = next(api for api in apis if api.get("name") == "complex_function")
+        assert complex_api["type"] == "function"
+        assert "items: List[str]" in complex_api["parameters"]
+        assert "mapping: Dict[str, int]" in complex_api["parameters"]
+        assert complex_api["return_type"] == "Dict[str, List[int]]"

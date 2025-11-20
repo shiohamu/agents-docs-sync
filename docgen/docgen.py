@@ -4,12 +4,12 @@
 コミット時にAPIドキュメントとREADME.mdを自動更新します。
 """
 
-import os
-import sys
-import yaml
-from pathlib import Path
-from typing import Optional, Dict, Any, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+import sys
+from typing import Any
+
+import yaml
 
 # プロジェクトルートのパスを取得
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -18,26 +18,26 @@ DOCGEN_DIR = Path(__file__).parent.resolve()
 # モジュールパスを追加（メインエントリーポイントとして実行される場合に必要）
 # 注意: このファイルは直接実行されることを想定しているため、sys.path.insertが必要
 # パッケージとしてインストールされた場合は相対インポートを使用
+sys.path.insert(0, str(PROJECT_ROOT))
+
 try:
-    from .detectors.python_detector import PythonDetector
-    from .detectors.javascript_detector import JavaScriptDetector
-    from .detectors.go_detector import GoDetector
     from .detectors.generic_detector import GenericDetector
+    from .detectors.go_detector import GoDetector
+    from .detectors.javascript_detector import JavaScriptDetector
+    from .detectors.python_detector import PythonDetector
+    from .generators.agents_generator import AgentsGenerator
     from .generators.api_generator import APIGenerator
     from .generators.readme_generator import ReadmeGenerator
-    from .generators.agents_generator import AgentsGenerator
     from .utils.logger import get_logger
 except (ImportError, ValueError, SystemError):
-    # 直接実行される場合のフォールバック
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from detectors.python_detector import PythonDetector
-    from detectors.javascript_detector import JavaScriptDetector
-    from detectors.go_detector import GoDetector
+    # パッケージとしてインストールされた場合のフォールバック
     from detectors.generic_detector import GenericDetector
+    from detectors.go_detector import GoDetector
+    from detectors.javascript_detector import JavaScriptDetector
+    from detectors.python_detector import PythonDetector
+    from generators.agents_generator import AgentsGenerator
     from generators.api_generator import APIGenerator
     from generators.readme_generator import ReadmeGenerator
-    from generators.agents_generator import AgentsGenerator
     from utils.logger import get_logger
 
 # ロガーの初期化
@@ -47,9 +47,7 @@ logger = get_logger("docgen")
 class DocGen:
     """ドキュメント自動生成メインクラス"""
 
-    def __init__(
-        self, project_root: Optional[Path] = None, config_path: Optional[Path] = None
-    ):
+    def __init__(self, project_root: Path | None = None, config_path: Path | None = None):
         """
         初期化
 
@@ -62,7 +60,10 @@ class DocGen:
         if project_root is None:
             self.project_root = Path.cwd().resolve()
         else:
-            self.project_root = Path(project_root).resolve()
+            if not project_root or str(project_root) == ".":
+                raise ValueError("プロジェクトルートが無効です")
+            resolved_root = Path(project_root).resolve()
+            self.project_root = resolved_root
 
         # docgenディレクトリはプロジェクトルート内のdocgenディレクトリ
         self.docgen_dir = self.project_root / "docgen"
@@ -80,7 +81,7 @@ class DocGen:
         self._validate_config()
         self.detected_languages = []
 
-    def _load_config(self) -> Dict[str, Any]:
+    def _load_config(self) -> dict[str, Any]:
         """
         設定ファイルを読み込む
 
@@ -89,7 +90,7 @@ class DocGen:
         """
         if self.config_path.exists():
             try:
-                with open(self.config_path, "r", encoding="utf-8") as f:
+                with open(self.config_path, encoding="utf-8") as f:
                     config = yaml.safe_load(f) or {}
                     return config
             except yaml.YAMLError as e:
@@ -117,10 +118,8 @@ class DocGen:
                     # docgenディレクトリが存在しない場合は作成
                     self.docgen_dir.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(sample_path, self.config_path)
-                    logger.info(
-                        f"{sample_path.name}から{self.config_path.name}を作成しました。"
-                    )
-                    with open(self.config_path, "r", encoding="utf-8") as f:
+                    logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
+                    with open(self.config_path, encoding="utf-8") as f:
                         return yaml.safe_load(f) or {}
                 except Exception as e:
                     logger.warning(f"設定ファイルの作成に失敗しました: {e}")
@@ -130,7 +129,7 @@ class DocGen:
                 logger.info("デフォルト設定を使用します。")
             return self._get_default_config()
 
-    def _get_default_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> dict[str, Any]:
         """デフォルト設定を返す"""
         return {
             "languages": {"auto_detect": True, "preferred": []},
@@ -185,7 +184,7 @@ class DocGen:
                 default = self._get_default_config()["generation"][key]
                 self.config["generation"][key] = default
 
-    def update_config(self, updates: Dict[str, Any]) -> None:
+    def update_config(self, updates: dict[str, Any]) -> None:
         """
         設定を動的に更新
 
@@ -193,7 +192,7 @@ class DocGen:
             updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
         """
 
-        def set_nested_value(d: Dict[str, Any], keys: List[str], value: Any) -> None:
+        def set_nested_value(d: dict[str, Any], keys: list[str], value: Any) -> None:
             for key in keys[:-1]:
                 d = d.setdefault(key, {})
             d[keys[-1]] = value
@@ -206,7 +205,7 @@ class DocGen:
         self._validate_config()
         logger.info(f"設定を更新しました: {updates}")
 
-    def detect_languages(self, use_parallel: bool = True) -> List[str]:
+    def detect_languages(self, use_parallel: bool = True) -> list[str]:
         """
         プロジェクトの使用言語を自動検出
 
@@ -309,9 +308,7 @@ class DocGen:
                     logger.error("✗ READMEの更新に失敗しました")
                     success = False
             except Exception as e:
-                logger.error(
-                    f"✗ READMEの更新中にエラーが発生しました: {e}", exc_info=True
-                )
+                logger.error(f"✗ READMEの更新中にエラーが発生しました: {e}", exc_info=True)
                 success = False
 
         # AGENTS.md生成
@@ -327,9 +324,7 @@ class DocGen:
                     logger.error("✗ AGENTS.mdの生成に失敗しました")
                     success = False
             except Exception as e:
-                logger.error(
-                    f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}", exc_info=True
-                )
+                logger.error(f"✗ AGENTS.mdの生成中にエラーが発生しました: {e}", exc_info=True)
                 success = False
 
         return success
@@ -345,14 +340,10 @@ def main():
         __version__ = "0.0.1"
 
     parser = argparse.ArgumentParser(description="汎用ドキュメント自動生成システム")
-    parser.add_argument(
-        "--version", action="version", version=f"%(prog)s {__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--config", type=Path, help="設定ファイルのパス")
     parser.add_argument("--detect-only", action="store_true", help="言語検出のみ実行")
-    parser.add_argument(
-        "--no-api-doc", action="store_true", help="APIドキュメントを生成しない"
-    )
+    parser.add_argument("--no-api-doc", action="store_true", help="APIドキュメントを生成しない")
     parser.add_argument("--no-readme", action="store_true", help="READMEを更新しない")
     parser.add_argument(
         "command",
@@ -370,9 +361,9 @@ def main():
     # コミットメッセージ生成コマンド
     if args.command == "commit-msg":
         try:
-            from .generators.commit_message_generator import CommitMessageGenerator
-        except (ImportError, ValueError, SystemError):
             from generators.commit_message_generator import CommitMessageGenerator
+        except (ImportError, ValueError, SystemError):
+            from .generators.commit_message_generator import CommitMessageGenerator
 
         generator = CommitMessageGenerator(project_root, docgen.config)
         message = generator.generate()
@@ -384,9 +375,7 @@ def main():
 
     if args.detect_only:
         languages = docgen.detect_languages()
-        logger.info(
-            f"\n検出された言語: {', '.join(languages) if languages else 'なし'}"
-        )
+        logger.info(f"\n検出された言語: {', '.join(languages) if languages else 'なし'}")
         return 0
 
     # 設定を一時的に上書き

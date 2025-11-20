@@ -80,6 +80,14 @@ class ConfigManager:
                 "generate_agents_doc": True,
                 "preserve_manual_sections": True,
             },
+            "agents": {
+                "llm_mode": "both",
+                "generation": {
+                    "agents_mode": "template",
+                    "readme_mode": "template",
+                    "enable_commit_message": True,
+                },
+            },
         }
 
     def get_config(self) -> dict[str, Any]:

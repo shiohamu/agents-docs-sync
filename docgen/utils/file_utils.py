@@ -36,6 +36,28 @@ def safe_read_file(file_path: Path, encoding: str = "utf-8") -> str | None:
         return None
 
 
+def save_yaml_file(file_path: Path, data: dict[str, Any]) -> bool:
+    """
+    YAMLファイルを保存
+
+    Args:
+        file_path: 保存先ファイルパス
+        data: 保存するデータ
+
+    Returns:
+        成功した場合はTrue
+    """
+    if yaml is None:
+        return False
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(file_path, "w", encoding="utf-8") as f:
+            yaml.safe_dump(data, f, allow_unicode=True, default_flow_style=False)
+        return True
+    except Exception:
+        return False
+
+
 def safe_write_file(file_path: Path, content: str, encoding: str = "utf-8") -> bool:
     """
     ファイルを安全に書き込む
@@ -73,6 +95,44 @@ def safe_read_json(file_path: Path) -> Any | None:
             return json.load(f)
     except (OSError, json.JSONDecodeError):
         return None
+
+
+def load_toml_file(file_path: Path) -> dict[str, Any] | None:
+    """
+    TOMLファイルを読み込む
+
+    Args:
+        file_path: 読み込むTOMLファイルのパス
+
+    Returns:
+        読み込んだ辞書。読み込み失敗時はNone
+    """
+    if tomllib is None:
+        return None
+    try:
+        if not file_path.exists():
+            return None
+        with open(file_path, "rb") as f:
+            return tomllib.load(f)
+    except Exception:
+        return None
+
+
+def find_files_with_extensions(root_dir: Path, extensions: list[str]) -> list[Path]:
+    """
+    指定された拡張子のファイルを検索
+
+    Args:
+        root_dir: 検索するルートディレクトリ
+        extensions: 拡張子のリスト（例: ['.py', '.js']）
+
+    Returns:
+        見つかったファイルのリスト
+    """
+    files = []
+    for ext in extensions:
+        files.extend(root_dir.glob(f"**/*{ext}"))
+    return sorted(files)
 
 
 def safe_read_yaml(file_path: Path) -> Any | None:

@@ -2,170 +2,246 @@
 ProjectInfoCollectorのテスト
 """
 
+from pathlib import Path
+from unittest.mock import patch
+
+# docgenモジュールをインポート可能にする
+PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
+DOCGEN_DIR = PROJECT_ROOT / "docgen"
+import sys
+
+sys.path.insert(0, str(PROJECT_ROOT))
+
 from docgen.collectors.project_info_collector import ProjectInfoCollector
 
 
 class TestProjectInfoCollector:
-    """ProjectInfoCollectorのテストクラス"""
+    """ProjectInfoCollectorクラスのテスト"""
 
-    def test_init(self, temp_project):
-        """初期化テスト"""
+    def test_project_info_collector_initialization(self, temp_project):
+        """ProjectInfoCollectorの初期化テスト"""
         collector = ProjectInfoCollector(temp_project)
+
         assert collector.project_root == temp_project
 
     def test_collect_all(self, temp_project):
         """全情報収集テスト"""
         collector = ProjectInfoCollector(temp_project)
-        result = collector.collect_all()
 
-        expected_keys = [
-            "build_commands",
-            "test_commands",
-            "dependencies",
-            "coding_standards",
-            "ci_cd_info",
-            "project_structure",
-        ]
+        with patch.object(collector, "collect_project_description", return_value="Test project"):
+            with patch.object(collector, "collect_build_commands", return_value=["make build"]):
+                with patch.object(collector, "collect_test_commands", return_value=["make test"]):
+                    with patch.object(collector, "collect_dependencies", return_value=["pytest"]):
+                        with patch.object(
+                            collector, "collect_coding_standards", return_value=["Use black"]
+                        ):
+                            with patch.object(
+                                collector,
+                                "collect_ci_cd_info",
+                                return_value={"github_actions": True},
+                            ):
+                                with patch.object(
+                                    collector,
+                                    "collect_project_structure",
+                                    return_value="src/\n  main.py",
+                                ):
+                                    result = collector.collect_all()
 
-        for key in expected_keys:
-            assert key in result
-            assert isinstance(result[key], (list, dict))
+                                    expected = {
+                                        "description": "Test project",
+                                        "build_commands": ["make build"],
+                                        "test_commands": ["make test"],
+                                        "dependencies": ["pytest"],
+                                        "coding_standards": ["Use black"],
+                                        "ci_cd_info": {"github_actions": True},
+                                        "project_structure": "src/\n  main.py",
+                                    }
 
-    def test_collect_build_commands_from_script(self, temp_project):
-        """スクリプトからのビルドコマンド収集"""
-        script_content = """#!/bin/bash
+                                    assert result == expected
+
+    def test_collect_build_commands_from_pipeline_script(self, temp_project):
+        """パイプラインスクリプトからのビルドコマンド収集テスト"""
+        scripts_dir = temp_project / "scripts"
+        scripts_dir.mkdir()
+        pipeline_script = scripts_dir / "run_pipeline.sh"
+        pipeline_script.write_text("""
+#!/bin/bash
 echo "Building project..."
+make build
 npm run build
-echo "Build complete"
-"""
-        script_path = temp_project / "scripts" / "run_pipeline.sh"
-        script_path.parent.mkdir(parents=True, exist_ok=True)
-        script_path.write_text(script_content, encoding="utf-8")
+python setup.py build
+""")
 
         collector = ProjectInfoCollector(temp_project)
         commands = collector.collect_build_commands()
 
-        # スクリプトが見つからない場合、空のリストが返される
-        # （実際の解析は複雑なので、ここでは基本的なテストのみ）
-        assert isinstance(commands, list)
+        assert "make build" in commands
+        assert "npm run build" in commands
+        assert "python setup.py build" in commands
 
-    def test_collect_build_commands_no_script(self, temp_project):
-        """スクリプトが存在しない場合"""
+    def test_collect_build_commands_from_makefile(self, temp_project):
+        """Makefileからのビルドコマンド収集テスト"""
+        makefile = temp_project / "Makefile"
+        makefile.write_text("""
+.PHONY: build test clean
+
+build:
+\t@echo "Building..."
+\tgcc main.c -o main
+\tgo build -o bin/app .
+
+test:
+\t@echo "Testing..."
+\tgo test ./...
+
+clean:
+\t@echo "Cleaning..."
+\trm -rf bin/
+""")
+
         collector = ProjectInfoCollector(temp_project)
         commands = collector.collect_build_commands()
 
-        assert commands == []
+        assert "gcc main.c -o main" in commands
+        assert "go build -o bin/app ." in commands
 
-    def test_collect_test_commands_from_script(self, temp_project):
-        """スクリプトからのテストコマンド収集"""
-        script_content = """#!/bin/bash
-echo "Running tests..."
-npm test
-pytest tests/
-echo "Tests complete"
-"""
-        script_path = temp_project / "scripts" / "run_tests.sh"
-        script_path.parent.mkdir(parents=True, exist_ok=True)
-        script_path.write_text(script_content, encoding="utf-8")
+    def test_collect_build_commands_from_package_json(self, temp_project):
+        """package.jsonからのビルドコマンド収集テスト"""
+        package_json = temp_project / "package.json"
+        package_json.write_text("""
+{
+  "name": "test-project",
+  "scripts": {
+    "build": "webpack --mode production",
+    "compile": "tsc",
+    "package": "npm pack"
+  }
+}
+""")
+
+        collector = ProjectInfoCollector(temp_project)
+        commands = collector.collect_build_commands()
+
+        assert "npm run build" in commands
+        assert "npm run compile" in commands
+
+    def test_collect_test_commands_from_makefile(self, temp_project):
+        """Makefileからのテストコマンド収集テスト"""
+        makefile = temp_project / "Makefile"
+        makefile.write_text("""
+test:
+\tpytest tests/
+\tgo test ./...
+\tnpm test
+
+integration-test:
+\tdocker-compose up -d
+\tpytest tests/integration/
+""")
 
         collector = ProjectInfoCollector(temp_project)
         commands = collector.collect_test_commands()
 
-        assert isinstance(commands, list)
+        assert "pytest tests/" in commands
+        assert "go test ./..." in commands
+        assert "npm test" in commands
 
-    def test_collect_test_commands_no_script(self, temp_project):
-        """テストスクリプトが存在しない場合"""
+    def test_collect_test_commands_from_package_json(self, temp_project):
+        """package.jsonからのテストコマンド収集テスト"""
+        package_json = temp_project / "package.json"
+        package_json.write_text("""
+{
+  "scripts": {
+    "test": "jest",
+    "test:unit": "jest unit/",
+    "test:integration": "jest integration/"
+  }
+}
+""")
+
         collector = ProjectInfoCollector(temp_project)
         commands = collector.collect_test_commands()
 
-        assert commands == []
+        assert "npm test" in commands
 
-    def test_collect_dependencies_python(self, temp_project):
-        """Python依存関係の収集"""
-        requirements_content = """requests==2.28.0
+    def test_collect_dependencies_from_requirements_txt(self, temp_project):
+        """requirements.txtからの依存関係収集テスト"""
+        requirements_txt = temp_project / "requirements.txt"
+        requirements_txt.write_text("""
 pytest>=7.0.0
-"""
-        req_path = temp_project / "requirements.txt"
-        req_path.write_text(requirements_content, encoding="utf-8")
+requests==2.28.1
+flask
+numpy>=1.21.0,<2.0.0
+""")
 
         collector = ProjectInfoCollector(temp_project)
         dependencies = collector.collect_dependencies()
 
         assert "python" in dependencies
-        assert isinstance(dependencies["python"], list)
+        python_deps = dependencies["python"]
+        assert "pytest>=7.0.0" in python_deps
+        assert "requests==2.28.1" in python_deps
+        assert "flask" in python_deps
+        assert "numpy>=1.21.0,<2.0.0" in python_deps
 
-    def test_collect_dependencies_nodejs(self, temp_project):
-        """Node.js依存関係の収集"""
-        package_json = {
-            "dependencies": {"express": "^4.18.0", "lodash": "~4.17.0"},
-            "devDependencies": {"jest": "^29.0.0"},
-        }
-
-        import json
-
-        pkg_path = temp_project / "package.json"
-        pkg_path.write_text(json.dumps(package_json, indent=2), encoding="utf-8")
+    def test_collect_dependencies_from_package_json(self, temp_project):
+        """package.jsonからの依存関係収集テスト"""
+        package_json = temp_project / "package.json"
+        package_json.write_text("""
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "lodash": "~4.17.21"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "@types/node": "^18.0.0"
+  }
+}
+""")
 
         collector = ProjectInfoCollector(temp_project)
         dependencies = collector.collect_dependencies()
 
         assert "nodejs" in dependencies
-        assert isinstance(dependencies["nodejs"], list)
+        nodejs_deps = dependencies["nodejs"]
+        assert "react@^18.2.0" in nodejs_deps
+        assert "lodash@~4.17.21" in nodejs_deps
 
-    def test_collect_dependencies_go(self, temp_project):
-        """Go依存関係の収集"""
-        go_mod_content = """module test-project
-
-go 1.20
-
-require (
-    github.com/pkg/errors v0.9.1
-    golang.org/x/sync v0.1.0
-)
-"""
-        go_mod_path = temp_project / "go.mod"
-        go_mod_path.write_text(go_mod_content, encoding="utf-8")
-
-        collector = ProjectInfoCollector(temp_project)
-        dependencies = collector.collect_dependencies()
-
-        assert "go" in dependencies
-        assert isinstance(dependencies["go"], list)
-
-    def test_collect_dependencies_no_files(self, temp_project):
-        """依存関係ファイルが存在しない場合"""
-        collector = ProjectInfoCollector(temp_project)
-        dependencies = collector.collect_dependencies()
-
-        assert dependencies == {}
-
-    def test_collect_coding_standards_with_pyproject(self, temp_project):
-        """pyproject.tomlからのコーディング規約収集"""
-        pyproject_content = """[tool.black]
+    def test_collect_coding_standards_from_pyproject_toml(self, temp_project):
+        """pyproject.tomlからのコーディング規約収集テスト"""
+        pyproject_toml = temp_project / "pyproject.toml"
+        pyproject_toml.write_text("""
+[tool.black]
 line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 88
 
 [tool.ruff]
 line-length = 88
-select = ["E", "F", "W"]
-"""
-        pyproject_path = temp_project / "pyproject.toml"
-        pyproject_path.write_text(pyproject_content, encoding="utf-8")
+""")
 
         collector = ProjectInfoCollector(temp_project)
         standards = collector.collect_coding_standards()
 
-        assert isinstance(standards, dict)
+        assert "formatter" in standards
+        assert standards["formatter"] == "black"
+        assert "import_sorter" in standards
+        assert standards["import_sorter"] == "isort"
+        assert "linter" in standards
+        assert standards["linter"] == "ruff"
+        assert any("ruff" in standard.lower() for standard in standards)
 
-    def test_collect_coding_standards_no_files(self, temp_project):
-        """コーディング規約ファイルが存在しない場合"""
-        collector = ProjectInfoCollector(temp_project)
-        standards = collector.collect_coding_standards()
-
-        assert standards == {}
-
-    def test_collect_ci_cd_info_with_github_actions(self, temp_project):
-        """GitHub ActionsからのCI/CD情報収集"""
-        workflow_content = """name: CI
+    def test_collect_ci_cd_info_github_actions(self, temp_project):
+        """GitHub Actions CI/CD情報収集テスト"""
+        github_dir = temp_project / ".github" / "workflows"
+        github_dir.mkdir(parents=True)
+        workflow_file = github_dir / "ci.yml"
+        workflow_file.write_text("""
+name: CI
 on: [push, pull_request]
 jobs:
   test:
@@ -174,33 +250,84 @@ jobs:
     - uses: actions/checkout@v3
     - name: Run tests
       run: make test
-"""
-        workflow_path = temp_project / ".github" / "workflows" / "ci.yml"
-        workflow_path.parent.mkdir(parents=True, exist_ok=True)
-        workflow_path.write_text(workflow_content, encoding="utf-8")
+""")
 
         collector = ProjectInfoCollector(temp_project)
         ci_cd_info = collector.collect_ci_cd_info()
 
-        assert isinstance(ci_cd_info, dict)
-
-    def test_collect_ci_cd_info_no_files(self, temp_project):
-        """CI/CDファイルが存在しない場合"""
-        collector = ProjectInfoCollector(temp_project)
-        ci_cd_info = collector.collect_ci_cd_info()
-
-        assert ci_cd_info == {}
+        assert "github_actions" in ci_cd_info
+        assert "ci.yml" in ci_cd_info["github_actions"]
 
     def test_collect_project_structure(self, temp_project):
-        """プロジェクト構造の収集"""
-        # テストファイルを作成
-        (temp_project / "main.py").write_text("print('hello')", encoding="utf-8")
-        (temp_project / "README.md").write_text("# Test", encoding="utf-8")
-        (temp_project / ".gitignore").write_text("*.pyc", encoding="utf-8")
+        """プロジェクト構造収集テスト"""
+        # ディレクトリ構造を作成
+        (temp_project / "src").mkdir()
+        (temp_project / "src" / "__init__.py").write_text("")
+        (temp_project / "src" / "main.py").write_text("print('hello')")
+        (temp_project / "tests").mkdir()
+        (temp_project / "tests" / "test_main.py").write_text("")
+        (temp_project / "docs").mkdir()
+        (temp_project / "README.md").write_text("# Project")
 
         collector = ProjectInfoCollector(temp_project)
         structure = collector.collect_project_structure()
 
-        assert isinstance(structure, dict)
-        assert "languages" in structure
-        assert "main_directories" in structure
+        assert "src/" in structure["main_directories"]
+        assert "tests/" in structure["main_directories"]
+        assert "docs/" in structure["main_directories"]
+        assert "README.md" in structure["important_files"]
+
+    def test_collect_project_description_from_readme(self, temp_project):
+        """READMEからのプロジェクト説明収集テスト"""
+        readme = temp_project / "README.md"
+        readme.write_text("""# My Awesome Project
+
+This is a description of my awesome project. It does amazing things and solves real problems.
+
+## Features
+
+- Feature 1
+- Feature 2
+""")
+
+        collector = ProjectInfoCollector(temp_project)
+        description = collector.collect_project_description()
+
+        assert description is not None
+        assert "amazing things" in description
+
+    def test_collect_project_description_from_setup_py(self, temp_project):
+        """setup.pyからのプロジェクト説明収集テスト"""
+        setup_py = temp_project / "setup.py"
+        setup_py.write_text("""
+from setuptools import setup
+
+setup(
+    name="my-project",
+    description="A short description",
+    long_description="A much longer description of the project that explains what it does and why it's useful.",
+    author="Test Author"
+)
+""")
+
+        collector = ProjectInfoCollector(temp_project)
+        description = collector.collect_project_description()
+
+        assert description is not None
+        assert "A short description" in description
+
+    def test_collect_project_description_from_package_json(self, temp_project):
+        """package.jsonからのプロジェクト説明収集テスト"""
+        package_json = temp_project / "package.json"
+        package_json.write_text("""
+{
+  "name": "my-package",
+  "description": "A JavaScript package description",
+  "version": "1.0.0"
+}
+""")
+
+        collector = ProjectInfoCollector(temp_project)
+        description = collector.collect_project_description()
+
+        assert "JavaScript package description" in description

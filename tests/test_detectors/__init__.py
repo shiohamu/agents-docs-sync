@@ -1,3 +1,1 @@
-"""
-言語検出モジュールのテスト
-"""
+# Test detectors package

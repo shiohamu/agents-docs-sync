@@ -2,254 +2,238 @@
 CommitMessageGeneratorのテスト
 """
 
-import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from generators.commit_message_generator import CommitMessageGenerator  # pyright: ignore[reportMissingImports]
+from unittest.mock import MagicMock, patch
+
+# docgenモジュールをインポート可能にする
+PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
+DOCGEN_DIR = PROJECT_ROOT / "docgen"
+import sys
+
+sys.path.insert(0, str(PROJECT_ROOT))
+
+from docgen.generators.commit_message_generator import CommitMessageGenerator
 
 
 class TestCommitMessageGenerator:
     """CommitMessageGeneratorクラスのテスト"""
 
-    def test_initialization(self, temp_project):
-        """初期化テスト"""
+    def test_commit_message_generator_initialization(self, temp_project):
+        """CommitMessageGeneratorの初期化テスト"""
         config = {"agents": {"llm_mode": "api"}}
+
         generator = CommitMessageGenerator(temp_project, config)
 
         assert generator.project_root == temp_project
         assert generator.config == config
         assert generator.agents_config == {"llm_mode": "api"}
 
-    def test_initialization_empty_config(self, temp_project):
-        """空の設定での初期化テスト"""
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-
-        assert generator.agents_config == {}
-
-    @patch("generators.commit_message_generator.subprocess.run")
-    def test_get_staged_changes_success(self, mock_subprocess, temp_project):
-        """ステージング済み変更の取得成功テスト"""
-        # git diff --cached --stat のモック
-        stat_result = Mock()
-        stat_result.returncode = 0
-        stat_result.stdout = "file.py | 5 +-\n1 file changed, 5 insertions(+)"
-
-        # git diff --cached のモック
-        diff_result = Mock()
-        diff_result.returncode = 0
-        diff_result.stdout = "+ new line\n- old line"
-
-        mock_subprocess.side_effect = [stat_result, diff_result]
-
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-        result = generator._get_staged_changes()
-
-        assert result is not None
-        assert "file.py | 5 +-" in result
-        assert "+ new line" in result
-
-        # subprocess.runが2回呼ばれたことを確認
-        assert mock_subprocess.call_count == 2
-
-    @patch("generators.commit_message_generator.subprocess.run")
-    def test_get_staged_changes_no_changes(self, mock_subprocess, temp_project):
-        """ステージング済み変更がない場合のテスト"""
-        # git diff --cached --stat のモック
-        stat_result = Mock()
-        stat_result.returncode = 0
-        stat_result.stdout = ""
-
-        # git diff --cached のモック
-        diff_result = Mock()
-        diff_result.returncode = 0
-        diff_result.stdout = ""
-
-        mock_subprocess.side_effect = [stat_result, diff_result]
-
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-        result = generator._get_staged_changes()
-
-        assert result == "\n\n"
-
-    @patch("generators.commit_message_generator.subprocess.run")
-    def test_get_staged_changes_git_error(self, mock_subprocess, temp_project):
-        """Gitコマンドエラーのテスト"""
-        result_mock = Mock()
-        result_mock.returncode = 1
-        result_mock.stderr = "fatal: not a git repository"
-        mock_subprocess.return_value = result_mock
-
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-        result = generator._get_staged_changes()
-
-        assert result is None
-
-    def test_get_staged_changes_no_git(self, temp_project, monkeypatch):
-        """Gitコマンドが存在しない場合のテスト"""
-
-        def mock_subprocess_run(*args, **kwargs):
-            raise FileNotFoundError("git command not found")
-
-        monkeypatch.setattr(
-            "generators.commit_message_generator.subprocess.run", mock_subprocess_run
-        )
-
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-        result = generator._get_staged_changes()
-
-        assert result is None
-
-    def test_create_prompt(self, temp_project):
-        """プロンプト作成テスト"""
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-
-        staged_changes = "file.py | 2 +-\n+ new feature"
-        prompt = generator._create_prompt(staged_changes)
-
-        assert "以下のGitの変更内容を分析して" in prompt
-        assert staged_changes in prompt
-        assert "Conventional Commits形式" in prompt
-        assert "コミットメッセージを1行で生成" in prompt
-
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_success(self, mock_create_client, temp_project):
-        """コミットメッセージ生成成功テスト"""
-        # LLMクライアントのモック
-        mock_client = Mock()
-        mock_client.generate.return_value = "feat: add new feature"
-        mock_create_client.return_value = mock_client
-
+    def test_generate_no_staged_changes(self, temp_project):
+        """ステージングされた変更がない場合のテスト"""
         config = {"agents": {"llm_mode": "api"}}
+
         generator = CommitMessageGenerator(temp_project, config)
 
-        # ステージング済み変更取得のモック
-        with patch.object(
-            generator, "_get_staged_changes", return_value="test changes"
-        ):
-            result = generator.generate()
-
-        assert result == "feat: add new feature"
-        mock_create_client.assert_called_once()
-        mock_client.generate.assert_called_once()
-
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_no_staged_changes(self, mock_create_client, temp_project):
-        """ステージング済み変更がない場合のテスト"""
-        config = {}
-        generator = CommitMessageGenerator(temp_project, config)
-
-        # ステージング済み変更がない場合
         with patch.object(generator, "_get_staged_changes", return_value=None):
             result = generator.generate()
 
-        assert result is None
-        mock_create_client.assert_not_called()
+            assert result is None
 
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_no_client(self, mock_create_client, temp_project):
-        """LLMクライアント作成失敗のテスト"""
-        mock_create_client.return_value = None
+    @patch("docgen.generators.commit_message_generator.LLMClientFactory")
+    def test_generate_with_llm(self, mock_llm_factory, temp_project):
+        """LLMを使用したコミットメッセージ生成テスト"""
+        config = {"agents": {"llm_mode": "api", "api": {"provider": "openai"}}}
 
-        config = {}
+        staged_changes = """
+diff --git a/src/main.py b/src/main.py
+index 1234567..abcdef0 100644
+--- a/src/main.py
++++ b/src/main.py
+@@ -1,5 +1,7 @@
+ def hello():
+-    print("Hello")
++    print("Hello, World!")
++
++def goodbye():
++    print("Goodbye")
+"""
+
+        mock_client = MagicMock()
+        mock_client.generate.return_value = "feat(ui): add greeting and farewell functions"
+        mock_llm_factory.create_client_with_fallback.return_value = mock_client
+
         generator = CommitMessageGenerator(temp_project, config)
 
-        with patch.object(
-            generator, "_get_staged_changes", return_value="test changes"
-        ):
+        with patch.object(generator, "_get_staged_changes", return_value=staged_changes):
             result = generator.generate()
 
-        assert result is None
+            assert result == "feat(ui): add greeting and farewell functions"
+            mock_client.generate.assert_called_once()
 
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_llm_returns_none(self, mock_create_client, temp_project):
-        """LLMがNoneを返す場合のテスト"""
-        mock_client = Mock()
-        mock_client.generate.return_value = None
-        mock_create_client.return_value = mock_client
+    @patch("docgen.generators.commit_message_generator.LLMClientFactory")
+    def test_generate_llm_client_creation_failure(self, mock_llm_factory, temp_project):
+        """LLMクライアント作成失敗時のテスト"""
+        config = {"agents": {"llm_mode": "api"}}
+        mock_llm_factory.create_client_with_fallback.return_value = None
 
-        config = {}
         generator = CommitMessageGenerator(temp_project, config)
 
-        with patch.object(
-            generator, "_get_staged_changes", return_value="test changes"
-        ):
+        with patch.object(generator, "_get_staged_changes", return_value="some changes"):
             result = generator.generate()
 
-        assert result is None
+            assert result is None
 
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_llm_returns_multiline(self, mock_create_client, temp_project):
-        """LLMが複数行のメッセージを返す場合のテスト"""
-        mock_client = Mock()
+    @patch("docgen.generators.commit_message_generator.LLMClientFactory")
+    def test_generate_llm_returns_empty(self, mock_llm_factory, temp_project):
+        """LLMが空文字列を返す場合のテスト"""
+        config = {"agents": {"llm_mode": "api"}}
+
+        mock_client = MagicMock()
+        mock_client.generate.return_value = ""
+        mock_llm_factory.create_client_with_fallback.return_value = mock_client
+
+        generator = CommitMessageGenerator(temp_project, config)
+
+        with patch.object(generator, "_get_staged_changes", return_value="some changes"):
+            result = generator.generate()
+
+            assert result is None
+
+    @patch("docgen.generators.commit_message_generator.LLMClientFactory")
+    def test_generate_llm_returns_multiline(self, mock_llm_factory, temp_project):
+        """LLMが複数行を返す場合のテスト"""
+        config = {"agents": {"llm_mode": "api"}}
+
+        mock_client = MagicMock()
         mock_client.generate.return_value = (
             "feat: add new feature\n\nThis is a detailed description"
         )
-        mock_create_client.return_value = mock_client
+        mock_llm_factory.create_client_with_fallback.return_value = mock_client
 
-        config = {}
         generator = CommitMessageGenerator(temp_project, config)
 
-        with patch.object(
-            generator, "_get_staged_changes", return_value="test changes"
-        ):
+        with patch.object(generator, "_get_staged_changes", return_value="some changes"):
             result = generator.generate()
 
-        assert result == "feat: add new feature"
+            assert result == "feat: add new feature"
 
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_exception_handling(self, mock_create_client, temp_project):
-        """例外発生時のテスト"""
-        mock_client = Mock()
-        mock_client.generate.side_effect = Exception("Test error")
-        mock_create_client.return_value = mock_client
+    def test_get_staged_changes_success(self, temp_project):
+        """ステージングされた変更の取得成功テスト"""
+        generator = CommitMessageGenerator(temp_project, {})
 
-        config = {}
+        mock_stat_result = MagicMock()
+        mock_stat_result.stdout = " 1 file changed, 2 insertions(+)"
+        mock_stat_result.returncode = 0
+
+        mock_diff_result = MagicMock()
+        mock_diff_result.stdout = "diff content here"
+        mock_diff_result.returncode = 0
+
+        with patch(
+            "subprocess.run", side_effect=[mock_stat_result, mock_diff_result]
+        ) as mock_subprocess:
+            result = generator._get_staged_changes()
+
+            assert result == " 1 file changed, 2 insertions(+)\n\ndiff content here"
+            assert mock_subprocess.call_count == 2
+
+    def test_get_staged_changes_stat_failure(self, temp_project):
+        """git diff --cached --statが失敗した場合のテスト"""
+        generator = CommitMessageGenerator(temp_project, {})
+
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stderr = "fatal: not a git repository"
+
+        with patch("subprocess.run", return_value=mock_result):
+            result = generator._get_staged_changes()
+
+            assert result is None
+
+    def test_get_staged_changes_no_git_repo(self, temp_project):
+        """Gitリポジトリがない場合のテスト"""
+        generator = CommitMessageGenerator(temp_project, {})
+
+        with patch("subprocess.run", side_effect=FileNotFoundError):
+            result = generator._get_staged_changes()
+
+            assert result is None
+
+    def test_get_staged_changes_diff_failure(self, temp_project):
+        """詳細diff取得失敗時のテスト（statのみ返す）"""
+        generator = CommitMessageGenerator(temp_project, {})
+
+        mock_stat_result = MagicMock()
+        mock_stat_result.stdout = " 1 file changed, 2 insertions(+)"
+        mock_stat_result.returncode = 0
+
+        mock_diff_result = MagicMock()
+        mock_diff_result.returncode = 1
+
+        with patch("subprocess.run", side_effect=[mock_stat_result, mock_diff_result]):
+            result = generator._get_staged_changes()
+
+            assert result == " 1 file changed, 2 insertions(+)"
+
+    def test_get_staged_changes_long_diff_truncated(self, temp_project):
+        """長いdiffが切り詰められるテスト"""
+        generator = CommitMessageGenerator(temp_project, {})
+
+        mock_stat_result = MagicMock()
+        mock_stat_result.stdout = " 1 file changed, 100 insertions(+)"
+        mock_stat_result.returncode = 0
+
+        # 長いdiffを作成
+        long_diff = "a" * 6000
+        mock_diff_result = MagicMock()
+        mock_diff_result.stdout = long_diff
+        mock_diff_result.returncode = 0
+
+        with patch("subprocess.run", side_effect=[mock_stat_result, mock_diff_result]):
+            result = generator._get_staged_changes()
+
+            assert result is not None
+            assert "... (truncated)" in result
+            assert len(result) < len(long_diff) + 100
+
+    def test_create_prompt(self, temp_project):
+        """プロンプト作成テスト"""
+        generator = CommitMessageGenerator(temp_project, {})
+
+        staged_changes = "diff content here"
+
+        prompt = generator._create_prompt(staged_changes)
+
+        assert "以下のGitの変更内容を分析して" in prompt
+        assert "Conventional Commits形式" in prompt
+        assert "diff content here" in prompt
+
+    def test_create_prompt_with_custom_changes(self, temp_project):
+        """カスタム変更内容でのプロンプト作成テスト"""
+        generator = CommitMessageGenerator(temp_project, {})
+
+        staged_changes = """
+diff --git a/test.py b/test.py
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/test.py
+@@ -0,0 +1,3 @@
++def test():
++    pass
+"""
+
+        prompt = generator._create_prompt(staged_changes)
+
+        assert "test.py" in prompt
+        assert "def test():" in prompt
+
+    def test_generate_exception_handling(self, temp_project):
+        """例外処理のテスト"""
+        config = {"agents": {"llm_mode": "api"}}
         generator = CommitMessageGenerator(temp_project, config)
 
-        with patch.object(
-            generator, "_get_staged_changes", return_value="test changes"
-        ):
+        with patch.object(generator, "_get_staged_changes", side_effect=Exception("Test error")):
             result = generator.generate()
 
-        assert result is None
-
-    @patch(
-        "generators.commit_message_generator.LLMClientFactory.create_client_with_fallback"
-    )
-    def test_generate_with_local_fallback(self, mock_create_client, temp_project):
-        """ローカルLLMへのフォールバックテスト"""
-        mock_client = Mock()
-        mock_client.generate.return_value = "fix: bug fix"
-        mock_create_client.return_value = mock_client
-
-        config = {"agents": {"llm_mode": "local"}}
-        generator = CommitMessageGenerator(temp_project, config)
-
-        with patch.object(
-            generator, "_get_staged_changes", return_value="test changes"
-        ):
-            result = generator.generate()
-
-        # preferred_mode='local'で呼び出されたことを確認
-        mock_create_client.assert_called_once_with(
-            {"llm_mode": "local"}, preferred_mode="local"
-        )
-        assert result == "fix: bug fix"
+            assert result is None

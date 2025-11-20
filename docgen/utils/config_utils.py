@@ -70,7 +70,10 @@ def get_config_list(config: dict[str, Any], *keys: str, default: list | None = N
     value = get_nested_config(config, *keys, default=default)
     if isinstance(value, list):
         return value
-    if isinstance(value, (str, int, float)):
+    if isinstance(value, str):
+        # カンマ区切りをサポート
+        return [item.strip() for item in value.split(",") if item.strip()]
+    if isinstance(value, (int, float)):
         return [value]
     return default
 
@@ -88,6 +91,8 @@ def get_config_str(config: dict[str, Any], *keys: str, default: str = "") -> str
         文字列
     """
     value = get_nested_config(config, *keys, default=default)
+    if value is None:
+        return default
     if isinstance(value, str):
         return value
     return str(value)

@@ -14,4 +14,3 @@ __version__ = "0.0.5"
 from docgen import DocGen, main
 
 __all__ = ["DocGen", "main"]
-

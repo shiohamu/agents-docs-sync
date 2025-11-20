@@ -15,13 +15,13 @@ class JSParser(BaseParser):
 
     # JSDocコメントのパターン
     JSDOC_PATTERN = re.compile(
-        r"/\*\*\s*\n(.*?)\*/\s*\n\s*(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+(\w+)",
+        r"/\*\*\s*\n(.*?)\*/\s*\n\s*(?:export\s+)?(?:async\s+)?(?:(?:function|class)\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=|(\w+)\s*\([^)]*\)\s*\{)",
         re.DOTALL | re.MULTILINE,
     )
 
     # 関数定義のパターン
     FUNCTION_PATTERN = re.compile(
-        r"(?:export\s+)?(?:async\s+)?(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>|(\w+)\s*:\s*(?:async\s+)?\([^)]*\)\s*=>)",
+        r"(?:export\s+)?(?:async\s+)?(?:function\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>|(\w+)\s*:\s*(?:async\s+)?\([^)]*\)\s*=>|(\w+)\s*\([^)]*\)\s*\{)",
         re.MULTILINE,
     )
 
@@ -43,11 +43,29 @@ class JSParser(BaseParser):
                 content = f.read()
 
             apis = []
+            class_stack = []
+
+            # クラス定義を先に抽出してclass_stackを作成
+            for match in self.CLASS_PATTERN.finditer(content):
+                name = match.group(1)
+                class_start = match.start()
+                # 対応する}を見つける
+                brace_count = 0
+                class_end = class_start
+                for i, char in enumerate(content[class_start:], class_start):
+                    if char == "{":
+                        brace_count += 1
+                    elif char == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            class_end = i + 1
+                            break
+                class_stack.append((name, class_start, class_end))
 
             # JSDoc付きの関数/クラスを抽出
             for match in self.JSDOC_PATTERN.finditer(content):
                 docstring = match.group(1).strip()
-                name = match.group(2)
+                name = match.group(2) or match.group(3) or match.group(4)
 
                 # 行番号を取得
                 line_num = content[: match.start()].count("\n") + 1
@@ -56,9 +74,14 @@ class JSParser(BaseParser):
                 api_type = "function"
                 if "class" in match.group(0):
                     api_type = "class"
+                elif match.group(4):  # メソッドの場合
+                    api_type = "method"
 
                 # シグネチャを抽出
                 signature = self._extract_signature(content, match.end(), name, api_type)
+
+                # パラメータを抽出
+                parameters = self._extract_parameters(docstring)
 
                 apis.append(
                     {
@@ -66,21 +89,30 @@ class JSParser(BaseParser):
                         "type": api_type,
                         "signature": signature,
                         "docstring": self._clean_jsdoc(docstring),
+                        "parameters": parameters,
                         "line": line_num,
                         "file": str(file_path.relative_to(self.project_root)),
                     }
                 )
 
-            # JSDocなしの関数/クラスも抽出（簡易版）
+            # JSDocなしの関数も抽出（簡易版）
             for match in self.FUNCTION_PATTERN.finditer(content):
-                name = match.group(1) or match.group(2) or match.group(3)
+                name = match.group(1) or match.group(2) or match.group(3) or match.group(4)
                 if name and not any(api["name"] == name for api in apis):
                     line_num = content[: match.start()].count("\n") + 1
-                    signature = self._extract_signature(content, match.end(), name, "function")
+
+                    # クラス内にあるかをチェック
+                    api_type = "function"
+                    for _class_name, class_start, class_end in class_stack:
+                        if class_start < match.start() < class_end:
+                            api_type = "method"
+                            break
+
+                    signature = self._extract_signature(content, match.end(), name, api_type)
                     apis.append(
                         {
                             "name": name,
-                            "type": "function",
+                            "type": api_type,
                             "signature": signature,
                             "docstring": "",
                             "line": line_num,
@@ -147,6 +179,33 @@ class JSParser(BaseParser):
                     return sig
 
         return f"function {name}(...)"
+
+    def _extract_parameters(self, docstring: str) -> list[str]:
+        """
+        JSDocからパラメータを抽出
+
+        Args:
+            docstring: JSDocコメントの内容
+
+        Returns:
+            パラメータ名のリスト
+        """
+        params = []
+        lines = docstring.split("\n")
+        for line in lines:
+            # * を削除してから処理
+            line = line.strip().lstrip("*").strip()
+            if line.startswith("@param"):
+                # @param {type} name - description
+                # ドット付きのパラメータ名を処理
+                parts = line.split()
+                if len(parts) >= 3:
+                    param_name = parts[2].rstrip("-").strip()
+                    # ドットを含む場合は最後の部分のみを取得
+                    if "." in param_name:
+                        param_name = param_name.split(".")[-1]
+                    params.append(param_name)
+        return params
 
     def _clean_jsdoc(self, docstring: str) -> str:
         """

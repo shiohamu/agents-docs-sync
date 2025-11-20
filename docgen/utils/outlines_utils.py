@@ -11,7 +11,7 @@ except ImportError:
     OUTLINES_AVAILABLE = False
     outlines = None
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
@@ -19,8 +19,8 @@ try:
     from ..utils.llm_client import LLMClientFactory
 except ImportError:
     # 相対インポートが失敗した場合のフォールバック
-    import sys
     from pathlib import Path
+    import sys
 
     DOCGEN_DIR = Path(__file__).parent.parent.resolve()
     if str(DOCGEN_DIR) not in sys.path:
@@ -28,7 +28,7 @@ except ImportError:
     from utils.llm_client import LLMClientFactory
 
 
-def should_use_outlines(config: Dict[str, Any]) -> bool:
+def should_use_outlines(config: dict[str, Any]) -> bool:
     """
     Outlinesを使用するかどうかを判定
 
@@ -73,12 +73,12 @@ def create_outlines_model(client, provider: str = "openai"):
             return outlines.from_openai(openai_client, client.model)
         else:
             raise ValueError("サポートされていないクライアントタイプ")
-    except Exception as e:
+    except Exception:
         # エラーログは呼び出し元で処理
         return None
 
 
-def get_llm_client_with_fallback(config: Dict[str, Any], agents_config: Dict[str, Any]):
+def get_llm_client_with_fallback(config: dict[str, Any], agents_config: dict[str, Any]):
     """
     LLMクライアントを取得（フォールバック付き）
 
@@ -112,14 +112,12 @@ def clean_llm_output(text: str) -> str:
 
     lines = text.split("\n")
     cleaned_lines = []
-    skip_block = False
     in_code_block = False
     code_block_lang = None
 
     i = 0
     while i < len(lines):
         line = lines[i]
-        original_line = line
 
         # コードブロックの開始/終了を検出
         if line.strip().startswith("```"):
@@ -128,14 +126,12 @@ def clean_llm_output(text: str) -> str:
                 code_block_lang = line.strip()[3:].strip().lower()
                 # マークダウンコードブロック内の思考過程をスキップ
                 if "markdown" in code_block_lang:
-                    skip_block = True
                     i += 1
                     # 次の```までスキップ
                     while i < len(lines) and not lines[i].strip().startswith("```"):
                         i += 1
                     if i < len(lines):
                         i += 1  # ```をスキップ
-                    skip_block = False
                     in_code_block = False
                     continue
                 else:
@@ -159,11 +155,7 @@ def clean_llm_output(text: str) -> str:
         line_lower = line.lower().strip()
 
         # 特殊なマーカーパターン（最初にチェック）
-        if (
-            "<|channel|>" in line
-            or "<|message|>" in line
-            or "commentary/analysis" in line_lower
-        ):
+        if "<|channel|>" in line or "<|message|>" in line or "commentary/analysis" in line_lower:
             i += 1
             # 次の空行または通常のコンテンツまでスキップ
             while (
@@ -326,11 +318,7 @@ def validate_output(text: str) -> bool:
     text_lower = text.lower()
 
     # 特殊なマーカーパターンをチェック
-    if (
-        "<|channel|>" in text
-        or "<|message|>" in text
-        or "commentary/analysis" in text_lower
-    ):
+    if "<|channel|>" in text or "<|message|>" in text or "commentary/analysis" in text_lower:
         return False
 
     # 思考過程のパターンが含まれていないかチェック

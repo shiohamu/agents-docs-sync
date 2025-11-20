@@ -3,11 +3,10 @@
 ビルド/テスト手順、コーディング規約、依存関係などの情報を収集
 """
 
-from pathlib import Path
-from typing import Dict, Any, List, Optional
-import yaml
 import json
+from pathlib import Path
 import re
+from typing import Any
 
 
 class ProjectInfoCollector:
@@ -22,7 +21,7 @@ class ProjectInfoCollector:
         """
         self.project_root: Path = project_root
 
-    def collect_all(self) -> Dict[str, Any]:
+    def collect_all(self) -> dict[str, Any]:
         """
         すべてのプロジェクト情報を収集
 
@@ -39,7 +38,7 @@ class ProjectInfoCollector:
             "project_structure": self.collect_project_structure(),
         }
 
-    def collect_build_commands(self) -> List[str]:
+    def collect_build_commands(self) -> list[str]:
         """
         ビルドコマンドを収集
 
@@ -65,17 +64,19 @@ class ProjectInfoCollector:
         makefile = self.project_root / "Makefile"
         if makefile.exists():
             content = makefile.read_text(encoding="utf-8")
-            # .PHONY やターゲットを抽出
+            # タブで始まるコマンド行を抽出
             for line in content.split("\n"):
-                if re.match(r"^\w+:", line) and not line.startswith(".PHONY"):
-                    target = line.split(":")[0].strip()
-                    commands.append(f"make {target}")
+                if line.startswith("\t") and line.strip():
+                    # \tを削除してコマンドを追加
+                    command = line.lstrip("\t")
+                    if command and not command.startswith("@"):
+                        commands.append(command)
 
         # package.json から収集
         package_json = self.project_root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, "r", encoding="utf-8") as f:
+                with open(package_json, encoding="utf-8") as f:
                     data = json.load(f)
                     if "scripts" in data:
                         for script_name, script_cmd in data["scripts"].items():
@@ -85,7 +86,7 @@ class ProjectInfoCollector:
 
         return commands
 
-    def collect_test_commands(self) -> List[str]:
+    def collect_test_commands(self) -> list[str]:
         """
         テストコマンドを収集
 
@@ -101,11 +102,25 @@ class ProjectInfoCollector:
             for line in content.split("\n"):
                 if "pytest" in line or "test" in line.lower():
                     # コマンド行を抽出
-                    match = re.search(
-                        r"(pytest|python.*test|npm.*test|make.*test)", line
-                    )
+                    match = re.search(r"(pytest|python.*test|npm.*test|make.*test)", line)
                     if match:
                         commands.append(match.group(0))
+
+        # Makefile から収集
+        makefile = self.project_root / "Makefile"
+        if makefile.exists():
+            content = makefile.read_text(encoding="utf-8")
+            # testターゲットのコマンド行を抽出
+            in_test_target = False
+            for line in content.split("\n"):
+                if line.strip() == "test:":
+                    in_test_target = True
+                elif line.strip().endswith(":") and in_test_target:
+                    break  # 次のターゲット
+                elif in_test_target and line.startswith("\t") and line.strip():
+                    command = line.lstrip("\t")
+                    if command and not command.startswith("@"):
+                        commands.append(command)
 
         # pytest.ini から収集
         pytest_ini = self.project_root / "pytest.ini"
@@ -116,16 +131,16 @@ class ProjectInfoCollector:
         package_json = self.project_root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, "r", encoding="utf-8") as f:
+                with open(package_json, encoding="utf-8") as f:
                     data = json.load(f)
                     if "scripts" in data and "test" in data["scripts"]:
-                        commands.append(f"npm test")
+                        commands.append("npm test")
             except (json.JSONDecodeError, KeyError):
                 pass
 
         return list(set(commands))  # 重複を除去
 
-    def collect_dependencies(self) -> Dict[str, List[str]]:
+    def collect_dependencies(self) -> dict[str, list[str]]:
         """
         依存関係を収集
 
@@ -143,7 +158,7 @@ class ProjectInfoCollector:
         ]:
             req_path = self.project_root / req_file
             if req_path.exists():
-                with open(req_path, "r", encoding="utf-8") as f:
+                with open(req_path, encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if line and not line.startswith("#"):
@@ -155,12 +170,11 @@ class ProjectInfoCollector:
         package_json = self.project_root / "package.json"
         if package_json.exists():
             try:
-                with open(package_json, "r", encoding="utf-8") as f:
+                with open(package_json, encoding="utf-8") as f:
                     data = json.load(f)
                     if "dependencies" in data:
                         node_deps = [
-                            f"{name}@{version}"
-                            for name, version in data["dependencies"].items()
+                            f"{name}@{version}" for name, version in data["dependencies"].items()
                         ]
                         dependencies["nodejs"] = node_deps
             except (json.JSONDecodeError, KeyError):
@@ -198,7 +212,7 @@ class ProjectInfoCollector:
 
         return dependencies
 
-    def collect_coding_standards(self) -> Dict[str, Any]:
+    def collect_coding_standards(self) -> dict[str, Any]:
         """
         コーディング規約を収集
 
@@ -228,17 +242,20 @@ class ProjectInfoCollector:
                             data = tomli.load(f)
                     except ImportError:
                         # tomliがインストールされていない場合、簡易的な解析にフォールバック
-                        raise ImportError("tomli not available")
+                        raise ImportError("tomli not available") from None
 
                 if "tool" in data:
                     tools = data["tool"]
                     if "black" in tools:
                         standards["formatter"] = "black"
                         standards["black_config"] = tools["black"]
+                    if "isort" in tools:
+                        standards["import_sorter"] = "isort"
+                        standards["isort_config"] = tools["isort"]
                     if "ruff" in tools:
                         standards["linter"] = "ruff"
                         standards["ruff_config"] = tools["ruff"]
-            except (ImportError, Exception) as e:
+            except (ImportError, Exception):
                 # TOML解析が失敗した場合、簡易的な解析にフォールバック
                 content = pyproject.read_text(encoding="utf-8")
                 if "black" in content:
@@ -260,7 +277,7 @@ class ProjectInfoCollector:
 
         return standards
 
-    def collect_ci_cd_info(self) -> Dict[str, Any]:
+    def collect_ci_cd_info(self) -> dict[str, Any]:
         """
         CI/CD情報を収集
 
@@ -280,7 +297,7 @@ class ProjectInfoCollector:
 
         return ci_info
 
-    def collect_project_structure(self) -> Dict[str, Any]:
+    def collect_project_structure(self) -> dict[str, Any]:
         """
         プロジェクト構造を収集
 
@@ -290,6 +307,7 @@ class ProjectInfoCollector:
         structure = {
             "languages": [],
             "main_directories": [],
+            "important_files": [],
         }
 
         # 言語の検出（簡易版）
@@ -305,11 +323,18 @@ class ProjectInfoCollector:
         # 主要ディレクトリ
         for item in self.project_root.iterdir():
             if item.is_dir() and not item.name.startswith("."):
-                structure["main_directories"].append(item.name)
+                structure["main_directories"].append(item.name + "/")
+            elif item.is_file() and item.name in [
+                "README.md",
+                "README.rst",
+                "CHANGELOG.md",
+                "LICENSE",
+            ]:
+                structure["important_files"].append(item.name)
 
         return structure
 
-    def collect_project_description(self) -> Optional[str]:
+    def collect_project_description(self) -> str | None:
         """
         プロジェクトの説明を収集
 
@@ -333,6 +358,32 @@ class ProjectInfoCollector:
                     if "このプロジェクトの説明をここに記述してください" not in line:
                         return line
                     break
+
+        # 1.5. setup.pyから説明を取得
+        setup_py = self.project_root / "setup.py"
+        if setup_py.exists():
+            try:
+                content = setup_py.read_text(encoding="utf-8")
+                # description= または long_description= を探す
+                desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
+                if desc_match:
+                    return desc_match.group(1)
+                long_desc_match = re.search(r'long_description\s*=\s*["\']([^"\']+)["\']', content)
+                if long_desc_match:
+                    return long_desc_match.group(1)
+            except Exception:
+                pass
+
+        # 1.6. package.jsonから説明を取得
+        package_json = self.project_root / "package.json"
+        if package_json.exists():
+            try:
+                with open(package_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "description" in data:
+                        return data["description"]
+            except Exception:
+                pass
 
         # 2. main.pyのdocstringから取得
         main_py = self.project_root / "main.py"
