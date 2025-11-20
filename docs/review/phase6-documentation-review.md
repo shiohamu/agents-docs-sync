@@ -217,15 +217,15 @@
 ### AGENTS.mdの検証
 ```bash
 # 記載されているコマンドの実行確認
-python3 .docgen/docgen.py
+python3 docgen/docgen.py
 pytest
 ```
 
 ### コード内ドキュメントの検証
 ```bash
 # pydocを使用してdocstringを確認
-python -m pydoc .docgen.docgen
-python -m pydoc .docgen.detectors.python_detector
+python -m pydoc docgen.docgen
+python -m pydoc docgen.detectors.python_detector
 ```
 
 ## 次のステップ

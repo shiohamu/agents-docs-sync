@@ -18,7 +18,7 @@
 ### 評価結果: ✅ 良好（一部改善推奨）
 
 #### 強み
-- 明確なディレクトリ構造（`.docgen/`, `tests/`, `scripts/`）
+- 明確なディレクトリ構造（`docgen/`, `tests/`, `scripts/`）
 - 適切なモジュール分離（detectors, generators, parsers, collectors）
 - 一貫したファイル命名規則
 - `config.yaml`が存在し、自動生成機能も実装されている（`docgen.py`の`_load_config`メソッド）
@@ -234,7 +234,7 @@
 
 5. **パフォーマンス最適化** ✅ **実施済み**
    - キャッシュ機能の実装（並列処理は既に実装されている）
-   - `.docgen/utils/cache.py`に`CacheManager`クラスを実装
+   - `docgen/utils/cache.py`に`CacheManager`クラスを実装
    - `base_parser.py`にキャッシュ機能を統合
    - `api_generator.py`でキャッシュマネージャーを使用
    - 設定ファイル（`config.yaml`）でキャッシュの有効/無効を設定可能
@@ -292,13 +292,13 @@
    - プロジェクト構造、アーキテクチャ、コード追加方法、テスト実行方法、コントリビューションガイドラインを含む包括的な開発者向けガイドを提供
 
 6. **パフォーマンス最適化** ✅
-   - `.docgen/utils/cache.py`に`CacheManager`クラスを実装
+   - `docgen/utils/cache.py`に`CacheManager`クラスを実装
    - ファイルのハッシュ（SHA256）とタイムスタンプを使用してキャッシュの有効性を検証
    - `base_parser.py`の`parse_project()`メソッドにキャッシュ機能を統合
    - `api_generator.py`でキャッシュマネージャーを初期化し、パーサーに渡す
    - 設定ファイル（`config.yaml`）でキャッシュの有効/無効を設定可能（デフォルト: 有効）
-   - キャッシュファイルは`.docgen/.cache/parser_cache.json`に保存
-   - `.gitignore`に`.docgen/.cache/`を追加
+   - キャッシュファイルは`docgen/.cache/parser_cache.json`に保存
+   - `.gitignore`に`docgen/.cache/`を追加
 
 ## 結論
 
@@ -330,9 +330,9 @@
 - 設定ファイルの確認
 
 ### 確認したファイル数
-- Pythonファイル: 20ファイル以上（`.docgen/`配下のモジュール、`scripts/`配下のスクリプト）
+- Pythonファイル: 20ファイル以上（`docgen/`配下のモジュール、`scripts/`配下のスクリプト）
 - テストファイル: 17ファイル以上（`tests/`配下）
-- 設定ファイル: 7ファイル（`pyproject.toml`, `pytest.ini`, `requirements-*.txt`, `.docgen/config.yaml.sample`, `Dockerfile`, `.dockerignore`, `MANIFEST.in`）
+- 設定ファイル: 7ファイル（`pyproject.toml`, `pytest.ini`, `requirements-*.txt`, `docgen/config.yaml.sample`, `Dockerfile`, `.dockerignore`, `MANIFEST.in`）
 - スクリプトファイル: 5ファイル（`setup.sh`, `install.sh`, `scripts/run_tests.sh`, `scripts/run_pipeline.sh`, `scripts/generate_requirements.py`）
 - CI/CDファイル: 2ファイル（`.github/workflows/ci-cd-pipeline.yml`, `.github/workflows/release.yml`）
 - ドキュメントファイル: 複数（`README.md`, `AGENTS.md`, `RELEASE.md`, `docs/api.md`, `docs/implementation/*.md`, `docs/review/*.md`）

@@ -12,7 +12,7 @@
 
 ```bash
 # プロジェクトルートで実行
-python3 .docgen/docgen.py
+python3 docgen/docgen.py
 ```
 
 生成された`AGENTS.md`を確認し、以下の点をチェック：
@@ -55,7 +55,7 @@ python3 .docgen/docgen.py
 
 #### 2.1 `llm_mode`の変更テスト
 
-`.docgen/config.yaml`の`agents.llm_mode`を変更してテスト：
+`docgen/config.yaml`の`agents.llm_mode`を変更してテスト：
 
 **テスト1: `llm_mode: 'api'`**
 
@@ -137,7 +137,7 @@ agents:
 
 ### 4. テストファイルの作成（オプション）
 
-`.docgen/generators/test_agents_generator.py`を作成して、ユニットテストを追加：
+`docgen/generators/test_agents_generator.py`を作成して、ユニットテストを追加：
 
 ```python
 """
@@ -148,9 +148,9 @@ import pytest
 from pathlib import Path
 import sys
 
-# .docgenモジュールをインポート可能にする
+# docgenモジュールをインポート可能にする
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.resolve()
-DOCGEN_DIR = PROJECT_ROOT / ".docgen"
+DOCGEN_DIR = PROJECT_ROOT / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 from generators.agents_generator import AgentsGenerator

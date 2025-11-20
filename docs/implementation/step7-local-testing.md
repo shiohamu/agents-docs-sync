@@ -9,7 +9,7 @@
 ### 1. AGENTS.md生成のテスト
 
 ```bash
-python3 .docgen/docgen.py
+python3 docgen/docgen.py
 ```
 
 **確認項目**:

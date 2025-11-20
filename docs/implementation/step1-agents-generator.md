@@ -6,7 +6,7 @@
 
 ## 作業内容
 
-### 1. `.docgen/generators/agents_generator.py`を作成
+### 1. `docgen/generators/agents_generator.py`を作成
 
 既存の`APIGenerator`と`ReadmeGenerator`を参考に、以下の構造で実装します：
 

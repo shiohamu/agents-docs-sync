@@ -6,14 +6,14 @@
 
 ## 作業内容
 
-### 1. `.docgen/collectors/`ディレクトリを作成
+### 1. `docgen/collectors/`ディレクトリを作成
 
 ```bash
-mkdir -p .docgen/collectors
-touch .docgen/collectors/__init__.py
+mkdir -p docgen/collectors
+touch docgen/collectors/__init__.py
 ```
 
-### 2. `.docgen/collectors/project_info_collector.py`を作成
+### 2. `docgen/collectors/project_info_collector.py`を作成
 
 以下の構造で実装します：
 
@@ -268,7 +268,7 @@ class ProjectInfoCollector:
         return structure
 ```
 
-### 3. `.docgen/collectors/__init__.py`を編集
+### 3. `docgen/collectors/__init__.py`を編集
 
 ```python
 """

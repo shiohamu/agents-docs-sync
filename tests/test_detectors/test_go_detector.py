@@ -2,9 +2,8 @@
 GoDetectorのテスト
 """
 
-import pytest
-from pathlib import Path
 from detectors.go_detector import GoDetector
+import pytest
 
 
 @pytest.mark.unit
@@ -15,11 +14,11 @@ class TestGoDetector:
         """go.modがある場合に検出されることを確認"""
         detector = GoDetector(go_project)
         assert detector.detect() is True
-        assert detector.get_language() == 'go'
+        assert detector.get_language() == "go"
 
     def test_detect_with_go_files(self, temp_project):
         """Goファイルがある場合に検出されることを確認"""
-        (temp_project / "main.go").write_text("package main\n", encoding='utf-8')
+        (temp_project / "main.go").write_text("package main\n", encoding="utf-8")
         detector = GoDetector(temp_project)
         assert detector.detect() is True
 
@@ -31,5 +30,4 @@ class TestGoDetector:
     def test_get_language(self, go_project):
         """get_language()が'go'を返すことを確認"""
         detector = GoDetector(go_project)
-        assert detector.get_language() == 'go'
-
+        assert detector.get_language() == "go"

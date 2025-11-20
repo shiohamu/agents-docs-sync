@@ -2,13 +2,14 @@
 DocGenメインクラスのテスト
 """
 
-import pytest
-import yaml
 from pathlib import Path
 import sys
 
-# .docgenモジュールをインポート
-DOCGEN_DIR = Path(__file__).parent.parent / ".docgen"
+import pytest
+import yaml
+
+# docgenモジュールをインポート
+DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 from docgen import DocGen
@@ -23,20 +24,22 @@ class TestDocGen:
         # 一時プロジェクトをルートとして使用
         docgen = DocGen(config_path=sample_config)
 
-        assert docgen.config is not None
-        assert 'languages' in docgen.config
-        assert 'output' in docgen.config
+        config = docgen.get_config()
+        assert config is not None
+        assert "languages" in config
+        assert "output" in config
 
     def test_get_default_config(self, temp_project):
         """デフォルト設定が正しいことを確認"""
-        docgen = DocGen()
-        default_config = docgen._get_default_config()
+        # 設定ファイルが存在しない場合、デフォルト設定が返される
+        docgen = DocGen(config_path=temp_project / "nonexistent.yaml")
+        config = docgen.get_config()
 
-        assert 'languages' in default_config
-        assert 'output' in default_config
-        assert 'generation' in default_config
-        assert default_config['output']['api_doc'] == 'docs/api.md'
-        assert default_config['output']['readme'] == 'README.md'
+        assert "languages" in config
+        assert "output" in config
+        assert "generation" in config
+        assert config["output"]["api_doc"] == "docs/api.md"
+        assert config["output"]["readme"] == "README.md"
 
     def test_detect_languages_python(self, python_project):
         """Pythonプロジェクトの言語検出を確認"""
@@ -45,7 +48,7 @@ class TestDocGen:
 
         detector = PythonDetector(python_project)
         assert detector.detect() is True
-        assert detector.get_language() == 'python'
+        assert detector.get_language() == "python"
 
         # DocGenのdetect_languagesメソッドもテスト
         # 注意: DocGenは実際のプロジェクトルートを使用するため、
@@ -57,9 +60,9 @@ class TestDocGen:
 
     def test_detect_languages_empty_project(self, temp_project):
         """空のプロジェクトで言語が検出されないことを確認"""
-        from detectors.python_detector import PythonDetector
-        from detectors.javascript_detector import JavaScriptDetector
         from detectors.go_detector import GoDetector
+        from detectors.javascript_detector import JavaScriptDetector
+        from detectors.python_detector import PythonDetector
 
         # 空のプロジェクトでは言語が検出されないことを確認
         python_detector = PythonDetector(temp_project)
@@ -78,37 +81,37 @@ class TestDocGen:
         # 代わりに、各生成器を直接テスト
 
         config = {
-            'output': {
-                'api_doc': 'docs/api.md',
-                'readme': 'README.md',
-                'agents_doc': 'AGENTS.md'
+            "output": {
+                "api_doc": "docs/api.md",
+                "readme": "README.md",
+                "agents_doc": "AGENTS.md",
             },
-            'generation': {
-                'update_readme': True,
-                'generate_api_doc': True,
-                'generate_agents_doc': True,
-                'preserve_manual_sections': True
-            }
+            "generation": {
+                "update_readme": True,
+                "generate_api_doc": True,
+                "generate_agents_doc": True,
+                "preserve_manual_sections": True,
+            },
         }
 
+        from generators.agents_generator import AgentsGenerator
         from generators.api_generator import APIGenerator
         from generators.readme_generator import ReadmeGenerator
-        from generators.agents_generator import AgentsGenerator
 
         # API生成をテスト
-        api_generator = APIGenerator(python_project, ['python'], config)
+        api_generator = APIGenerator(python_project, ["python"], config)
         result = api_generator.generate()
         assert result is True
         assert (python_project / "docs" / "api.md").exists()
 
         # README生成をテスト
-        readme_generator = ReadmeGenerator(python_project, ['python'], config)
+        readme_generator = ReadmeGenerator(python_project, ["python"], config)
         result = readme_generator.generate()
         assert result is True
         assert (python_project / "README.md").exists()
 
         # AGENTS.md生成をテスト
-        agents_generator = AgentsGenerator(python_project, ['python'], config)
+        agents_generator = AgentsGenerator(python_project, ["python"], config)
         result = agents_generator.generate()
         assert result is True
         assert (python_project / "AGENTS.md").exists()
@@ -119,37 +122,35 @@ class TestDocGen:
         config_dir.mkdir()
         config_path = config_dir / "config.yaml"
 
-        partial_config = {
-            'output': {
-                'api_doc': 'custom/api.md'
-            }
-        }
+        partial_config = {"output": {"api_doc": "custom/api.md"}}
 
-        with open(config_path, 'w', encoding='utf-8') as f:
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(partial_config, f)
 
         docgen = DocGen(config_path=config_path)
         # 部分的な設定が読み込まれることを確認
-        assert docgen.config['output']['api_doc'] == 'custom/api.md'
+        assert docgen.get_config()["output"]["api_doc"] == "custom/api.md"
 
     def test_load_config_invalid_yaml(self, temp_project):
         """無効なYAMLファイルを処理"""
         config_dir = temp_project / ".docgen"
         config_dir.mkdir()
         config_path = config_dir / "config.yaml"
-        config_path.write_text("invalid: yaml: content: [\n", encoding='utf-8')
+        config_path.write_text("invalid: yaml: content: [\n", encoding="utf-8")
 
         docgen = DocGen(config_path=config_path)
         # デフォルト設定が使用されることを確認
-        assert docgen.config is not None
-        assert 'languages' in docgen.config
+        config = docgen.get_config()
+        assert config is not None
+        assert "languages" in config
 
     def test_load_config_missing_file(self, temp_project):
         """設定ファイルが存在しない場合"""
         config_path = temp_project / ".docgen" / "config.yaml"
         docgen = DocGen(config_path=config_path)
         # デフォルト設定が使用されることを確認
-        assert docgen.config is not None
+        config = docgen.get_config()
+        assert config is not None
 
     def test_detect_languages_parallel(self, python_project):
         """並列処理で言語検出"""
@@ -181,48 +182,48 @@ class TestDocGen:
     def test_generate_documents_api_doc_disabled(self, python_project):
         """APIドキュメント生成が無効な場合"""
         config = {
-            'generation': {
-                'generate_api_doc': False,
-                'update_readme': True,
-                'generate_agents_doc': True
+            "generation": {
+                "generate_api_doc": False,
+                "update_readme": True,
+                "generate_agents_doc": True,
             }
         }
         from generators.readme_generator import ReadmeGenerator
-        from generators.agents_generator import AgentsGenerator
 
-        readme_generator = ReadmeGenerator(python_project, ['python'], config)
+        readme_generator = ReadmeGenerator(python_project, ["python"], config)
         assert readme_generator.generate() is True
 
     def test_generate_documents_readme_disabled(self, python_project):
         """README生成が無効な場合"""
         config = {
-            'generation': {
-                'generate_api_doc': True,
-                'update_readme': False,
-                'generate_agents_doc': True
+            "generation": {
+                "generate_api_doc": True,
+                "update_readme": False,
+                "generate_agents_doc": True,
             }
         }
         from generators.api_generator import APIGenerator
 
-        api_generator = APIGenerator(python_project, ['python'], config)
+        api_generator = APIGenerator(python_project, ["python"], config)
         assert api_generator.generate() is True
 
     def test_main_function_detect_only(self, temp_project, monkeypatch):
         """main()関数の--detect-onlyオプションをテスト"""
-        import sys
         from io import StringIO
+        import sys
 
         # コマンドライン引数をモック
-        test_args = ['docgen.py', '--detect-only']
-        monkeypatch.setattr(sys, 'argv', test_args)
+        test_args = ["docgen.py", "--detect-only"]
+        monkeypatch.setattr(sys, "argv", test_args)
 
         # stdoutをキャプチャ
         captured_output = StringIO()
-        monkeypatch.setattr(sys, 'stdout', captured_output)
+        monkeypatch.setattr(sys, "stdout", captured_output)
 
         # main()を実行（実際のプロジェクトルートを使用するため、スキップする可能性がある）
         try:
             from docgen import main
+
             result = main()
             # detect_onlyの場合は0を返す
             assert result == 0
@@ -235,11 +236,12 @@ class TestDocGen:
         import sys
 
         # コマンドライン引数をモック
-        test_args = ['docgen.py', '--no-api-doc']
-        monkeypatch.setattr(sys, 'argv', test_args)
+        test_args = ["docgen.py", "--no-api-doc"]
+        monkeypatch.setattr(sys, "argv", test_args)
 
         try:
             from docgen import main
+
             # 実際のプロジェクトで実行されるため、結果は環境依存
             # エラーが発生しないことを確認
             result = main()
@@ -255,11 +257,12 @@ class TestDocGen:
         import sys
 
         # コマンドライン引数をモック
-        test_args = ['docgen.py', '--no-readme']
-        monkeypatch.setattr(sys, 'argv', test_args)
+        test_args = ["docgen.py", "--no-readme"]
+        monkeypatch.setattr(sys, "argv", test_args)
 
         try:
             from docgen import main
+
             # 実際のプロジェクトで実行されるため、結果は環境依存
             result = main()
             assert isinstance(result, int)
@@ -274,11 +277,12 @@ class TestDocGen:
         import sys
 
         # コマンドライン引数をモック
-        test_args = ['docgen.py', '--config', str(sample_config)]
-        monkeypatch.setattr(sys, 'argv', test_args)
+        test_args = ["docgen.py", "--config", str(sample_config)]
+        monkeypatch.setattr(sys, "argv", test_args)
 
         try:
             from docgen import main
+
             result = main()
             assert isinstance(result, int)
         except SystemExit:
@@ -286,4 +290,3 @@ class TestDocGen:
         except Exception:
             # その他のエラーは許容（環境依存のため）
             pass
-

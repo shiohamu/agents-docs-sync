@@ -10,8 +10,8 @@
 - `pytest.ini` - テスト設定
 - `requirements-docgen.txt` - ドキュメント生成用依存関係
 - `requirements-test.txt` - テスト用依存関係
-- `.docgen/config.yaml` - 設定ファイル（存在確認）
-- `.docgen/config.yaml.sample` - 設定ファイルテンプレート
+- `docgen/config.yaml` - 設定ファイル（存在確認）
+- `docgen/config.yaml.sample` - 設定ファイルテンプレート
 - `setup.sh` - セットアップスクリプト
 - `README.md` - プロジェクトドキュメント
 
@@ -24,7 +24,7 @@
 
 #### 1.1 ディレクトリ構造の確認
 - [ ] プロジェクトルートに必要なディレクトリが存在するか確認
-  - `.docgen/` - コアモジュール
+  - `docgen/` - コアモジュール
   - `tests/` - テストファイル
   - `scripts/` - 実行スクリプト
   - `.github/workflows/` - CI/CD設定
@@ -60,8 +60,8 @@
 ### ステップ3: 設定ファイルのレビュー
 
 #### 3.1 config.yamlの存在確認
-- [ ] `.docgen/config.yaml`が存在するか
-- [ ] `.docgen/config.yaml.sample`が存在するか
+- [ ] `docgen/config.yaml`が存在するか
+- [ ] `docgen/config.yaml.sample`が存在するか
 - [ ] `config.yaml`が`.gitignore`に含まれているか（機密情報を含む場合）
 
 #### 3.2 config.yaml.sampleの確認

@@ -27,7 +27,7 @@ error() {
 
 # プロジェクトルートを取得
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCGEN_DIR="$PROJECT_ROOT/.docgen"
+DOCGEN_DIR="$PROJECT_ROOT/docgen"
 GIT_HOOKS_DIR="$PROJECT_ROOT/.git/hooks"
 
 # グローバル変数
@@ -140,14 +140,14 @@ check_and_install_packages() {
 # 2. 必要なPythonパッケージの確認とインストール
 check_and_install_packages
 
-# 3. .docgenディレクトリの確認
+# 3. docgenディレクトリの確認
 if [ ! -d "$DOCGEN_DIR" ]; then
-    error ".docgenディレクトリが見つかりません。"
-    error "このスクリプトは、.docgenディレクトリが存在するプロジェクトで実行してください。"
+    error "docgenディレクトリが見つかりません。"
+    error "このスクリプトは、docgenディレクトリが存在するプロジェクトで実行してください。"
     exit 1
 fi
 
-info ".docgenディレクトリを確認しました"
+info "docgenディレクトリを確認しました"
 
 # 4. docgen.pyの実行権限を確認
 DOCGEN_SCRIPT="$DOCGEN_DIR/docgen.py"

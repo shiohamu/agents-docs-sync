@@ -98,7 +98,7 @@
 #### 4.1 カバレッジレポートの生成
 - [ ] カバレッジレポートが生成されるか確認
   ```bash
-  pytest --cov=.docgen --cov-report=html
+  pytest --cov=docgen --cov-report=html
   ```
 - [ ] HTMLレポートが生成されるか確認（`htmlcov/index.html`）
 
@@ -204,18 +204,18 @@
 
 ### HTMLレポートの生成
 ```bash
-pytest --cov=.docgen --cov-report=html
+pytest --cov=docgen --cov-report=html
 # ブラウザで htmlcov/index.html を開く
 ```
 
 ### ターミナルレポートの生成
 ```bash
-pytest --cov=.docgen --cov-report=term-missing
+pytest --cov=docgen --cov-report=term-missing
 ```
 
 ### XMLレポートの生成（CI/CD用）
 ```bash
-pytest --cov=.docgen --cov-report=xml
+pytest --cov=docgen --cov-report=xml
 ```
 
 ## 次のステップ

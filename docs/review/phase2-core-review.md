@@ -6,32 +6,32 @@
 ## 対象ファイル・ディレクトリ
 
 ### メインエントリーポイント
-- `.docgen/docgen.py` - メインエントリーポイントとDocGenクラス
+- `docgen/docgen.py` - メインエントリーポイントとDocGenクラス
 
 ### Detectors（言語検出モジュール）
-- `.docgen/detectors/base_detector.py` - 基底クラス
-- `.docgen/detectors/python_detector.py` - Python検出器
-- `.docgen/detectors/javascript_detector.py` - JavaScript検出器
-- `.docgen/detectors/go_detector.py` - Go検出器
-- `.docgen/detectors/generic_detector.py` - 汎用検出器
-- `.docgen/detectors/__init__.py` - モジュール初期化
+- `docgen/detectors/base_detector.py` - 基底クラス
+- `docgen/detectors/python_detector.py` - Python検出器
+- `docgen/detectors/javascript_detector.py` - JavaScript検出器
+- `docgen/detectors/go_detector.py` - Go検出器
+- `docgen/detectors/generic_detector.py` - 汎用検出器
+- `docgen/detectors/__init__.py` - モジュール初期化
 
 ### Parsers（コードパーサー）
-- `.docgen/generators/parsers/base_parser.py` - 基底クラス
-- `.docgen/generators/parsers/python_parser.py` - Pythonパーサー
-- `.docgen/generators/parsers/js_parser.py` - JavaScriptパーサー
-- `.docgen/generators/parsers/generic_parser.py` - 汎用パーサー
-- `.docgen/generators/parsers/__init__.py` - モジュール初期化
+- `docgen/generators/parsers/base_parser.py` - 基底クラス
+- `docgen/generators/parsers/python_parser.py` - Pythonパーサー
+- `docgen/generators/parsers/js_parser.py` - JavaScriptパーサー
+- `docgen/generators/parsers/generic_parser.py` - 汎用パーサー
+- `docgen/generators/parsers/__init__.py` - モジュール初期化
 
 ### Generators（ドキュメント生成器）
-- `.docgen/generators/agents_generator.py` - AGENTS.md生成器
-- `.docgen/generators/api_generator.py` - APIドキュメント生成器
-- `.docgen/generators/readme_generator.py` - README.md生成器
-- `.docgen/generators/__init__.py` - モジュール初期化
+- `docgen/generators/agents_generator.py` - AGENTS.md生成器
+- `docgen/generators/api_generator.py` - APIドキュメント生成器
+- `docgen/generators/readme_generator.py` - README.md生成器
+- `docgen/generators/__init__.py` - モジュール初期化
 
 ### Collectors（情報収集モジュール）
-- `.docgen/collectors/project_info_collector.py` - プロジェクト情報収集器
-- `.docgen/collectors/__init__.py` - モジュール初期化
+- `docgen/collectors/project_info_collector.py` - プロジェクト情報収集器
+- `docgen/collectors/__init__.py` - モジュール初期化
 
 ## レビュー手順
 

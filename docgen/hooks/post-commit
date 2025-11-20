@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+# post-commitフック
+# コミット後にドキュメントを更新（オプション）
+# 注意: このフックは別のコミットとしてドキュメント更新を追加します
+#
+
+# プロジェクトルートを取得
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -z "$PROJECT_ROOT" ]; then
+    # Gitリポジトリでない場合はスキップ
+    exit 0
+fi
+
+DOCGEN_DIR="$PROJECT_ROOT/docgen"
+DOCGEN_SCRIPT="$DOCGEN_DIR/docgen.py"
+CONFIG_FILE="$DOCGEN_DIR/config.yaml"
+
+# docgen.pyが存在しない場合はスキップ
+if [ ! -f "$DOCGEN_SCRIPT" ]; then
+    exit 0
+fi
+
+# 設定でpost-commitが有効か確認（デフォルトは無効）
+# この機能を使う場合は、手動で有効化してください
+ENABLE_POST_COMMIT="${DOCGEN_ENABLE_POST_COMMIT:-0}"
+
+if [ "$ENABLE_POST_COMMIT" != "1" ]; then
+    exit 0
+fi
+
+# uvまたはPythonが利用可能か確認
+if command -v uv &> /dev/null; then
+    PYTHON_CMD="uv run python3"
+elif command -v python3 &> /dev/null; then
+    PYTHON_CMD="python3"
+else
+    exit 0
+fi
+
+# 設定ファイルからパスを取得（デフォルト値を使用）
+API_DOC_PATH="docs/api.md"
+README_PATH="README.md"
+
+if [ -f "$CONFIG_FILE" ] && command -v python3 &> /dev/null; then
+    # Pythonで設定ファイルを読み取り
+    API_DOC_PATH=$(python3 -c "
+import yaml
+import sys
+try:
+    with open('$CONFIG_FILE', 'r') as f:
+        config = yaml.safe_load(f) or {}
+    api_path = config.get('output', {}).get('api_doc', 'docs/api.md')
+    print(api_path)
+except:
+    print('docs/api.md')
+" 2>/dev/null || echo "docs/api.md")
+fi
+
+# ドキュメントを生成
+cd "$PROJECT_ROOT" || exit 0
+$PYTHON_CMD "$DOCGEN_SCRIPT" 2>&1
+
+# 変更があったファイルを確認（HEADとの差分をチェック）
+CHANGED_FILES=()
+
+if [ -f "$API_DOC_PATH" ]; then
+    if ! git diff HEAD --quiet -- "$API_DOC_PATH" 2>/dev/null; then
+        CHANGED_FILES+=("$API_DOC_PATH")
+    fi
+fi
+
+if [ -f "$README_PATH" ]; then
+    if ! git diff HEAD --quiet -- "$README_PATH" 2>/dev/null; then
+        CHANGED_FILES+=("$README_PATH")
+    fi
+fi
+
+# 変更があった場合は別コミットとして追加
+if [ "${#CHANGED_FILES[@]}" -gt 0 ]; then
+    git add "${CHANGED_FILES[@]}" 2>/dev/null
+    git commit -m "docs: ドキュメントを自動更新" --no-verify 2>/dev/null
+
+    if [ $? -eq 0 ]; then
+        echo "✓ ドキュメントを自動更新し、別コミットとして追加しました。"
+    fi
+fi
+
+exit 0
+

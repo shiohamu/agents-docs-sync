@@ -3,13 +3,15 @@
 requirements-*.txtファイルをpyproject.tomlから自動生成するスクリプト
 """
 
-import tomllib
 from pathlib import Path
+import tomllib
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
 
-def generate_requirements_file(extras: list[str], output_file: Path, include_base: bool = False) -> None:
+def generate_requirements_file(
+    extras: list[str], output_file: Path, include_base: bool = False
+) -> None:
     """
     pyproject.tomlからrequirementsファイルを生成
 
@@ -63,8 +65,8 @@ def generate_requirements_file(extras: list[str], output_file: Path, include_bas
 
     # ファイルに書き込み
     with open(output_file, "w", encoding="utf-8") as f:
-        f.write(f"# このファイルはpyproject.tomlから自動生成されます\n")
-        f.write(f"# 手動で編集しないでください\n\n")
+        f.write("# このファイルはpyproject.tomlから自動生成されます\n")
+        f.write("# 手動で編集しないでください\n\n")
         for dep in unique_dependencies:
             f.write(f"{dep}\n")
 
@@ -73,21 +75,14 @@ def main():
     """メイン処理"""
     # requirements-docgen.txtを生成（基本依存関係を含む）
     generate_requirements_file(
-        ["docgen"],
-        PROJECT_ROOT / "requirements-docgen.txt",
-        include_base=True
+        ["docgen"], PROJECT_ROOT / "requirements-docgen.txt", include_base=True
     )
     print("✓ requirements-docgen.txt を生成しました")
 
     # requirements-test.txtを生成（基本依存関係を含まない）
-    generate_requirements_file(
-        ["test"],
-        PROJECT_ROOT / "requirements-test.txt",
-        include_base=False
-    )
+    generate_requirements_file(["test"], PROJECT_ROOT / "requirements-test.txt", include_base=False)
     print("✓ requirements-test.txt を生成しました")
 
 
 if __name__ == "__main__":
     main()
-

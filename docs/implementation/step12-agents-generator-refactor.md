@@ -6,7 +6,7 @@
 
 ## 作業内容
 
-### 1. `.docgen/generators/agents_generator.py`を大幅に変更
+### 1. `docgen/generators/agents_generator.py`を大幅に変更
 
 既存の実装を、以下の新しい実装に置き換えます：
 

@@ -2,16 +2,17 @@
 エッジケースとエラーハンドリングのテスト
 """
 
-import pytest
 from pathlib import Path
 import sys
 
-DOCGEN_DIR = Path(__file__).parent.parent / ".docgen"
+import pytest
+
+DOCGEN_DIR = Path(__file__).parent.parent / "docgen"
 sys.path.insert(0, str(DOCGEN_DIR))
 
 from detectors.python_detector import PythonDetector
-from generators.parsers.python_parser import PythonParser
 from generators.api_generator import APIGenerator
+from generators.parsers.python_parser import PythonParser
 from generators.readme_generator import ReadmeGenerator
 
 
@@ -39,7 +40,7 @@ class TestEdgeCases:
         """構文エラーを含むファイルの解析をテスト"""
         code = "def invalid syntax here\n"
         file_path = temp_project / "invalid.py"
-        file_path.write_text(code, encoding='utf-8')
+        file_path.write_text(code, encoding="utf-8")
 
         parser = PythonParser(temp_project)
         # 構文エラーがあっても例外が発生しないことを確認
@@ -49,7 +50,7 @@ class TestEdgeCases:
     def test_parser_with_empty_file(self, temp_project):
         """空のファイルの解析をテスト"""
         file_path = temp_project / "empty.py"
-        file_path.write_text("", encoding='utf-8')
+        file_path.write_text("", encoding="utf-8")
 
         parser = PythonParser(temp_project)
         apis = parser.parse_file(file_path)
@@ -58,15 +59,11 @@ class TestEdgeCases:
     def test_api_generator_with_empty_project(self, temp_project):
         """空のプロジェクトでのAPI生成をテスト"""
         config = {
-            'output': {
-                'api_doc': 'docs/api.md'
-            },
-            'generation': {
-                'generate_api_doc': True
-            }
+            "output": {"api_doc": "docs/api.md"},
+            "generation": {"generate_api_doc": True},
         }
 
-        generator = APIGenerator(temp_project, ['python'], config)
+        generator = APIGenerator(temp_project, ["python"], config)
         result = generator.generate()
 
         assert result is True
@@ -76,13 +73,8 @@ class TestEdgeCases:
     def test_readme_generator_with_no_dependencies(self, temp_project):
         """依存関係がないプロジェクトでのREADME生成をテスト"""
         config = {
-            'output': {
-                'readme': 'README.md'
-            },
-            'generation': {
-                'update_readme': True,
-                'preserve_manual_sections': True
-            }
+            "output": {"readme": "README.md"},
+            "generation": {"update_readme": True, "preserve_manual_sections": True},
         }
 
         generator = ReadmeGenerator(temp_project, [], config)
@@ -92,7 +84,7 @@ class TestEdgeCases:
         readme_path = temp_project / "README.md"
         assert readme_path.exists()
 
-        content = readme_path.read_text(encoding='utf-8')
+        content = readme_path.read_text(encoding="utf-8")
         assert len(content) > 0
 
     def test_readme_generator_with_invalid_manual_section(self, temp_project):
@@ -104,19 +96,14 @@ class TestEdgeCases:
 <!-- MANUAL_END:other -->
 """
         readme_path = temp_project / "README.md"
-        readme_path.write_text(readme_content, encoding='utf-8')
+        readme_path.write_text(readme_content, encoding="utf-8")
 
         config = {
-            'output': {
-                'readme': 'README.md'
-            },
-            'generation': {
-                'update_readme': True,
-                'preserve_manual_sections': True
-            }
+            "output": {"readme": "README.md"},
+            "generation": {"update_readme": True, "preserve_manual_sections": True},
         }
 
-        generator = ReadmeGenerator(temp_project, ['python'], config)
+        generator = ReadmeGenerator(temp_project, ["python"], config)
         # エラーが発生しないことを確認
         result = generator.generate()
         assert result is True
@@ -124,15 +111,11 @@ class TestEdgeCases:
     def test_api_generator_with_custom_output_path(self, temp_project):
         """カスタム出力パスでのAPI生成をテスト"""
         config = {
-            'output': {
-                'api_doc': 'custom/path/api.md'
-            },
-            'generation': {
-                'generate_api_doc': True
-            }
+            "output": {"api_doc": "custom/path/api.md"},
+            "generation": {"generate_api_doc": True},
         }
 
-        generator = APIGenerator(temp_project, ['python'], config)
+        generator = APIGenerator(temp_project, ["python"], config)
         result = generator.generate()
 
         assert result is True
@@ -143,24 +126,24 @@ class TestEdgeCases:
         """除外ディレクトリが正しく除外されることを確認"""
         # 除外ディレクトリにファイルを作成
         (temp_project / ".git" / "file.py").parent.mkdir()
-        (temp_project / ".git" / "file.py").write_text("def test(): pass\n", encoding='utf-8')
+        (temp_project / ".git" / "file.py").write_text("def test(): pass\n", encoding="utf-8")
 
         # 通常のファイルを作成
-        (temp_project / "main.py").write_text("def main(): pass\n", encoding='utf-8')
+        (temp_project / "main.py").write_text("def main(): pass\n", encoding="utf-8")
 
         parser = PythonParser(temp_project)
-        apis = parser.parse_project(exclude_dirs=['.git'])
+        apis = parser.parse_project(exclude_dirs=[".git"])
 
         # .git内のファイルは除外される
-        files = [api['file'] for api in apis]
-        assert '.git/file.py' not in files
-        assert 'main.py' in files or len(apis) >= 0
+        files = [api["file"] for api in apis]
+        assert ".git/file.py" not in files
+        assert "main.py" in files or len(apis) >= 0
 
     def test_readme_generator_with_missing_config(self, temp_project):
         """設定が不完全な場合の処理をテスト"""
         config = {}  # 空の設定
 
-        generator = ReadmeGenerator(temp_project, ['python'], config)
+        generator = ReadmeGenerator(temp_project, ["python"], config)
         # デフォルト値が使用されることを確認
         result = generator.generate()
         assert result is True
@@ -168,12 +151,8 @@ class TestEdgeCases:
     def test_api_generator_with_no_languages(self, temp_project):
         """言語が指定されていない場合の処理をテスト"""
         config = {
-            'output': {
-                'api_doc': 'docs/api.md'
-            },
-            'generation': {
-                'generate_api_doc': True
-            }
+            "output": {"api_doc": "docs/api.md"},
+            "generation": {"generate_api_doc": True},
         }
 
         generator = APIGenerator(temp_project, [], config)
@@ -181,4 +160,3 @@ class TestEdgeCases:
 
         # 空のリストでもエラーが発生しないことを確認
         assert isinstance(result, bool)
-
