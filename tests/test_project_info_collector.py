@@ -202,4 +202,5 @@ jobs:
         structure = collector.collect_project_structure()
 
         assert isinstance(structure, dict)
-        assert "structure" in structure
+        assert "languages" in structure
+        assert "main_directories" in structure

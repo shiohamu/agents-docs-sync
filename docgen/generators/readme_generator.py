@@ -333,3 +333,12 @@ class ReadmeGenerator(BaseGenerator):
                     dependencies["Go"] = deps
 
         return dependencies
+
+    def _get_project_structure(self) -> list[str]:
+        """
+        プロジェクト構造を取得
+
+        Returns:
+            プロジェクト構造のリスト
+        """
+        return get_project_structure(self.project_root)

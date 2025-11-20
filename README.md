@@ -29,7 +29,6 @@ uv sync
 ```bash
 npm install
 ```
-
 <!-- MANUAL_END:setup -->
 
 ## プロジェクト構造
@@ -37,7 +36,6 @@ npm install
 ```
 .github/
   workflows/
-agents_docs_sync/
 agents_docs_sync.egg-info/
   dependency_links.txt
   entry_points.txt
@@ -55,8 +53,9 @@ docs/
   review/
     README.md
   api.md
+  DEVELOPER_GUIDE.md
 ```
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-20 10:06:49*
+*このREADMEは自動生成されています。最終更新: 2025-11-20 10:34:13*
