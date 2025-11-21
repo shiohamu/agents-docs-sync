@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-21 12:40:43
+自動生成日時: 2025-11-21 14:50:50
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -9,26 +9,38 @@
 ## プロジェクト概要
 
 <!-- MANUAL_START:description -->
-`agents-docs-sync` は、GitHub Actions を利用して構築されたマルチ言語（Python・JavaScript・C）向けの CI/CD パイプラインです。  
-主な機能は次のとおり：
 
-- **ドキュメント生成**： `uv run python3 docgen/docgen.py` でプロジェクト全体の API ドキュメントを自動生成し、リポジトリ内に配置します。
-- **テスト実行**：Python コードは Pytest を用いて単体・統合テストが走り、コードカバレッジも測定されます。  
-  - `uv run pytest`
-  - `uv run python3 -m pytest test`
-  - `uv run pytest tests/ -v --tb=short`
-- **静的解析**：`ruff` をリンターとして使用し、一貫したコーディングスタイルと品質を保ちます。
+`agents-docs-sync` は GitHub に push された変更をトリガーとして実行される CI/CD パイプラインです。主な機能は以下の通りです。
 
-依存関係は以下のパッケージで管理され、必要に応じて `uv` からインストールします：
+- **ドキュメント自動生成**  
+  Python スクリプト `docgen/docgen.py` を使用し、YAML 設定から Markdown ドキュメントを作成します。
+- **テスト実行とカバレッジ報告**  
+  Pytest ベースの単体・統合テストが自動で走り、コード品質を保証します。
 
-```text
-pyyaml>=6.0.3
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-mock>=3.11.1
-```
+### 技術スタック
+| コンポーネント | バージョン要件 |
+|-----------------|---------------|
+| Python          | 3.11+         |
+| Shell           | Bash (POSIX)  |
 
-このパイプラインは GitHub Actions のワークフローとして定義され、コミットごとに自動でビルド・テストが走るため、高品質なコードベースを維持しつつ迅速なデプロイメントサイクルを実現します。
+#### 主な依存ライブラリ
+- `pyyaml>=6.0.3`
+- `pytest>=7.4.0`
+- `pytest-cov>=4.1.0`
+- `pytest-mock>=3.11.1`
+
+### ビルド & テストコマンド
+
+| タスク | コマンド |
+|--------|----------|
+| ドキュメント生成 | `uv run python3 docgen/docgen.py` |
+| 単体テスト   | `uv run pytest` <br> `uv run python3 -m pytest test` <br> `uv run pytest tests/ -v --tb=short` |
+
+### コーディング規約
+- **リンター**：`ruff`
+
+これらを組み合わせることで、リポジトリ内の変更が即座に最新ドキュメントへ反映され、品質保証も同時に行われます。
+
 <!-- MANUAL_END:description -->
 
 ---
@@ -38,7 +50,6 @@ pytest-mock>=3.11.1
 ### 前提条件
 
 - Python 3.12以上
-- Node.js 18以上
 
 ### 依存関係のインストール
 
@@ -46,12 +57,6 @@ pytest-mock>=3.11.1
 
 ```bash
 uv sync
-```
-
-#### JavaScript依存関係
-
-```bash
-npm install
 ```
 
 ### LLM環境のセットアップ
@@ -133,4 +138,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-21 12:40:43*
+*このドキュメントは自動生成されています。最終更新: 2025-11-21 14:50:50*
