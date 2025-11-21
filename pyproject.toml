@@ -75,9 +75,8 @@ dev = [
     {include-group = "default"},
 ]
 
-[tool.setuptools]
-package-dir = {"docgen" = "docgen"}
-packages = {find = {}}
+[tool.hatch.build.targets.wheel]
+packages = ["agents_docs_sync", "docgen"]
 
 [tool.setuptools.package-data]
 "docgen" = [
