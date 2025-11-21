@@ -90,6 +90,16 @@ class BaseDetector(ABC):
                             # プロジェクトルート外のファイルはスキップ
                             continue
 
+                        # 除外ディレクトリをスキップ
+                        relative_path = file_path.relative_to(self.project_root)
+                        if relative_path.parts and relative_path.parts[0] in [
+                            ".venv",
+                            ".git",
+                            "__pycache__",
+                            "node_modules",
+                        ]:
+                            continue
+
                         # シンボリックリンクをスキップ（オプション）
                         if file_path.is_symlink():
                             continue
