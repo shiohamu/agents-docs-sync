@@ -195,23 +195,22 @@ class ProjectInfoCollector:
                 command = f"uv run {command}"
             commands.append(command)
 
-        # JavaScript/TypeScriptプロジェクトの場合
-        if "javascript" in self.package_managers or "typescript" in self.package_managers:
-            pm = self.package_managers.get("javascript", "npm")
-            package_json = self.project_root / "package.json"
-            if package_json.exists():
-                try:
-                    with open(package_json, encoding="utf-8") as f:
-                        data = json.load(f)
-                        if "scripts" in data and "test" in data["scripts"]:
-                            if pm == "pnpm":
-                                commands.append("pnpm test")
-                            elif pm == "yarn":
-                                commands.append("yarn test")
-                            else:  # npm
-                                commands.append("npm test")
-                except (json.JSONDecodeError, KeyError):
-                    pass
+        # package.json から収集
+        package_json = self.project_root / "package.json"
+        if package_json.exists():
+            try:
+                with open(package_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "scripts" in data and "test" in data["scripts"]:
+                        pm = self.package_managers.get("javascript", "npm")
+                        if pm == "pnpm":
+                            commands.append("pnpm test")
+                        elif pm == "yarn":
+                            commands.append("yarn test")
+                        else:  # npm
+                            commands.append("npm test")
+            except (json.JSONDecodeError, KeyError):
+                pass
 
         # Goプロジェクトの場合
         if "go" in self.package_managers:

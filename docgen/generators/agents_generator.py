@@ -619,8 +619,6 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("### 依存関係のインストール")
         lines.append("")
 
-        dependencies = project_info.get("dependencies", {})
-
         # Python依存関係
         if "python" in self.languages:
             pm = self.package_managers.get("python", "pip")

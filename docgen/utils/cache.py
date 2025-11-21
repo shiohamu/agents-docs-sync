@@ -62,9 +62,6 @@ class CacheManager:
             except (OSError, json.JSONDecodeError) as e:
                 logger.warning(f"キャッシュファイルの読み込みに失敗しました: {e}")
                 self._cache_data = {}
-            except (OSError, json.JSONDecodeError) as e:
-                logger.warning(f"キャッシュファイルの読み込みに失敗しました: {e}")
-                self._cache_data = {}
         else:
             self._cache_data = {}
 
