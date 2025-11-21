@@ -25,7 +25,13 @@ logger = get_logger("api_generator")
 class APIGenerator(BaseGenerator):
     """APIドキュメント生成クラス"""
 
-    def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
+    def __init__(
+        self,
+        project_root: Path,
+        languages: list[str],
+        config: dict[str, Any],
+        package_managers: dict[str, str] | None = None,
+    ):
         """
         初期化
 
@@ -33,8 +39,9 @@ class APIGenerator(BaseGenerator):
             project_root: プロジェクトのルートディレクトリ
             languages: 検出された言語のリスト
             config: 設定辞書
+            package_managers: 検出されたパッケージマネージャの辞書
         """
-        super().__init__(project_root, languages, config)
+        super().__init__(project_root, languages, config, package_managers)
         self.output_path = Path(config.get("output", {}).get("api_doc", "docs/api.md"))
         if not self.output_path.is_absolute():
             self.output_path = project_root / self.output_path

@@ -80,6 +80,7 @@ class DocGen:
         self.config = self._load_config()
         self._validate_config()
         self.detected_languages = []
+        self.detected_package_managers = {}
 
     def _load_config(self) -> dict[str, Any]:
         """
@@ -258,6 +259,23 @@ class DocGen:
                     )
 
         self.detected_languages = detected
+
+        # パッケージマネージャの検出
+        package_managers = {}
+        for detector in detectors:
+            try:
+                if detector.detect():
+                    lang = detector.get_language()
+                    pm = detector.detect_package_manager()
+                    if pm:
+                        package_managers[lang] = pm
+                        logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
+            except Exception as e:
+                logger.warning(
+                    f"パッケージマネージャ検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
+                )
+
+        self.detected_package_managers = package_managers
         return detected
 
     def generate_documents(self) -> bool:
@@ -281,7 +299,10 @@ class DocGen:
             logger.info("[APIドキュメント生成]")
             try:
                 api_generator = APIGenerator(
-                    self.project_root, self.detected_languages, self.config
+                    self.project_root,
+                    self.detected_languages,
+                    self.config,
+                    self.detected_package_managers,
                 )
                 if api_generator.generate():
                     logger.info("✓ APIドキュメントを生成しました")
@@ -300,7 +321,10 @@ class DocGen:
             logger.info("[README生成]")
             try:
                 readme_generator = ReadmeGenerator(
-                    self.project_root, self.detected_languages, self.config
+                    self.project_root,
+                    self.detected_languages,
+                    self.config,
+                    self.detected_package_managers,
                 )
                 if readme_generator.generate():
                     logger.info("✓ READMEを更新しました")
@@ -316,7 +340,10 @@ class DocGen:
             logger.info("[AGENTS.md生成]")
             try:
                 agents_generator = AgentsGenerator(
-                    self.project_root, self.detected_languages, self.config
+                    self.project_root,
+                    self.detected_languages,
+                    self.config,
+                    self.detected_package_managers,
                 )
                 if agents_generator.generate():
                     logger.info("✓ AGENTS.mdを生成しました")

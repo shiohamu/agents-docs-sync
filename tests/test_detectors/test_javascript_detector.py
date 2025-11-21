@@ -50,6 +50,30 @@ class TestJavaScriptDetector:
         detector = JavaScriptDetector(temp_project)
         assert detector.get_language() == "javascript"
 
+    def test_detect_package_manager_pnpm(self, temp_project):
+        write_file(temp_project, "pnpm-lock.yaml", "# pnpm lock file")
+        detector = JavaScriptDetector(temp_project)
+        assert detector.detect_package_manager() == "pnpm"
+
+    def test_detect_package_manager_yarn(self, temp_project):
+        write_file(temp_project, "yarn.lock", "# yarn lock file")
+        detector = JavaScriptDetector(temp_project)
+        assert detector.detect_package_manager() == "yarn"
+
+    def test_detect_package_manager_npm_lock(self, temp_project):
+        write_file(temp_project, "package-lock.json", "{}")
+        detector = JavaScriptDetector(temp_project)
+        assert detector.detect_package_manager() == "npm"
+
+    def test_detect_package_manager_npm_package_json(self, temp_project):
+        write_file(temp_project, "package.json", '{"name": "test"}')
+        detector = JavaScriptDetector(temp_project)
+        assert detector.detect_package_manager() == "npm"
+
+    def test_detect_package_manager_none(self, temp_project):
+        detector = JavaScriptDetector(temp_project)
+        assert detector.detect_package_manager() is None
+
     def test_get_language_typescript_with_tsconfig(self, temp_project):
         write_file(temp_project, "package.json", '{"name": "test"}')
         write_file(temp_project, "tsconfig.json", "{}")

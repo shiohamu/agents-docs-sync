@@ -45,6 +45,10 @@ class TestGenericDetector:
         detector = GenericDetector(temp_project)
         assert detector.detect() is False
 
+    def test_detect_package_manager_none(self, temp_project):
+        detector = GenericDetector(temp_project)
+        assert detector.detect_package_manager() is None
+
     def test_get_all_detected_languages(self, temp_project):
         write_file(temp_project, "main.rs", "fn main() {}\n")
         write_file(temp_project, "Main.java", "public class Main {}\n")

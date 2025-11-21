@@ -73,7 +73,13 @@ class ReadmeDocument(BaseModel):
 class ReadmeGenerator:
     """README生成クラス"""
 
-    def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
+    def __init__(
+        self,
+        project_root: Path,
+        languages: list[str],
+        config: dict[str, Any],
+        package_managers: dict[str, str] | None = None,
+    ):
         """
         初期化
 
@@ -81,16 +87,18 @@ class ReadmeGenerator:
             project_root: プロジェクトのルートディレクトリ
             languages: 検出された言語のリスト
             config: 設定辞書
+            package_managers: 検出されたパッケージマネージャの辞書
         """
         self.project_root = project_root
         self.languages = languages
         self.config = config
+        self.package_managers = package_managers or {}
         output_config = config.get("output", {})
         readme_filename = output_config.get("readme", "README.md")
         self.readme_path = project_root / readme_filename
         self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
         self.agents_config = config.get("agents", {})
-        self.collector = ProjectInfoCollector(project_root)
+        self.collector = ProjectInfoCollector(project_root, package_managers)
 
     def generate(self) -> bool:
         """
@@ -532,34 +540,12 @@ class ReadmeGenerator:
         lines.append("")
         lines.append("<!-- MANUAL_START:setup -->")
         if "setup" in manual_sections:
-            lines.append(manual_sections["setup"])
+            # 手動セクションがある場合は、パッケージマネージャに基づいて内容を更新
+            updated_setup = self._update_manual_setup_section(manual_sections["setup"])
+            lines.append(updated_setup)
         else:
-            lines.append("### 必要な環境")
-            lines.append("")
-            if "python" in self.languages:
-                lines.append("- Python 3.8以上")
-            if "javascript" in self.languages or "typescript" in self.languages:
-                lines.append("- Node.js (推奨バージョン: 18以上)")
-            if "go" in self.languages:
-                lines.append("- Go 1.16以上")
-            lines.append("")
-            lines.append("### インストール")
-            lines.append("")
-            if "python" in self.languages:
-                lines.append("```bash")
-                lines.append("pip install -r requirements.txt")
-                lines.append("```")
-                lines.append("")
-            if "javascript" in self.languages or "typescript" in self.languages:
-                lines.append("```bash")
-                lines.append("npm install")
-                lines.append("```")
-                lines.append("")
-            if "go" in self.languages:
-                lines.append("```bash")
-                lines.append("go mod download")
-                lines.append("```")
-                lines.append("")
+            # 自動生成
+            lines.extend(self._generate_setup_section())
         lines.append("<!-- MANUAL_END:setup -->")
         lines.append("")
 
@@ -572,18 +558,53 @@ class ReadmeGenerator:
             lines.append("<!-- MANUAL_END:usage -->")
             lines.append("")
 
-        # プロジェクト構造
-        structure = self._get_project_structure()
-        if structure:
-            lines.append("## プロジェクト構造")
+        # ビルドおよびテスト
+        project_info = self.collector.collect_all()
+        build_commands = project_info.get("build_commands", [])
+        test_commands = project_info.get("test_commands", [])
+        if build_commands or test_commands:
+            lines.append("## ビルドおよびテスト")
             lines.append("")
-            lines.append("```")
-            for line in structure[:20]:  # 最大20行まで
-                lines.append(line)
-            if len(structure) > 20:
-                lines.append("...")
-            lines.append("```")
-            lines.append("")
+
+            if build_commands:
+                lines.append("### ビルド")
+                lines.append("")
+                lines.append("```bash")
+                for cmd in build_commands[:5]:  # 最大5個まで表示
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    display_cmd = cmd
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if cmd.startswith("python") and not cmd.startswith("uv run"):
+                            display_cmd = f"uv run {cmd}"
+                    lines.append(display_cmd)
+                if len(build_commands) > 5:
+                    lines.append("# ... その他のビルドコマンド")
+                lines.append("```")
+                lines.append("")
+
+            if test_commands:
+                lines.append("### テスト")
+                lines.append("")
+                lines.append("```bash")
+                for cmd in test_commands[:5]:  # 最大5個まで表示
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    display_cmd = cmd
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if (
+                            cmd.startswith("python") or cmd.startswith("pytest")
+                        ) and not cmd.startswith("uv run"):
+                            display_cmd = f"uv run {cmd}"
+                    lines.append(display_cmd)
+                if len(test_commands) > 5:
+                    lines.append("# ... その他のテストコマンド")
+                lines.append("```")
+                lines.append("")
 
         # 手動セクション: その他
         if "other" in manual_sections:
@@ -601,6 +622,119 @@ class ReadmeGenerator:
         lines.append("")
 
         return "\n".join(lines)
+
+    def _update_manual_setup_section(self, manual_content: str) -> str:
+        """
+        手動セットアップセクションをパッケージマネージャに基づいて更新
+
+        Args:
+            manual_content: 手動セクションの内容
+
+        Returns:
+            更新された内容
+        """
+        pm_python = self.package_managers.get("python", "pip")
+        pm_js = self.package_managers.get("javascript", "npm")
+
+        # Pythonのインストールコマンドを置き換え
+        if pm_python == "uv":
+            # uv syncに置き換え
+            manual_content = manual_content.replace(
+                "pip install -r requirements-docgen.txt\npip install -r requirements-test.txt",
+                "uv sync",
+            )
+            # 個別の行も置き換え
+            manual_content = manual_content.replace(
+                "pip install -r requirements-docgen.txt", "uv sync"
+            )
+            manual_content = manual_content.replace("pip install -r requirements-test.txt", "")
+            # 個別のpip installも置き換え
+            manual_content = re.sub(
+                r"pip install -r requirements-docgen\.txt", "uv sync", manual_content
+            )
+            manual_content = re.sub(r"pip install -r requirements-test\.txt", "", manual_content)
+        elif pm_python == "poetry":
+            manual_content = re.sub(
+                r"pip install -r requirements-docgen\.txt\npip install -r requirements-test\.txt",
+                "poetry install",
+                manual_content,
+            )
+            manual_content = re.sub(
+                r"pip install -r requirements-docgen\.txt", "poetry install", manual_content
+            )
+            manual_content = re.sub(r"pip install -r requirements-test\.txt", "", manual_content)
+
+        # JavaScriptのインストールコマンドを置き換え
+        if pm_js == "pnpm":
+            manual_content = manual_content.replace("npm install", "pnpm install")
+        elif pm_js == "yarn":
+            manual_content = manual_content.replace("npm install", "yarn install")
+
+        # 重複する空行を削除
+        manual_content = re.sub(r"\n\n\n+", "\n\n", manual_content)
+
+        return manual_content
+
+    def _generate_setup_section(self) -> list[str]:
+        """
+        セットアップセクションを自動生成
+
+        Returns:
+            セットアップセクションの行リスト
+        """
+        lines = []
+
+        lines.append("### 必要な環境")
+        lines.append("")
+        if "python" in self.languages:
+            lines.append("- Python 3.8以上")
+        if "javascript" in self.languages or "typescript" in self.languages:
+            lines.append("- Node.js (推奨バージョン: 18以上)")
+        if "go" in self.languages:
+            lines.append("- Go 1.16以上")
+        lines.append("")
+        lines.append("### インストール")
+        lines.append("")
+
+        if "python" in self.languages:
+            pm = self.package_managers.get("python", "pip")
+            lines.append("```bash")
+            if pm == "uv":
+                lines.append("uv sync")
+            elif pm == "poetry":
+                lines.append("poetry install")
+            elif pm == "conda":
+                lines.append("conda env create -f environment.yml")
+            else:  # pip
+                lines.append("pip install -r requirements.txt")
+            lines.append("```")
+            lines.append("")
+
+        if "javascript" in self.languages or "typescript" in self.languages:
+            pm = self.package_managers.get("javascript", "npm")
+            lines.append("```bash")
+            if pm == "pnpm":
+                lines.append("pnpm install")
+            elif pm == "yarn":
+                lines.append("yarn install")
+            else:  # npm
+                lines.append("npm install")
+            lines.append("```")
+            lines.append("")
+
+        if "go" in self.languages:
+            pm = self.package_managers.get("go", "go")
+            lines.append("```bash")
+            if pm == "dep":
+                lines.append("dep ensure")
+            elif pm == "glide":
+                lines.append("glide install")
+            else:  # go modules
+                lines.append("go mod download")
+            lines.append("```")
+            lines.append("")
+
+        return lines
 
     def _generate_with_llm(self, manual_sections: dict[str, str]) -> str:
         """

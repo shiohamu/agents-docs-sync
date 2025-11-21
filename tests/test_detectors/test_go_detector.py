@@ -49,6 +49,25 @@ class TestGoDetector:
         detector = GoDetector(temp_project)
         assert detector.detect() is True
 
+    def test_detect_package_manager_go_modules(self, temp_project):
+        write_file(temp_project, "go.mod", "module example.com/test")
+        detector = GoDetector(temp_project)
+        assert detector.detect_package_manager() == "go"
+
+    def test_detect_package_manager_dep(self, temp_project):
+        write_file(temp_project, "Gopkg.toml", "")
+        detector = GoDetector(temp_project)
+        assert detector.detect_package_manager() == "dep"
+
+    def test_detect_package_manager_glide(self, temp_project):
+        write_file(temp_project, "glide.yaml", "")
+        detector = GoDetector(temp_project)
+        assert detector.detect_package_manager() == "glide"
+
+    def test_detect_package_manager_none(self, temp_project):
+        detector = GoDetector(temp_project)
+        assert detector.detect_package_manager() is None
+
     def test_detect_with_go_files(self, temp_project):
         write_file(
             temp_project,

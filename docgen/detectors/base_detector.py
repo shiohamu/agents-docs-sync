@@ -38,6 +38,16 @@ class BaseDetector(ABC):
         """
         pass
 
+    @abstractmethod
+    def detect_package_manager(self) -> str | None:
+        """
+        使用されているパッケージマネージャを検出
+
+        Returns:
+            パッケージマネージャ名（例: 'pip', 'npm', 'yarn'）またはNone
+        """
+        pass
+
     def _file_exists(self, *paths) -> bool:
         """
         ファイルの存在を確認

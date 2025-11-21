@@ -73,7 +73,13 @@ class AgentsDocument(BaseModel):
 class AgentsGenerator:
     """AGENTS.md生成クラス（OpenAI仕様準拠）"""
 
-    def __init__(self, project_root: Path, languages: list[str], config: dict[str, Any]):
+    def __init__(
+        self,
+        project_root: Path,
+        languages: list[str],
+        config: dict[str, Any],
+        package_managers: dict[str, str] | None = None,
+    ):
         """
         初期化
 
@@ -81,16 +87,18 @@ class AgentsGenerator:
             project_root: プロジェクトのルートディレクトリ
             languages: 検出された言語のリスト
             config: 設定辞書
+            package_managers: 検出されたパッケージマネージャの辞書
         """
         self.project_root: Path = project_root
         self.languages: list[str] = languages
         self.config: dict[str, Any] = config
+        self.package_managers: dict[str, str] = package_managers or {}
         self.output_path: Path = Path(config.get("output", {}).get("agents_doc", "AGENTS.md"))
         if not self.output_path.is_absolute():
             self.output_path = project_root / self.output_path
 
         # プロジェクト情報収集器
-        self.collector: ProjectInfoCollector = ProjectInfoCollector(project_root)
+        self.collector: ProjectInfoCollector = ProjectInfoCollector(project_root, package_managers)
 
         # AGENTS設定
         self.agents_config: dict[str, Any] = config.get("agents", {})
@@ -605,26 +613,59 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("")
 
         dependencies = project_info.get("dependencies", {})
-        if "python" in dependencies:
+
+        # Python依存関係
+        if "python" in self.languages:
+            pm = self.package_managers.get("python", "pip")
             lines.append("#### Python依存関係")
             lines.append("")
             lines.append("```bash")
-            for dep_file in [
-                "requirements.txt",
-                "requirements-docgen.txt",
-                "requirements-test.txt",
-            ]:
-                req_path = self.project_root / dep_file
-                if req_path.exists():
-                    lines.append(f"pip install -r {dep_file}")
+            if pm == "uv":
+                lines.append("uv sync")
+            elif pm == "poetry":
+                lines.append("poetry install")
+            elif pm == "conda":
+                lines.append("conda env create -f environment.yml")
+            else:  # pip
+                for dep_file in [
+                    "requirements.txt",
+                    "requirements-docgen.txt",
+                    "requirements-test.txt",
+                ]:
+                    req_path = self.project_root / dep_file
+                    if req_path.exists():
+                        lines.append(f"pip install -r {dep_file}")
             lines.append("```")
             lines.append("")
 
-        if "nodejs" in dependencies:
-            lines.append("#### Node.js依存関係")
+        # JavaScript/TypeScript依存関係
+        if "javascript" in self.languages or "typescript" in self.languages:
+            pm = self.package_managers.get("javascript", "npm")
+            lang_name = "TypeScript" if "typescript" in self.languages else "JavaScript"
+            lines.append(f"#### {lang_name}依存関係")
             lines.append("")
             lines.append("```bash")
-            lines.append("npm install")
+            if pm == "pnpm":
+                lines.append("pnpm install")
+            elif pm == "yarn":
+                lines.append("yarn install")
+            else:  # npm
+                lines.append("npm install")
+            lines.append("```")
+            lines.append("")
+
+        # Go依存関係
+        if "go" in self.languages:
+            pm = self.package_managers.get("go", "go")
+            lines.append("#### Go依存関係")
+            lines.append("")
+            lines.append("```bash")
+            if pm == "dep":
+                lines.append("dep ensure")
+            elif pm == "glide":
+                lines.append("glide install")
+            else:  # go modules
+                lines.append("go mod download")
             lines.append("```")
             lines.append("")
 
@@ -985,7 +1026,12 @@ AIコーディングエージェントがプロジェクトで効果的に作業
             lines.append("")
             lines.append("```bash")
             for cmd in build_commands:
-                lines.append(cmd)
+                # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                display_cmd = cmd
+                if "python" in self.package_managers and self.package_managers["python"] == "uv":
+                    if cmd.startswith("python") and not cmd.startswith("uv run"):
+                        display_cmd = f"uv run {cmd}"
+                lines.append(display_cmd)
             lines.append("```")
         else:
             lines.append("ビルド手順は設定されていません。")
@@ -1003,7 +1049,17 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                 lines.append("")
                 lines.append("```bash")
                 for cmd in test_commands:
-                    lines.append(cmd)
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    display_cmd = cmd
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if (
+                            cmd.startswith("python") or cmd.startswith("pytest")
+                        ) and not cmd.startswith("uv run"):
+                            display_cmd = f"uv run {cmd}"
+                    lines.append(display_cmd)
                 lines.append("```")
                 lines.append("")
 
@@ -1012,7 +1068,17 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                 lines.append("")
                 lines.append("```bash")
                 for cmd in test_commands:
-                    lines.append(cmd)
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    display_cmd = cmd
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if (
+                            cmd.startswith("python") or cmd.startswith("pytest")
+                        ) and not cmd.startswith("uv run"):
+                            display_cmd = f"uv run {cmd}"
+                    lines.append(display_cmd)
                 lines.append("```")
                 lines.append("")
                 lines.append(

@@ -12,14 +12,16 @@ from typing import Any
 class ProjectInfoCollector:
     """プロジェクト情報収集クラス"""
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, package_managers: dict[str, str] | None = None):
         """
         初期化
 
         Args:
             project_root: プロジェクトのルートディレクトリ
+            package_managers: 言語ごとのパッケージマネージャ辞書
         """
         self.project_root: Path = project_root
+        self.package_managers = package_managers or {}
 
     def collect_all(self) -> dict[str, Any]:
         """
@@ -57,8 +59,17 @@ class ProjectInfoCollector:
                     line.strip().startswith("python")
                     or line.strip().startswith("npm")
                     or line.strip().startswith("make")
+                    or line.strip().startswith("go")
                 ):
-                    commands.append(line.strip())
+                    command = line.strip()
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if command.startswith("python"):
+                            command = f"uv run {command}"
+                    commands.append(command)
 
         # Makefile から収集
         makefile = self.project_root / "Makefile"
@@ -70,6 +81,13 @@ class ProjectInfoCollector:
                     # \tを削除してコマンドを追加
                     command = line.lstrip("\t")
                     if command and not command.startswith("@"):
+                        # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                        if (
+                            "python" in self.package_managers
+                            and self.package_managers["python"] == "uv"
+                        ):
+                            if command.startswith("python") or command.startswith("pytest"):
+                                command = f"uv run {command}"
                         commands.append(command)
 
         # package.json から収集
@@ -79,10 +97,26 @@ class ProjectInfoCollector:
                 with open(package_json, encoding="utf-8") as f:
                     data = json.load(f)
                     if "scripts" in data:
+                        pm = self.package_managers.get("javascript", "npm")
                         for script_name, script_cmd in data["scripts"].items():
-                            commands.append(f"npm run {script_name}")
+                            if pm == "pnpm":
+                                commands.append(f"pnpm run {script_name}")
+                            elif pm == "yarn":
+                                commands.append(f"yarn run {script_name}")
+                            else:  # npm
+                                commands.append(f"npm run {script_name}")
             except (json.JSONDecodeError, KeyError):
                 pass
+
+        # Goプロジェクトの場合
+        if "go" in self.package_managers:
+            pm = self.package_managers["go"]
+            if pm == "go":
+                commands.append("go build")
+            elif pm == "dep":
+                commands.append("dep ensure")
+            elif pm == "glide":
+                commands.append("glide install")
 
         # 重複を順序を保って排除
         seen = set()
@@ -111,7 +145,15 @@ class ProjectInfoCollector:
                     # コマンド行を抽出
                     match = re.search(r"(pytest|python.*test|npm.*test|make.*test)", line)
                     if match:
-                        commands.append(match.group(0))
+                        command = match.group(0)
+                        # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                        if (
+                            "python" in self.package_managers
+                            and self.package_managers["python"] == "uv"
+                        ):
+                            if command.startswith("python") or command.startswith("pytest"):
+                                command = f"uv run {command}"
+                        commands.append(command)
 
         # Makefile から収集
         makefile = self.project_root / "Makefile"
@@ -127,23 +169,55 @@ class ProjectInfoCollector:
                 elif in_test_target and line.startswith("\t") and line.strip():
                     command = line.lstrip("\t")
                     if command and not command.startswith("@"):
+                        # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                        if (
+                            "python" in self.package_managers
+                            and self.package_managers["python"] == "uv"
+                        ):
+                            if command.startswith("python") or command.startswith("pytest"):
+                                command = f"uv run {command}"
                         commands.append(command)
 
-        # pytest.ini から収集
-        pytest_ini = self.project_root / "pytest.ini"
-        if pytest_ini.exists():
-            commands.append("pytest tests/ -v --tb=short")
+        # Pythonプロジェクトの場合
+        if "python" in self.package_managers:
+            pm = self.package_managers["python"]
+            if pm == "uv":
+                commands.append("uv run pytest tests/ -v --tb=short")
+            elif pm == "poetry":
+                commands.append("poetry run pytest tests/ -v --tb=short")
+            else:  # pip
+                commands.append("pytest tests/ -v --tb=short")
+        # pytest.ini から収集（パッケージマネージャが指定されていない場合）
+        elif (self.project_root / "pytest.ini").exists():
+            command = "pytest tests/ -v --tb=short"
+            # uvプロジェクトの場合はuv runをつける
+            if "python" in self.package_managers and self.package_managers["python"] == "uv":
+                command = f"uv run {command}"
+            commands.append(command)
 
-        # package.json の test スクリプトから収集
-        package_json = self.project_root / "package.json"
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "scripts" in data and "test" in data["scripts"]:
-                        commands.append("npm test")
-            except (json.JSONDecodeError, KeyError):
-                pass
+        # JavaScript/TypeScriptプロジェクトの場合
+        if "javascript" in self.package_managers or "typescript" in self.package_managers:
+            pm = self.package_managers.get("javascript", "npm")
+            package_json = self.project_root / "package.json"
+            if package_json.exists():
+                try:
+                    with open(package_json, encoding="utf-8") as f:
+                        data = json.load(f)
+                        if "scripts" in data and "test" in data["scripts"]:
+                            if pm == "pnpm":
+                                commands.append("pnpm test")
+                            elif pm == "yarn":
+                                commands.append("yarn test")
+                            else:  # npm
+                                commands.append("npm test")
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+        # Goプロジェクトの場合
+        if "go" in self.package_managers:
+            pm = self.package_managers["go"]
+            if pm == "go":
+                commands.append("go test ./...")
 
         # 重複を順序を保って排除
         seen = set()

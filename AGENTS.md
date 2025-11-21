@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-21 09:34:21
+自動生成日時: 2025-11-21 12:15:56
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -8,40 +8,31 @@
 
 ## プロジェクト概要
 
+## プロジェクト概要
+
 <!-- MANUAL_START:description -->
+`agents-docs-sync` は、Python・JavaScript/TypeScript・C の 3 種類の言語で書かれたコードベースに対して **自動化された CI/CD パイプライン** を提供します。GitHub に push が入ると GitHub Actions がトリガーされ、以下のフローが実行されます。
 
-**agents‑docs-sync** は、Python・JavaScript（TypeScript もサポート）と C の三言語で構築された軽量 CI/CD パイプラインです。
-主にコードベースのドキュメントを自動生成し、複数リポジトリ間で同期する機能を提供します。
+- **依存関係管理（Python）**
+  - `pyyaml>=6.0.3`
+  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
 
-### 主な特徴
-- **多言語対応**：Python, JavaScript/TypeScript, C のソースから統一された Markdown / reStructuredText を作成
-- **CI/CD 連携**：GitHub Actions 等のワークフローで簡単に組み込めるよう設計
-- **高速ビルド**：`python3 docgen/docgen.py` により、依存関係を最小化した軽量な実行環境
-
-### 主要コンポーネント
-| コンポーネント | 概要 |
-|-----------------|------|
-| `docgen/`        | Python スクリプトでソース解析・ドキュメント生成 |
-| `tests/`         | pytest を用いたユニットテスト（Python）と Jest などの JS テスト (省略) |
-
-### 開発環境
-- **依存ライブラリ**
-  - Python: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
-- **ビルドコマンド**
+- **ビルド**  
   ```bash
-  python3 docgen/docgen.py
-  ```
-- **テスト実行例**
-  ```bash
-  pytest
-  python3 -m pytest test
-  pytest tests/ -v --tb=short
+  uv run python3 docgen/docgen.py
   ```
 
-### コーディング規約
-- Python は `ruff` を使用したリンティングを推奨
-- JavaScript / TypeScript のスタイルは ESLint (設定ファイル未提供)
+- **テスト実行**
+  ```bash
+  uv run pytest          # 全体テスト
+  uv run python3 -m pytest test      # テストディレクトリを指定
+  uv run pytest tests/ -v --tb=short   # 詳細出力と短いトレースバック
+  ```
 
+- **コーディング規約**  
+  リンターとして `ruff` を使用し、コード品質の一貫性を保ちます。
+
+このパイプラインにより、ソースが更新されるたびに自動でビルド・テスト・Lint が走り、エラー検知とデプロイ準備がスムーズになります。  
 <!-- MANUAL_END:description -->
 
 ---
@@ -58,8 +49,13 @@
 #### Python依存関係
 
 ```bash
-pip install -r requirements-docgen.txt
-pip install -r requirements-test.txt
+uv sync
+```
+
+#### JavaScript依存関係
+
+```bash
+npm install
 ```
 
 ### LLM環境のセットアップ
@@ -84,7 +80,7 @@ pip install -r requirements-test.txt
 ### ビルド手順
 
 ```bash
-python3 docgen/docgen.py
+uv run python3 docgen/docgen.py
 ```
 
 ### テスト実行
@@ -92,9 +88,9 @@ python3 docgen/docgen.py
 #### ローカルLLMを使用する場合
 
 ```bash
-pytest
-python3 -m pytest test
-pytest tests/ -v --tb=short
+uv run pytest
+uv run python3 -m pytest test
+uv run pytest tests/ -v --tb=short
 ```
 
 **注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
@@ -129,9 +125,9 @@ pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   pytest
-   python3 -m pytest test
-   pytest tests/ -v --tb=short
+   uv run pytest
+   uv run python3 -m pytest test
+   uv run pytest tests/ -v --tb=short
    ```
 
 4. **プルリクエストの作成**
@@ -141,4 +137,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-21 09:34:21*
+*このドキュメントは自動生成されています。最終更新: 2025-11-21 12:15:56*

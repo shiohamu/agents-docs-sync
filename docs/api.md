@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-21 09:33:39
+自動生成日時: 2025-11-21 12:15:28
 
 ---
 
@@ -465,6 +465,21 @@ def test_detect_without_supported_language(self, temp_project):
 
 ---
 
+### test_detect_package_manager_none
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_none(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_generic_detector.py:48*
+
+---
+
 ### test_get_all_detected_languages
 
 **型**: `method`
@@ -476,7 +491,7 @@ def test_get_all_detected_languages(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_generic_detector.py:48*
+*定義場所: tests/test_detectors/test_generic_detector.py:52*
 
 ---
 
@@ -491,7 +506,7 @@ def test_get_language_returns_first_detected(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_generic_detector.py:56*
+*定義場所: tests/test_detectors/test_generic_detector.py:60*
 
 ---
 
@@ -506,7 +521,7 @@ def test_detect_with_header_files(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_generic_detector.py:62*
+*定義場所: tests/test_detectors/test_generic_detector.py:66*
 
 ---
 
@@ -521,7 +536,7 @@ def test_detect_case_insensitive_extensions(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_generic_detector.py:68*
+*定義場所: tests/test_detectors/test_generic_detector.py:72*
 
 ---
 
@@ -650,6 +665,66 @@ def test_detect_with_glide_lock(self, temp_project):
 
 ---
 
+### test_detect_package_manager_go_modules
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_go_modules(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_go_detector.py:52*
+
+---
+
+### test_detect_package_manager_dep
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_dep(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_go_detector.py:57*
+
+---
+
+### test_detect_package_manager_glide
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_glide(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_go_detector.py:62*
+
+---
+
+### test_detect_package_manager_none
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_none(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_go_detector.py:67*
+
+---
+
 ### test_detect_with_go_files
 
 **型**: `method`
@@ -661,7 +736,7 @@ def test_detect_with_go_files(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_go_detector.py:52*
+*定義場所: tests/test_detectors/test_go_detector.py:71*
 
 ---
 
@@ -676,7 +751,7 @@ def test_detect_without_go_files(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_go_detector.py:61*
+*定義場所: tests/test_detectors/test_go_detector.py:80*
 
 ---
 
@@ -691,7 +766,7 @@ def test_get_language(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_go_detector.py:65*
+*定義場所: tests/test_detectors/test_go_detector.py:84*
 
 ---
 
@@ -820,6 +895,81 @@ def test_get_language_javascript(self, temp_project):
 
 ---
 
+### test_detect_package_manager_pnpm
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_pnpm(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_javascript_detector.py:53*
+
+---
+
+### test_detect_package_manager_yarn
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_yarn(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_javascript_detector.py:58*
+
+---
+
+### test_detect_package_manager_npm_lock
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_npm_lock(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_javascript_detector.py:63*
+
+---
+
+### test_detect_package_manager_npm_package_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_npm_package_json(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_javascript_detector.py:68*
+
+---
+
+### test_detect_package_manager_none
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_none(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_javascript_detector.py:73*
+
+---
+
 ### test_get_language_typescript_with_tsconfig
 
 **型**: `method`
@@ -831,7 +981,7 @@ def test_get_language_typescript_with_tsconfig(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_javascript_detector.py:53*
+*定義場所: tests/test_detectors/test_javascript_detector.py:77*
 
 ---
 
@@ -846,7 +996,7 @@ def test_get_language_typescript_with_ts_files(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_javascript_detector.py:59*
+*定義場所: tests/test_detectors/test_javascript_detector.py:83*
 
 ---
 
@@ -861,7 +1011,7 @@ def test_get_language_typescript_with_tsx_files(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_javascript_detector.py:64*
+*定義場所: tests/test_detectors/test_javascript_detector.py:88*
 
 ---
 
@@ -988,6 +1138,111 @@ def test_get_language(self, temp_project):
 
 ---
 
+### test_detect_package_manager_uv
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_uv(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:50*
+
+---
+
+### test_detect_package_manager_poetry
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_poetry(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:55*
+
+---
+
+### test_detect_package_manager_poetry_pyproject
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_poetry_pyproject(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:60*
+
+---
+
+### test_detect_package_manager_conda
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_conda(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:65*
+
+---
+
+### test_detect_package_manager_pip_requirements
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_pip_requirements(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:70*
+
+---
+
+### test_detect_package_manager_pip_setup_py
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_pip_setup_py(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:75*
+
+---
+
+### test_detect_package_manager_none
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_package_manager_none(self, temp_project):
+```
+
+*説明なし*
+
+*定義場所: tests/test_detectors/test_python_detector.py:80*
+
+---
+
 ### test_detect_with_nested_python_files
 
 **型**: `method`
@@ -999,7 +1254,7 @@ def test_detect_with_nested_python_files(self, temp_project):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_python_detector.py:50*
+*定義場所: tests/test_detectors/test_python_detector.py:84*
 
 ---
 
@@ -1014,7 +1269,7 @@ def test_detect_ignores_symlinks(self, temp_project, monkeypatch):
 
 *説明なし*
 
-*定義場所: tests/test_detectors/test_python_detector.py:55*
+*定義場所: tests/test_detectors/test_python_detector.py:89*
 
 ---
 
@@ -1170,7 +1425,7 @@ def test_detect_languages_sequential(self, mock_generic, mock_go, mock_js, mock_
 
 逐次言語検出テスト
 
-*定義場所: tests/test_docgen.py:119*
+*定義場所: tests/test_docgen.py:124*
 
 ---
 
@@ -1187,7 +1442,7 @@ def test_generate_documents_success(self, mock_agents, mock_readme, mock_api, te
 
 ドキュメント生成成功テスト
 
-*定義場所: tests/test_docgen.py:141*
+*定義場所: tests/test_docgen.py:151*
 
 ---
 
@@ -1204,7 +1459,7 @@ def test_generate_documents_partial_failure(self, mock_agents, mock_readme, mock
 
 ドキュメント生成一部失敗テスト
 
-*定義場所: tests/test_docgen.py:161*
+*定義場所: tests/test_docgen.py:171*
 
 ---
 
@@ -1221,7 +1476,7 @@ def test_generate_documents_no_languages(self, temp_project):
 
 言語が検出されない場合のテスト
 
-*定義場所: tests/test_docgen.py:177*
+*定義場所: tests/test_docgen.py:187*
 
 ---
 
@@ -1238,7 +1493,7 @@ def test_main_commit_msg_command(self, mock_generator, temp_project, capsys):
 
 commit-msgコマンドのテスト
 
-*定義場所: tests/test_docgen.py:188*
+*定義場所: tests/test_docgen.py:198*
 
 ---
 
@@ -1255,7 +1510,7 @@ def test_main_detect_only(self, temp_project, caplog):
 
 detect-onlyオプションのテスト
 
-*定義場所: tests/test_docgen.py:202*
+*定義場所: tests/test_docgen.py:212*
 
 ---
 
@@ -3207,6 +3462,23 @@ ProjectInfoCollectorの初期化テスト
 
 ---
 
+### test_project_info_collector_initialization_with_package_managers
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_project_info_collector_initialization_with_package_managers(self, temp_project):
+```
+
+**説明**:
+
+パッケージマネージャ付き初期化テスト
+
+*定義場所: tests/test_project_info_collector.py:27*
+
+---
+
 ### test_collect_all
 
 **型**: `method`
@@ -3220,7 +3492,7 @@ def test_collect_all(self, temp_project):
 
 全情報収集テスト
 
-*定義場所: tests/test_project_info_collector.py:27*
+*定義場所: tests/test_project_info_collector.py:35*
 
 ---
 
@@ -3237,7 +3509,24 @@ def test_collect_build_commands_from_pipeline_script(self, temp_project):
 
 パイプラインスクリプトからのビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:62*
+*定義場所: tests/test_project_info_collector.py:70*
+
+---
+
+### test_collect_build_commands_with_package_managers
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_with_package_managers(self, temp_project):
+```
+
+**説明**:
+
+パッケージマネージャ考慮のビルドコマンド収集テスト
+
+*定義場所: tests/test_project_info_collector.py:90*
 
 ---
 
@@ -3254,7 +3543,7 @@ def test_collect_build_commands_from_makefile(self, temp_project):
 
 Makefileからのビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:82*
+*定義場所: tests/test_project_info_collector.py:109*
 
 ---
 
@@ -3271,7 +3560,7 @@ def test_collect_build_commands_from_package_json(self, temp_project):
 
 package.jsonからのビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:108*
+*定義場所: tests/test_project_info_collector.py:135*
 
 ---
 
@@ -3288,7 +3577,41 @@ def test_collect_test_commands_from_makefile(self, temp_project):
 
 Makefileからのテストコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:128*
+*定義場所: tests/test_project_info_collector.py:155*
+
+---
+
+### test_collect_test_commands_with_package_managers
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_collect_test_commands_with_package_managers(self, temp_project):
+```
+
+**説明**:
+
+パッケージマネージャ考慮のテストコマンド収集テスト
+
+*定義場所: tests/test_project_info_collector.py:176*
+
+---
+
+### test_collect_build_commands_with_uv_run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_collect_build_commands_with_uv_run(self, temp_project):
+```
+
+**説明**:
+
+uvプロジェクトでのpythonコマンドにuv runがつくテスト
+
+*定義場所: tests/test_project_info_collector.py:200*
 
 ---
 
@@ -3305,7 +3628,7 @@ def test_collect_test_commands_from_package_json(self, temp_project):
 
 package.jsonからのテストコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:149*
+*定義場所: tests/test_project_info_collector.py:218*
 
 ---
 
@@ -3322,7 +3645,7 @@ def test_collect_dependencies_from_requirements_txt(self, temp_project):
 
 requirements.txtからの依存関係収集テスト
 
-*定義場所: tests/test_project_info_collector.py:167*
+*定義場所: tests/test_project_info_collector.py:236*
 
 ---
 
@@ -3339,7 +3662,7 @@ def test_collect_dependencies_from_package_json(self, temp_project):
 
 package.jsonからの依存関係収集テスト
 
-*定義場所: tests/test_project_info_collector.py:187*
+*定義場所: tests/test_project_info_collector.py:256*
 
 ---
 
@@ -3356,7 +3679,7 @@ def test_collect_coding_standards_from_pyproject_toml(self, temp_project):
 
 pyproject.tomlからのコーディング規約収集テスト
 
-*定義場所: tests/test_project_info_collector.py:211*
+*定義場所: tests/test_project_info_collector.py:280*
 
 ---
 
@@ -3373,7 +3696,7 @@ def test_collect_ci_cd_info_github_actions(self, temp_project):
 
 GitHub Actions CI/CD情報収集テスト
 
-*定義場所: tests/test_project_info_collector.py:238*
+*定義場所: tests/test_project_info_collector.py:307*
 
 ---
 
@@ -3390,7 +3713,7 @@ def test_collect_project_structure(self, temp_project):
 
 プロジェクト構造収集テスト
 
-*定義場所: tests/test_project_info_collector.py:261*
+*定義場所: tests/test_project_info_collector.py:330*
 
 ---
 
@@ -3407,7 +3730,7 @@ def test_collect_project_description_from_readme(self, temp_project):
 
 READMEからのプロジェクト説明収集テスト
 
-*定義場所: tests/test_project_info_collector.py:280*
+*定義場所: tests/test_project_info_collector.py:349*
 
 ---
 
@@ -3424,7 +3747,7 @@ def test_collect_project_description_from_setup_py(self, temp_project):
 
 setup.pyからのプロジェクト説明収集テスト
 
-*定義場所: tests/test_project_info_collector.py:299*
+*定義場所: tests/test_project_info_collector.py:368*
 
 ---
 
@@ -3441,7 +3764,7 @@ def test_collect_project_description_from_package_json(self, temp_project):
 
 package.jsonからのプロジェクト説明収集テスト
 
-*定義場所: tests/test_project_info_collector.py:319*
+*定義場所: tests/test_project_info_collector.py:388*
 
 ---
 

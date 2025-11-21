@@ -24,6 +24,14 @@ class TestProjectInfoCollector:
 
         assert collector.project_root == temp_project
 
+    def test_project_info_collector_initialization_with_package_managers(self, temp_project):
+        """パッケージマネージャ付き初期化テスト"""
+        package_managers = {"python": "uv", "javascript": "npm"}
+        collector = ProjectInfoCollector(temp_project, package_managers)
+
+        assert collector.project_root == temp_project
+        assert collector.package_managers == package_managers
+
     def test_collect_all(self, temp_project):
         """全情報収集テスト"""
         collector = ProjectInfoCollector(temp_project)
@@ -78,6 +86,25 @@ python setup.py build
         assert "make build" in commands
         assert "npm run build" in commands
         assert "python setup.py build" in commands
+
+    def test_collect_build_commands_with_package_managers(self, temp_project):
+        """パッケージマネージャ考慮のビルドコマンド収集テスト"""
+        # Pythonプロジェクト
+        collector = ProjectInfoCollector(temp_project, {"python": "uv"})
+        commands = collector.collect_build_commands()
+        # uvプロジェクトでは特別なビルドコマンドは追加されない
+
+        # JavaScriptプロジェクト
+        collector = ProjectInfoCollector(temp_project, {"javascript": "pnpm"})
+        package_json = temp_project / "package.json"
+        package_json.write_text('{"scripts": {"build": "webpack"}}')
+        commands = collector.collect_build_commands()
+        assert "pnpm run build" in commands
+
+        # Goプロジェクト
+        collector = ProjectInfoCollector(temp_project, {"go": "go"})
+        commands = collector.collect_build_commands()
+        assert "go build" in commands
 
     def test_collect_build_commands_from_makefile(self, temp_project):
         """Makefileからのビルドコマンド収集テスト"""
@@ -145,6 +172,48 @@ integration-test:
         assert "pytest tests/" in commands
         assert "go test ./..." in commands
         assert "npm test" in commands
+
+    def test_collect_test_commands_with_package_managers(self, temp_project):
+        """パッケージマネージャ考慮のテストコマンド収集テスト"""
+        # Pythonプロジェクト (uv)
+        collector = ProjectInfoCollector(temp_project, {"python": "uv"})
+        commands = collector.collect_test_commands()
+        assert "uv run pytest tests/ -v --tb=short" in commands
+
+        # Poetryプロジェクト
+        collector = ProjectInfoCollector(temp_project, {"python": "poetry"})
+        commands = collector.collect_test_commands()
+        assert "poetry run pytest tests/ -v --tb=short" in commands
+
+        # JavaScriptプロジェクト
+        collector = ProjectInfoCollector(temp_project, {"javascript": "yarn"})
+        package_json = temp_project / "package.json"
+        package_json.write_text('{"scripts": {"test": "jest"}}')
+        commands = collector.collect_test_commands()
+        assert "yarn test" in commands
+
+        # Goプロジェクト
+        collector = ProjectInfoCollector(temp_project, {"go": "go"})
+        commands = collector.collect_test_commands()
+        assert "go test ./..." in commands
+
+    def test_collect_build_commands_with_uv_run(self, temp_project):
+        """uvプロジェクトでのpythonコマンドにuv runがつくテスト"""
+        # uvプロジェクトでpythonコマンドを含むスクリプト
+        scripts_dir = temp_project / "scripts"
+        scripts_dir.mkdir()
+        pipeline_script = scripts_dir / "run_pipeline.sh"
+        pipeline_script.write_text("""
+#!/bin/bash
+python3 setup.py build
+python3 -m pytest tests/
+""")
+
+        collector = ProjectInfoCollector(temp_project, {"python": "uv"})
+        commands = collector.collect_build_commands()
+
+        assert "uv run python3 setup.py build" in commands
+        assert "uv run python3 -m pytest tests/" in commands
 
     def test_collect_test_commands_from_package_json(self, temp_project):
         """package.jsonからのテストコマンド収集テスト"""

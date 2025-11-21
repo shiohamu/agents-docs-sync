@@ -99,10 +99,14 @@ output:
         # モックの設定
         mock_python.return_value.detect.return_value = True
         mock_python.return_value.get_language.return_value = "python"
+        mock_python.return_value.detect_package_manager.return_value = "pip"
         mock_js.return_value.detect.return_value = False
+        mock_js.return_value.detect_package_manager.return_value = None
         mock_go.return_value.detect.return_value = True
         mock_go.return_value.get_language.return_value = "go"
+        mock_go.return_value.detect_package_manager.return_value = "go"
         mock_generic.return_value.detect.return_value = False
+        mock_generic.return_value.detect_package_manager.return_value = None
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=True)
@@ -111,6 +115,7 @@ output:
         assert "go" in languages
         assert "javascript" not in languages
         assert docgen.detected_languages == languages
+        assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
     @patch("docgen.docgen.PythonDetector")
     @patch("docgen.docgen.JavaScriptDetector")
@@ -123,10 +128,14 @@ output:
         # モックの設定
         mock_python.return_value.detect.return_value = True
         mock_python.return_value.get_language.return_value = "python"
+        mock_python.return_value.detect_package_manager.return_value = "pip"
         mock_js.return_value.detect.return_value = False
+        mock_js.return_value.detect_package_manager.return_value = None
         mock_go.return_value.detect.return_value = True
         mock_go.return_value.get_language.return_value = "go"
+        mock_go.return_value.detect_package_manager.return_value = "go"
         mock_generic.return_value.detect.return_value = False
+        mock_generic.return_value.detect_package_manager.return_value = None
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=False)
@@ -134,6 +143,7 @@ output:
         assert "python" in languages
         assert "go" in languages
         assert "javascript" not in languages
+        assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
     @patch("docgen.docgen.APIGenerator")
     @patch("docgen.docgen.ReadmeGenerator")

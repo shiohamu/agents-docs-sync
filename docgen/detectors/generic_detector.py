@@ -66,3 +66,13 @@ class GenericDetector(BaseDetector):
             if self._has_files_with_ext(*extensions):
                 detected.append(lang)
         return detected
+
+    def detect_package_manager(self) -> str | None:
+        """
+        汎用言語プロジェクトで使用されているパッケージマネージャを検出
+
+        Returns:
+            パッケージマネージャ名またはNone
+        """
+        # 汎用言語ではパッケージマネージャの検出は行わない
+        return None
