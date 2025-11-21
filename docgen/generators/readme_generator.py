@@ -144,6 +144,10 @@ class ReadmeGenerator:
         for match in re.finditer(pattern, content, re.DOTALL):
             section_name = match.group(1)
             section_content = match.group(2).strip()
+            # ネストされた手動マーカーを除去
+            section_content = re.sub(
+                r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", section_content
+            ).strip()
             sections[section_name] = section_content
 
         return sections
@@ -1237,6 +1241,11 @@ class ReadmeGenerator:
 
         # 結果を結合
         result = "\n".join(cleaned_lines)
+
+        # 手動マーカーを除去
+        result = re.sub(
+            r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", result
+        ).strip()
 
         # 先頭と末尾の空行を削除
         result = result.strip()

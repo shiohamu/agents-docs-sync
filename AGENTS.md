@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-21 12:15:56
+自動生成日時: 2025-11-21 12:37:34
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -8,31 +8,25 @@
 
 ## プロジェクト概要
 
-## プロジェクト概要
-
 <!-- MANUAL_START:description -->
-`agents-docs-sync` は、Python・JavaScript/TypeScript・C の 3 種類の言語で書かれたコードベースに対して **自動化された CI/CD パイプライン** を提供します。GitHub に push が入ると GitHub Actions がトリガーされ、以下のフローが実行されます。
+`agents-docs-sync` は、GitHub Actions を利用して構築されたマルチ言語 CI/CD パイプラインです。  
+Python（v3.11+）、JavaScript、および C で書かれたコンポーネントを対象にし、以下の機能を自動化します。
 
-- **依存関係管理（Python）**
-  - `pyyaml>=6.0.3`
-  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
-
-- **ビルド**  
+- **ビルド** – `uv run python3 docgen/docgen.py` を実行してプロジェクト用の API ドキュメントとサンプルコードを生成。  
+- **テスト** – Python テストは pytest ベースで、カバレッジ (`pytest-cov`) とモック（`pytest-mock`）も併せて使用します。
   ```bash
-  uv run python3 docgen/docgen.py
+  uv run pytest
+  uv run python3 -m pytest test
+  uv run pytest tests/ -v --tb=short
   ```
+- **静的解析** – Python コードは Ruff を使って linting・フォーマットチェックを行い、コード品質を保ちます。  
+- **依存関係管理** – `pyproject.toml`（uv）で次のパッケージが指定されています:
+  - pyyaml >=6.0.3
+  - pytest >=7.4.0
+  - pytest-cov >=4.1.0
+  - pytest-mock >=3.11.1
 
-- **テスト実行**
-  ```bash
-  uv run pytest          # 全体テスト
-  uv run python3 -m pytest test      # テストディレクトリを指定
-  uv run pytest tests/ -v --tb=short   # 詳細出力と短いトレースバック
-  ```
-
-- **コーディング規約**  
-  リンターとして `ruff` を使用し、コード品質の一貫性を保ちます。
-
-このパイプラインにより、ソースが更新されるたびに自動でビルド・テスト・Lint が走り、エラー検知とデプロイ準備がスムーズになります。  
+このセットアップにより、ソースコードとドキュメントの整合性を保ちつつ、複数言語で統一された CI/CD 環境が実現します。
 <!-- MANUAL_END:description -->
 
 ---
@@ -137,4 +131,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-21 12:15:56*
+*このドキュメントは自動生成されています。最終更新: 2025-11-21 12:37:34*

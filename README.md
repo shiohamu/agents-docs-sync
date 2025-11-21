@@ -3,59 +3,37 @@
 <!-- MANUAL_START:description -->
 
 ## 概要
-<!-- MANUAL_START:description -->
-`agents-docs-sync` は、Python・JavaScript/TypeScript・C の 3 種類の言語で書かれたコードベースに対して **自動化された CI/CD パイプライン** を提供します。GitHub に push が入ると GitHub Actions がトリガーされ、以下のフローが実行されます。
 
-1. **ビルド・テスト**
-   - Python → `pytest`
-   - JavaScript/TypeScript → `jest` / `ts-jest`
-   - C → `make test`
 
-   これらは並列に走り、いずれかの失敗でビルドを停止します。品質保証と継続的インテグレーションが同時に実現されます。
+`agents-docs-sync` は、GitHub Actions を活用したマルチ言語 CI/CD パイプラインです。  
+リポジトリへコードが push されるたびに自動で以下の処理を実行し、品質保証とドキュメント整合性を継続的に保ちます。
 
-2. **API ドキュメント生成**
-   - Python → Sphinx（reStructuredText）
-   - JavaScript/TypeScript → JSDoc + TypeDoc
-   - C → Doxygen
+1. **ビルド・テスト**  
+   - **Python**：`pytest` + `coverage.py` によるユニット/統合テスト。カバレッジ結果は自動で報告され、PR へのコメントとして表示します。  
+   - **JavaScript / TypeScript**：`jest` を使い同等のテストを実行し、スナップショットやコードカバー率も確認。  
+   - **C/C++**：Google Test 等で単体テストを走らせ、さらに `clang-tidy`, `cppcheck` による静的解析を組み合わせてビルドエラー・品質問題の検出に努めます。
 
-   それぞれのツールで API の詳細を抽出し、`docs/` ディレクトリに統合。各言語ごとのベストプラクティスに沿ったドキュメントが自動的に作成されます。
+2. **API ドキュメント自動生成**  
+   - **Python**：Sphinx を利用し docstring から Markdown / HTML の API リファレンス (`docs/python/`) を作成。  
+   - **JavaScript**：JSDoc／TypeDoc により `docs/javascript/` 内に整形済みの HTML ドキュメントを生成。  
+   - **C**：Doxygen でコメントベースの API 文書（`docs/c/`）を出力し、ビルド時に更新します。
 
-3. **AGENTS.md 自動更新**
-   - 生成されたドキュメントから関数・クラスのメタ情報（名前、説明、引数、戻り値）を抽出し、差分置換で `AGENTS.md` を再構築。手作業による修正が不要になり、一貫性と即時反映が保証されます。
+3. **AGENTS.md の自動更新**  
+   各言語ごとのテスト結果と生成されたドキュメントへのリンクからエージェント一覧・稼働状態を抽出。  
+   これら情報は `AGENTS.md` に差分コミットされ、メンテナがいつでも最新のステータスを確認できるようになります。
 
-4. **成果物公開**
-   - 成功したビルドは GitHub Pages（または `gh-pages` ブランチ）へデプロイされ、外部から閲覧可能。CI の結果も可視化しつつ、最新の API ドキュメントとエージェント一覧が常に公開状態です。
+4. **成果物公開**  
+   - `docs/` ディレクトリ全体を GitHub Pages 等へ自動デプロイ。必要なトークンスコープは事前に設定済みです。  
 
-このパイプラインを利用することで、多言語リポジトリでも **品質保証** と **ドキュメント整備** を同時かつ自動で実行できるため、開発者体験（DX）とプロジェクトの保守性が大幅に向上します。
-<!-- MANUAL_END:description -->
-<!-- MANUAL_START:description -->
+### 主なメリット
 
-## 概要
-<!-- MANUAL_START:description -->
-`agents-docs-sync` は、Python・JavaScript/TypeScript・C の 3 種類の言語で書かれたコードベースに対して **自動化された CI/CD パイプライン** を提供します。GitHub に push が入ると GitHub Actions がトリガーされ、以下のフローが実行されます。
+| 項目 | 具体的価値 |
+|------|------------|
+| **継続的インテグレーション** | コード変更ごとに検証・ドキュメント生成され、品質低下を早期発見できます。 |
+| **一元管理** | 複数言語のエージェント情報や API 仕様が統合された `AGENTS.md` に集約されます。 |
+| **リソース効率化** | Actions のスケジューリングと最適なジョブ構成でビルド時間・コストを削減します。 |
 
-1. **ビルド・テスト**
-   - Python → `pytest`
-   - JavaScript/TypeScript → `jest` / `ts-jest`
-   - C → `make test`
-
-   これらは並列に走り、いずれかの失敗でビルドを停止します。品質保証と継続的インテグレーションが同時に実現されます。
-
-2. **API ドキュメント生成**
-   - Python → Sphinx（reStructuredText）
-   - JavaScript/TypeScript → JSDoc + TypeDoc
-   - C → Doxygen
-
-   それぞれのツールで API の詳細を抽出し、`docs/` ディレクトリに統合。各言語ごとのベストプラクティスに沿ったドキュメントが自動的に作成されます。
-
-3. **AGENTS.md 自動更新**
-   - 生成されたドキュメントから関数・クラスのメタ情報（名前、説明、引数、戻り値）を抽出し、差分置換で `AGENTS.md` を再構築。手作業による修正が不要になり、一貫性と即時反映が保証されます。
-
-4. **成果物公開**
-   - 成功したビルドは GitHub Pages（または `gh-pages` ブランチ）へデプロイされ、外部から閲覧可能。CI の結果も可視化しつつ、最新の API ドキュメントとエージェント一覧が常に公開状態です。
-
-このパイプラインを利用することで、多言語リポジトリでも **品質保証** と **ドキュメント整備** を同時かつ自動で実行できるため、開発者体験（DX）とプロジェクトの保守性が大幅に向上します。
-<!-- MANUAL_END:description -->
+このパイプラインにより、開発者はコード変更だけではなく、その影響範囲（テスト結果や最新ドキュメント）まで一貫して追跡できるようになります。
 
 <!-- MANUAL_END:description -->
 
@@ -102,4 +80,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-21 12:15:28*
+*このREADMEは自動生成されています。最終更新: 2025-11-21 12:37:02*

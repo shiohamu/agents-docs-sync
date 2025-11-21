@@ -5,6 +5,7 @@ Outlines統合で構造化出力を実現
 
 from datetime import datetime
 from pathlib import Path
+import re
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -178,7 +179,12 @@ class AgentsGenerator:
         lines.append("")
 
         # プロジェクト概要
-        lines.extend(self._generate_project_overview(project_info))
+        lines.append("## プロジェクト概要")
+        lines.append("")
+        lines.append(
+            "このプロジェクトは、AIコーディングエージェントが効果的に作業するためのドキュメント自動生成システムです。"
+        )
+        lines.append("詳細は README.md を参照してください。")
         lines.append("")
         lines.append("---")
         lines.append("")
@@ -420,7 +426,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
                 return template_content
 
             # プロジェクト概要セクションのみLLMで改善
-            prompt = f"""以下のプロジェクト情報を基に、AGENTS.mdの「プロジェクト概要」セクションを改善してください。
+            prompt = f"""以下のプロジェクト情報を基に、AGENTS.mdの「プロジェクト概要」セクションの内容を改善してください。
 既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
 
 プロジェクト情報:
@@ -429,7 +435,8 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 既存のテンプレート生成内容:
 {self._generate_project_overview(project_info)}
 
-改善された「プロジェクト概要」セクションをマークダウン形式で出力してください。
+改善されたプロジェクト概要の内容をマークダウン形式で出力してください。
+ヘッダー（## プロジェクト概要）は含めないでください。内容のみを出力してください。
 重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
 手動セクション（<!-- MANUAL_START:description --> と <!-- MANUAL_END:description -->）は保持してください。"""
 
@@ -1327,6 +1334,11 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         # 結果を結合
         result = "\n".join(cleaned_lines)
+
+        # 手動マーカーを除去
+        result = re.sub(
+            r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", result
+        ).strip()
 
         # 先頭と末尾の空行を削除
         result = result.strip()

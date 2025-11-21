@@ -54,10 +54,6 @@ docgen = [
     # tomliはPython 3.11未満でのみ必要（Python 3.11以降ではtomllibを使用）
     # Python 3.10以前のサポートが必要な場合は、以下のコメントを外してください
     # "tomli>=2.0.0; python_version<'3.11'",
-    # LLM機能用の依存関係（オプショナル）
-    # OpenAI API使用時: pip install openai
-    # Anthropic API使用時: pip install anthropic
-    # ローカルLLM使用時: pip install httpx
 ]
 
 # テスト用の依存関係
