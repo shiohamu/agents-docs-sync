@@ -68,7 +68,8 @@ $PYTHON_CMD "$DOCGEN_SCRIPT" 2>&1
 EXIT_CODE=$?
 if [ $EXIT_CODE -ne 0 ]; then
     echo "警告: ドキュメント生成中にエラーが発生しました（コード: $EXIT_CODE）"
-    # エラーがあってもコミットは続行（警告のみ）
+    # エラーが発生した場合、コミットを中止する
+    exit $EXIT_CODE
 fi
 
 # 変更があったファイルをステージングに追加
