@@ -84,7 +84,14 @@ class ProjectInfoCollector:
             except (json.JSONDecodeError, KeyError):
                 pass
 
-        return commands
+        # 重複を順序を保って排除
+        seen = set()
+        unique_commands = []
+        for c in commands:
+            if c not in seen:
+                unique_commands.append(c)
+                seen.add(c)
+        return unique_commands
 
     def collect_test_commands(self) -> list[str]:
         """
@@ -138,7 +145,14 @@ class ProjectInfoCollector:
             except (json.JSONDecodeError, KeyError):
                 pass
 
-        return list(set(commands))  # 重複を除去
+        # 重複を順序を保って排除
+        seen = set()
+        unique_commands = []
+        for c in commands:
+            if c not in seen:
+                unique_commands.append(c)
+                seen.add(c)
+        return unique_commands
 
     def collect_dependencies(self) -> dict[str, list[str]]:
         """
@@ -209,6 +223,23 @@ class ProjectInfoCollector:
                     dependencies["go"] = go_deps
             except Exception:
                 pass
+
+        # 重複を順序を保って排除（各依存関係リストごとに適用）
+        def _dedup_preserve_order(items: list[str]) -> list[str]:
+            seen_local = set()
+            out = []
+            for it in items:
+                if it not in seen_local:
+                    out.append(it)
+                    seen_local.add(it)
+            return out
+
+        if "python" in dependencies:
+            dependencies["python"] = _dedup_preserve_order(dependencies["python"])
+        if "nodejs" in dependencies:
+            dependencies["nodejs"] = _dedup_preserve_order(dependencies["nodejs"])
+        if "go" in dependencies:
+            dependencies["go"] = _dedup_preserve_order(dependencies["go"])
 
         return dependencies
 

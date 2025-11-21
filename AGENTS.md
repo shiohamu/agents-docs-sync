@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-20 21:07:17
+自動生成日時: 2025-11-21 09:34:21
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -11,8 +11,36 @@
 <!-- MANUAL_START:description -->
 
 **agents‑docs-sync** は、Python・JavaScript（TypeScript もサポート）と C の三言語で構築された軽量 CI/CD パイプラインです。
+主にコードベースのドキュメントを自動生成し、複数リポジトリ間で同期する機能を提供します。
 
-**使用技術**: python, javascript, c
+### 主な特徴
+- **多言語対応**：Python, JavaScript/TypeScript, C のソースから統一された Markdown / reStructuredText を作成
+- **CI/CD 連携**：GitHub Actions 等のワークフローで簡単に組み込めるよう設計
+- **高速ビルド**：`python3 docgen/docgen.py` により、依存関係を最小化した軽量な実行環境
+
+### 主要コンポーネント
+| コンポーネント | 概要 |
+|-----------------|------|
+| `docgen/`        | Python スクリプトでソース解析・ドキュメント生成 |
+| `tests/`         | pytest を用いたユニットテスト（Python）と Jest などの JS テスト (省略) |
+
+### 開発環境
+- **依存ライブラリ**
+  - Python: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
+- **ビルドコマンド**
+  ```bash
+  python3 docgen/docgen.py
+  ```
+- **テスト実行例**
+  ```bash
+  pytest
+  python3 -m pytest test
+  pytest tests/ -v --tb=short
+  ```
+
+### コーディング規約
+- Python は `ruff` を使用したリンティングを推奨
+- JavaScript / TypeScript のスタイルは ESLint (設定ファイル未提供)
 
 <!-- MANUAL_END:description -->
 
@@ -64,8 +92,8 @@ python3 docgen/docgen.py
 #### ローカルLLMを使用する場合
 
 ```bash
-python3 -m pytest test
 pytest
+python3 -m pytest test
 pytest tests/ -v --tb=short
 ```
 
@@ -101,8 +129,8 @@ pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   python3 -m pytest test
    pytest
+   python3 -m pytest test
    pytest tests/ -v --tb=short
    ```
 
@@ -113,4 +141,4 @@ pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-20 21:07:17*
+*このドキュメントは自動生成されています。最終更新: 2025-11-21 09:34:21*
