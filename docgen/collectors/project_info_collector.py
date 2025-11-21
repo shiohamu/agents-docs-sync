@@ -445,81 +445,7 @@ class ProjectInfoCollector:
         Returns:
             プロジェクトの説明文（見つからない場合はNone）
         """
-        # 1. README.mdから説明を取得
-        readme_path = self.project_root / "README.md"
-        if readme_path.exists():
-            readme_content = readme_path.read_text(encoding="utf-8")
-            # 最初の段落を抽出（# タイトルの後の最初の非空行）
-            lines = readme_content.split("\n")
-            found_title = False
-            for line in lines:
-                line = line.strip()
-                if line.startswith("#"):
-                    found_title = True
-                    continue
-                if found_title and line and not line.startswith("<!--"):
-                    # 汎用的なテンプレート文をスキップ
-                    if "このプロジェクトの説明をここに記述してください" not in line:
-                        return line
-                    break
-
-        # 1.5. setup.pyから説明を取得
-        setup_py = self.project_root / "setup.py"
-        if setup_py.exists():
-            try:
-                content = setup_py.read_text(encoding="utf-8")
-                # description= または long_description= を探す
-                desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
-                if desc_match:
-                    return desc_match.group(1)
-                long_desc_match = re.search(r'long_description\s*=\s*["\']([^"\']+)["\']', content)
-                if long_desc_match:
-                    return long_desc_match.group(1)
-            except Exception:
-                pass
-
-        # 1.6. package.jsonから説明を取得
-        package_json = self.project_root / "package.json"
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "description" in data:
-                        return data["description"]
-            except Exception:
-                pass
-
-        # 2. main.pyのdocstringから取得
-        main_py = self.project_root / "main.py"
-        if main_py.exists():
-            try:
-                content = main_py.read_text(encoding="utf-8")
-                # モジュールレベルのdocstringを抽出
-                # """...""" または '''...''' のパターンを探す
-                docstring_pattern = r'"""(.*?)"""'
-                match = re.search(docstring_pattern, content, re.DOTALL)
-                if match:
-                    docstring = match.group(1).strip()
-                    if docstring and len(docstring) > 10:  # 短すぎる場合はスキップ
-                        return docstring.split("\n")[0]  # 最初の行のみ
-            except Exception:
-                pass
-
-        # 3. __init__.pyのdocstringから取得
-        init_py = self.project_root / "__init__.py"
-        if init_py.exists():
-            try:
-                content = init_py.read_text(encoding="utf-8")
-                docstring_pattern = r'"""(.*?)"""'
-                match = re.search(docstring_pattern, content, re.DOTALL)
-                if match:
-                    docstring = match.group(1).strip()
-                    if docstring and len(docstring) > 10:
-                        return docstring.split("\n")[0]
-            except Exception:
-                pass
-
-        # 4. pyproject.tomlのdescriptionから取得
+        # 1. pyproject.tomlのdescriptionから取得（優先）
         pyproject = self.project_root / "pyproject.toml"
         if pyproject.exists():
             try:
@@ -543,6 +469,80 @@ class ProjectInfoCollector:
                     description = data["project"]["description"]
                     if description and len(description) > 10:
                         return description
+            except Exception:
+                pass
+
+        # 2. README.mdから説明を取得
+        readme_path = self.project_root / "README.md"
+        if readme_path.exists():
+            readme_content = readme_path.read_text(encoding="utf-8")
+            # 最初の段落を抽出（# タイトルの後の最初の非空行）
+            lines = readme_content.split("\n")
+            found_title = False
+            for line in lines:
+                line = line.strip()
+                if line.startswith("#"):
+                    found_title = True
+                    continue
+                if found_title and line and not line.startswith("<!--"):
+                    # 汎用的なテンプレート文をスキップ
+                    if "このプロジェクトの説明をここに記述してください" not in line:
+                        return line
+                    break
+
+        # 3. setup.pyから説明を取得
+        setup_py = self.project_root / "setup.py"
+        if setup_py.exists():
+            try:
+                content = setup_py.read_text(encoding="utf-8")
+                # description= または long_description= を探す
+                desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
+                if desc_match:
+                    return desc_match.group(1)
+                long_desc_match = re.search(r'long_description\s*=\s*["\']([^"\']+)["\']', content)
+                if long_desc_match:
+                    return long_desc_match.group(1)
+            except Exception:
+                pass
+
+        # 4. package.jsonから説明を取得
+        package_json = self.project_root / "package.json"
+        if package_json.exists():
+            try:
+                with open(package_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "description" in data:
+                        return data["description"]
+            except Exception:
+                pass
+
+        # 5. main.pyのdocstringから取得
+        main_py = self.project_root / "main.py"
+        if main_py.exists():
+            try:
+                content = main_py.read_text(encoding="utf-8")
+                # モジュールレベルのdocstringを抽出
+                # """...""" または '''...''' のパターンを探す
+                docstring_pattern = r'"""(.*?)"""'
+                match = re.search(docstring_pattern, content, re.DOTALL)
+                if match:
+                    docstring = match.group(1).strip()
+                    if docstring and len(docstring) > 10:  # 短すぎる場合はスキップ
+                        return docstring.split("\n")[0]  # 最初の行のみ
+            except Exception:
+                pass
+
+        # 6. __init__.pyのdocstringから取得
+        init_py = self.project_root / "__init__.py"
+        if init_py.exists():
+            try:
+                content = init_py.read_text(encoding="utf-8")
+                docstring_pattern = r'"""(.*?)"""'
+                match = re.search(docstring_pattern, content, re.DOTALL)
+                if match:
+                    docstring = match.group(1).strip()
+                    if docstring and len(docstring) > 10:
+                        return docstring.split("\n")[0]
             except Exception:
                 pass
 

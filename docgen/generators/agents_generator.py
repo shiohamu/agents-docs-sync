@@ -179,13 +179,7 @@ class AgentsGenerator:
         lines.append("")
 
         # プロジェクト概要
-        lines.append("## プロジェクト概要")
-        lines.append("")
-        lines.append(
-            "このプロジェクトは、AIコーディングエージェントが効果的に作業するためのドキュメント自動生成システムです。"
-        )
-        lines.append("詳細は README.md を参照してください。")
-        lines.append("")
+        lines.extend(self._generate_project_overview(project_info))
         lines.append("---")
         lines.append("")
 
