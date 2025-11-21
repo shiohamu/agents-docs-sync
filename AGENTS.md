@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-21 16:08:52
+自動生成日時: 2025-11-21 16:23:13
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -33,13 +33,25 @@ uv sync
 
 ### LLM環境のセットアップ
 
+#### APIを使用する場合
+
+1. **APIキーの取得と設定**
+
+   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
+   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
+
+2. **API使用時の注意事項**
+   - APIレート制限に注意してください
+   - コスト管理のために使用量を監視してください
+
 #### ローカルLLMを使用する場合
 
 1. **ローカルLLMのインストール**
 
-   - LM Studioをインストール: https://lmstudio.ai/
-   - モデルをダウンロードして起動
-   - ベースURL: http://192.168.10.113:1234
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
+   - ベースURL: http://localhost:11434
 
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
@@ -57,6 +69,14 @@ uv run python3 docgen/docgen.py
 ```
 
 ### テスト実行
+
+#### APIを使用する場合
+
+```bash
+uv run pytest
+uv run python3 -m pytest test
+uv run pytest tests/ -v --tb=short
+```
 
 #### ローカルLLMを使用する場合
 
@@ -110,4 +130,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-21 16:08:52*
+*このドキュメントは自動生成されています。最終更新: 2025-11-21 16:23:13*

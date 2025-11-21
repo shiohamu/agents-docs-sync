@@ -148,6 +148,7 @@ secrets.yaml
 secrets.yml
 config.local.yaml
 config.local.yml
+docgen/config.yaml
 
 # ============================================
 # キャッシュ / 一時ディレクトリ

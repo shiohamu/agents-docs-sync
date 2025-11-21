@@ -719,12 +719,14 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
             local_provider = local_config.get("provider", "ollama")
             local_model = local_config.get("model", "llama3")
-            local_base_url = local_config.get("base_url", "http://localhost:11434")
+            # 一般的な手順としてlocalhostを使用
+            local_base_url = "http://localhost:11434"
 
             if local_provider == "ollama":
                 lines.append("   - Ollamaをインストール: https://ollama.ai/")
                 lines.append(f"   - モデルをダウンロード: `ollama pull {local_model}`")
                 lines.append("   - サービスを起動: `ollama serve`")
+                lines.append(f"   - ベースURL: {local_base_url}")
             elif local_provider == "lmstudio":
                 lines.append("   - LM Studioをインストール: https://lmstudio.ai/")
                 lines.append("   - モデルをダウンロードして起動")
