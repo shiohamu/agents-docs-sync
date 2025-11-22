@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-22 18:10:21
+自動生成日時: 2025-11-22 18:49:05
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -9,39 +9,60 @@
 ## プロジェクト概要
 
 <!-- MANUAL_START:description -->
+このリポジトリは、コミットが行われるたびに自動で以下の処理を実行するパイプラインです。
 
-`agents-docs-sync` はソースに変更がコミットされるたびに、以下の一連作業を自動で実行するパイプラインです。
+1. **テスト実行**
+   - Python テスト：`uv run pytest`（カバレッジ付き）
+   - JavaScript テスト：`npm test`
+   - 詳細表示と短いトレースバックでの再確認: `uv run pytest tests/ -v --tb=short`
 
-1. **テスト実行**  
-   - Python の単体テストは `uv run pytest`（標準）と詳細レポート用に `-v --tb=short` を併せて走らせます。  
-   - Node.js 側のユニットテストも同時に起動し、フロントエンド側の整合性を確保します。
+2. **ドキュメント生成**
+   ビルドコマンドは `uv run python3 docgen/docgen.py`。
+   これにより、YAML 定義から自動的に Markdown ドキュメントが作成されます（依存ライブラリ：`pyyaml>=6.0.3`）。
 
-2. **ドキュメント生成**  
-   - `docgen/docgen.py`（Python）を実行 (`uv run python3 docgen/docgen.py`) して最新の Sphinx/Markdown ドキュメントを作成し、変更内容が反映されるように保守します。
+3. **AGENTS.md の更新**
+   - 自動生成されたドキュメントを元に AGENTS.md 内の該当セクションを書き換え、常に最新状態を保持します。
 
-3. **AGENTS.md の自動更新**  
-   - 上記ドキュメント生成結果から `agents` ディレクトリ内情報を抽出し、マークダウンファイルへ差分を書き込みます。  
+### 主要な技術・ツール
 
-### 主要技術
-- Python（バージョンはプロジェクトルートで管理）  
-- Shell スクリプトによるビルド・テストワークフロー統合
-
-### 依存関係 (Python)
-| ライブラリ | バージョン |
-|------------|-----------|
-| `pyyaml`   | ≥6.0.3     |
-| `pytest`   | ≥7.4.0     |
-| `pytest-cov` | ≥4.1.0  |
-| `pytest-mock` | ≥3.11.1 |
-
-### ビルド・テストコマンド
+- **言語**: Python, Shell
+- **依存関係**
+  - `pyyaml>=6.0.3`
+  - `pytest>=7.4.0`
+  - `pytest-cov>=4.1.0`
+  - `pytest-mock>=3.11.1`
 - **ビルド**: `uv run python3 docgen/docgen.py`
-- **Python テスト**: `uv run pytest`, `uv run pytest tests/ -v --tb=short`
-- **Node.js テスト**: `npm test`
+- **テスト**: 上記の pytest と npm test
+- **コーディング規約**: Ruff リンター
 
-### コーディング規約
-プロジェクト全体は `ruff` をリンターとして使用し、コード品質と一貫性を保っています。
+### 使用方法
 
+```bash
+user@hogehoge: ~$ agents_docs_sync --help
+
+usage: agents_docs_sync [-h] [--version] [--config CONFIG] [--detect-only] [--no-api-doc] [--no-readme] {commit-msg,hooks} ...
+
+汎用ドキュメント自動生成システム
+
+positional arguments:
+  {commit-msg,hooks}  実行するコマンド
+    commit-msg        コミットメッセージ生成
+    hooks             Git hooksの管理
+
+options:
+  -h, --help          show this help message and exit
+  --version           show program's version number and exit
+  --config CONFIG     設定ファイルのパス
+  --detect-only       言語検出のみ実行
+  --no-api-doc        APIドキュメントを生成しない
+  --no-readme         READMEを更新しない
+```
+
+### 利点
+* コミットごとに自動で検証・文書化が行われるため、ドキュメント不整合を防止。
+* 変更箇所だけを即座に反映でき、手作業による更新の手間が大幅削減されます。
+
+これらの機能は開発フロー全体で品質と一貫性を維持するために設計されています。
 <!-- MANUAL_END:description -->
 
 ---
@@ -139,4 +160,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-22 18:10:21*
+*このドキュメントは自動生成されています。最終更新: 2025-11-22 18:49:05*
