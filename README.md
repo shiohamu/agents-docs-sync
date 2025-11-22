@@ -28,6 +28,17 @@
 
 ### 使用方法
 
+・フックの有効化
+```bash
+user@hogehoge: ~$ agents_docs_sync hooks enable  # git hookで自動テスト、AGENTS.md、README.md更新
+```
+
+・フックの無効化
+```bash
+user@hogehoge: ~$ agents_docs_sync hooks disable  # git hook無効化
+```
+
+・ヘルプ
 ```bash
 user@hogehoge: ~$ agents_docs_sync --help
 
