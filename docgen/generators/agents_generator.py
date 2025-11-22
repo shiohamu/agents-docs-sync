@@ -104,6 +104,88 @@ class AgentsGenerator:
         # AGENTS設定
         self.agents_config: dict[str, Any] = config.get("agents", {})
 
+    def _extract_manual_sections(self) -> dict[str, str]:
+        """
+        既存のAGENTS.mdから手動セクションを抽出
+
+        Returns:
+            セクション名をキー、手動内容を値とする辞書
+        """
+        manual_sections = {}
+        if not self.output_path.exists():
+            return manual_sections
+
+        try:
+            content = self.output_path.read_text(encoding="utf-8")
+            lines = content.split("\n")
+
+            current_section = None
+            section_content = []
+            in_manual = False
+
+            for line in lines:
+                if line.strip().startswith("<!-- MANUAL_START:"):
+                    # セクション開始
+                    section_name = line.strip().split(":", 1)[1].split("-->", 0)[0].strip()
+                    current_section = section_name
+                    section_content = []
+                    in_manual = True
+                elif line.strip().startswith("<!-- MANUAL_END:") and current_section:
+                    # セクション終了
+                    if section_content:
+                        manual_sections[current_section] = "\n".join(section_content).strip()
+                    current_section = None
+                    in_manual = False
+                elif in_manual and current_section:
+                    section_content.append(line)
+
+        except Exception as e:
+            logger.warning(f"手動セクションの抽出に失敗しました: {e}")
+
+        return manual_sections
+
+    def _merge_manual_sections(self, markdown: str, manual_sections: dict[str, str]) -> str:
+        """
+        生成されたマークダウンに手動セクションをマージ
+
+        Args:
+            markdown: 生成されたマークダウン
+            manual_sections: 手動セクションの辞書
+
+        Returns:
+            マージされたマークダウン
+        """
+        lines = markdown.split("\n")
+        result = []
+        i = 0
+
+        while i < len(lines):
+            line = lines[i]
+            result.append(line)
+
+            # MANUAL_STARTマーカーを見つけたら、手動内容を挿入
+            if line.strip().startswith("<!-- MANUAL_START:"):
+                section_name = line.strip().split(":", 1)[1].split("-->", 0)[0].strip()
+                if section_name in manual_sections:
+                    # MANUAL_STARTの次の空行をスキップ
+                    i += 1
+                    if i < len(lines) and lines[i].strip() == "":
+                        i += 1
+                    # 手動内容を挿入
+                    manual_content = manual_sections[section_name]
+                    result.extend(manual_content.split("\n"))
+                    # MANUAL_ENDまでスキップ
+                    while i < len(lines) and not lines[i].strip().startswith("<!-- MANUAL_END:"):
+                        i += 1
+                    if i < len(lines):
+                        result.append(lines[i])  # MANUAL_ENDを追加
+                else:
+                    # 手動セクションがない場合、次の行を処理
+                    pass
+            i += 1
+
+        return "\n".join(result)
+
     def generate(self) -> bool:
         """
         AGENTS.mdを生成
@@ -120,6 +202,11 @@ class AgentsGenerator:
 
             # マークダウンを生成
             markdown = self._generate_markdown(project_info)
+
+            # 既存の手動セクションを保持
+            manual_sections = self._extract_manual_sections()
+            if manual_sections:
+                markdown = self._merge_manual_sections(markdown, manual_sections)
 
             # ファイルに書き込み
             with open(self.output_path, "w", encoding="utf-8") as f:
@@ -567,27 +654,35 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("<!-- MANUAL_START:description -->")
         lines.append("")
 
-        # プロジェクト情報から説明を取得
-        description = project_info.get("description")
-        if description:
-            lines.append(description)
-        else:
-            # READMEから説明を取得（フォールバック）
-            readme_path = self.project_root / "README.md"
-            if readme_path.exists():
-                readme_content = readme_path.read_text(encoding="utf-8")
-                # 最初の段落を抽出（簡易版）
-                for line in readme_content.split("\n"):
-                    line_stripped = line.strip()
-                    if (
-                        line_stripped
-                        and not line_stripped.startswith("#")
-                        and not line_stripped.startswith("<!--")
-                    ):
-                        # 汎用的なテンプレート文をスキップ
-                        if "このプロジェクトの説明をここに記述してください" not in line_stripped:
-                            lines.append(line)
-                            break
+        # READMEから説明を取得（優先）
+        readme_path = self.project_root / "README.md"
+        description_found = False
+        if readme_path.exists():
+            readme_content = readme_path.read_text(encoding="utf-8")
+            # 最初の段落を抽出（簡易版）
+            for line in readme_content.split("\n"):
+                line_stripped = line.strip()
+                if (
+                    line_stripped
+                    and not line_stripped.startswith("#")
+                    and not line_stripped.startswith("<!--")
+                ):
+                    # 汎用的なテンプレート文をスキップ
+                    if "このプロジェクトの説明をここに記述してください" not in line_stripped:
+                        lines.append(line)
+                        description_found = True
+                        break
+
+        # READMEに説明がない場合、プロジェクト情報から取得（pyproject.tomlなど）
+        if not description_found:
+            description = project_info.get("description")
+            if description:
+                lines.append(description)
+                description_found = True
+
+        # 説明が見つからない場合のデフォルトメッセージ
+        if not description_found:
+            lines.append("このプロジェクトの説明をここに記述してください。")
 
         lines.append("")
         lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}")
