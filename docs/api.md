@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-21 17:01:59
+自動生成日時: 2025-11-22 18:13:16
 
 ---
 
@@ -237,7 +237,7 @@ def test_load_config_nonexistent_file(self, mock_safe_read_yaml, temp_project):
 
 存在しない設定ファイルのテスト
 
-*定義場所: tests/test_config_manager.py:58*
+*定義場所: tests/test_config_manager.py:59*
 
 ---
 
@@ -254,7 +254,7 @@ def test_create_default_config_with_sample(self, mock_safe_read_yaml, temp_proje
 
 サンプル設定ファイルからのデフォルト設定作成テスト
 
-*定義場所: tests/test_config_manager.py:75*
+*定義場所: tests/test_config_manager.py:80*
 
 ---
 
@@ -271,7 +271,7 @@ def test_create_default_config_without_sample(self, mock_safe_read_yaml, temp_pr
 
 サンプル設定ファイルなしの場合のデフォルト設定作成テスト
 
-*定義場所: tests/test_config_manager.py:99*
+*定義場所: tests/test_config_manager.py:104*
 
 ---
 
@@ -288,7 +288,7 @@ def test_copy_sample_config_success(self, temp_project):
 
 サンプル設定ファイルのコピー成功テスト
 
-*定義場所: tests/test_config_manager.py:120*
+*定義場所: tests/test_config_manager.py:125*
 
 ---
 
@@ -305,7 +305,7 @@ def test_copy_sample_config_failure(self, temp_project):
 
 サンプル設定ファイルのコピー失敗テスト
 
-*定義場所: tests/test_config_manager.py:140*
+*定義場所: tests/test_config_manager.py:145*
 
 ---
 
@@ -322,7 +322,7 @@ def test_get_default_config(self, temp_project):
 
 デフォルト設定の取得テスト
 
-*定義場所: tests/test_config_manager.py:159*
+*定義場所: tests/test_config_manager.py:164*
 
 ---
 
@@ -339,7 +339,7 @@ def test_get_config(self, temp_project):
 
 設定取得テスト
 
-*定義場所: tests/test_config_manager.py:176*
+*定義場所: tests/test_config_manager.py:181*
 
 ---
 
@@ -356,7 +356,7 @@ def test_update_config_simple(self, temp_project):
 
 シンプルな設定更新テスト
 
-*定義場所: tests/test_config_manager.py:188*
+*定義場所: tests/test_config_manager.py:193*
 
 ---
 
@@ -373,7 +373,7 @@ def test_update_config_nested(self, temp_project):
 
 ネストされた設定更新テスト
 
-*定義場所: tests/test_config_manager.py:200*
+*定義場所: tests/test_config_manager.py:205*
 
 ---
 
@@ -390,7 +390,7 @@ def test_set_nested_value_existing(self, temp_project):
 
 既存のネストされた値設定テスト
 
-*定義場所: tests/test_config_manager.py:212*
+*定義場所: tests/test_config_manager.py:217*
 
 ---
 
@@ -407,7 +407,7 @@ def test_set_nested_value_new_structure(self, temp_project):
 
 新規ネスト構造作成テスト
 
-*定義場所: tests/test_config_manager.py:224*
+*定義場所: tests/test_config_manager.py:229*
 
 ---
 
@@ -1564,7 +1564,7 @@ def test_main_detect_only(self, temp_project, caplog):
 
 detect-onlyオプションのテスト
 
-*定義場所: tests/test_docgen.py:212*
+*定義場所: tests/test_docgen.py:215*
 
 ---
 

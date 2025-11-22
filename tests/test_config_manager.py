@@ -45,6 +45,7 @@ class TestConfigManager:
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
         config_path = docgen_dir / "config.yaml"
+        config_path.touch()  # ファイルを作成
 
         test_config = {"test": "value"}
         mock_safe_read_yaml.return_value = test_config
@@ -63,13 +64,17 @@ class TestConfigManager:
 
         mock_safe_read_yaml.return_value = None
 
-        with patch.object(
-            ConfigManager, "_create_default_config", return_value={"default": "config"}
-        ) as mock_default:
+        with (
+            patch.object(
+                ConfigManager, "_create_default_config", return_value={"default": "config"}
+            ) as mock_default,
+            patch.object(ConfigManager, "_validate_config") as mock_validate,
+        ):
             config_manager = ConfigManager(temp_project, docgen_dir, config_path)
 
             assert config_manager.config == {"default": "config"}
             mock_default.assert_called_once()
+            mock_validate.assert_called_once()
 
     @patch("docgen.config_manager.safe_read_yaml")
     def test_create_default_config_with_sample(self, mock_safe_read_yaml, temp_project):
@@ -193,7 +198,7 @@ class TestConfigManager:
         config_manager = ConfigManager.__new__(ConfigManager)
         config_manager.config = {"a": 1, "b": 2}
 
-        config_manager.update_config("a", 3)
+        config_manager.update_config({"a": 3})
 
         assert config_manager.config["a"] == 3
 
@@ -205,7 +210,7 @@ class TestConfigManager:
         config_manager = ConfigManager.__new__(ConfigManager)
         config_manager.config = {"a": {"b": 2}}
 
-        config_manager.update_config("a.b", 3)
+        config_manager.update_config({"a.b": 3})
 
         assert config_manager.config["a"]["b"] == 3
 

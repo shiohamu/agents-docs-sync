@@ -60,9 +60,30 @@ fi
 
 cd "$PROJECT_ROOT" || exit 0
 
+# テストを実行
+echo "テストを実行中..."
+./scripts/run_tests.sh 2>&1
+
+TEST_EXIT_CODE=$?
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+    echo "テストが失敗しました。コミットを中止します。"
+    exit 1
+fi
+echo "テストが成功しました。"
+
+# コミット時はLLMを使わないように設定を一時的に変更
+if [ -f "$CONFIG_FILE" ]; then
+    # agents_modeをtemplateに変更してLLMを無効化
+    sed -i 's/agents_mode: .*/agents_mode: template/' "$CONFIG_FILE"
+    sed -i 's/readme_mode: .*/readme_mode: template/' "$CONFIG_FILE"
+fi
+
 # ドキュメントを生成
 echo "ドキュメントを自動生成中..."
-$PYTHON_CMD "$DOCGEN_SCRIPT" 2>&1
+$PYTHON_CMD -m docgen.docgen 2>&1
+
+# 設定を元に戻す（必要に応じて）
+# 今回は変更をコミットに含めるのでそのまま
 
 # 生成結果を確認
 EXIT_CODE=$?

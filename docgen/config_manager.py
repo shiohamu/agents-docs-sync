@@ -49,9 +49,16 @@ class ConfigManager:
         """
         if self.config_path.exists():
             try:
-                with open(self.config_path, encoding="utf-8") as f:
-                    config = yaml.safe_load(f) or {}
-                    return config
+                config = safe_read_yaml(self.config_path)
+                return config if config is not None else {}
+            except yaml.YAMLError as e:
+                logger.warning(f"設定ファイルの解析に失敗しました: {e}")
+                logger.info("デフォルト設定を使用します。")
+                return self._get_default_config()
+            except Exception as e:
+                logger.warning(f"設定ファイルの読み込みに失敗しました: {e}")
+                logger.info("デフォルト設定を使用します。")
+                return self._get_default_config()
             except yaml.YAMLError as e:
                 logger.warning(f"設定ファイルの解析に失敗しました: {e}")
                 logger.info("デフォルト設定を使用します。")
@@ -61,28 +68,7 @@ class ConfigManager:
                 logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
         else:
-            # 設定ファイルが存在しない場合、sampleからコピーを試みる
-            # まず、プロジェクトルート内のdocgen/config.yaml.sampleを確認
-            sample_path = self.docgen_dir / "config.yaml.sample"
-            if not sample_path.exists():
-                # プロジェクト内にない場合は、パッケージ内のsampleを参照
-                sample_path = self._package_config_sample or self.docgen_dir / "config.yaml.sample"
-
-            if sample_path.exists():
-                try:
-                    # docgenディレクトリが存在しない場合は作成
-                    self.docgen_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(sample_path, self.config_path)
-                    logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
-                    with open(self.config_path, encoding="utf-8") as f:
-                        return yaml.safe_load(f) or {}
-                except Exception as e:
-                    logger.warning(f"設定ファイルの作成に失敗しました: {e}")
-                    logger.info("デフォルト設定を使用します。")
-            else:
-                logger.warning(f"設定ファイルが見つかりません: {self.config_path}")
-                logger.info("デフォルト設定を使用します。")
-            return self._get_default_config()
+            return self._create_default_config()
 
     def _create_default_config(self) -> dict[str, Any]:
         """デフォルト設定を作成して返す"""

@@ -69,7 +69,7 @@ class TestDocumentGenerator:
         config = {"generation": {"generate_api_doc": True, "update_readme": True}}
 
         # モックの設定 - 1つは成功、1つは失敗
-        def side_effect(gen_type, project_root, languages, config):
+        def side_effect(gen_type, project_root, languages, config, detected_package_managers):
             mock_gen = MagicMock()
             if gen_type == "api":
                 mock_gen.generate.return_value = True

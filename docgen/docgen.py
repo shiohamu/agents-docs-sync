@@ -53,11 +53,22 @@ class DocGen:
         # パッケージ内のconfig.yaml.sampleを参照するためのパス
         package_config_sample = DOCGEN_DIR / "config.yaml.sample"
 
+        self.config_path = config_path or self.docgen_dir / "config.yaml"
+
         self.config_manager = ConfigManager(
             self.project_root, self.docgen_dir, config_path, package_config_sample
         )
         self.config = self.config_manager.get_config()
         self.language_detector = LanguageDetector(self.project_root)
+        self.detected_languages = []
+        self.detected_package_managers = {}
+
+    def _load_config(self):
+        return self.config_manager._load_config()
+
+    def _validate_config(self):
+        self.config_manager._validate_config()
+        self.config = self.config_manager.config
 
     def detect_languages(self, use_parallel: bool = True) -> list[str]:
         """
@@ -69,7 +80,9 @@ class DocGen:
         Returns:
             検出された言語のリスト
         """
-        return self.language_detector.detect_languages(use_parallel)
+        self.detected_languages = self.language_detector.detect_languages(use_parallel)
+        self.detected_package_managers = self.language_detector.detected_package_managers
+        return self.detected_languages
 
     def update_config(self, updates: dict[str, Any]) -> None:
         """

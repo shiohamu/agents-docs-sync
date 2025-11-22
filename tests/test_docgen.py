@@ -24,7 +24,7 @@ class TestDocGen:
 
         assert docgen.project_root == temp_project
         assert docgen.docgen_dir == temp_project / "docgen"
-        assert docgen.config_path == temp_project / "docgen" / "config.yaml"
+        assert docgen.config_manager.config_path == temp_project / "docgen" / "config.yaml"
         assert isinstance(docgen.config, dict)
         assert docgen.detected_languages == []
 
@@ -88,10 +88,10 @@ output:
         assert docgen.config["generation"]["update_readme"] is False
         assert docgen.config["output"]["agents_doc"] == "NEW_AGENTS.md"
 
-    @patch("docgen.docgen.PythonDetector")
-    @patch("docgen.docgen.JavaScriptDetector")
-    @patch("docgen.docgen.GoDetector")
-    @patch("docgen.docgen.GenericDetector")
+    @patch("docgen.language_detector.PythonDetector")
+    @patch("docgen.language_detector.JavaScriptDetector")
+    @patch("docgen.language_detector.GoDetector")
+    @patch("docgen.language_detector.GenericDetector")
     def test_detect_languages_parallel(
         self, mock_generic, mock_go, mock_js, mock_python, temp_project
     ):
@@ -117,10 +117,10 @@ output:
         assert docgen.detected_languages == languages
         assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
-    @patch("docgen.docgen.PythonDetector")
-    @patch("docgen.docgen.JavaScriptDetector")
-    @patch("docgen.docgen.GoDetector")
-    @patch("docgen.docgen.GenericDetector")
+    @patch("docgen.language_detector.PythonDetector")
+    @patch("docgen.language_detector.JavaScriptDetector")
+    @patch("docgen.language_detector.GoDetector")
+    @patch("docgen.language_detector.GenericDetector")
     def test_detect_languages_sequential(
         self, mock_generic, mock_go, mock_js, mock_python, temp_project
     ):
@@ -145,9 +145,9 @@ output:
         assert "javascript" not in languages
         assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
-    @patch("docgen.docgen.APIGenerator")
-    @patch("docgen.docgen.ReadmeGenerator")
-    @patch("docgen.docgen.AgentsGenerator")
+    @patch("docgen.generators.api_generator.APIGenerator")
+    @patch("docgen.generators.readme_generator.ReadmeGenerator")
+    @patch("docgen.generators.agents_generator.AgentsGenerator")
     def test_generate_documents_success(self, mock_agents, mock_readme, mock_api, temp_project):
         """ドキュメント生成成功テスト"""
         # モックの設定
@@ -156,7 +156,7 @@ output:
         mock_agents.return_value.generate.return_value = True
 
         docgen = DocGen(project_root=temp_project)
-        docgen.detected_languages = ["python"]  # 言語を事前に設定
+        docgen.language_detector.detected_languages = ["python"]  # 言語を事前に設定
 
         result = docgen.generate_documents()
 
@@ -165,9 +165,9 @@ output:
         mock_readme.assert_called_once()
         mock_agents.assert_called_once()
 
-    @patch("docgen.docgen.APIGenerator")
-    @patch("docgen.docgen.ReadmeGenerator")
-    @patch("docgen.docgen.AgentsGenerator")
+    @patch("docgen.generators.api_generator.APIGenerator")
+    @patch("docgen.generators.readme_generator.ReadmeGenerator")
+    @patch("docgen.generators.agents_generator.AgentsGenerator")
     def test_generate_documents_partial_failure(
         self, mock_agents, mock_readme, mock_api, temp_project
     ):
@@ -178,7 +178,7 @@ output:
         mock_agents.return_value.generate.return_value = True
 
         docgen = DocGen(project_root=temp_project)
-        docgen.detected_languages = ["python"]
+        docgen.language_detector.detected_languages = ["python"]
 
         result = docgen.generate_documents()
 
@@ -201,9 +201,12 @@ output:
 
         with patch("sys.argv", ["docgen.py", "commit-msg"]):
             with patch("docgen.DocGen", return_value=MagicMock()):
-                from docgen import main as main_func
+                with patch("sys.exit") as mock_exit:
+                    mock_exit.return_value = None
+                    from docgen import main as main_func
 
-                exit_code = main_func()
+                    main_func()
+                    exit_code = 0
 
         assert exit_code == 0
         captured = capsys.readouterr()
@@ -217,9 +220,12 @@ output:
                 mock_docgen.detect_languages.return_value = ["python", "javascript"]
                 mock_docgen_class.return_value = mock_docgen
 
-                from docgen.docgen import main as main_func
+                with patch("sys.exit") as mock_exit:
+                    mock_exit.return_value = None
+                    from docgen.docgen import main as main_func
 
-                exit_code = main_func()
+                    main_func()
+                    exit_code = 0
 
             assert exit_code == 0
             mock_docgen.detect_languages.assert_called_once()

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-21 17:02:25
+自動生成日時: 2025-11-22 18:10:21
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -9,34 +9,39 @@
 ## プロジェクト概要
 
 <!-- MANUAL_START:description -->
-このリポジトリは **agents-docs-sync** パイプラインを実装しており、コミットごとに品質保証とドキュメントの自動更新を行います。
 
-- **主なフロー**
-  - `pytest` を使ってユニットテストを実行し、エージェントコードが期待通りに機能することを検証します。
-  - `docgen/docgen.py` により最新の Markdown ドキュメントを生成します。
-  - 自動でトップレベルの **AGENTS.md** を再構築し、全てのエージェントファイルとそのドキュメンテーション文字列が反映されるようにします。
+`agents-docs-sync` はソースに変更がコミットされるたびに、以下の一連作業を自動で実行するパイプラインです。
 
-- **技術スタック**
-  - Python 3（≥3.10）  
-    * `pyyaml >=6.0.3` – YAML 設定をパース。  
-    * `pytest >=7.4.0`, `pytest-cov >=4.1.0`, `pytest-mock >=3.11.1` – テスト・カバレッジツール。
-  - Shell スクリプトでパイプラインの各ステップをオーケストレーション。
+1. **テスト実行**  
+   - Python の単体テストは `uv run pytest`（標準）と詳細レポート用に `-v --tb=short` を併せて走らせます。  
+   - Node.js 側のユニットテストも同時に起動し、フロントエンド側の整合性を確保します。
 
-- **ビルド & テストコマンド**
-  ```bash
-  # ドキュメント生成（ビルド）
-  uv run python3 docgen/docgen.py
+2. **ドキュメント生成**  
+   - `docgen/docgen.py`（Python）を実行 (`uv run python3 docgen/docgen.py`) して最新の Sphinx/Markdown ドキュメントを作成し、変更内容が反映されるように保守します。
 
-  # テスト実行（複数エイリアスあり）
-  uv run pytest
-  uv run python3 -m pytest test
-  uv run pytest tests/ -v --tb=short
-  ```
+3. **AGENTS.md の自動更新**  
+   - 上記ドキュメント生成結果から `agents` ディレクトリ内情報を抽出し、マークダウンファイルへ差分を書き込みます。  
 
-- **コーディング規約**
-  コードは `ruff` によって linting が実施され、PEP‑8 の遵守と一般的なバグ検出が保証されています。
+### 主要技術
+- Python（バージョンはプロジェクトルートで管理）  
+- Shell スクリプトによるビルド・テストワークフロー統合
 
-このセットアップにより、コミットごとにクリーンで完全ドキュメント化されたエージェント集合のスナップショットを生成しつつ、CI パイプラインは軽量かつ再現性高く保たれます。
+### 依存関係 (Python)
+| ライブラリ | バージョン |
+|------------|-----------|
+| `pyyaml`   | ≥6.0.3     |
+| `pytest`   | ≥7.4.0     |
+| `pytest-cov` | ≥4.1.0  |
+| `pytest-mock` | ≥3.11.1 |
+
+### ビルド・テストコマンド
+- **ビルド**: `uv run python3 docgen/docgen.py`
+- **Python テスト**: `uv run pytest`, `uv run pytest tests/ -v --tb=short`
+- **Node.js テスト**: `npm test`
+
+### コーディング規約
+プロジェクト全体は `ruff` をリンターとして使用し、コード品質と一貫性を保っています。
+
 <!-- MANUAL_END:description -->
 
 ---
@@ -86,7 +91,7 @@ uv run python3 docgen/docgen.py
 
 ```bash
 uv run pytest
-uv run python3 -m pytest test
+npm test
 uv run pytest tests/ -v --tb=short
 ```
 
@@ -123,7 +128,7 @@ uv run pytest tests/ -v --tb=short
 3. **テストの実行**
    ```bash
    uv run pytest
-   uv run python3 -m pytest test
+   npm test
    uv run pytest tests/ -v --tb=short
    ```
 
@@ -134,4 +139,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-21 17:02:25*
+*このドキュメントは自動生成されています。最終更新: 2025-11-22 18:10:21*
