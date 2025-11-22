@@ -14,7 +14,13 @@ logger = get_logger("document_generator")
 class DocumentGenerator:
     """ドキュメント生成クラス"""
 
-    def __init__(self, project_root: Path, detected_languages: list[str], config: dict[str, Any]):
+    def __init__(
+        self,
+        project_root: Path,
+        detected_languages: list[str],
+        config: dict[str, Any],
+        detected_package_managers: dict[str, str] | None = None,
+    ):
         """
         初期化
 
@@ -22,10 +28,12 @@ class DocumentGenerator:
             project_root: プロジェクトルートパス
             detected_languages: 検出された言語リスト
             config: 設定辞書
+            detected_package_managers: 検出されたパッケージマネージャ辞書
         """
         self.project_root = project_root
         self.detected_languages = detected_languages
         self.config = config
+        self.detected_package_managers = detected_package_managers or {}
 
     def generate_documents(self) -> bool:
         """
@@ -54,7 +62,11 @@ class DocumentGenerator:
             logger.info(f"[{gen_name}生成]")
             try:
                 generator = GeneratorFactory.create_generator(
-                    gen_type, self.project_root, self.detected_languages, self.config
+                    gen_type,
+                    self.project_root,
+                    self.detected_languages,
+                    self.config,
+                    self.detected_package_managers,
                 )
                 if generator.generate():
                     logger.info(f"✓ {gen_name}を生成しました")

@@ -26,6 +26,7 @@ class LanguageDetector:
         """
         self.project_root = project_root
         self.detected_languages = []
+        self.detected_package_managers = {}
 
     def detect_languages(self, use_parallel: bool = True) -> list[str]:
         """
@@ -80,8 +81,29 @@ class LanguageDetector:
                     )
 
         self.detected_languages = detected
+
+        # パッケージマネージャの検出
+        package_managers = {}
+        for detector in detectors:
+            try:
+                if detector.detect():
+                    lang = detector.get_language()
+                    pm = detector.detect_package_manager()
+                    if pm:
+                        package_managers[lang] = pm
+                        logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
+            except Exception as e:
+                logger.warning(
+                    f"パッケージマネージャ検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
+                )
+
+        self.detected_package_managers = package_managers
         return detected
 
     def get_detected_languages(self) -> list[str]:
         """検出された言語を取得"""
         return self.detected_languages
+
+    def get_detected_package_managers(self) -> dict[str, str]:
+        """検出されたパッケージマネージャを取得"""
+        return self.detected_package_managers
