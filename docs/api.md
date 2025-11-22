@@ -100,6 +100,60 @@ Mock LLMクライアント
 ---
 
 
+## tests/test_cli.py
+
+### TestCommandLineInterface
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestCommandLineInterface:
+```
+
+**説明**:
+
+CommandLineInterfaceクラスのテスト
+
+*定義場所: tests/test_cli.py:10*
+
+---
+
+### test_init
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_init(self):
+```
+
+**説明**:
+
+初期化テスト
+
+*定義場所: tests/test_cli.py:13*
+
+---
+
+### test_run_detect_only
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_run_detect_only(self, mock_docgen_class, tmp_path):
+```
+
+**説明**:
+
+言語検出のみ実行テスト
+
+*定義場所: tests/test_cli.py:19*
+
+---
+
+
 ## tests/test_config_manager.py
 
 ### TestConfigManager
@@ -2903,6 +2957,77 @@ def test_error_handling(self, temp_project):
 エラーハンドリングのテスト
 
 *定義場所: tests/test_integration.py:206*
+
+---
+
+
+## tests/test_language_detector.py
+
+### TestLanguageDetector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestLanguageDetector:
+```
+
+**説明**:
+
+LanguageDetectorクラスのテスト
+
+*定義場所: tests/test_language_detector.py:8*
+
+---
+
+### test_init
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_init(self, tmp_path):
+```
+
+**説明**:
+
+初期化テスト
+
+*定義場所: tests/test_language_detector.py:11*
+
+---
+
+### test_detect_languages_python
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_detect_languages_python(self, tmp_path):
+```
+
+**説明**:
+
+Python言語検出テスト
+
+*定義場所: tests/test_language_detector.py:18*
+
+---
+
+### test_get_detected_package_managers
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_get_detected_package_managers(self, tmp_path):
+```
+
+**説明**:
+
+パッケージマネージャ取得テスト
+
+*定義場所: tests/test_language_detector.py:29*
 
 ---
 
