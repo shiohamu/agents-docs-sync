@@ -156,7 +156,7 @@ class TestConfigManager:
         config_manager.config_path = config_path
 
         # shutil.copy2をモックして例外を発生させる
-        with patch("shutil.copy2", side_effect=Exception("Copy failed")):
+        with patch("shutil.copy2", side_effect=OSError("Copy failed")):
             result = config_manager._copy_sample_config(sample_path)
 
             assert result is False

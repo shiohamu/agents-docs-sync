@@ -74,7 +74,7 @@ class ConfigManager:
             shutil.copy2(sample_path, self.config_path)
             logger.info(f"{sample_path.name}から{self.config_path.name}を作成しました。")
             return True
-        except Exception as e:
+        except OSError as e:
             logger.error(f"設定ファイルの作成に失敗しました: {e}", exc_info=True)
             logger.info("デフォルト設定を使用します。")
             return False

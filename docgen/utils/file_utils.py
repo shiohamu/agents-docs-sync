@@ -54,7 +54,7 @@ def save_yaml_file(file_path: Path, data: dict[str, Any]) -> bool:
         with open(file_path, "w", encoding="utf-8") as f:
             yaml.safe_dump(data, f, allow_unicode=True, default_flow_style=False)
         return True
-    except Exception:
+    except (OSError, yaml.YAMLError):
         return False
 
 
@@ -114,7 +114,7 @@ def load_toml_file(file_path: Path) -> dict[str, Any] | None:
             return None
         with open(file_path, "rb") as f:
             return tomllib.load(f)
-    except Exception:
+    except OSError:
         return None
 
 

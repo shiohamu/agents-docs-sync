@@ -21,10 +21,21 @@ except ImportError:
     from utils.logger import get_logger
 
     # Fallback for exceptions
-    class ConfigError(ValueError):
+    class DocGenError(Exception):
+        def __init__(self, message: str, details: str | None = None):
+            super().__init__(message)
+            self.message = message
+            self.details = details
+
+        def __str__(self) -> str:
+            if self.details:
+                return f"{self.message}: {self.details}"
+            return self.message
+
+    class ConfigError(DocGenError):
         pass
 
-    class LLMError(Exception):
+    class LLMError(DocGenError):
         pass
 
 
@@ -118,7 +129,10 @@ class BaseLLMClient(ABC):
                     time.sleep(delay)
                 else:
                     logger.error(f"LLM呼び出しが{self.max_retries}回失敗しました: {e}")
-        raise last_exception
+        if last_exception:
+            raise last_exception
+        else:
+            raise RuntimeError("LLM呼び出しで不明なエラーが発生しました")
 
 
 class OpenAIClient(BaseLLMClient):
@@ -157,7 +171,7 @@ class OpenAIClient(BaseLLMClient):
                 **kwargs,
             )
 
-            if response and response.choices:
+            if response and response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content.strip()
             return None
         except Exception as e:
@@ -186,7 +200,7 @@ class AnthropicClient(BaseLLMClient):
                 "anthropicパッケージが必要です。`pip install anthropic`でインストールしてください。"
             ) from None
         except Exception as e:
-            raise ValueError(f"Anthropicクライアントの初期化に失敗しました: {e}") from e
+            raise ConfigError(f"Anthropicクライアントの初期化に失敗しました: {e}") from e
 
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """Anthropic APIを使用してテキストを生成"""
@@ -209,7 +223,7 @@ class AnthropicClient(BaseLLMClient):
                 # Anthropicのレスポンス形式に合わせて処理
                 text_content = ""
                 for block in response.content:
-                    if hasattr(block, "text"):
+                    if hasattr(block, "text") and block.text:
                         text_content += block.text
                 return text_content.strip() if text_content else None
             return None
@@ -253,8 +267,7 @@ class LocalLLMClient(BaseLLMClient):
             elif self.provider in ["lmstudio", "custom"]:
                 return self._generate_openai_compatible(prompt, system_prompt, **kwargs)
             else:
-                logger.error(f"サポートされていないプロバイダー: {self.provider}")
-                return None
+                raise ConfigError(f"サポートされていないプロバイダー: {self.provider}")
         except Exception as e:
             logger.error(f"ローカルLLM呼び出しエラー: {e}")
             return None
