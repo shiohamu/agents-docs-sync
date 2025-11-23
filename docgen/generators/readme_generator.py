@@ -24,30 +24,13 @@ except ImportError:
         return None
 
 
-# 相対インポートを使用（docgenがパッケージとして認識される場合）
-# フォールバック: 絶対インポート
-try:
-    from ..collectors.project_info_collector import ProjectInfoCollector
-    from ..utils.llm_client import LLMClientFactory
-    from ..utils.logger import get_logger
-    from ..utils.outlines_utils import (
-        create_outlines_model,
-        should_use_outlines,
-    )
-except ImportError:
-    # 相対インポートが失敗した場合のフォールバック
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from collectors.project_info_collector import ProjectInfoCollector
-    from utils.llm_client import LLMClientFactory
-    from utils.logger import get_logger
-    from utils.outlines_utils import (
-        create_outlines_model,
-        should_use_outlines,
-    )
+from ..collectors.project_info_collector import ProjectInfoCollector
+from ..utils.llm_client import LLMClientFactory
+from ..utils.logger import get_logger
+from ..utils.outlines_utils import (
+    create_outlines_model,
+    should_use_outlines,
+)
 
 logger = get_logger("readme_generator")
 

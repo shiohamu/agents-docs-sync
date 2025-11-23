@@ -7,15 +7,9 @@ from datetime import datetime
 import hashlib
 import json
 from pathlib import Path
-import sys
 from typing import Any
 
-# モジュールパスを追加（utils.loggerをインポートするため）
-DOCGEN_DIR = Path(__file__).parent.parent.parent.resolve()
-if str(DOCGEN_DIR) not in sys.path:
-    sys.path.insert(0, str(DOCGEN_DIR))
-
-from utils.logger import get_logger
+from .logger import get_logger
 
 logger = get_logger("cache")
 

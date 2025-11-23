@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-23 11:30:49
+自動生成日時: 2025-11-23 11:34:22
 
 ---
 
@@ -61,7 +61,7 @@ def temp_project():
 
 Create a temporary project directory with basic structure.
 
-*定義場所: tests/conftest.py:18*
+*定義場所: tests/conftest.py:11*
 
 ---
 
@@ -78,7 +78,7 @@ def sample_config():
 
 Return a sample configuration dictionary.
 
-*定義場所: tests/conftest.py:51*
+*定義場所: tests/conftest.py:44*
 
 ---
 
@@ -95,7 +95,7 @@ def mock_llm_client(mocker):
 
 Mock LLMクライアント
 
-*定義場所: tests/conftest.py:73*
+*定義場所: tests/conftest.py:66*
 
 ---
 
@@ -169,7 +169,7 @@ class TestConfigManager:
 
 ConfigManagerクラスのテスト
 
-*定義場所: tests/test_config_manager.py:18*
+*定義場所: tests/test_config_manager.py:15*
 
 ---
 
@@ -186,7 +186,7 @@ def test_config_manager_initialization_with_config_path(self, temp_project):
 
 設定ファイルパス指定での初期化テスト
 
-*定義場所: tests/test_config_manager.py:21*
+*定義場所: tests/test_config_manager.py:18*
 
 ---
 
@@ -203,7 +203,7 @@ def test_config_manager_initialization_default_config_path(self, temp_project):
 
 デフォルト設定ファイルパスでの初期化テスト
 
-*定義場所: tests/test_config_manager.py:33*
+*定義場所: tests/test_config_manager.py:30*
 
 ---
 
@@ -220,7 +220,7 @@ def test_load_config_existing_file(self, mock_safe_read_yaml, temp_project):
 
 既存の設定ファイル読み込みテスト
 
-*定義場所: tests/test_config_manager.py:43*
+*定義場所: tests/test_config_manager.py:40*
 
 ---
 
@@ -237,7 +237,7 @@ def test_load_config_nonexistent_file(self, mock_safe_read_yaml, temp_project):
 
 存在しない設定ファイルのテスト
 
-*定義場所: tests/test_config_manager.py:59*
+*定義場所: tests/test_config_manager.py:56*
 
 ---
 
@@ -254,7 +254,7 @@ def test_create_default_config_with_sample(self, mock_safe_read_yaml, temp_proje
 
 サンプル設定ファイルからのデフォルト設定作成テスト
 
-*定義場所: tests/test_config_manager.py:80*
+*定義場所: tests/test_config_manager.py:77*
 
 ---
 
@@ -271,7 +271,7 @@ def test_create_default_config_without_sample(self, mock_safe_read_yaml, temp_pr
 
 サンプル設定ファイルなしの場合のデフォルト設定作成テスト
 
-*定義場所: tests/test_config_manager.py:104*
+*定義場所: tests/test_config_manager.py:101*
 
 ---
 
@@ -288,7 +288,7 @@ def test_copy_sample_config_success(self, temp_project):
 
 サンプル設定ファイルのコピー成功テスト
 
-*定義場所: tests/test_config_manager.py:125*
+*定義場所: tests/test_config_manager.py:122*
 
 ---
 
@@ -305,7 +305,7 @@ def test_copy_sample_config_failure(self, temp_project):
 
 サンプル設定ファイルのコピー失敗テスト
 
-*定義場所: tests/test_config_manager.py:145*
+*定義場所: tests/test_config_manager.py:142*
 
 ---
 
@@ -322,7 +322,7 @@ def test_get_default_config(self, temp_project):
 
 デフォルト設定の取得テスト
 
-*定義場所: tests/test_config_manager.py:164*
+*定義場所: tests/test_config_manager.py:161*
 
 ---
 
@@ -339,7 +339,7 @@ def test_get_config(self, temp_project):
 
 設定取得テスト
 
-*定義場所: tests/test_config_manager.py:181*
+*定義場所: tests/test_config_manager.py:178*
 
 ---
 
@@ -356,7 +356,7 @@ def test_update_config_simple(self, temp_project):
 
 シンプルな設定更新テスト
 
-*定義場所: tests/test_config_manager.py:193*
+*定義場所: tests/test_config_manager.py:190*
 
 ---
 
@@ -373,7 +373,7 @@ def test_update_config_nested(self, temp_project):
 
 ネストされた設定更新テスト
 
-*定義場所: tests/test_config_manager.py:205*
+*定義場所: tests/test_config_manager.py:202*
 
 ---
 
@@ -390,7 +390,7 @@ def test_set_nested_value_existing(self, temp_project):
 
 既存のネストされた値設定テスト
 
-*定義場所: tests/test_config_manager.py:217*
+*定義場所: tests/test_config_manager.py:214*
 
 ---
 
@@ -407,7 +407,7 @@ def test_set_nested_value_new_structure(self, temp_project):
 
 新規ネスト構造作成テスト
 
-*定義場所: tests/test_config_manager.py:229*
+*定義場所: tests/test_config_manager.py:226*
 
 ---
 

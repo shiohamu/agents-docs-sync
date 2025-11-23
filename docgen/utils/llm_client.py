@@ -5,39 +5,11 @@ OpenAI、Anthropic、ローカルLLM（Ollama、LM Studio）に対応
 
 from abc import ABC, abstractmethod
 import os
-from pathlib import Path
 import time
 from typing import Any
 
-try:
-    from ..utils.exceptions import ConfigError, LLMError
-    from ..utils.logger import get_logger
-except ImportError:
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from utils.logger import get_logger
-
-    # Fallback for exceptions
-    class DocGenError(Exception):
-        def __init__(self, message: str, details: str | None = None):
-            super().__init__(message)
-            self.message = message
-            self.details = details
-
-        def __str__(self) -> str:
-            if self.details:
-                return f"{self.message}: {self.details}"
-            return self.message
-
-    class ConfigError(DocGenError):
-        pass
-
-    class LLMError(DocGenError):
-        pass
-
+from ..utils.exceptions import ConfigError
+from ..utils.logger import get_logger
 
 logger = get_logger("llm_client")
 

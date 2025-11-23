@@ -13,19 +13,7 @@ except ImportError:
 
 from typing import Any
 
-# 相対インポートを使用（docgenがパッケージとして認識される場合）
-# フォールバック: 絶対インポート
-try:
-    from ..utils.llm_client import LLMClientFactory
-except ImportError:
-    # 相対インポートが失敗した場合のフォールバック
-    from pathlib import Path
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from utils.llm_client import LLMClientFactory
+from ..utils.llm_client import LLMClientFactory
 
 
 def should_use_outlines(config: dict[str, Any]) -> bool:

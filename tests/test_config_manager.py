@@ -8,9 +8,6 @@ from unittest.mock import patch
 # docgenモジュールをインポート可能にする
 PROJECT_ROOT = Path(__file__).parent.parent.parent.resolve()
 DOCGEN_DIR = PROJECT_ROOT / "docgen"
-import sys
-
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.config_manager import ConfigManager
 

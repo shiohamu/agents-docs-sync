@@ -7,17 +7,8 @@ from pathlib import Path
 import subprocess
 from typing import Any
 
-try:
-    from ..utils.llm_client import LLMClientFactory
-    from ..utils.logger import get_logger
-except ImportError:
-    import sys
-
-    DOCGEN_DIR = Path(__file__).parent.parent.resolve()
-    if str(DOCGEN_DIR) not in sys.path:
-        sys.path.insert(0, str(DOCGEN_DIR))
-    from utils.llm_client import LLMClientFactory
-    from utils.logger import get_logger
+from ..utils.llm_client import LLMClientFactory
+from ..utils.logger import get_logger
 
 logger = get_logger("commit_message_generator")
 

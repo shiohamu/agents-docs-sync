@@ -6,20 +6,12 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import copy
 from pathlib import Path
-import sys
 from typing import TYPE_CHECKING, Any, Optional
 
-# モジュールパスを追加（utils.loggerをインポートするため）
-# 注意: このモジュールはdocgenパッケージ内で実行されることを想定
-# 相対インポートが困難な場合のフォールバックとしてsys.path.insertを使用
-DOCGEN_DIR = Path(__file__).parent.parent.parent.resolve()
-if str(DOCGEN_DIR) not in sys.path:
-    sys.path.insert(0, str(DOCGEN_DIR))
-
-from utils.logger import get_logger
+from ...utils.logger import get_logger
 
 if TYPE_CHECKING:
-    from utils.cache import CacheManager
+    from ...utils.cache import CacheManager
 
 logger = get_logger("parser")
 

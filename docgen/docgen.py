@@ -14,10 +14,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DOCGEN_DIR = Path(__file__).parent.resolve()
 
-# モジュールパスを追加（メインエントリーポイントとして実行される場合に必要）
-# 注意: このファイルは直接実行されることを想定しているため、sys.path.insertが必要
 # パッケージとしてインストールされた場合は相対インポートを使用
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator

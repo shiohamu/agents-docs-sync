@@ -2,16 +2,9 @@
 
 from pathlib import Path
 import shutil
-
-# Minimal: always ensure repo root is on sys.path so imports like test_utils.common work
-import sys
 import tempfile
 
 import pytest
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
 
 
 @pytest.fixture(scope="function")
