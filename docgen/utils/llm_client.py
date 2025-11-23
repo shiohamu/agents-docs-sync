@@ -8,6 +8,7 @@ import os
 import time
 from typing import Any
 
+from ..models import LLMClientConfig, LLMConfig
 from ..utils.exceptions import ConfigError
 from ..utils.logger import get_logger
 
@@ -17,17 +18,21 @@ logger = get_logger("llm_client")
 class BaseLLMClient(ABC):
     """LLMクライアントの抽象基底クラス"""
 
-    def __init__(self, config: dict[str, Any]):
+    def __init__(self, config: dict[str, Any] | LLMConfig):
         """
         初期化
 
         Args:
-            config: LLM設定辞書
+            config: LLM設定辞書またはLLMConfigオブジェクト
         """
-        self.config: dict[str, Any] = config
-        self.timeout: int = config.get("timeout", 30)
-        self.max_retries: int = config.get("max_retries", 3)
-        self.retry_delay: float = config.get("retry_delay", 1.0)
+        if isinstance(config, dict):
+            self.config = LLMConfig(**config)
+        else:
+            self.config = config
+
+        self.timeout: int = self.config.timeout
+        self.max_retries: int = self.config.max_retries
+        self.retry_delay: float = self.config.retry_delay
 
     @abstractmethod
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
@@ -111,15 +116,18 @@ class OpenAIClient(BaseLLMClient):
     """OpenAI APIクライアント"""
 
     def __init__(self, config: dict[str, Any]):
+        # OpenAIクライアント用にproviderを設定
+        if isinstance(config, dict):
+            config["provider"] = "openai"
         super().__init__(config)
         try:
             import openai
 
             self.client: openai.OpenAI = openai.OpenAI(
-                api_key=os.getenv(config.get("api_key_env", "OPENAI_API_KEY"), ""),
-                base_url=config.get("endpoint"),  # カスタムエンドポイント対応
+                api_key=os.getenv(self.config.api_key_env or "OPENAI_API_KEY", ""),
+                base_url=self.config.base_url,  # カスタムエンドポイント対応
             )
-            self.model: str = config.get("model", "gpt-4o")
+            self.model: str = self.config.model or "gpt-4o"
         except ImportError:
             raise ImportError(
                 "openaiパッケージが必要です。`pip install openai`でインストールしてください。"
@@ -159,14 +167,17 @@ class AnthropicClient(BaseLLMClient):
     """Anthropic APIクライアント"""
 
     def __init__(self, config: dict[str, Any]):
+        # Anthropicクライアント用にproviderを設定
+        if isinstance(config, dict):
+            config["provider"] = "anthropic"
         super().__init__(config)
         try:
             import anthropic
 
             self.client = anthropic.Anthropic(
-                api_key=os.getenv(config.get("api_key_env", "ANTHROPIC_API_KEY"), "")
+                api_key=os.getenv(self.config.api_key_env or "ANTHROPIC_API_KEY", "")
             )
-            self.model = config.get("model", "claude-3-5-sonnet-20241022")
+            self.model = self.config.model or "claude-3-5-sonnet-20241022"
         except ImportError:
             raise ImportError(
                 "anthropicパッケージが必要です。`pip install anthropic`でインストールしてください。"
@@ -214,6 +225,9 @@ class LocalLLMClient(BaseLLMClient):
     """ローカルLLMクライアント（Ollama、LM Studio対応）"""
 
     def __init__(self, config: dict[str, Any]):
+        # LocalLLMクライアント用にproviderを設定（既に設定されている場合は上書きしない）
+        if isinstance(config, dict) and "provider" not in config:
+            config["provider"] = "local"
         super().__init__(config)
         try:
             import httpx
@@ -224,7 +238,7 @@ class LocalLLMClient(BaseLLMClient):
                 "httpxパッケージが必要です。`pip install httpx`でインストールしてください。"
             ) from None
 
-        self.base_url: str = config.get("base_url", "http://localhost:11434")
+        self.base_url: str = self.config.base_url or "http://localhost:11434"
         self.model: str = config.get("model", "llama3")
         self.provider: str = config.get("provider", "ollama")
 
@@ -234,12 +248,13 @@ class LocalLLMClient(BaseLLMClient):
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """ローカルLLMを使用してテキストを生成"""
         try:
-            if self.provider == "ollama":
+            # LocalLLMClientは常にローカルプロバイダーとして動作
+            if self.config.provider == "ollama":
                 return self._generate_ollama(prompt, system_prompt, **kwargs)
-            elif self.provider in ["lmstudio", "custom"]:
+            elif self.config.provider in ["lmstudio", "custom", "local"]:
                 return self._generate_openai_compatible(prompt, system_prompt, **kwargs)
             else:
-                raise ConfigError(f"サポートされていないプロバイダー: {self.provider}")
+                raise ConfigError(f"サポートされていないプロバイダー: {self.config.provider}")
         except Exception as e:
             logger.error(f"ローカルLLM呼び出しエラー: {e}")
             return None
@@ -327,12 +342,14 @@ class LLMClientFactory:
     """LLMクライアントのファクトリークラス"""
 
     @staticmethod
-    def create_client(config: dict[str, Any], mode: str = "api") -> BaseLLMClient | None:
+    def create_client(
+        config: dict[str, Any] | LLMClientConfig, mode: str = "api"
+    ) -> BaseLLMClient | None:
         """
         LLMクライアントを作成
 
         Args:
-            config: LLM設定辞書
+            config: LLM設定辞書またはLLMClientConfigオブジェクト
             mode: 'api' または 'local'
 
         Returns:
@@ -340,19 +357,34 @@ class LLMClientFactory:
         """
         try:
             if mode == "api":
-                api_config = config.get("api", {})
-                provider = api_config.get("provider", "openai")
+                if isinstance(config, LLMClientConfig):
+                    client_config = config.openai or config.anthropic
+                    if not client_config:
+                        logger.error("API設定が見つかりません")
+                        return None
 
-                if provider == "openai":
-                    return OpenAIClient(api_config)
-                elif provider == "anthropic":
-                    return AnthropicClient(api_config)
-                elif provider == "custom":
-                    # カスタムエンドポイントはOpenAI互換形式を想定
-                    return OpenAIClient(api_config)
+                    provider = client_config.provider
+                    if provider == "openai":
+                        return OpenAIClient(client_config.model_dump())
+                    elif provider == "anthropic":
+                        return AnthropicClient(client_config.model_dump())
+                    else:
+                        logger.error(f"サポートされていないAPIプロバイダー: {provider}")
+                        return None
                 else:
-                    logger.error(f"サポートされていないAPIプロバイダー: {provider}")
-                    return None
+                    api_config = config.get("api", {})
+                    provider = api_config.get("provider", "openai")
+
+                    if provider == "openai":
+                        return OpenAIClient(api_config)
+                    elif provider == "anthropic":
+                        return AnthropicClient(api_config)
+                    elif provider == "custom":
+                        # カスタムエンドポイントはOpenAI互換形式を想定
+                        return OpenAIClient(api_config)
+                    else:
+                        logger.error(f"サポートされていないAPIプロバイダー: {provider}")
+                        return None
 
             elif mode == "local":
                 local_config = config.get("local", {})

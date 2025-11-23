@@ -191,6 +191,16 @@ class ReadmeDocument(BaseModel):
     )
 
 
+class APIParameter(BaseModel):
+    """APIパラメータモデル"""
+
+    name: str = Field(description="パラメータ名")
+    type: str = Field(description="パラメータの型")
+    description: str | None = Field(default=None, description="パラメータの説明")
+    default: Any = Field(default=None, description="デフォルト値")
+    required: bool = Field(default=True, description="必須かどうか")
+
+
 class APIInfo(BaseModel):
     """API情報モデル"""
 
@@ -200,8 +210,36 @@ class APIInfo(BaseModel):
     line_number: int | None = Field(default=None, description="行番号")
     signature: str | None = Field(default=None, description="シグネチャ")
     docstring: str | None = Field(default=None, description="ドキュメント文字列")
-    parameters: list[dict[str, Any]] | None = Field(default=None, description="パラメータ情報")
+    parameters: list[APIParameter] | None = Field(default=None, description="パラメータ情報")
     return_type: str | None = Field(default=None, description="戻り値の型")
     decorators: list[str] | None = Field(default=None, description="デコレータ")
     visibility: str | None = Field(default=None, description="可視性 (public, private, protected)")
     language: str = Field(description="プログラミング言語")
+
+
+class LLMConfig(BaseModel):
+    """LLM設定モデル"""
+
+    provider: str | None = Field(
+        default=None, description="LLMプロバイダー (openai, anthropic, ollama, local)"
+    )
+    model: str | None = Field(default=None, description="モデル名")
+    api_key: str | None = Field(default=None, description="APIキー")
+    api_key_env: str | None = Field(default=None, description="APIキー環境変数名")
+    base_url: str | None = Field(default=None, description="ベースURL")
+    endpoint: str | None = Field(default=None, description="エンドポイントURL")
+    timeout: int = Field(default=30, description="タイムアウト秒数")
+    max_retries: int = Field(default=3, description="最大リトライ回数")
+    retry_delay: float = Field(default=1.0, description="リトライ遅延秒数")
+    temperature: float | None = Field(default=None, description="温度パラメータ")
+    max_tokens: int | None = Field(default=None, description="最大トークン数")
+
+
+class LLMClientConfig(BaseModel):
+    """LLMクライアント設定モデル"""
+
+    openai: LLMConfig | None = Field(default=None, description="OpenAI設定")
+    anthropic: LLMConfig | None = Field(default=None, description="Anthropic設定")
+    ollama: LLMConfig | None = Field(default=None, description="Ollama設定")
+    local: LLMConfig | None = Field(default=None, description="ローカルLLM設定")
+    default_provider: str = Field(default="openai", description="デフォルトプロバイダー")
