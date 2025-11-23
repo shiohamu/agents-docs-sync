@@ -6,8 +6,6 @@ from pathlib import Path
 import shutil
 from typing import Any
 
-import yaml
-
 from .utils.file_utils import safe_read_yaml
 from .utils.logger import get_logger
 
@@ -48,23 +46,11 @@ class ConfigManager:
             設定辞書。ファイルが存在しない場合はデフォルト設定を返す
         """
         if self.config_path.exists():
-            try:
-                config = safe_read_yaml(self.config_path)
-                return config if config is not None else {}
-            except yaml.YAMLError as e:
-                logger.warning(f"設定ファイルの解析に失敗しました: {e}")
-                logger.info("デフォルト設定を使用します。")
-                return self._get_default_config()
-            except Exception as e:
-                logger.warning(f"設定ファイルの読み込みに失敗しました: {e}")
-                logger.info("デフォルト設定を使用します。")
-                return self._get_default_config()
-            except yaml.YAMLError as e:
-                logger.warning(f"設定ファイルの解析に失敗しました: {e}")
-                logger.info("デフォルト設定を使用します。")
-                return self._get_default_config()
-            except Exception as e:
-                logger.warning(f"設定ファイルの読み込みに失敗しました: {e}")
+            config = safe_read_yaml(self.config_path)
+            if config is not None:
+                return config
+            else:
+                logger.warning("設定ファイルの読み込みに失敗しました")
                 logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
         else:

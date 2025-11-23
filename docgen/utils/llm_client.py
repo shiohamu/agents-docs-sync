@@ -168,10 +168,6 @@ class OpenAIClient(BaseLLMClient):
         """OpenAI用のOutlinesモデルを作成"""
         return outlines.from_openai(self.client, self.model)
 
-    def _create_outlines_model_internal(self, outlines):
-        """OpenAI用のOutlinesモデルを作成"""
-        return outlines.from_openai(self.client, self.model)
-
 
 class AnthropicClient(BaseLLMClient):
     """Anthropic APIクライアント"""
@@ -220,12 +216,6 @@ class AnthropicClient(BaseLLMClient):
         except Exception as e:
             logger.error(f"Anthropic API呼び出しエラー: {e}")
             return None
-
-    def _create_outlines_model_internal(self, outlines):
-        """Anthropic用のOutlinesモデルを作成（現在未対応）"""
-        # Outlinesは現在Anthropicを直接サポートしていないため、未実装
-        logger.warning("Anthropic用のOutlinesモデルは現在サポートされていません")
-        return None
 
     def _create_outlines_model_internal(self, outlines):
         """Anthropic用のOutlinesモデルを作成（現在未対応）"""

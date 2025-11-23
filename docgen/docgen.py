@@ -5,10 +5,9 @@
 """
 
 from pathlib import Path
-import sys
-import os
 import shutil
 import subprocess
+import sys
 from typing import Any
 
 # プロジェクトルートのパスを取得
@@ -215,8 +214,6 @@ class CommandLineInterface:
 
     def _enable_hooks(self, git_hooks_dir, docgen_hooks_dir, hook_names):
         """hooksを有効化"""
-        import shutil
-        import subprocess
 
         git_hooks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -242,7 +239,7 @@ class CommandLineInterface:
                     if not hook_file.exists() or not self._has_shebang(hook_file):
                         f.write("#!/bin/bash\n")
                     f.write(f"\n# docgen - {hook_name} hook\n")
-                    with open(source_file, "r") as src:
+                    with open(source_file) as src:
                         f.write(src.read())
                 hook_file.chmod(0o755)
                 logger.info(f"✓ {hook_name}フックをインストールしました")
@@ -254,7 +251,6 @@ class CommandLineInterface:
 
     def _disable_hooks(self, git_hooks_dir, hook_names):
         """hooksを無効化"""
-        import shutil
 
         for hook_name in hook_names:
             hook_file = git_hooks_dir / hook_name
@@ -275,7 +271,7 @@ class CommandLineInterface:
     def _is_docgen_hook(self, hook_file):
         """フックファイルがdocgenフックかどうかをチェック"""
         try:
-            with open(hook_file, "r") as f:
+            with open(hook_file) as f:
                 return "# docgen" in f.read()
         except FileNotFoundError:
             return False
@@ -283,7 +279,7 @@ class CommandLineInterface:
     def _has_shebang(self, hook_file):
         """フックファイルにシェバンがあるかどうかをチェック"""
         try:
-            with open(hook_file, "r") as f:
+            with open(hook_file) as f:
                 first_line = f.readline().strip()
                 return first_line.startswith("#!")
         except FileNotFoundError:
