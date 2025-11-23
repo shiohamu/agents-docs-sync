@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ..models import APIInfo
+from ..models import APIInfo, CacheEntry, CacheMetadata
 from .logger import get_logger
 
 logger = get_logger("cache")
@@ -31,7 +31,8 @@ class CacheManager:
         self.enabled: bool = enabled
         self.cache_dir: Path = cache_dir or (project_root / "docgen" / ".cache")
         self.cache_file: Path = self.cache_dir / "parser_cache.json"
-        self._cache_data: dict[str, Any] | None = None
+        self._cache_data: dict[str, CacheEntry] | None = None
+        self._metadata: CacheMetadata | None = None
 
         if self.enabled:
             self.cache_dir.mkdir(parents=True, exist_ok=True)

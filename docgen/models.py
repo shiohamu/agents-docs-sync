@@ -1,5 +1,6 @@
 """Pydantic models for configuration validation."""
 
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -243,3 +244,21 @@ class LLMClientConfig(BaseModel):
     ollama: LLMConfig | None = Field(default=None, description="Ollama設定")
     local: LLMConfig | None = Field(default=None, description="ローカルLLM設定")
     default_provider: str = Field(default="openai", description="デフォルトプロバイダー")
+
+
+class CacheEntry(BaseModel):
+    """キャッシュエントリーモデル"""
+
+    data: list[APIInfo] = Field(description="キャッシュされたAPI情報")
+    timestamp: datetime = Field(description="キャッシュ作成時刻")
+    file_hash: str = Field(description="ファイルハッシュ")
+    parser_type: str = Field(description="パーサーの種類")
+
+
+class CacheMetadata(BaseModel):
+    """キャッシュメタデータモデル"""
+
+    version: str = Field(default="1.0", description="キャッシュバージョン")
+    created_at: datetime = Field(description="キャッシュ作成時刻")
+    last_updated: datetime = Field(description="最終更新時刻")
+    total_entries: int = Field(default=0, description="総エントリー数")

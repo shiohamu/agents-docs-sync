@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from ...models import APIInfo
 from ...utils.logger import get_logger
@@ -83,7 +83,7 @@ class BaseParser(ABC):
         max_workers: int | None = None,
         use_cache: bool = True,
         cache_manager: Optional["CacheManager"] = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[APIInfo]:
         """
         プロジェクト全体を解析
 
@@ -206,7 +206,7 @@ class BaseParser(ABC):
         file_path_relative: Path,
         cache_manager: Optional["CacheManager"] = None,
         parser_type: str | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> list[APIInfo]:
         """
         ファイルを安全に解析（内部メソッド）
 
