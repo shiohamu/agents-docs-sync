@@ -61,7 +61,7 @@ options:
 ```
 <!-- MANUAL_END:description -->
 
-## 使用技術
+## Technologies Used
 
 - Python
 - Shell
@@ -112,4 +112,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADMEは自動生成されています。最終更新: 2025-11-23 11:34:22*
+*このREADMEは自動生成されています。最終更新: 2025-11-23 15:48:31*

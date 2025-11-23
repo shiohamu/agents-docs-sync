@@ -92,12 +92,22 @@ class BaseDetector(ABC):
 
                         # 除外ディレクトリをスキップ
                         relative_path = file_path.relative_to(self.project_root)
-                        if relative_path.parts and relative_path.parts[0] in [
-                            ".venv",
-                            ".git",
-                            "__pycache__",
-                            "node_modules",
-                        ]:
+                        if relative_path.parts and any(
+                            part
+                            in [
+                                ".venv",
+                                ".git",
+                                "__pycache__",
+                                "node_modules",
+                                "htmlcov",
+                                "coverage",
+                                ".coverage",
+                                "site-packages",
+                                "dist",
+                                "build",
+                            ]
+                            for part in relative_path.parts
+                        ):
                             continue
 
                         # シンボリックリンクをスキップ（オプション）

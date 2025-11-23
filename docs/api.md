@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-23 11:34:22
+自動生成日時: 2025-11-23 15:48:31
 
 ---
 
@@ -237,7 +237,7 @@ def test_load_config_nonexistent_file(self, mock_safe_read_yaml, temp_project):
 
 存在しない設定ファイルのテスト
 
-*定義場所: tests/test_config_manager.py:56*
+*定義場所: tests/test_config_manager.py:78*
 
 ---
 
@@ -254,7 +254,7 @@ def test_create_default_config_with_sample(self, mock_safe_read_yaml, temp_proje
 
 サンプル設定ファイルからのデフォルト設定作成テスト
 
-*定義場所: tests/test_config_manager.py:77*
+*定義場所: tests/test_config_manager.py:99*
 
 ---
 
@@ -271,7 +271,7 @@ def test_create_default_config_without_sample(self, mock_safe_read_yaml, temp_pr
 
 サンプル設定ファイルなしの場合のデフォルト設定作成テスト
 
-*定義場所: tests/test_config_manager.py:101*
+*定義場所: tests/test_config_manager.py:123*
 
 ---
 
@@ -288,7 +288,7 @@ def test_copy_sample_config_success(self, temp_project):
 
 サンプル設定ファイルのコピー成功テスト
 
-*定義場所: tests/test_config_manager.py:122*
+*定義場所: tests/test_config_manager.py:144*
 
 ---
 
@@ -305,7 +305,7 @@ def test_copy_sample_config_failure(self, temp_project):
 
 サンプル設定ファイルのコピー失敗テスト
 
-*定義場所: tests/test_config_manager.py:142*
+*定義場所: tests/test_config_manager.py:164*
 
 ---
 
@@ -322,7 +322,7 @@ def test_get_default_config(self, temp_project):
 
 デフォルト設定の取得テスト
 
-*定義場所: tests/test_config_manager.py:161*
+*定義場所: tests/test_config_manager.py:183*
 
 ---
 
@@ -339,7 +339,7 @@ def test_get_config(self, temp_project):
 
 設定取得テスト
 
-*定義場所: tests/test_config_manager.py:178*
+*定義場所: tests/test_config_manager.py:200*
 
 ---
 
@@ -356,7 +356,7 @@ def test_update_config_simple(self, temp_project):
 
 シンプルな設定更新テスト
 
-*定義場所: tests/test_config_manager.py:190*
+*定義場所: tests/test_config_manager.py:229*
 
 ---
 
@@ -373,7 +373,7 @@ def test_update_config_nested(self, temp_project):
 
 ネストされた設定更新テスト
 
-*定義場所: tests/test_config_manager.py:202*
+*定義場所: tests/test_config_manager.py:259*
 
 ---
 
@@ -390,7 +390,7 @@ def test_set_nested_value_existing(self, temp_project):
 
 既存のネストされた値設定テスト
 
-*定義場所: tests/test_config_manager.py:214*
+*定義場所: tests/test_config_manager.py:289*
 
 ---
 
@@ -407,7 +407,7 @@ def test_set_nested_value_new_structure(self, temp_project):
 
 新規ネスト構造作成テスト
 
-*定義場所: tests/test_config_manager.py:226*
+*定義場所: tests/test_config_manager.py:301*
 
 ---
 
@@ -1723,7 +1723,7 @@ class TestEdgeCases:
 
 エッジケースのテスト
 
-*定義場所: tests/test_edge_cases.py:24*
+*定義場所: tests/test_edge_cases.py:25*
 
 ---
 
@@ -1740,7 +1740,7 @@ def test_empty_project_root(self):
 
 空のプロジェクトルートでのテスト
 
-*定義場所: tests/test_edge_cases.py:27*
+*定義場所: tests/test_edge_cases.py:28*
 
 ---
 
@@ -1757,7 +1757,7 @@ def test_nonexistent_project_root(self):
 
 存在しないプロジェクトルートでのテスト
 
-*定義場所: tests/test_edge_cases.py:32*
+*定義場所: tests/test_edge_cases.py:33*
 
 ---
 
@@ -1774,7 +1774,7 @@ def test_python_parser_with_malformed_ast(self, temp_project):
 
 不正なASTを持つPythonファイルの解析テスト
 
-*定義場所: tests/test_edge_cases.py:39*
+*定義場所: tests/test_edge_cases.py:40*
 
 ---
 
@@ -1791,7 +1791,7 @@ def test_python_parser_with_unicode_content(self, temp_project):
 
 Unicode文字を含むPythonファイルの解析テスト
 
-*定義場所: tests/test_edge_cases.py:54*
+*定義場所: tests/test_edge_cases.py:55*
 
 ---
 
@@ -1808,7 +1808,7 @@ def test_python_parser_with_very_long_docstring(self, temp_project):
 
 非常に長いdocstringの解析テスト
 
-*定義場所: tests/test_edge_cases.py:74*
+*定義場所: tests/test_edge_cases.py:75*
 
 ---
 
@@ -1825,7 +1825,7 @@ def test_agents_generator_with_invalid_config(self, temp_project):
 
 無効な設定でのAgentsGeneratorテスト
 
-*定義場所: tests/test_edge_cases.py:92*
+*定義場所: tests/test_edge_cases.py:93*
 
 ---
 
@@ -1842,7 +1842,7 @@ def test_api_generator_with_empty_languages(self, temp_project):
 
 空の言語リストでのAPIGeneratorテスト
 
-*定義場所: tests/test_edge_cases.py:106*
+*定義場所: tests/test_edge_cases.py:107*
 
 ---
 
@@ -1859,7 +1859,7 @@ def test_readme_generator_with_readonly_filesystem(self, temp_project, monkeypat
 
 読み取り専用ファイルシステムでのReadmeGeneratorテスト
 
-*定義場所: tests/test_edge_cases.py:117*
+*定義場所: tests/test_edge_cases.py:118*
 
 ---
 
@@ -1876,7 +1876,7 @@ def test_docgen_with_circular_imports(self, temp_project):
 
 循環インポートのあるプロジェクトのテスト
 
-*定義場所: tests/test_edge_cases.py:133*
+*定義場所: tests/test_edge_cases.py:134*
 
 ---
 
@@ -1893,7 +1893,7 @@ def test_docgen_with_very_deep_directory_structure(self, temp_project):
 
 非常に深いディレクトリ構造のテスト
 
-*定義場所: tests/test_edge_cases.py:156*
+*定義場所: tests/test_edge_cases.py:157*
 
 ---
 
@@ -1910,7 +1910,7 @@ def test_docgen_with_special_characters_in_paths(self, temp_project):
 
 パスに特殊文字を含む場合のテスト
 
-*定義場所: tests/test_edge_cases.py:177*
+*定義場所: tests/test_edge_cases.py:178*
 
 ---
 
@@ -1927,7 +1927,7 @@ def test_docgen_with_symlink_loops(self, temp_project):
 
 シンボリックリンクのループがある場合のテスト
 
-*定義場所: tests/test_edge_cases.py:195*
+*定義場所: tests/test_edge_cases.py:196*
 
 ---
 
@@ -1944,7 +1944,7 @@ def test_python_parser_with_binary_file_extension(self, temp_project):
 
 .pycファイルなどのバイナリ拡張子のテスト
 
-*定義場所: tests/test_edge_cases.py:217*
+*定義場所: tests/test_edge_cases.py:218*
 
 ---
 
@@ -1961,7 +1961,7 @@ def test_agents_generator_with_very_long_custom_instructions(self, temp_project)
 
 非常に長いカスタム指示のテスト
 
-*定義場所: tests/test_edge_cases.py:229*
+*定義場所: tests/test_edge_cases.py:230*
 
 ---
 
@@ -1978,7 +1978,75 @@ def test_api_generator_with_mixed_file_types(self, temp_project):
 
 混在したファイルタイプのテスト
 
-*定義場所: tests/test_edge_cases.py:244*
+*定義場所: tests/test_edge_cases.py:245*
+
+---
+
+### test_llm_client_factory_with_invalid_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_llm_client_factory_with_invalid_config(self):
+```
+
+**説明**:
+
+無効なLLM設定でのテスト
+
+*定義場所: tests/test_edge_cases.py:271*
+
+---
+
+### test_llm_client_factory_fallback
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_llm_client_factory_fallback(self):
+```
+
+**説明**:
+
+LLMクライアントのフォールバックテスト
+
+*定義場所: tests/test_edge_cases.py:277*
+
+---
+
+### test_agents_generator_with_llm_failure
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_agents_generator_with_llm_failure(self, temp_project):
+```
+
+**説明**:
+
+LLM失敗時のAgentsGeneratorテスト
+
+*定義場所: tests/test_edge_cases.py:285*
+
+---
+
+### test_readme_generator_with_llm_failure
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_readme_generator_with_llm_failure(self, temp_project):
+```
+
+**説明**:
+
+LLM失敗時のReadmeGeneratorテスト
+
+*定義場所: tests/test_edge_cases.py:296*
 
 ---
 
@@ -3634,7 +3702,7 @@ def test_collect_build_commands_from_pipeline_script(self, temp_project):
 
 パイプラインスクリプトからのビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:70*
+*定義場所: tests/test_project_info_collector.py:79*
 
 ---
 
@@ -3651,7 +3719,7 @@ def test_collect_build_commands_with_package_managers(self, temp_project):
 
 パッケージマネージャ考慮のビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:90*
+*定義場所: tests/test_project_info_collector.py:99*
 
 ---
 
@@ -3668,7 +3736,7 @@ def test_collect_build_commands_from_makefile(self, temp_project):
 
 Makefileからのビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:109*
+*定義場所: tests/test_project_info_collector.py:118*
 
 ---
 
@@ -3685,7 +3753,7 @@ def test_collect_build_commands_from_package_json(self, temp_project):
 
 package.jsonからのビルドコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:135*
+*定義場所: tests/test_project_info_collector.py:144*
 
 ---
 
@@ -3702,7 +3770,7 @@ def test_collect_test_commands_from_makefile(self, temp_project):
 
 Makefileからのテストコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:155*
+*定義場所: tests/test_project_info_collector.py:164*
 
 ---
 
@@ -3719,7 +3787,7 @@ def test_collect_test_commands_with_package_managers(self, temp_project):
 
 パッケージマネージャ考慮のテストコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:176*
+*定義場所: tests/test_project_info_collector.py:185*
 
 ---
 
@@ -3736,7 +3804,7 @@ def test_collect_build_commands_with_uv_run(self, temp_project):
 
 uvプロジェクトでのpythonコマンドにuv runがつくテスト
 
-*定義場所: tests/test_project_info_collector.py:200*
+*定義場所: tests/test_project_info_collector.py:209*
 
 ---
 
@@ -3753,7 +3821,7 @@ def test_collect_test_commands_from_package_json(self, temp_project):
 
 package.jsonからのテストコマンド収集テスト
 
-*定義場所: tests/test_project_info_collector.py:218*
+*定義場所: tests/test_project_info_collector.py:227*
 
 ---
 
@@ -3770,7 +3838,7 @@ def test_collect_dependencies_from_requirements_txt(self, temp_project):
 
 requirements.txtからの依存関係収集テスト
 
-*定義場所: tests/test_project_info_collector.py:236*
+*定義場所: tests/test_project_info_collector.py:245*
 
 ---
 
@@ -3787,7 +3855,7 @@ def test_collect_dependencies_from_package_json(self, temp_project):
 
 package.jsonからの依存関係収集テスト
 
-*定義場所: tests/test_project_info_collector.py:256*
+*定義場所: tests/test_project_info_collector.py:265*
 
 ---
 
@@ -3804,7 +3872,7 @@ def test_collect_coding_standards_from_pyproject_toml(self, temp_project):
 
 pyproject.tomlからのコーディング規約収集テスト
 
-*定義場所: tests/test_project_info_collector.py:280*
+*定義場所: tests/test_project_info_collector.py:289*
 
 ---
 
@@ -3821,7 +3889,7 @@ def test_collect_ci_cd_info_github_actions(self, temp_project):
 
 GitHub Actions CI/CD情報収集テスト
 
-*定義場所: tests/test_project_info_collector.py:307*
+*定義場所: tests/test_project_info_collector.py:316*
 
 ---
 
@@ -3838,7 +3906,7 @@ def test_collect_project_structure(self, temp_project):
 
 プロジェクト構造収集テスト
 
-*定義場所: tests/test_project_info_collector.py:330*
+*定義場所: tests/test_project_info_collector.py:339*
 
 ---
 
@@ -3855,7 +3923,7 @@ def test_collect_project_description_from_readme(self, temp_project):
 
 READMEからのプロジェクト説明収集テスト
 
-*定義場所: tests/test_project_info_collector.py:349*
+*定義場所: tests/test_project_info_collector.py:358*
 
 ---
 
@@ -3872,7 +3940,7 @@ def test_collect_project_description_from_setup_py(self, temp_project):
 
 setup.pyからのプロジェクト説明収集テスト
 
-*定義場所: tests/test_project_info_collector.py:368*
+*定義場所: tests/test_project_info_collector.py:377*
 
 ---
 
@@ -3889,7 +3957,7 @@ def test_collect_project_description_from_package_json(self, temp_project):
 
 package.jsonからのプロジェクト説明収集テスト
 
-*定義場所: tests/test_project_info_collector.py:388*
+*定義場所: tests/test_project_info_collector.py:397*
 
 ---
 
@@ -5184,66 +5252,6 @@ def test_find_files_with_extensions_recursive(self, temp_project):
 
 ## tests/test_utils/test_llm_client.py
 
-### OpenAIClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class OpenAIClient:
-```
-
-*説明なし*
-
-*定義場所: tests/test_utils/test_llm_client.py:30*
-
----
-
-### AnthropicClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class AnthropicClient:
-```
-
-*説明なし*
-
-*定義場所: tests/test_utils/test_llm_client.py:33*
-
----
-
-### LocalLLMClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LocalLLMClient:
-```
-
-*説明なし*
-
-*定義場所: tests/test_utils/test_llm_client.py:36*
-
----
-
-### LLMClientFactory
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LLMClientFactory:
-```
-
-*説明なし*
-
-*定義場所: tests/test_utils/test_llm_client.py:39*
-
----
-
 ### TestBaseLLMClient
 
 **型**: `class`
@@ -5257,7 +5265,7 @@ class TestBaseLLMClient:
 
 BaseLLMClientクラスのテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:43*
+*定義場所: tests/test_utils/test_llm_client.py:27*
 
 ---
 
@@ -5274,7 +5282,7 @@ def test_base_llm_client_initialization(self):
 
 BaseLLMClientの初期化テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:46*
+*定義場所: tests/test_utils/test_llm_client.py:30*
 
 ---
 
@@ -5291,7 +5299,75 @@ class TestOpenAIClient:
 
 OpenAIClientクラスのテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:65*
+*定義場所: tests/test_utils/test_llm_client.py:49*
+
+---
+
+### test_openai_client_initialization_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_openai_client_initialization_success(self):
+```
+
+**説明**:
+
+OpenAIClientの正常初期化テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:52*
+
+---
+
+### test_openai_client_initialization_config_error
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_openai_client_initialization_config_error(self, mock_openai):
+```
+
+**説明**:
+
+OpenAIClientの設定エラーテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:59*
+
+---
+
+### test_openai_client_generate_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_openai_client_generate_success(self, mock_openai):
+```
+
+**説明**:
+
+OpenAIClientのgenerate成功テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:67*
+
+---
+
+### test_openai_client_generate_error
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_openai_client_generate_error(self, mock_openai):
+```
+
+**説明**:
+
+OpenAIClientのgenerateエラーテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:82*
 
 ---
 
@@ -5301,14 +5377,320 @@ OpenAIClientクラスのテスト
 
 **シグネチャ**:
 ```
-def test_ollama_client_error_handling(self, mock_httpx):
+def test_ollama_client_error_handling(self, mock_post):
 ```
 
 **説明**:
 
 Ollamaクライアントのエラーハンドリングテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:71*
+*定義場所: tests/test_utils/test_llm_client.py:94*
+
+---
+
+### TestLocalLLMClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestLocalLLMClient:
+```
+
+**説明**:
+
+LocalLLMClientクラスのテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:106*
+
+---
+
+### test_local_client_initialization_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_local_client_initialization_success(self):
+```
+
+**説明**:
+
+LocalLLMClientの正常初期化テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:109*
+
+---
+
+### test_local_client_generate_ollama_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_local_client_generate_ollama_success(self, mock_post):
+```
+
+**説明**:
+
+LocalLLMClientのOllama generate成功テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:117*
+
+---
+
+### test_local_client_generate_openai_compatible_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_local_client_generate_openai_compatible_success(self, mock_post):
+```
+
+**説明**:
+
+LocalLLMClientのOpenAI互換generate成功テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:130*
+
+---
+
+### test_local_client_generate_error
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_local_client_generate_error(self, mock_post):
+```
+
+**説明**:
+
+LocalLLMClientのgenerateエラーテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:143*
+
+---
+
+### TestAnthropicClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestAnthropicClient:
+```
+
+**説明**:
+
+AnthropicClientクラスのテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:153*
+
+---
+
+### test_anthropic_client_initialization_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_anthropic_client_initialization_success(self):
+```
+
+**説明**:
+
+AnthropicClientの正常初期化テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:156*
+
+---
+
+### test_anthropic_client_initialization_config_error
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_anthropic_client_initialization_config_error(self, mock_anthropic):
+```
+
+**説明**:
+
+AnthropicClientの設定エラーテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:163*
+
+---
+
+### test_anthropic_client_generate_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_anthropic_client_generate_success(self, mock_anthropic):
+```
+
+**説明**:
+
+AnthropicClientのgenerate成功テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:171*
+
+---
+
+### test_anthropic_client_generate_error
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_anthropic_client_generate_error(self, mock_anthropic):
+```
+
+**説明**:
+
+AnthropicClientのgenerateエラーテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:186*
+
+---
+
+### TestLLMClientFactory
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestLLMClientFactory:
+```
+
+**説明**:
+
+LLMClientFactoryクラスのテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:198*
+
+---
+
+### test_create_client_openai
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_openai(self, mock_openai_client):
+```
+
+**説明**:
+
+OpenAIクライアント作成テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:202*
+
+---
+
+### test_create_client_anthropic
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_anthropic(self, mock_anthropic_client):
+```
+
+**説明**:
+
+Anthropicクライアント作成テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:210*
+
+---
+
+### test_create_client_local
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_local(self, mock_local_client):
+```
+
+**説明**:
+
+Localクライアント作成テスト
+
+*定義場所: tests/test_utils/test_llm_client.py:220*
+
+---
+
+### test_create_client_unknown_provider
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_unknown_provider(self):
+```
+
+**説明**:
+
+不明なプロバイダーテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:229*
+
+---
+
+### test_create_client_unknown_mode
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_unknown_mode(self):
+```
+
+**説明**:
+
+不明なモードテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:235*
+
+---
+
+### test_create_client_with_fallback_api_to_local
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_with_fallback_api_to_local(self, mock_create_client):
+```
+
+**説明**:
+
+APIからLocalへのフォールバックテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:242*
+
+---
+
+### test_create_client_with_fallback_local_to_api
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_client_with_fallback_local_to_api(self, mock_create_client):
+```
+
+**説明**:
+
+LocalからAPIへのフォールバックテスト
+
+*定義場所: tests/test_utils/test_llm_client.py:250*
 
 ---
 
