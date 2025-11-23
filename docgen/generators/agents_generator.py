@@ -82,7 +82,7 @@ class AgentsGenerator:
             for line in lines:
                 if line.strip().startswith("<!-- MANUAL_START:"):
                     # セクション開始
-                    section_name = line.strip().split(":", 1)[1].split("-->", 0)[0].strip()
+                    section_name = line.strip().split(":", 1)[1].split("-->", 1)[0].strip()
                     current_section = section_name
                     section_content = []
                     in_manual = True
@@ -121,7 +121,7 @@ class AgentsGenerator:
 
             # MANUAL_STARTマーカーを見つけたら、手動内容を挿入
             if line.strip().startswith("<!-- MANUAL_START:"):
-                section_name = line.strip().split(":", 1)[1].split("-->", 0)[0].strip()
+                section_name = line.strip().split(":", 1)[1].split("-->", 1)[0].strip()
                 if section_name in manual_sections:
                     # MANUAL_STARTの次の空行をスキップ
                     i += 1
