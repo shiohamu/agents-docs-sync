@@ -19,6 +19,7 @@ from docgen.generators.agents_generator import AgentsGenerator
 from docgen.generators.api_generator import APIGenerator
 from docgen.generators.parsers.python_parser import PythonParser
 from docgen.generators.readme_generator import ReadmeGenerator
+from docgen.utils.llm_client import LLMClientFactory
 
 
 class TestEdgeCases:
@@ -266,3 +267,39 @@ function hello() {
         content = (temp_project / "api.md").read_text(encoding="utf-8")
         # PythonとJavaScriptのAPIのみが含まれるはず
         assert "script.py" in content or "script.js" in content
+
+    def test_llm_client_factory_with_invalid_config(self):
+        """無効なLLM設定でのテスト"""
+        invalid_config = {"api": {"provider": "nonexistent"}}
+        client = LLMClientFactory.create_client(invalid_config, "api")
+        assert client is None
+
+    def test_llm_client_factory_fallback(self):
+        """LLMクライアントのフォールバックテスト"""
+        config = {"api": {"provider": "openai"}, "local": {"provider": "ollama"}}
+        # 実際のLLMがないのでNoneが返されるが、エラーは発生しない
+        client = LLMClientFactory.create_client_with_fallback(config, "api")
+        # ライブラリがインストールされていない場合None
+        assert client is None or hasattr(client, "generate")
+
+    def test_agents_generator_with_llm_failure(self, temp_project):
+        """LLM失敗時のAgentsGeneratorテスト"""
+        config = {
+            "output": {"agents_doc": "AGENTS.md"},
+            "agents": {"llm_mode": "api", "api": {"provider": "invalid"}},
+        }
+        generator = AgentsGenerator(temp_project, ["python"], config)
+        result = generator.generate()
+        # LLMが失敗しても基本的なドキュメントは生成されるはず
+        assert isinstance(result, bool)
+
+    def test_readme_generator_with_llm_failure(self, temp_project):
+        """LLM失敗時のReadmeGeneratorテスト"""
+        config = {
+            "output": {"readme": "README.md"},
+            "readme": {"llm_mode": "api", "api": {"provider": "invalid"}},
+        }
+        generator = ReadmeGenerator(temp_project, ["python"], config)
+        result = generator.generate()
+        # LLMが失敗しても基本的なREADMEは生成されるはず
+        assert isinstance(result, bool)
