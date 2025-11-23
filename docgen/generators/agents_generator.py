@@ -4,31 +4,17 @@ Outlines統合で構造化出力を実現
 """
 
 from datetime import datetime
+import json
 from pathlib import Path
 import re
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from pydantic import BaseModel, Field
-else:
-    try:
-        from pydantic import BaseModel, Field
-
-        PYDANTIC_AVAILABLE = True
-    except ImportError:
-        PYDANTIC_AVAILABLE = False
-
-        # Fallback for when pydantic is not available
-        class BaseModel:
-            pass
-
-        def Field(**kwargs):
-            return None
-
+from pydantic import ValidationError
 
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
 from ..collectors.project_info_collector import ProjectInfoCollector
+from ..models import AgentsDocument, ProjectInfo
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
 from ..utils.outlines_utils import (
@@ -39,19 +25,6 @@ from ..utils.outlines_utils import (
 )
 
 logger = get_logger("agents_generator")
-
-
-class AgentsDocument(BaseModel):
-    """AGENTS.mdドキュメントの構造化データモデル"""
-
-    title: str = Field(description="ドキュメントのタイトル")
-    description: str = Field(description="プロジェクトの説明")
-    project_overview: dict[str, Any] = Field(description="プロジェクト概要情報")
-    setup_instructions: dict[str, Any] = Field(description="セットアップ手順")
-    build_test_instructions: dict[str, Any] = Field(description="ビルド/テスト手順")
-    coding_standards: dict[str, Any] = Field(description="コーディング規約")
-    pr_guidelines: dict[str, Any] = Field(description="プルリクエスト手順")
-    auto_generated_note: str = Field(description="自動生成に関する注意書き")
 
 
 class AgentsGenerator:
@@ -200,7 +173,7 @@ class AgentsGenerator:
             logger.error(f"AGENTS.md生成に失敗しました: {e}", exc_info=True)
             return False
 
-    def _generate_markdown(self, project_info: dict[str, Any]) -> str:
+    def _generate_markdown(self, project_info: ProjectInfo) -> str:
         """
         プロジェクト情報からマークダウンを生成
 
@@ -224,7 +197,7 @@ class AgentsGenerator:
             # テンプレート生成（デフォルト）
             return self._generate_template(project_info)
 
-    def _generate_template(self, project_info: dict[str, Any]) -> str:
+    def _generate_template(self, project_info: ProjectInfo) -> str:
         """
         テンプレートベースでマークダウンを生成（既存の実装）
 
@@ -293,7 +266,7 @@ class AgentsGenerator:
 
         return "\n".join(lines)
 
-    def _generate_with_llm(self, project_info: dict[str, Any]) -> str:
+    def _generate_with_llm(self, project_info: ProjectInfo) -> str:
         """
         LLMを使用してAGENTS.mdを生成（Outlinesで構造化出力）
 
@@ -342,7 +315,7 @@ class AgentsGenerator:
             self.agents_config, preferred_mode=preferred_mode
         )
 
-    def _generate_with_outlines(self, project_info: dict[str, Any]) -> str:
+    def _generate_with_outlines(self, project_info: ProjectInfo) -> str:
         """
         Outlinesを使用して構造化されたAGENTS.mdを生成
 
@@ -396,7 +369,7 @@ class AgentsGenerator:
         """
         return create_outlines_model(client)
 
-    def _generate_with_llm_legacy(self, project_info: dict[str, Any]) -> str:
+    def _generate_with_llm_legacy(self, project_info: ProjectInfo) -> str:
         """
         従来のLLM生成（Outlinesなし）
 
@@ -461,7 +434,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
             )
             return self._generate_template(project_info)
 
-    def _generate_hybrid(self, project_info: dict[str, Any]) -> str:
+    def _generate_hybrid(self, project_info: ProjectInfo) -> str:
         """
         テンプレートとLLMを組み合わせて生成
 
@@ -549,7 +522,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
             )
             return template_content
 
-    def _create_llm_prompt(self, project_info: dict[str, Any]) -> str:
+    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
         """
         LLM用のプロンプトを作成
 
@@ -576,7 +549,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return prompt
 
-    def _format_project_info_for_prompt(self, project_info: dict[str, Any]) -> str:
+    def _format_project_info_for_prompt(self, project_info: ProjectInfo) -> str:
         """
         プロジェクト情報をプロンプト用にフォーマット
 
@@ -590,11 +563,11 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append(f"プロジェクト名: {self.project_root.name}")
         lines.append(f"使用言語: {', '.join(self.languages) if self.languages else '不明'}")
 
-        description = project_info.get("description")
+        description = project_info.description
         if description:
             lines.append(f"説明: {description}")
 
-        dependencies = project_info.get("dependencies", {})
+        dependencies = project_info.dependencies or {}
         if dependencies:
             lines.append("依存関係:")
             for dep_type, deps in dependencies.items():
@@ -628,7 +601,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return "\n".join(lines)
 
-    def _generate_project_overview(self, project_info: dict[str, Any]) -> list[str]:
+    def _generate_project_overview(self, project_info: ProjectInfo) -> list[str]:
         """プロジェクト概要セクションを生成"""
         lines = []
         lines.append("## プロジェクト概要")
@@ -658,7 +631,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         # READMEに説明がない場合、プロジェクト情報から取得（pyproject.tomlなど）
         if not description_found:
-            description = project_info.get("description")
+            description = project_info.description
             if description:
                 lines.append(description)
                 description_found = True
@@ -673,7 +646,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("<!-- MANUAL_END:description -->")
         return lines
 
-    def _generate_setup_section(self, project_info: dict[str, Any]) -> list[str]:
+    def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
         """開発環境セットアップセクションを生成"""
         lines = []
         lines.append("## 開発環境のセットアップ")
@@ -821,7 +794,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_build_test_section(self, project_info: dict[str, Any]) -> list[str]:
+    def _generate_build_test_section(self, project_info: ProjectInfo) -> list[str]:
         """ビルド/テストセクションを生成"""
         lines = []
         lines.append("## ビルドおよびテスト手順")
@@ -830,7 +803,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         # ビルド手順
         lines.append("### ビルド手順")
         lines.append("")
-        build_commands = project_info.get("build_commands", [])
+        build_commands = project_info.build_commands
         if build_commands:
             lines.append("```bash")
             for cmd in build_commands:
@@ -843,7 +816,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         # テスト実行
         lines.append("### テスト実行")
         lines.append("")
-        test_commands = project_info.get("test_commands", [])
+        test_commands = project_info.test_commands
         if test_commands:
             llm_mode = self.agents_config.get("llm_mode", "both")
 
@@ -874,13 +847,13 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_coding_standards_section(self, project_info: dict[str, Any]) -> list[str]:
+    def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
         """コーディング規約セクションを生成"""
         lines = []
         lines.append("## コーディング規約")
         lines.append("")
 
-        coding_standards = project_info.get("coding_standards", {})
+        coding_standards = project_info.coding_standards or {}
 
         if coding_standards:
             # フォーマッター
@@ -927,7 +900,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_pr_section(self, project_info: dict[str, Any]) -> list[str]:
+    def _generate_pr_section(self, project_info: ProjectInfo) -> list[str]:
         """プルリクエストセクションを生成"""
         lines = []
         lines.append("## プルリクエストの手順")
@@ -943,7 +916,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("")
         lines.append("3. **テストの実行**")
         lines.append("   ```bash")
-        test_commands = project_info.get("test_commands", [])
+        test_commands = project_info.test_commands
         for cmd in test_commands:
             lines.append(f"   {cmd}")
         if not test_commands:
@@ -979,7 +952,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         return lines
 
     def _convert_structured_data_to_markdown(
-        self, data: AgentsDocument, project_info: dict[str, Any]
+        self, data: AgentsDocument, project_info: ProjectInfo
     ) -> str:
         """
         構造化データをマークダウン形式に変換
@@ -1435,7 +1408,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
     def _validate_output(self, text: str) -> bool:
         """
-        LLMの出力を検証して、不適切な内容が含まれていないかチェック
+        LLMの出力を検証して、Pydanticモデルでパースできるかチェック
 
         Args:
             text: 検証するテキスト
@@ -1446,76 +1419,87 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         if not text or not text.strip():
             return False
 
-        text_lower = text.lower()
+        try:
+            # JSONとしてパースを試みる（LLM出力がJSON形式の場合）
+            data = json.loads(text)
+            AgentsDocument(**data)
+            return True
+        except (json.JSONDecodeError, ValidationError):
+            # マークダウン形式の場合は基本的なチェックのみ
+            text_lower = text.lower()
 
-        # 特殊なマーカーパターンをチェック
-        if "<|channel|>" in text or "<|message|>" in text or "commentary/analysis" in text_lower:
-            logger.warning("特殊なマーカーパターンが検出されました")
-            return False
-
-        # 思考過程のパターンが含まれていないかチェック
-        thinking_patterns = [
-            "thus final answer",
-            "let's generate",
-            "but we need",
-            "i will produce",
-            "i think",
-            "let's finalize",
-            "we should produce",
-            "we will output",
-            "thus the final",
-            "i'm going to",
-            "let's output",
-            "let's produce",
-            "but i think it's",
-            "thus final answer will be",
-            "以下が、",
-            "改訂版です",
-            "we should now",
-            "we will not include",
-            "should we keep",
-            "possibly they want",
-            "but we must keep",
-            "but we might need",
-            "however, user wrote",
-            "also note",
-            "but the user",
-            "ok final output",
-            "ok. i'll generate",
-            "let's create final output",
-            "check that it doesn't",
-            "now i will provide",
-            "the user wants",
-            "they gave",
-            "so we should",
-            "so we can",
-            "also keep",
-            "we must not include",
-            "so final output",
-            "but we must also keep",
-            "we must only output",
-            "but we must",
-        ]
-
-        for pattern in thinking_patterns:
-            if pattern in text_lower:
-                logger.warning(f"思考過程のパターンが検出されました: {pattern}")
+            # 特殊なマーカーパターンをチェック
+            if (
+                "<|channel|>" in text
+                or "<|message|>" in text
+                or "commentary/analysis" in text_lower
+            ):
+                logger.warning("特殊なマーカーパターンが検出されました")
                 return False
 
-        # プレースホルダーが含まれていないかチェック
-        placeholder_patterns = [
-            "???",
-            "(??)",
-            "... ...",
-            "|  | |",
-            "---‐‐‐",
-            "# ... (continue)",
-        ]
+            # 思考過程のパターンが含まれていないかチェック
+            thinking_patterns = [
+                "thus final answer",
+                "let's generate",
+                "but we need",
+                "i will produce",
+                "i think",
+                "let's finalize",
+                "we should produce",
+                "we will output",
+                "thus the final",
+                "i'm going to",
+                "let's output",
+                "let's produce",
+                "but i think it's",
+                "thus final answer will be",
+                "以下が、",
+                "改訂版です",
+                "we should now",
+                "we will not include",
+                "should we keep",
+                "possibly they want",
+                "but we must keep",
+                "but we might need",
+                "however, user wrote",
+                "also note",
+                "but the user",
+                "ok final output",
+                "ok. i'll generate",
+                "let's create final output",
+                "check that it doesn't",
+                "now i will provide",
+                "the user wants",
+                "they gave",
+                "so we should",
+                "so we can",
+                "also keep",
+                "we must not include",
+                "so final output",
+                "but we must also keep",
+                "we must only output",
+                "but we must",
+            ]
 
-        for pattern in placeholder_patterns:
-            if pattern in text:
-                logger.warning(f"プレースホルダーが検出されました: {pattern}")
-                return False
+            for pattern in thinking_patterns:
+                if pattern in text_lower:
+                    logger.warning(f"思考過程のパターンが検出されました: {pattern}")
+                    return False
+
+            # プレースホルダーが含まれていないかチェック
+            placeholder_patterns = [
+                "???",
+                "(??)",
+                "... ...",
+                "|  | |",
+                "---‐‐‐",
+                "# ... (continue)",
+            ]
+
+            for pattern in placeholder_patterns:
+                if pattern in text:
+                    logger.warning(f"プレースホルダーが検出されました: {pattern}")
+                    return False
 
         # マークダウンコードブロック内に思考過程が含まれていないかチェック
         lines = text.split("\n")

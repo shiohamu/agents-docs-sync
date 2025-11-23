@@ -11,6 +11,7 @@ dependencies = [
     { name = "httpx" },
     { name = "openai" },
     { name = "outlines" },
+    { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
 ]
@@ -44,6 +45,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "openai", specifier = ">=2.8.1" },
     { name = "outlines", specifier = ">=1.2.8" },
+    { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
 ]

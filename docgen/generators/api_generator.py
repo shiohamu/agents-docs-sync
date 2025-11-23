@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from ..models import APIInfo
 from .parsers.generic_parser import GenericParser
 from .parsers.js_parser import JSParser
 from .parsers.python_parser import PythonParser
@@ -133,7 +134,7 @@ class APIGenerator(BaseGenerator):
 
         return parsers
 
-    def _generate_markdown(self, apis: list[dict[str, Any]]) -> str:
+    def _generate_markdown(self, apis: list[APIInfo]) -> str:
         """
         API情報からマークダウンを生成
 

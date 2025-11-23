@@ -1,6 +1,6 @@
 """
-README生成モジュール
-Outlines統合で構造化出力を実現
+README generation module
+Achieve structured output with Outlines integration
 """
 
 from datetime import datetime
@@ -9,22 +9,8 @@ from pathlib import Path
 import re
 from typing import Any
 
-try:
-    from pydantic import BaseModel, Field
-
-    PYDANTIC_AVAILABLE = True
-except ImportError:
-    PYDANTIC_AVAILABLE = False
-
-    # Fallback for when pydantic is not available
-    class BaseModel:
-        pass
-
-    def Field(**kwargs):
-        return None
-
-
 from ..collectors.project_info_collector import ProjectInfoCollector
+from ..models import ProjectInfo, ReadmeDocument
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
 from ..utils.outlines_utils import (
@@ -35,26 +21,8 @@ from ..utils.outlines_utils import (
 logger = get_logger("readme_generator")
 
 
-class ReadmeDocument(BaseModel):
-    """READMEドキュメントの構造化データモデル"""
-
-    title: str = Field(description="プロジェクトタイトル")
-    description: str = Field(description="プロジェクト説明")
-    technologies: list[str] = Field(description="使用技術", default_factory=list)
-    dependencies: dict[str, list[str]] = Field(
-        description="言語ごとの依存関係", default_factory=dict
-    )
-    setup_instructions: dict[str, Any] = Field(description="セットアップ手順", default_factory=dict)
-    project_structure: list[str] = Field(description="プロジェクト構造の説明", default_factory=list)
-    build_commands: list[str] = Field(description="ビルドコマンド", default_factory=list)
-    test_commands: list[str] = Field(description="テストコマンド", default_factory=list)
-    manual_sections: dict[str, str] = Field(
-        description="手動で記述されたセクション", default_factory=dict
-    )
-
-
 class ReadmeGenerator:
-    """README生成クラス"""
+    """README generation class"""
 
     def __init__(
         self,
@@ -64,13 +32,13 @@ class ReadmeGenerator:
         package_managers: dict[str, str] | None = None,
     ):
         """
-        初期化
+        Initialize
 
         Args:
-            project_root: プロジェクトのルートディレクトリ
-            languages: 検出された言語のリスト
-            config: 設定辞書
-            package_managers: 検出されたパッケージマネージャの辞書
+            project_root: Project root directory
+            languages: List of detected languages
+            config: Configuration dictionary
+            package_managers: Dictionary of detected package managers
         """
         self.project_root = project_root
         self.languages = languages
@@ -85,49 +53,62 @@ class ReadmeGenerator:
 
     def generate(self) -> bool:
         """
-        READMEを生成または更新
+        Generate or update README
 
         Returns:
-            成功したかどうか
+            Whether successful
         """
         try:
-            # 既存のREADMEを読み込む
-            existing_content = ""
+            # Read existing README
+            existing_readme = ""
+            if self.readme_path.exists():
+                existing_readme = self.readme_path.read_text(encoding="utf-8")
+
+            # Extract manual sections if preservation is enabled
             manual_sections = {}
-            if self.readme_path.exists() and self.preserve_manual:
-                existing_content = self.readme_path.read_text(encoding="utf-8")
-                manual_sections = self._extract_manual_sections(existing_content)
+            if self.preserve_manual and existing_readme:
+                manual_sections = self._extract_manual_sections(existing_readme)
 
-            # 新しいREADMEを生成
-            new_content = self._generate_readme(manual_sections)
+            # Collect project information
+            project_info = self.collector.collect_all()
 
-            # ファイルに書き込み
+            # Generate new README
+            if self.agents_config.get("llm_mode", "both") in ["api", "both"]:
+                new_content = self._generate_with_llm(
+                    project_info, existing_readme, manual_sections
+                )
+            else:
+                new_content = self._generate_without_llm(
+                    project_info, existing_readme, manual_sections
+                )
+
+            # Write to file
             self.readme_path.write_text(new_content, encoding="utf-8")
 
             return True
         except Exception as e:
-            logger.error(f"README生成に失敗しました: {e}", exc_info=True)
+            logger.error(f"README generation failed: {e}", exc_info=True)
             return False
 
     def _extract_manual_sections(self, content: str) -> dict[str, str]:
         """
-        既存READMEから手動セクションを抽出
+        Extract manual sections from existing README
 
         Args:
-            content: 既存のREADME内容
+            content: Existing README content
 
         Returns:
-            セクション名をキー、内容を値とする辞書
+            Dictionary with section names as keys and content as values
         """
         sections = {}
 
-        # 手動セクションのマーカーを探す
+        # Find manual section markers
         # <!-- MANUAL_START:section_name --> ... <!-- MANUAL_END:section_name -->
         pattern = r"<!--\s*MANUAL_START:(\w+)\s*-->(.*?)<!--\s*MANUAL_END:\1\s*-->"
         for match in re.finditer(pattern, content, re.DOTALL):
             section_name = match.group(1)
             section_content = match.group(2).strip()
-            # ネストされた手動マーカーを除去
+            # Remove nested manual markers
             section_content = re.sub(
                 r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", section_content
             ).strip()
@@ -137,48 +118,48 @@ class ReadmeGenerator:
 
     def _generate_readme(self, manual_sections: dict[str, str]) -> str:
         """
-        READMEを生成（Outlinesで構造化出力）
+        Generate README (structured output with Outlines)
 
         Args:
-            manual_sections: 保持する手動セクション
+            manual_sections: Manual sections to preserve
 
         Returns:
-            READMEの内容
+            README content
         """
         try:
             # Outlinesを使用した構造化生成を試す
             if self._should_use_outlines():
                 return self._generate_with_outlines_readme(manual_sections)
 
-            # 従来の生成にフォールバック
+            # Fallback to traditional generation
             return self._generate_readme_legacy(manual_sections)
 
         except Exception as e:
             logger.error(
-                f"README生成中にエラーが発生しました: {e}。従来の生成にフォールバックします。",
+                f"Error occurred during README generation: {e}. Falling back to traditional generation.",
                 exc_info=True,
             )
             return self._generate_readme_legacy(manual_sections)
 
     def _should_use_outlines(self) -> bool:
         """
-        Outlinesを使用するかどうかを判定
+        Determine whether to use Outlines
 
         Returns:
-            Outlinesを使用するかどうか
+            Whether to use Outlines
         """
-        # 設定でOutlinesが有効になっているかチェック
+        # Check if Outlines is enabled in configuration
         return should_use_outlines(self.config)
 
     def _generate_with_outlines_readme(self, manual_sections: dict[str, str]) -> str:
         """
-        Outlinesを使用して構造化されたREADMEを生成
+        Generate structured README using Outlines
 
         Args:
-            manual_sections: 保持する手動セクション
+            manual_sections: Manual sections to preserve
 
         Returns:
-            READMEの内容
+            README content
         """
         try:
             # LLMクライアントを取得
@@ -191,21 +172,21 @@ class ReadmeGenerator:
 
             if not client:
                 logger.warning(
-                    "LLMクライアントの作成に失敗しました。従来の生成にフォールバックします。"
+                    "Failed to create LLM client. Falling back to traditional generation."
                 )
                 return self._generate_readme_legacy(manual_sections)
 
-            # Outlinesモデルを作成
+            # Create Outlines model
             outlines_model = self._create_outlines_model_readme(client)
 
             # プロンプトを作成
             prompt = self._create_readme_prompt(manual_sections)
 
-            # 構造化出力モデルで生成
-            logger.info("Outlinesを使用して構造化されたREADMEを生成中...")
+            # Generate with structured output model
+            logger.info("Generating structured README using Outlines...")
             structured_data = outlines_model(prompt, ReadmeDocument)
 
-            # 構造化データをマークダウンに変換
+            # Convert structured data to markdown
             markdown = self._convert_readme_structured_data_to_markdown(
                 structured_data, manual_sections
             )
@@ -214,84 +195,77 @@ class ReadmeGenerator:
 
         except Exception as e:
             logger.error(
-                f"Outlines README生成中にエラーが発生しました: {e}。従来の生成にフォールバックします。",
+                f"Error occurred during Outlines README generation: {e}. Falling back to traditional generation.",
                 exc_info=True,
             )
             return self._generate_readme_legacy(manual_sections)
 
     def _create_outlines_model_readme(self, client):
         """
-        README用のOutlinesモデルを作成
-
-        Args:
-            client: LLMクライアント
+        Create Outlines model for README
 
         Returns:
-            Outlinesモデル
+            Outlines model
         """
         return create_outlines_model(client)
 
     def _create_readme_prompt(self, manual_sections: dict[str, str]) -> str:
         """
-        README用のプロンプトを作成
+        Create prompt for README
 
         Args:
-            manual_sections: 保持する手動セクション
+            manual_sections: Manual sections to preserve
 
         Returns:
-            プロンプト文字列
+            Prompt string
         """
-        project_info = self.collector.collect_all()
+        prompt = f"""Generate README.md documentation based on the following project information.
 
-        prompt = f"""以下のプロジェクト情報を基に、README.mdドキュメントを生成してください。
+Project name: {self.project_root.name}
+Languages used: {", ".join(self.languages) if self.languages else "Unknown"}
 
-プロジェクト名: {self.project_root.name}
-使用言語: {", ".join(self.languages) if self.languages else "不明"}
+Project information:
 
-プロジェクト情報:
-{self._format_project_info_for_readme_prompt(project_info)}
+Manual sections (preserve them):
 
-手動セクション（保持してください）:
-{self._format_manual_sections_for_prompt(manual_sections)}
+Generate README with the following structure:
 
-以下の構造でREADMEを生成してください:
-1. プロジェクトタイトル
-2. プロジェクト説明
-3. 使用技術
-4. 依存関係
-5. セットアップ手順
-6. プロジェクト構造
-7. ビルドおよびテスト手順
+2. Project description
+3. Technologies used
+4. Dependencies
+5. Setup instructions
+6. Project structure
+7. Build and test instructions
 
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクションは指定された場所に挿入してください。"""
+Important: Generate only the final output. Do not include any thinking process, trial and error traces, or meta descriptions.
+Create a structured, clear document in Markdown format.
+Insert manual sections in the specified locations."""
 
         return prompt
 
-    def _format_project_info_for_readme_prompt(self, project_info: dict[str, Any]) -> str:
+    def _format_project_info_for_readme_prompt(self, project_info: ProjectInfo) -> str:
         """
-        プロジェクト情報をREADMEプロンプト用にフォーマット
+        Format project information for README prompt
 
         Args:
-            project_info: プロジェクト情報の辞書
+            project_info: Project information dictionary
 
         Returns:
-            フォーマットされた文字列
+            Formatted string
         """
         lines = []
 
-        description = project_info.get("description")
+        description = project_info.description
         if description:
-            lines.append(f"説明: {description}")
+            lines.append(f"Description: {description}")
 
-        dependencies = project_info.get("dependencies", {})
+        dependencies = project_info.dependencies or {}
         if dependencies:
-            lines.append("依存関係:")
+            lines.append("Dependencies:")
             for dep_type, deps in dependencies.items():
                 lines.append(f"  - {dep_type}: {', '.join(deps[:10])}")
 
-        build_commands = project_info.get("build_commands", [])
+        build_commands = project_info.build_commands
         if build_commands:
             lines.append("ビルドコマンド:")
             for cmd in build_commands:
@@ -307,20 +281,20 @@ class ReadmeGenerator:
 
     def _format_manual_sections_for_prompt(self, manual_sections: dict[str, str]) -> str:
         """
-        手動セクションをプロンプト用にフォーマット
+        Format manual sections for prompt
 
         Args:
-            manual_sections: 手動セクション
+            manual_sections: Manual sections
 
         Returns:
-            フォーマットされた文字列
+            Formatted string
         """
         if not manual_sections:
             return "なし"
 
         lines = []
         for name, content in manual_sections.items():
-            lines.append(f"{name}: {content[:200]}...")  # 最初の200文字
+            lines.append(f"{name}: {content[:200]}...")  # First 200 characters
 
         return "\n".join(lines)
 
@@ -328,14 +302,14 @@ class ReadmeGenerator:
         self, data: ReadmeDocument, manual_sections: dict[str, str]
     ) -> str:
         """
-        READMEの構造化データをマークダウン形式に変換
+        Convert structured README data to Markdown format
 
         Args:
-            data: 構造化されたREADMEデータ
-            manual_sections: 手動セクション
+            data: Structured README data
+            manual_sections: Manual sections
 
         Returns:
-            マークダウン形式の文字列
+            Markdown formatted string
         """
         lines = []
 
@@ -343,15 +317,15 @@ class ReadmeGenerator:
         lines.append(f"# {data.title}")
         lines.append("")
 
-        # 説明（手動セクションを優先）
+        # Description (prioritize manual sections)
         description = manual_sections.get("description", data.description)
         if description:
             lines.append(description)
         lines.append("")
 
-        # 使用技術
+        # Technologies used
         if data.technologies:
-            lines.append("## 使用技術")
+            lines.append("## Technologies Used")
             lines.append("")
             for tech in data.technologies:
                 lines.append(f"- {tech}")
@@ -376,7 +350,7 @@ class ReadmeGenerator:
 
             prerequisites = data.setup_instructions.get("prerequisites", [])
             if prerequisites:
-                lines.append("### 前提条件")
+                lines.append("### Prerequisites")
                 lines.append("")
                 for prereq in prerequisites:
                     lines.append(f"- {prereq}")
@@ -392,9 +366,9 @@ class ReadmeGenerator:
                 lines.append("```")
                 lines.append("")
 
-        # プロジェクト構造
+        # Project structure
         if data.project_structure:
-            lines.append("## プロジェクト構造")
+            lines.append("## Project Structure")
             lines.append("")
             for item in data.project_structure:
                 lines.append(f"- {item}")
@@ -427,51 +401,51 @@ class ReadmeGenerator:
 
     def _generate_readme_legacy(self, manual_sections: dict[str, str]) -> str:
         """
-        従来のREADME生成（Outlinesなし）
+        Generate README (without Outlines)
 
         Args:
-            manual_sections: 保持する手動セクション
+            manual_sections: Manual sections to preserve
 
         Returns:
-            READMEの内容
+            README content
         """
-        # 生成モードを取得（デフォルトは'template'）
+        # Get generation mode (default is 'template')
         generation_config = self.agents_config.get("generation", {})
         mode = generation_config.get("readme_mode", "template")
 
         if mode == "llm":
-            # LLM完全生成
+            # Full LLM generation
             return self._generate_with_llm(manual_sections)
         elif mode == "hybrid":
-            # ハイブリッド生成
+            # Hybrid generation
             return self._generate_hybrid(manual_sections)
         else:
-            # テンプレート生成（デフォルト）
+            # Template generation (default)
             return self._generate_template(manual_sections)
 
     def _generate_template(self, manual_sections: dict[str, str]) -> str:
         """
-        テンプレートベースでREADMEを生成（既存の実装）
+        Generate README based on template (existing implementation)
 
         Args:
-            manual_sections: 保持する手動セクション
+            manual_sections: Manual sections to preserve
 
         Returns:
-            READMEの内容
+            README content
         """
         lines = []
 
-        # プロジェクト名（ディレクトリ名から推測）
+        # Project name (inferred from directory name)
         project_name = self.project_root.name
         lines.append(f"# {project_name}")
         lines.append("")
 
-        # 手動セクション: 説明
+        # Manual section: Description
         lines.append("<!-- MANUAL_START:description -->")
         if "description" in manual_sections:
             lines.append(manual_sections["description"])
         else:
-            # プロジェクトの説明を収集
+            # Collect project description
             description = self._collect_project_description()
             if description:
                 lines.append("## 概要")
@@ -480,12 +454,12 @@ class ReadmeGenerator:
             else:
                 lines.append("## 概要")
                 lines.append("")
-                lines.append("このプロジェクトの説明をここに記述してください。")
+                lines.append("Please describe this project here.")
         lines.append("<!-- MANUAL_END:description -->")
         lines.append("")
 
-        # 自動生成セクション: 使用技術
-        lines.append("## 使用技術")
+        # Auto-generated section: Technologies used
+        lines.append("## Technologies Used")
         lines.append("")
         if self.languages:
             lang_display = {
@@ -504,10 +478,10 @@ class ReadmeGenerator:
                 display_name = lang_display.get(lang, lang.capitalize())
                 lines.append(f"- {display_name}")
         else:
-            lines.append("- 検出されませんでした")
+            lines.append("- Not detected")
         lines.append("")
 
-        # 依存関係の情報
+        # Dependency information
         dependencies = self._detect_dependencies()
         if dependencies:
             lines.append("## 依存関係")
@@ -516,7 +490,7 @@ class ReadmeGenerator:
                 if deps:
                     lines.append(f"### {dep_type}")
                     lines.append("")
-                    for dep in deps[:10]:  # 最大10個まで表示
+                    for dep in deps[:10]:  # Show up to 10
                         lines.append(f"- {dep}")
                     if len(deps) > 10:
                         lines.append(f"- ... 他 {len(deps) - 10} 個")
@@ -547,8 +521,8 @@ class ReadmeGenerator:
 
         # ビルドおよびテスト
         project_info = self.collector.collect_all()
-        build_commands = project_info.get("build_commands", [])
-        test_commands = project_info.get("test_commands", [])
+        build_commands = project_info.build_commands
+        test_commands = project_info.test_commands
         if build_commands or test_commands:
             lines.append("## ビルドおよびテスト")
             lines.append("")
@@ -569,29 +543,27 @@ class ReadmeGenerator:
                     lines.append(display_cmd)
                 if len(build_commands) > 5:
                     lines.append("# ... その他のビルドコマンド")
-                lines.append("```")
-                lines.append("")
+            lines.append("```")
+            lines.append("")
 
-            if test_commands:
-                lines.append("### テスト")
-                lines.append("")
-                lines.append("```bash")
-                for cmd in test_commands[:5]:  # 最大5個まで表示
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    display_cmd = cmd
+        test_commands = project_info.test_commands
+        if test_commands:
+            lines.append("### テスト")
+            lines.append("")
+            lines.append("```bash")
+            for cmd in test_commands[:5]:  # 最大5個まで表示
+                # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                display_cmd = cmd
+                if "python" in self.package_managers and self.package_managers["python"] == "uv":
                     if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if (
-                            cmd.startswith("python") or cmd.startswith("pytest")
-                        ) and not cmd.startswith("uv run"):
-                            display_cmd = f"uv run {cmd}"
-                    lines.append(display_cmd)
-                if len(test_commands) > 5:
-                    lines.append("# ... その他のテストコマンド")
-                lines.append("```")
-                lines.append("")
+                        cmd.startswith("python") or cmd.startswith("pytest")
+                    ) and not cmd.startswith("uv run"):
+                        display_cmd = f"uv run {cmd}"
+                lines.append(display_cmd)
+            if len(test_commands) > 5:
+                lines.append("# ... その他のテストコマンド")
+            lines.append("```")
+            lines.append("")
 
         # 手動セクション: その他
         if "other" in manual_sections:
@@ -664,10 +636,10 @@ class ReadmeGenerator:
 
     def _generate_setup_section(self) -> list[str]:
         """
-        セットアップセクションを自動生成
+        Detect dependencies
 
         Returns:
-            セットアップセクションの行リスト
+            Dictionary with dependency types as keys and dependency lists as values
         """
         lines = []
 
@@ -723,7 +695,9 @@ class ReadmeGenerator:
 
         return lines
 
-    def _generate_with_llm(self, manual_sections: dict[str, str]) -> str:
+    def _generate_with_llm(
+        self, project_info, existing_readme: str, manual_sections: dict[str, str]
+    ) -> str:
         """
         LLMを使用してREADME.mdを生成
 
@@ -762,9 +736,9 @@ class ReadmeGenerator:
             # システムプロンプト
             system_prompt = """あなたは技術ドキュメント作成の専門家です。
 プロジェクトのREADME.mdを生成してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は必ず保持してください。"""
+Important: Generate only the final output. Do not include any thinking process, trial and error traces, or meta descriptions.
+Create a structured, clear document in Markdown format.
+Be sure to preserve manual sections (<!-- MANUAL_START:... --> and <!-- MANUAL_END:... -->)."""
 
             # LLMで生成
             logger.info("LLMを使用してREADME.mdを生成中...")
@@ -794,6 +768,22 @@ class ReadmeGenerator:
                 exc_info=True,
             )
             return self._generate_template(manual_sections)
+
+    def _generate_without_llm(
+        self, project_info, existing_readme: str, manual_sections: dict[str, str]
+    ) -> str:
+        """
+        LLMを使用せずにREADME.mdを生成
+
+        Args:
+            project_info: プロジェクト情報
+            existing_readme: 既存のREADME内容
+            manual_sections: 保持する手動セクション
+
+        Returns:
+            READMEの内容
+        """
+        return self._generate_template(manual_sections)
 
     def _generate_hybrid(self, manual_sections: dict[str, str]) -> str:
         """
@@ -825,7 +815,7 @@ class ReadmeGenerator:
 
             # 説明セクションのみLLMで改善
             project_info = self.collector.collect_all()
-            description = project_info.get("description") or self._collect_project_description()
+            description = project_info.description or self._collect_project_description()
 
             prompt = f"""以下のプロジェクト情報を基に、README.mdの「概要」セクションを改善してください。
 既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
@@ -889,7 +879,7 @@ class ReadmeGenerator:
 
     def _create_llm_prompt(
         self,
-        project_info: dict[str, Any],
+        project_info: ProjectInfo,
         existing_readme: str,
         manual_sections: dict[str, str],
     ) -> str:
@@ -904,35 +894,35 @@ class ReadmeGenerator:
         Returns:
             プロンプト文字列
         """
+        dependencies = project_info.dependencies or {}
+        deps_text = ""
+        for dep_type, deps in dependencies.items():
+            deps_text += f"- {dep_type}: {', '.join(deps[:10])}\n"
+
+        existing_readme_text = ""
+        if existing_readme:
+            existing_readme_text = f"\n既存のREADME（参考）:\n{existing_readme[:1000]}...\n"
+
         prompt = f"""以下のプロジェクト情報を基に、README.mdドキュメントを生成してください。
 
 プロジェクト情報:
 - プロジェクト名: {self.project_root.name}
 - 使用言語: {", ".join(self.languages) if self.languages else "不明"}
-- 説明: {project_info.get("description") or "なし"}
+- 説明: {project_info.description or "なし"}
 
-依存関係:
-"""
-        dependencies = project_info.get("dependencies", {})
-        for dep_type, deps in dependencies.items():
-            prompt += f"- {dep_type}: {', '.join(deps[:10])}\n"
-
-        if existing_readme:
-            prompt += f"\n既存のREADME（参考）:\n{existing_readme[:1000]}...\n"
-
-        prompt += """
+{deps_text}{existing_readme_text}
 以下のセクションを含めてください:
-1. プロジェクト名（見出し）
-2. 概要（手動セクションを保持）
+1. プロジェクト名(見出し)
+2. 概要(手動セクションを保持)
 3. 使用技術
-4. 依存関係（検出された場合）
-5. セットアップ手順（手動セクションを保持）
-6. 使用方法（手動セクションがある場合）
+4. 依存関係(検出された場合)
+5. セットアップ手順(手動セクションを保持)
+6. 使用方法(手動セクションがある場合)
 7. プロジェクト構造
 
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は必ず保持してください。"""
+Important: Generate only the final output. Do not include any thinking process, trial and error traces, or meta descriptions.
+Create a structured, clear document in Markdown format.
+Be sure to preserve manual sections (<!-- MANUAL_START:... --> and <!-- MANUAL_END:... -->)."""
 
         return prompt
 
@@ -940,6 +930,8 @@ class ReadmeGenerator:
         self, generated_text: str, manual_sections: dict[str, str]
     ) -> str:
         """
+        Preserve manual sections in generated text
+
         生成されたテキストに手動セクションを保持
 
         Args:
@@ -1253,13 +1245,13 @@ class ReadmeGenerator:
 
     def _validate_output(self, text: str) -> bool:
         """
-        LLMの出力を検証して、不適切な内容が含まれていないかチェック
+        Validate LLM output to check for inappropriate content
 
         Args:
-            text: 検証するテキスト
+            text: Text to validate
 
         Returns:
-            検証に合格したかどうか
+            Whether validation passed
         """
         if not text or not text.strip():
             return False
@@ -1344,13 +1336,13 @@ class ReadmeGenerator:
 
     def _extract_description_section(self, content: str) -> str:
         """
-        コンテンツから説明セクションを抽出
+        Extract description section from content
 
         Args:
-            content: READMEコンテンツ
+            content: README content
 
         Returns:
-            説明セクションのテキスト
+            Description section text
         """
         lines = content.split("\n")
         description_lines = []
@@ -1369,10 +1361,7 @@ class ReadmeGenerator:
 
     def _detect_dependencies(self) -> dict[str, list[str]]:
         """
-        依存関係を検出
-
-        Returns:
-            依存関係タイプをキー、依存関係リストを値とする辞書
+        Detect dependencies
         """
         dependencies = {}
 
@@ -1475,20 +1464,14 @@ class ReadmeGenerator:
 
     def _collect_project_description(self) -> str | None:
         """
-        プロジェクトの説明を収集
-
-        Returns:
-            プロジェクトの説明文（見つからない場合はNone）
+        Collect project description
         """
         collector = ProjectInfoCollector(self.project_root)
         return collector.collect_project_description()
 
     def _get_project_structure(self) -> list[str]:
         """
-        プロジェクト構造を取得
-
-        Returns:
-            プロジェクト構造のリスト
+        Get project structure
         """
         structure = []
         try:

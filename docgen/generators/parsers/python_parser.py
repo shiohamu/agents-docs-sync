@@ -6,8 +6,8 @@ docstringを抽出してAPI情報を生成
 import ast
 from pathlib import Path
 import sys
-from typing import Any
 
+from ...models import APIInfo
 from .base_parser import BaseParser
 
 # Python 3.9+ では ast.unparse が利用可能
@@ -30,7 +30,7 @@ else:
 class PythonParser(BaseParser):
     """Pythonコード解析クラス"""
 
-    def parse_file(self, file_path: Path) -> list[dict[str, Any]]:
+    def parse_file(self, file_path: Path) -> list[APIInfo]:
         """
         Pythonファイルを解析
 

@@ -5,8 +5,8 @@ JSDocコメントを抽出してAPI情報を生成
 
 from pathlib import Path
 import re
-from typing import Any
 
+from ...models import APIInfo
 from .base_parser import BaseParser
 
 
@@ -28,7 +28,7 @@ class JSParser(BaseParser):
     # クラス定義のパターン
     CLASS_PATTERN = re.compile(r"(?:export\s+)?class\s+(\w+)", re.MULTILINE)
 
-    def parse_file(self, file_path: Path) -> list[dict[str, Any]]:
+    def parse_file(self, file_path: Path) -> list[APIInfo]:
         """
         JavaScript/TypeScriptファイルを解析
 

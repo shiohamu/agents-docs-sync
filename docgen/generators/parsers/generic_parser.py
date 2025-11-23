@@ -5,8 +5,8 @@
 
 from pathlib import Path
 import re
-from typing import Any
 
+from ...models import APIInfo
 from .base_parser import BaseParser
 
 
@@ -39,7 +39,7 @@ class GenericParser(BaseParser):
         super().__init__(project_root)
         self.language = language
 
-    def parse_file(self, file_path: Path) -> list[dict[str, Any]]:
+    def parse_file(self, file_path: Path) -> list[APIInfo]:
         """
         汎用ファイルを解析
 

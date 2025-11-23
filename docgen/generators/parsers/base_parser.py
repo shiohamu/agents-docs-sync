@@ -8,6 +8,7 @@ import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from ...models import APIInfo
 from ...utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -29,7 +30,7 @@ class BaseParser(ABC):
         self.project_root: Path = project_root
 
     @abstractmethod
-    def parse_file(self, file_path: Path) -> list[dict[str, Any]]:
+    def parse_file(self, file_path: Path) -> list[APIInfo]:
         """
         ファイルを解析してAPI情報を抽出
 

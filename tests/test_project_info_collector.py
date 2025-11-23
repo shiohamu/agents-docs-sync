@@ -39,9 +39,13 @@ class TestProjectInfoCollector:
         with patch.object(collector, "collect_project_description", return_value="Test project"):
             with patch.object(collector, "collect_build_commands", return_value=["make build"]):
                 with patch.object(collector, "collect_test_commands", return_value=["make test"]):
-                    with patch.object(collector, "collect_dependencies", return_value=["pytest"]):
+                    with patch.object(
+                        collector, "collect_dependencies", return_value={"python": ["pytest"]}
+                    ):
                         with patch.object(
-                            collector, "collect_coding_standards", return_value=["Use black"]
+                            collector,
+                            "collect_coding_standards",
+                            return_value={"formatter": "black"},
                         ):
                             with patch.object(
                                 collector,
@@ -51,19 +55,24 @@ class TestProjectInfoCollector:
                                 with patch.object(
                                     collector,
                                     "collect_project_structure",
-                                    return_value="src/\n  main.py",
+                                    return_value={"directories": ["src"], "files": ["main.py"]},
                                 ):
                                     result = collector.collect_all()
 
-                                    expected = {
-                                        "description": "Test project",
-                                        "build_commands": ["make build"],
-                                        "test_commands": ["make test"],
-                                        "dependencies": ["pytest"],
-                                        "coding_standards": ["Use black"],
-                                        "ci_cd_info": {"github_actions": True},
-                                        "project_structure": "src/\n  main.py",
-                                    }
+                                    from docgen.models import ProjectInfo
+
+                                    expected = ProjectInfo(
+                                        description="Test project",
+                                        build_commands=["make build"],
+                                        test_commands=["make test"],
+                                        dependencies={"python": ["pytest"]},
+                                        coding_standards={"formatter": "black"},
+                                        ci_cd_info={"github_actions": True},
+                                        project_structure={
+                                            "directories": ["src"],
+                                            "files": ["main.py"],
+                                        },
+                                    )
 
                                     assert result == expected
 

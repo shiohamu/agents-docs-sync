@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from ..models import APIInfo
 from .logger import get_logger
 
 logger = get_logger("cache")
@@ -117,7 +118,7 @@ class CacheManager:
             # プロジェクトルート外のファイルの場合、絶対パスを使用
             return f"{parser_type}:{file_path}"
 
-    def get_cached_result(self, file_path: Path, parser_type: str) -> list[dict[str, Any]] | None:
+    def get_cached_result(self, file_path: Path, parser_type: str) -> list[APIInfo] | None:
         """
         キャッシュから結果を取得
 
@@ -157,9 +158,7 @@ class CacheManager:
         del self._cache_data[cache_key]
         return None
 
-    def set_cached_result(
-        self, file_path: Path, parser_type: str, result: list[dict[str, Any]]
-    ) -> None:
+    def set_cached_result(self, file_path: Path, parser_type: str, result: list[APIInfo]) -> None:
         """
         結果をキャッシュに保存
 

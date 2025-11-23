@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from ..models import ProjectInfo
+
 
 class ProjectInfoCollector:
     """プロジェクト情報収集クラス"""
@@ -23,22 +25,22 @@ class ProjectInfoCollector:
         self.project_root: Path = project_root
         self.package_managers = package_managers or {}
 
-    def collect_all(self) -> dict[str, Any]:
+    def collect_all(self) -> ProjectInfo:
         """
         すべてのプロジェクト情報を収集
 
         Returns:
             プロジェクト情報の辞書
         """
-        return {
-            "description": self.collect_project_description(),
-            "build_commands": self.collect_build_commands(),
-            "test_commands": self.collect_test_commands(),
-            "dependencies": self.collect_dependencies(),
-            "coding_standards": self.collect_coding_standards(),
-            "ci_cd_info": self.collect_ci_cd_info(),
-            "project_structure": self.collect_project_structure(),
-        }
+        return ProjectInfo(
+            description=self.collect_project_description(),
+            build_commands=self.collect_build_commands(),
+            test_commands=self.collect_test_commands(),
+            dependencies=self.collect_dependencies(),
+            coding_standards=self.collect_coding_standards(),
+            ci_cd_info=self.collect_ci_cd_info(),
+            project_structure=self.collect_project_structure(),
+        )
 
     def collect_build_commands(self) -> list[str]:
         """

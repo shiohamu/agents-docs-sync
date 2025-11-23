@@ -44,7 +44,29 @@ class TestConfigManager:
         config_path = docgen_dir / "config.yaml"
         config_path.touch()  # ファイルを作成
 
-        test_config = {"test": "value"}
+        # 有効な設定を使用（Pydanticバリデーションを通過する）
+        test_config = {
+            "languages": {"auto_detect": False, "preferred": ["python"]},
+            "output": {
+                "api_doc": "custom_api.md",
+                "readme": "CUSTOM_README.md",
+                "agents_doc": "CUSTOM_AGENTS.md",
+            },
+            "generation": {
+                "update_readme": False,
+                "generate_api_doc": False,
+                "generate_agents_doc": False,
+                "preserve_manual_sections": False,
+            },
+            "agents": {
+                "llm_mode": "api",
+                "generation": {
+                    "agents_mode": "llm",
+                    "readme_mode": "llm",
+                    "enable_commit_message": False,
+                },
+            },
+        }
         mock_safe_read_yaml.return_value = test_config
 
         config_manager = ConfigManager(temp_project, docgen_dir, config_path)
@@ -180,7 +202,24 @@ class TestConfigManager:
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
 
-        test_config = {"test": "value"}
+        test_config = {
+            "languages": {"auto_detect": True, "preferred": []},
+            "output": {"api_doc": "docs/api.md", "readme": "README.md", "agents_doc": "AGENTS.md"},
+            "generation": {
+                "update_readme": True,
+                "generate_api_doc": True,
+                "generate_agents_doc": True,
+                "preserve_manual_sections": True,
+            },
+            "agents": {
+                "llm_mode": "both",
+                "generation": {
+                    "agents_mode": "template",
+                    "readme_mode": "template",
+                    "enable_commit_message": True,
+                },
+            },
+        }
         with patch.object(ConfigManager, "_load_config", return_value=test_config):
             config_manager = ConfigManager(temp_project, docgen_dir)
 
@@ -193,11 +232,29 @@ class TestConfigManager:
         docgen_dir.mkdir()
 
         config_manager = ConfigManager.__new__(ConfigManager)
-        config_manager.config = {"a": 1, "b": 2}
+        config_manager.config = {
+            "languages": {"auto_detect": True, "preferred": []},
+            "output": {"api_doc": "docs/api.md", "readme": "README.md", "agents_doc": "AGENTS.md"},
+            "generation": {
+                "update_readme": True,
+                "generate_api_doc": True,
+                "generate_agents_doc": True,
+                "preserve_manual_sections": True,
+            },
+            "agents": {
+                "llm_mode": "both",
+                "generation": {
+                    "agents_mode": "template",
+                    "readme_mode": "template",
+                    "enable_commit_message": True,
+                },
+            },
+        }
 
-        config_manager.update_config({"a": 3})
+        with patch.object(config_manager, "_validate_config"):
+            config_manager.update_config({"generation.update_readme": False})
 
-        assert config_manager.config["a"] == 3
+            assert config_manager.config["generation"]["update_readme"] is False
 
     def test_update_config_nested(self, temp_project):
         """ネストされた設定更新テスト"""
@@ -205,11 +262,29 @@ class TestConfigManager:
         docgen_dir.mkdir()
 
         config_manager = ConfigManager.__new__(ConfigManager)
-        config_manager.config = {"a": {"b": 2}}
+        config_manager.config = {
+            "languages": {"auto_detect": True, "preferred": []},
+            "output": {"api_doc": "docs/api.md", "readme": "README.md", "agents_doc": "AGENTS.md"},
+            "generation": {
+                "update_readme": True,
+                "generate_api_doc": True,
+                "generate_agents_doc": True,
+                "preserve_manual_sections": True,
+            },
+            "agents": {
+                "llm_mode": "both",
+                "generation": {
+                    "agents_mode": "template",
+                    "readme_mode": "template",
+                    "enable_commit_message": True,
+                },
+            },
+        }
 
-        config_manager.update_config({"a.b": 3})
+        with patch.object(config_manager, "_validate_config"):
+            config_manager.update_config({"generation.update_readme": False})
 
-        assert config_manager.config["a"]["b"] == 3
+            assert config_manager.config["generation"]["update_readme"] is False
 
     def test_set_nested_value_existing(self, temp_project):
         """既存のネストされた値設定テスト"""

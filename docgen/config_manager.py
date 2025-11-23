@@ -6,6 +6,9 @@ from pathlib import Path
 import shutil
 from typing import Any
 
+from pydantic import ValidationError
+
+from .models import DocgenConfig
 from .utils.file_utils import safe_read_yaml
 from .utils.logger import get_logger
 
@@ -121,36 +124,17 @@ class ConfigManager:
         Raises:
             ValueError: 設定が無効な場合
         """
-        # 必須フィールドのチェック
-        required_sections = ["languages", "output", "generation"]
-        for section in required_sections:
-            if section not in self.config:
-                logger.warning(
-                    f"設定セクション '{section}' がありません。デフォルト値を使用します。"
-                )
-                # デフォルトをマージ
-                default = self._get_default_config()
-                self.config[section] = default.get(section, {})
-
-        # outputパスの検証
-        output_config = self.config.get("output", {})
-        for key, path in output_config.items():
-            if not isinstance(path, str):
-                logger.warning(
-                    f"output.{key} は文字列である必要があります。デフォルト値を使用します。"
-                )
-                default = self._get_default_config()["output"][key]
-                self.config["output"][key] = default
-
-        # generationフラグの検証
-        generation_config = self.config.get("generation", {})
-        for key, value in generation_config.items():
-            if not isinstance(value, bool):
-                logger.warning(
-                    f"generation.{key} はブール値である必要があります。デフォルト値を使用します。"
-                )
-                default = self._get_default_config()["generation"][key]
-                self.config["generation"][key] = default
+        try:
+            # Pydanticでバリデーション
+            validated_config = DocgenConfig(**self.config)
+            # バリデーション済みの設定をdictに戻す
+            self.config = validated_config.model_dump()
+        except ValidationError as e:
+            logger.warning(f"設定のバリデーションエラー: {e}")
+            logger.info("デフォルト設定を使用します。")
+            # デフォルト設定を使用
+            default_config = DocgenConfig()
+            self.config = default_config.model_dump()
 
     def update_config(self, updates: dict[str, Any]) -> None:
         """
