@@ -166,7 +166,7 @@ def test_extract_manual_sections_with_existing_file(temp_project):
     config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
     generator = AgentsGenerator(temp_project, ["python"], config)
 
-    manual_sections = generator._extract_manual_sections()
+    manual_sections = generator._extract_manual_sections_from_existing()
 
     # パースのデバッグ情報
     print(f"Extracted sections: {list(manual_sections.keys())}")
@@ -182,7 +182,7 @@ def test_extract_manual_sections_no_file(temp_project):
     config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
     generator = AgentsGenerator(temp_project, ["python"], config)
 
-    manual_sections = generator._extract_manual_sections()
+    manual_sections = generator._extract_manual_sections_from_existing()
 
     assert manual_sections == {}
 
@@ -207,7 +207,7 @@ def test_extract_manual_sections_malformed_content(temp_project):
     generator = AgentsGenerator(temp_project, ["python"], config)
 
     # エラーが発生しても処理が続くことを確認
-    manual_sections = generator._extract_manual_sections()
+    manual_sections = generator._extract_manual_sections_from_existing()
 
     # 終了タグのあるセクションのみ抽出される
     assert "another" in manual_sections

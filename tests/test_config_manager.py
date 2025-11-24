@@ -65,6 +65,20 @@ class TestConfigManager:
                     "readme_mode": "llm",
                     "enable_commit_message": False,
                 },
+                "api": None,
+                "local": None,
+                "coding_standards": None,
+                "custom_instructions": None,
+            },
+            "exclude": {
+                "directories": [],
+                "patterns": [],
+            },
+            "cache": {
+                "enabled": True,
+            },
+            "debug": {
+                "enabled": False,
             },
         }
         mock_safe_read_yaml.return_value = test_config
@@ -218,6 +232,20 @@ class TestConfigManager:
                     "readme_mode": "template",
                     "enable_commit_message": True,
                 },
+                "api": None,
+                "local": None,
+                "coding_standards": None,
+                "custom_instructions": None,
+            },
+            "exclude": {
+                "directories": [],
+                "patterns": [],
+            },
+            "cache": {
+                "enabled": True,
+            },
+            "debug": {
+                "enabled": False,
             },
         }
         with patch.object(ConfigManager, "_load_config", return_value=test_config):

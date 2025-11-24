@@ -232,6 +232,8 @@ class LocalLLMClient(BaseLLMClient):
         try:
             import httpx
 
+            # httpxクライアントを作成（接続プールを使用）
+            self.httpx_client = httpx.Client(timeout=self.timeout)
             self.httpx = httpx
         except ImportError:
             raise ImportError(
@@ -241,6 +243,9 @@ class LocalLLMClient(BaseLLMClient):
         self.base_url: str = self.config.base_url or "http://localhost:11434"
         self.model: str = config.get("model", "llama3")
         self.provider: str = config.get("provider", "ollama")
+        logger.info(
+            f"LLM Client initialized: provider={self.provider}, base_url={self.base_url}, model={self.model}"
+        )
 
         # ベースURLの正規化（末尾のスラッシュを削除）
         self.base_url = self.base_url.rstrip("/")
@@ -308,6 +313,7 @@ class LocalLLMClient(BaseLLMClient):
         try:
             # OpenAI互換のAPI形式
             url = f"{self.base_url}/v1/chat/completions"
+            logger.info(f"Connecting to LLM API: {url}")
 
             messages = []
             if system_prompt:
@@ -321,9 +327,7 @@ class LocalLLMClient(BaseLLMClient):
                 "max_tokens": kwargs.get("max_tokens", 4096),
             }
 
-            response = self._retry_with_backoff(
-                lambda: self.httpx.post(url, json=payload, timeout=self.timeout)
-            )
+            response = self._retry_with_backoff(lambda: self.httpx_client.post(url, json=payload))
 
             if response.status_code == 200:
                 data = response.json()

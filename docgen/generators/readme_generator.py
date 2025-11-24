@@ -4,24 +4,18 @@ Achieve structured output with Outlines integration
 """
 
 from datetime import datetime
-import os
 from pathlib import Path
 import re
 from typing import Any
 
-from ..collectors.project_info_collector import ProjectInfoCollector
 from ..models import ProjectInfo, ReadmeDocument
-from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
-from ..utils.outlines_utils import (
-    create_outlines_model,
-    should_use_outlines,
-)
+from .base_generator import BaseGenerator
 
 logger = get_logger("readme_generator")
 
 
-class ReadmeGenerator:
+class ReadmeGenerator(BaseGenerator):
     """README generation class"""
 
     def __init__(
@@ -40,277 +34,210 @@ class ReadmeGenerator:
             config: Configuration dictionary
             package_managers: Dictionary of detected package managers
         """
-        self.project_root = project_root
-        self.languages = languages
-        self.config = config
-        self.package_managers = package_managers or {}
+        super().__init__(project_root, languages, config, package_managers)
+        self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
+
+    @property
+    def readme_path(self):
+        return self.output_path
+
+    def _get_output_path(self, config: dict[str, Any]) -> Path:
         output_config = config.get("output", {})
         readme_filename = output_config.get("readme", "README.md")
-        self.readme_path = project_root / readme_filename
-        self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
-        self.agents_config = config.get("agents", {})
-        self.collector = ProjectInfoCollector(project_root, package_managers)
+        return self.project_root / readme_filename
 
-    def generate(self) -> bool:
-        """
-        Generate or update README
+    def _get_mode_key(self) -> str:
+        return "readme_mode"
 
-        Returns:
-            Whether successful
-        """
-        try:
-            # Read existing README
-            existing_readme = ""
-            if self.readme_path.exists():
-                existing_readme = self.readme_path.read_text(encoding="utf-8")
+    def _get_document_type(self) -> str:
+        return "README.md"
 
-            # Extract manual sections if preservation is enabled
-            manual_sections = {}
-            if self.preserve_manual and existing_readme:
-                manual_sections = self._extract_manual_sections(existing_readme)
+    def _get_structured_model(self):
+        return ReadmeDocument
 
-            # Collect project information
-            project_info = self.collector.collect_all()
+    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
+        return self._create_readme_prompt(project_info)
 
-            # Generate new README
-            if self.agents_config.get("llm_mode", "both") in ["api", "both"]:
-                new_content = self._generate_with_llm(
-                    project_info, existing_readme, manual_sections
-                )
-            else:
-                new_content = self._generate_without_llm(
-                    project_info, existing_readme, manual_sections
-                )
+    def _get_project_overview_section(self, content: str) -> str:
+        return self._extract_description_section(content)
 
-            # Write to file
-            self.readme_path.write_text(new_content, encoding="utf-8")
-
-            return True
-        except Exception as e:
-            logger.error(f"README generation failed: {e}", exc_info=True)
-            return False
-
-    def _extract_manual_sections(self, content: str) -> dict[str, str]:
-        """
-        Extract manual sections from existing README
-
-        Args:
-            content: Existing README content
-
-        Returns:
-            Dictionary with section names as keys and content as values
-        """
-        sections = {}
-
-        # Find manual section markers
-        # <!-- MANUAL_START:section_name --> ... <!-- MANUAL_END:section_name -->
-        pattern = r"<!--\s*MANUAL_START:(\w+)\s*-->(.*?)<!--\s*MANUAL_END:\1\s*-->"
-        for match in re.finditer(pattern, content, re.DOTALL):
-            section_name = match.group(1)
-            section_content = match.group(2).strip()
-            # Remove nested manual markers
-            section_content = re.sub(
-                r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", section_content
-            ).strip()
-            sections[section_name] = section_content
-
-        return sections
-
-    def _generate_readme(self, manual_sections: dict[str, str]) -> str:
-        """
-        Generate README (structured output with Outlines)
-
-        Args:
-            manual_sections: Manual sections to preserve
-
-        Returns:
-            README content
-        """
-        try:
-            # Outlinesを使用した構造化生成を試す
-            if self._should_use_outlines():
-                return self._generate_with_outlines_readme(manual_sections)
-
-            # Fallback to traditional generation
-            return self._generate_readme_legacy(manual_sections)
-
-        except Exception as e:
-            logger.error(
-                f"Error occurred during README generation: {e}. Falling back to traditional generation.",
-                exc_info=True,
-            )
-            return self._generate_readme_legacy(manual_sections)
-
-    def _should_use_outlines(self) -> bool:
-        """
-        Determine whether to use Outlines
-
-        Returns:
-            Whether to use Outlines
-        """
-        # Check if Outlines is enabled in configuration
-        return should_use_outlines(self.config)
-
-    def _generate_with_outlines_readme(self, manual_sections: dict[str, str]) -> str:
-        """
-        Generate structured README using Outlines
-
-        Args:
-            manual_sections: Manual sections to preserve
-
-        Returns:
-            README content
-        """
-        try:
-            # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
-
-            if not client:
-                logger.warning(
-                    "Failed to create LLM client. Falling back to traditional generation."
-                )
-                return self._generate_readme_legacy(manual_sections)
-
-            # Create Outlines model
-            outlines_model = self._create_outlines_model_readme(client)
-
-            # プロンプトを作成
-            prompt = self._create_readme_prompt(manual_sections)
-
-            # Generate with structured output model
-            logger.info("Generating structured README using Outlines...")
-            structured_data = outlines_model(prompt, ReadmeDocument)
-
-            # Convert structured data to markdown
-            markdown = self._convert_readme_structured_data_to_markdown(
-                structured_data, manual_sections
-            )
-
-            return markdown
-
-        except Exception as e:
-            logger.error(
-                f"Error occurred during Outlines README generation: {e}. Falling back to traditional generation.",
-                exc_info=True,
-            )
-            return self._generate_readme_legacy(manual_sections)
-
-    def _create_outlines_model_readme(self, client):
-        """
-        Create Outlines model for README
-
-        Returns:
-            Outlines model
-        """
-        return create_outlines_model(client)
-
-    def _create_readme_prompt(self, manual_sections: dict[str, str]) -> str:
-        """
-        Create prompt for README
-
-        Args:
-            manual_sections: Manual sections to preserve
-
-        Returns:
-            Prompt string
-        """
-        prompt = f"""Generate README.md documentation based on the following project information.
-
-Project name: {self.project_root.name}
-Languages used: {", ".join(self.languages) if self.languages else "Unknown"}
-
-Project information:
-
-Manual sections (preserve them):
-
-Generate README with the following structure:
-
-2. Project description
-3. Technologies used
-4. Dependencies
-5. Setup instructions
-6. Project structure
-7. Build and test instructions
-
-Important: Generate only the final output. Do not include any thinking process, trial and error traces, or meta descriptions.
-Create a structured, clear document in Markdown format.
-Insert manual sections in the specified locations."""
-
-        return prompt
-
-    def _format_project_info_for_readme_prompt(self, project_info: ProjectInfo) -> str:
-        """
-        Format project information for README prompt
-
-        Args:
-            project_info: Project information dictionary
-
-        Returns:
-            Formatted string
-        """
+    def _generate_project_overview(self, project_info: ProjectInfo) -> list[str]:
+        """README用のプロジェクト概要セクションを生成"""
         lines = []
+        lines.append("## 概要")
+        lines.append("")
 
-        description = project_info.description
-        if description:
-            lines.append(f"Description: {description}")
+        # READMEから説明を取得（優先）
+        readme_path = self.project_root / "README.md"
+        description_found = False
+        if readme_path.exists() and readme_path != self.readme_path:
+            readme_content = readme_path.read_text(encoding="utf-8")
+            # 最初の段落を抽出（簡易版）
+            for line in readme_content.split("\n"):
+                line_stripped = line.strip()
+                if (
+                    line_stripped
+                    and not line_stripped.startswith("#")
+                    and not line_stripped.startswith("<!--")
+                ):
+                    # 汎用的なテンプレート文をスキップ
+                    if "このプロジェクトの説明をここに記述してください" not in line_stripped:
+                        lines.append(line)
+                        description_found = True
+                        break
 
-        dependencies = project_info.dependencies or {}
-        if dependencies:
-            lines.append("Dependencies:")
-            for dep_type, deps in dependencies.items():
-                lines.append(f"  - {dep_type}: {', '.join(deps[:10])}")
+        # READMEに説明がない場合、プロジェクト情報から取得
+        if not description_found:
+            description = project_info.description
+            if description:
+                lines.append(description)
+                description_found = True
 
+        # 説明が見つからない場合のデフォルトメッセージ
+        if not description_found:
+            lines.append("このプロジェクトの説明をここに記述してください。")
+
+        return lines
+
+    def _generate_build_test_section(self, project_info: ProjectInfo) -> list[str]:
+        """README用のビルド/テストセクションを生成"""
+        lines = []
         build_commands = project_info.build_commands
-        if build_commands:
-            lines.append("ビルドコマンド:")
-            for cmd in build_commands:
-                lines.append(f"  - {cmd}")
+        test_commands = project_info.test_commands
+        if build_commands or test_commands:
+            lines.append("## ビルドおよびテスト")
+            lines.append("")
 
-        test_commands = project_info.get("test_commands", [])
-        if test_commands:
-            lines.append("テストコマンド:")
-            for cmd in test_commands:
-                lines.append(f"  - {cmd}")
+            if build_commands:
+                lines.append("### ビルド")
+                lines.append("")
+                lines.append("```bash")
+                for cmd in build_commands[:5]:  # 最大5個まで表示
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    display_cmd = cmd
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if cmd.startswith("python") and not cmd.startswith("uv run"):
+                            display_cmd = f"uv run {cmd}"
+                    lines.append(display_cmd)
+                if len(build_commands) > 5:
+                    lines.append("# ... その他のビルドコマンド")
+                lines.append("```")
+                lines.append("")
 
-        return "\n".join(lines)
+            if test_commands:
+                lines.append("### テスト")
+                lines.append("")
+                lines.append("```bash")
+                for cmd in test_commands[:5]:  # 最大5個まで表示
+                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
+                    display_cmd = cmd
+                    if (
+                        "python" in self.package_managers
+                        and self.package_managers["python"] == "uv"
+                    ):
+                        if (
+                            cmd.startswith("python") or cmd.startswith("pytest")
+                        ) and not cmd.startswith("uv run"):
+                            display_cmd = f"uv run {cmd}"
+                    lines.append(display_cmd)
+                if len(test_commands) > 5:
+                    lines.append("# ... その他のテストコマンド")
+                lines.append("```")
+                lines.append("")
 
-    def _format_manual_sections_for_prompt(self, manual_sections: dict[str, str]) -> str:
-        """
-        Format manual sections for prompt
+        return lines
 
-        Args:
-            manual_sections: Manual sections
-
-        Returns:
-            Formatted string
-        """
-        if not manual_sections:
-            return "なし"
-
+    def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
+        """README用のコーディング規約セクションを生成"""
         lines = []
-        for name, content in manual_sections.items():
-            lines.append(f"{name}: {content[:200]}...")  # First 200 characters
+        coding_standards = project_info.coding_standards or {}
 
-        return "\n".join(lines)
+        if coding_standards:
+            lines.append("## コーディング規約")
+            lines.append("")
 
-    def _convert_readme_structured_data_to_markdown(
-        self, data: ReadmeDocument, manual_sections: dict[str, str]
-    ) -> str:
-        """
-        Convert structured README data to Markdown format
+            # フォーマッター
+            formatter = coding_standards.get("formatter")
+            if formatter:
+                lines.append(f"- **フォーマッター**: {formatter}")
 
-        Args:
-            data: Structured README data
-            manual_sections: Manual sections
+            # リンター
+            linter = coding_standards.get("linter")
+            if linter:
+                lines.append(f"- **リンター**: {linter}")
 
-        Returns:
-            Markdown formatted string
-        """
+            # スタイルガイド
+            style_guide = coding_standards.get("style_guide")
+            if style_guide:
+                lines.append(f"- **スタイルガイド**: {style_guide}")
+
+            lines.append("")
+        else:
+            lines.append("## コーディング規約")
+            lines.append("")
+            lines.append(
+                "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
+            )
+            lines.append("")
+
+        return lines
+
+    def _generate_pr_section(self, project_info: ProjectInfo) -> list[str]:
+        """README用のPRセクションを生成"""
+        lines = []
+        lines.append("## プルリクエストの手順")
+        lines.append("")
+        lines.append("1. **ブランチの作成**")
+        lines.append("   ```bash")
+        lines.append("   git checkout -b feature/your-feature-name")
+        lines.append("   ```")
+        lines.append("")
+        lines.append("2. **変更のコミット**")
+        lines.append("   - コミットメッセージは明確で説明的に")
+        lines.append("   - 関連するIssue番号を含める")
+        lines.append("")
+        lines.append("3. **テストの実行**")
+        lines.append("   ```bash")
+        test_commands = project_info.test_commands
+        for cmd in test_commands[:3]:
+            lines.append(f"   {cmd}")
+        if not test_commands:
+            lines.append("   # テストコマンドを実行")
+        lines.append("   ```")
+        lines.append("")
+        lines.append("4. **プルリクエストの作成**")
+        lines.append("   - タイトル: `[種類] 簡潔な説明`")
+        lines.append("   - 説明: 変更内容、テスト結果、関連Issueを記載")
+        lines.append("")
+
+        return lines
+
+    def _generate_custom_instructions_section(
+        self, custom_instructions: str | dict[str, Any]
+    ) -> list[str]:
+        """README用のカスタム指示セクションを生成"""
+        lines = []
+        if custom_instructions:
+            lines.append("## プロジェクト固有の指示")
+            lines.append("")
+
+            if isinstance(custom_instructions, str):
+                lines.append(custom_instructions)
+            elif isinstance(custom_instructions, dict):
+                # dictの場合はキーをセクションとして扱う
+                for key, value in custom_instructions.items():
+                    lines.append(f"### {key}")
+                    lines.append("")
+                    lines.append(str(value))
+                    lines.append("")
+
+        return lines
+
+    def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
+        """READMEの構造化データをマークダウン形式に変換"""
         lines = []
 
         # タイトル
@@ -318,13 +245,13 @@ Insert manual sections in the specified locations."""
         lines.append("")
 
         # Description (prioritize manual sections)
-        description = manual_sections.get("description", data.description)
+        description = getattr(data, "description", "")
         if description:
             lines.append(description)
         lines.append("")
 
         # Technologies used
-        if data.technologies:
+        if hasattr(data, "technologies") and data.technologies:
             lines.append("## Technologies Used")
             lines.append("")
             for tech in data.technologies:
@@ -332,7 +259,7 @@ Insert manual sections in the specified locations."""
             lines.append("")
 
         # 依存関係
-        if data.dependencies:
+        if hasattr(data, "dependencies") and data.dependencies:
             lines.append("## 依存関係")
             lines.append("")
             for lang, deps in data.dependencies.items():
@@ -344,7 +271,7 @@ Insert manual sections in the specified locations."""
                     lines.append("")
 
         # セットアップ
-        if data.setup_instructions:
+        if hasattr(data, "setup_instructions") and data.setup_instructions:
             lines.append("## セットアップ")
             lines.append("")
 
@@ -367,7 +294,7 @@ Insert manual sections in the specified locations."""
                 lines.append("")
 
         # Project structure
-        if data.project_structure:
+        if hasattr(data, "project_structure") and data.project_structure:
             lines.append("## Project Structure")
             lines.append("")
             for item in data.project_structure:
@@ -375,11 +302,13 @@ Insert manual sections in the specified locations."""
             lines.append("")
 
         # ビルドおよびテスト
-        if data.build_commands or data.test_commands:
+        if (hasattr(data, "build_commands") and data.build_commands) or (
+            hasattr(data, "test_commands") and data.test_commands
+        ):
             lines.append("## ビルドおよびテスト")
             lines.append("")
 
-            if data.build_commands:
+            if hasattr(data, "build_commands") and data.build_commands:
                 lines.append("### ビルド")
                 lines.append("")
                 lines.append("```bash")
@@ -388,7 +317,7 @@ Insert manual sections in the specified locations."""
                 lines.append("```")
                 lines.append("")
 
-            if data.test_commands:
+            if hasattr(data, "test_commands") and data.test_commands:
                 lines.append("### テスト")
                 lines.append("")
                 lines.append("```bash")
@@ -399,29 +328,24 @@ Insert manual sections in the specified locations."""
 
         return "\n".join(lines)
 
-    def _generate_readme_legacy(self, manual_sections: dict[str, str]) -> str:
+    def _format_manual_sections_for_prompt(self, manual_sections: dict[str, str]) -> str:
         """
-        Generate README (without Outlines)
+        Format manual sections for prompt
 
         Args:
-            manual_sections: Manual sections to preserve
+            manual_sections: Manual sections
 
         Returns:
-            README content
+            Formatted string
         """
-        # Get generation mode (default is 'template')
-        generation_config = self.agents_config.get("generation", {})
-        mode = generation_config.get("readme_mode", "template")
+        if not manual_sections:
+            return "なし"
 
-        if mode == "llm":
-            # Full LLM generation
-            return self._generate_with_llm(manual_sections)
-        elif mode == "hybrid":
-            # Hybrid generation
-            return self._generate_hybrid(manual_sections)
-        else:
-            # Template generation (default)
-            return self._generate_template(manual_sections)
+        lines = []
+        for name, content in manual_sections.items():
+            lines.append(f"{name}: {content[:200]}...")  # First 200 characters
+
+        return "\n".join(lines)
 
     def _generate_template(self, manual_sections: dict[str, str]) -> str:
         """
@@ -695,645 +619,6 @@ Insert manual sections in the specified locations."""
 
         return lines
 
-    def _generate_with_llm(
-        self, project_info, existing_readme: str, manual_sections: dict[str, str]
-    ) -> str:
-        """
-        LLMを使用してREADME.mdを生成
-
-        Args:
-            manual_sections: 保持する手動セクション
-
-        Returns:
-            READMEの内容（エラー時はテンプレート生成にフォールバック）
-        """
-        try:
-            # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
-
-            if not client:
-                logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレート生成にフォールバックします。"
-                )
-                return self._generate_template(manual_sections)
-
-            # 既存READMEを読み込む（コンテキストとして使用）
-            existing_readme = ""
-            if self.readme_path.exists():
-                existing_readme = self.readme_path.read_text(encoding="utf-8")
-
-            # プロジェクト情報を収集
-            project_info = self.collector.collect_all()
-
-            # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info, existing_readme, manual_sections)
-
-            # システムプロンプト
-            system_prompt = """あなたは技術ドキュメント作成の専門家です。
-プロジェクトのREADME.mdを生成してください。
-Important: Generate only the final output. Do not include any thinking process, trial and error traces, or meta descriptions.
-Create a structured, clear document in Markdown format.
-Be sure to preserve manual sections (<!-- MANUAL_START:... --> and <!-- MANUAL_END:... -->)."""
-
-            # LLMで生成
-            logger.info("LLMを使用してREADME.mdを生成中...")
-            generated_text = client.generate(prompt, system_prompt=system_prompt)
-
-            if generated_text:
-                # LLM出力をクリーンアップ
-                cleaned_text = self._clean_llm_output(generated_text)
-
-                # 出力を検証
-                if not self._validate_output(cleaned_text):
-                    logger.warning(
-                        "LLM出力の検証に失敗しました。テンプレート生成にフォールバックします。"
-                    )
-                    return self._generate_template(manual_sections)
-
-                # 手動セクションを確実に保持
-                result = self._preserve_manual_sections_in_generated(cleaned_text, manual_sections)
-                return result
-            else:
-                logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
-                return self._generate_template(manual_sections)
-
-        except Exception as e:
-            logger.error(
-                f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
-                exc_info=True,
-            )
-            return self._generate_template(manual_sections)
-
-    def _generate_without_llm(
-        self, project_info, existing_readme: str, manual_sections: dict[str, str]
-    ) -> str:
-        """
-        LLMを使用せずにREADME.mdを生成
-
-        Args:
-            project_info: プロジェクト情報
-            existing_readme: 既存のREADME内容
-            manual_sections: 保持する手動セクション
-
-        Returns:
-            READMEの内容
-        """
-        return self._generate_template(manual_sections)
-
-    def _generate_hybrid(self, manual_sections: dict[str, str]) -> str:
-        """
-        テンプレートとLLMを組み合わせて生成
-
-        Args:
-            manual_sections: 保持する手動セクション
-
-        Returns:
-            READMEの内容
-        """
-        # まずテンプレートを生成
-        template_content = self._generate_template(manual_sections)
-
-        try:
-            # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
-
-            if not client:
-                logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
-                )
-                return template_content
-
-            # 説明セクションのみLLMで改善
-            project_info = self.collector.collect_all()
-            description = project_info.description or self._collect_project_description()
-
-            prompt = f"""以下のプロジェクト情報を基に、README.mdの「概要」セクションを改善してください。
-既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
-
-プロジェクト情報:
-- プロジェクト名: {self.project_root.name}
-- 使用言語: {", ".join(self.languages) if self.languages else "不明"}
-- 説明: {description or "なし"}
-
-既存のテンプレート生成内容:
-{self._extract_description_section(template_content)}
-
-改善された「概要」セクションをマークダウン形式で出力してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-手動セクション（<!-- MANUAL_START:description --> と <!-- MANUAL_END:description -->）は保持してください。"""
-
-            system_prompt = """あなたは技術ドキュメント作成の専門家です。プロジェクト概要を明確で有用な形で記述してください。
-最終的な出力のみを生成し、思考過程や試行錯誤の痕跡を含めないでください。"""
-
-            logger.info("LLMを使用して概要セクションを改善中...")
-            improved_description = client.generate(prompt, system_prompt=system_prompt)
-
-            if improved_description:
-                # LLM出力をクリーンアップ
-                cleaned_description = self._clean_llm_output(improved_description)
-
-                # 出力を検証
-                if not self._validate_output(cleaned_description):
-                    logger.warning("LLM出力の検証に失敗しました。テンプレートのみを使用します。")
-                    return template_content
-
-                # テンプレートの説明セクションを置き換え
-                lines = template_content.split("\n")
-                new_lines = []
-                skip_until_end = False
-
-                for line in lines:
-                    if "<!-- MANUAL_START:description -->" in line:
-                        new_lines.append(line)
-                        new_lines.append("")
-                        # 改善された説明を挿入
-                        new_lines.extend(cleaned_description.split("\n"))
-                        skip_until_end = True
-                    elif skip_until_end and "<!-- MANUAL_END:description -->" in line:
-                        skip_until_end = False
-                        new_lines.append("")
-                        new_lines.append(line)
-                    elif not skip_until_end:
-                        new_lines.append(line)
-
-                return "\n".join(new_lines)
-            else:
-                return template_content
-
-        except Exception as e:
-            logger.warning(
-                f"ハイブリッド生成中にエラーが発生しました: {e}。テンプレートのみを使用します。",
-                exc_info=True,
-            )
-            return template_content
-
-    def _create_llm_prompt(
-        self,
-        project_info: ProjectInfo,
-        existing_readme: str,
-        manual_sections: dict[str, str],
-    ) -> str:
-        """
-        LLM用のプロンプトを作成
-
-        Args:
-            project_info: プロジェクト情報の辞書
-            existing_readme: 既存のREADME内容
-            manual_sections: 手動セクション
-
-        Returns:
-            プロンプト文字列
-        """
-        dependencies = project_info.dependencies or {}
-        deps_text = ""
-        for dep_type, deps in dependencies.items():
-            deps_text += f"- {dep_type}: {', '.join(deps[:10])}\n"
-
-        existing_readme_text = ""
-        if existing_readme:
-            existing_readme_text = f"\n既存のREADME（参考）:\n{existing_readme[:1000]}...\n"
-
-        prompt = f"""以下のプロジェクト情報を基に、README.mdドキュメントを生成してください。
-
-プロジェクト情報:
-- プロジェクト名: {self.project_root.name}
-- 使用言語: {", ".join(self.languages) if self.languages else "不明"}
-- 説明: {project_info.description or "なし"}
-
-{deps_text}{existing_readme_text}
-以下のセクションを含めてください:
-1. プロジェクト名(見出し)
-2. 概要(手動セクションを保持)
-3. 使用技術
-4. 依存関係(検出された場合)
-5. セットアップ手順(手動セクションを保持)
-6. 使用方法(手動セクションがある場合)
-7. プロジェクト構造
-
-Important: Generate only the final output. Do not include any thinking process, trial and error traces, or meta descriptions.
-Create a structured, clear document in Markdown format.
-Be sure to preserve manual sections (<!-- MANUAL_START:... --> and <!-- MANUAL_END:... -->)."""
-
-        return prompt
-
-    def _preserve_manual_sections_in_generated(
-        self, generated_text: str, manual_sections: dict[str, str]
-    ) -> str:
-        """
-        Preserve manual sections in generated text
-
-        生成されたテキストに手動セクションを保持
-
-        Args:
-            generated_text: LLMで生成されたテキスト
-            manual_sections: 保持する手動セクション
-
-        Returns:
-            手動セクションが保持されたテキスト
-        """
-        lines = generated_text.split("\n")
-        new_lines = []
-        line_index = 0
-
-        while line_index < len(lines):
-            line = lines[line_index]
-            replaced = False
-
-            # 手動セクションの開始マーカーを検出
-            for section_name, section_content in manual_sections.items():
-                if f"<!-- MANUAL_START:{section_name} -->" in line:
-                    new_lines.append(line)
-                    new_lines.append("")
-                    # 既存の手動セクション内容を使用（思考過程を除外）
-                    cleaned_content = self._clean_manual_section_content(section_content)
-                    new_lines.append(cleaned_content)
-                    # 次のMANUAL_ENDまでスキップ
-                    line_index += 1
-                    while line_index < len(lines):
-                        if f"<!-- MANUAL_END:{section_name} -->" in lines[line_index]:
-                            new_lines.append("")
-                            new_lines.append(lines[line_index])
-                            line_index += 1
-                            replaced = True
-                            break
-                        line_index += 1
-                    if not replaced:
-                        new_lines.append("")
-                        new_lines.append(f"<!-- MANUAL_END:{section_name} -->")
-                    break
-
-            if not replaced:
-                new_lines.append(line)
-                line_index += 1
-
-        return "\n".join(new_lines)
-
-    def _clean_manual_section_content(self, content: str) -> str:
-        """
-        手動セクションの内容から思考過程を削除
-
-        Args:
-            content: 手動セクションの内容
-
-        Returns:
-            クリーンアップされた内容
-        """
-        # 思考過程のパターンを削除
-        lines = content.split("\n")
-        cleaned_lines = []
-
-        for line in lines:
-            # 思考過程のパターンを検出
-            if any(
-                pattern in line.lower()
-                for pattern in [
-                    "we need to",
-                    "thus final answer",
-                    "let's generate",
-                    "let's do",
-                    "but we need",
-                    "hence final answer",
-                    "thus final output",
-                    "i will produce",
-                    "i think",
-                    "ok i'll",
-                    "let's finalize",
-                    "but i think",
-                    "but we need to",
-                    "thus final answer will",
-                    "we should produce",
-                    "we will output",
-                    "we must produce",
-                    "thus the final",
-                    "but the actual",
-                    "so i will",
-                    "i'm going to",
-                    "i'm still not sure",
-                    "but it's enough",
-                    "let's output",
-                    "let's produce",
-                    "let's final answer",
-                ]
-            ):
-                continue
-
-            # マークダウンコードブロック内の思考過程をスキップ
-            if line.strip().startswith("```") and "markdown" in line.lower():
-                continue
-
-            cleaned_lines.append(line)
-
-        return "\n".join(cleaned_lines)
-
-    def _clean_llm_output(self, text: str) -> str:
-        """
-        LLMの出力から思考過程や試行錯誤の痕跡を削除
-
-        Args:
-            text: LLMで生成されたテキスト
-
-        Returns:
-            クリーンアップされたテキスト
-        """
-        if not text:
-            return text
-
-        lines = text.split("\n")
-        cleaned_lines = []
-        in_code_block = False
-        code_block_lang = None
-
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-
-            # コードブロックの開始/終了を検出
-            if line.strip().startswith("```"):
-                if not in_code_block:
-                    in_code_block = True
-                    code_block_lang = line.strip()[3:].strip().lower()
-                    # マークダウンコードブロック内の思考過程をスキップ
-                    if "markdown" in code_block_lang:
-                        i += 1
-                        # 次の```までスキップ
-                        while i < len(lines) and not lines[i].strip().startswith("```"):
-                            i += 1
-                        if i < len(lines):
-                            i += 1  # ```をスキップ
-                        in_code_block = False
-                        continue
-                    else:
-                        cleaned_lines.append(line)
-                        i += 1
-                        continue
-                else:
-                    in_code_block = False
-                    code_block_lang = None
-                    cleaned_lines.append(line)
-                    i += 1
-                    continue
-
-            # コードブロック内はそのまま保持
-            if in_code_block:
-                cleaned_lines.append(line)
-                i += 1
-                continue
-
-            # 思考過程のパターンを検出
-            line_lower = line.lower().strip()
-
-            # 特殊なマーカーパターン（最初にチェック）
-            if (
-                "<|channel|>" in line
-                or "<|message|>" in line
-                or "commentary/analysis" in line_lower
-            ):
-                i += 1
-                # 次の空行または通常のコンテンツまでスキップ
-                while (
-                    i < len(lines)
-                    and not lines[i].strip().startswith("##")
-                    and not lines[i].strip().startswith("<!--")
-                ):
-                    if lines[i].strip() and not any(
-                        pattern in lines[i].lower()
-                        for pattern in ["let's", "we need", "but we", "thus final"]
-                    ):
-                        break
-                    i += 1
-                continue
-
-            # 思考過程の開始パターン
-            thinking_patterns = [
-                "we need to",
-                "thus final answer",
-                "let's generate",
-                "let's do",
-                "but we need",
-                "hence final answer",
-                "thus final output",
-                "i will produce",
-                "i think",
-                "ok i'll",
-                "let's finalize",
-                "but i think",
-                "but we need to",
-                "thus final answer will",
-                "we should produce",
-                "we will output",
-                "we must produce",
-                "thus the final",
-                "but the actual",
-                "so i will",
-                "i'm going to",
-                "i'm still not sure",
-                "but it's enough",
-                "let's output",
-                "let's produce",
-                "let's final answer",
-                "but we need the final",
-                "thus final answer is",
-                "we now produce",
-                "this content includes",
-                "but we also mention",
-                "ok, i will",
-                "thus we must",
-                "but we need to ensure",
-                "let's generate:",
-                "we should produce final",
-                "thus final answer will be",
-                "but i'm still not sure",
-                "but i think it's",
-                "let's finalize:",
-                "we need the final answer",
-                "thus final answer:",
-                "ok i'll produce",
-                "we will not include",
-                "should we keep",
-                "possibly they want",
-                "but we must keep",
-                "but we might need",
-                "however, user wrote",
-                "also note",
-                "but the user",
-                "ok final output",
-                "ok. i'll generate",
-                "let's create final output",
-                "check that it doesn't",
-                "now i will provide",
-                "the user wants",
-                "they gave",
-                "so we should",
-                "so we can",
-                "also keep",
-                "we must not include",
-                "so final output",
-                "but we must also keep",
-                "we must only output",
-                "but we must",
-            ]
-
-            # 思考過程の行をスキップ
-            if any(pattern in line_lower for pattern in thinking_patterns):
-                i += 1
-                continue
-
-            # プレースホルダーや不完全な記述を検出
-            placeholder_patterns = [
-                "???",
-                "(??)",
-                "... ...",
-                "|  | |",
-                "---‐‐‐",
-                "continue",
-                "we should now",
-                "this content, while present",
-            ]
-
-            if any(pattern in line_lower for pattern in placeholder_patterns):
-                i += 1
-                continue
-
-            # 空行の連続を制限（3行以上は2行に）
-            if not line.strip():
-                if cleaned_lines and not cleaned_lines[-1].strip():
-                    if len(cleaned_lines) >= 2 and not cleaned_lines[-2].strip():
-                        i += 1
-                        continue
-
-            cleaned_lines.append(line)
-            i += 1
-
-        # 結果を結合
-        result = "\n".join(cleaned_lines)
-
-        # 手動マーカーを除去
-        result = re.sub(
-            r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", result
-        ).strip()
-
-        # 先頭と末尾の空行を削除
-        result = result.strip()
-
-        # 重複した説明を削除（同じ行が3回以上続く場合）
-        lines_result = result.split("\n")
-        deduplicated = []
-        prev_line = None
-        repeat_count = 0
-
-        for line in lines_result:
-            if line == prev_line:
-                repeat_count += 1
-                if repeat_count < 3:
-                    deduplicated.append(line)
-            else:
-                repeat_count = 0
-                deduplicated.append(line)
-            prev_line = line
-
-        return "\n".join(deduplicated)
-
-    def _validate_output(self, text: str) -> bool:
-        """
-        Validate LLM output to check for inappropriate content
-
-        Args:
-            text: Text to validate
-
-        Returns:
-            Whether validation passed
-        """
-        if not text or not text.strip():
-            return False
-
-        text_lower = text.lower()
-
-        # 特殊なマーカーパターンをチェック
-        if "<|channel|>" in text or "<|message|>" in text or "commentary/analysis" in text_lower:
-            logger.warning("特殊なマーカーパターンが検出されました")
-            return False
-
-        # 思考過程のパターンが含まれていないかチェック
-        thinking_patterns = [
-            "thus final answer",
-            "let's generate",
-            "but we need",
-            "i will produce",
-            "i think",
-            "let's finalize",
-            "we should produce",
-            "we will output",
-            "thus the final",
-            "i'm going to",
-            "let's output",
-            "let's produce",
-            "but i think it's",
-            "thus final answer will be",
-            "we will not include",
-            "should we keep",
-            "possibly they want",
-            "but we must keep",
-            "but we might need",
-            "however, user wrote",
-            "also note",
-            "but the user",
-            "ok final output",
-            "ok. i'll generate",
-            "let's create final output",
-            "check that it doesn't",
-            "now i will provide",
-            "the user wants",
-            "they gave",
-            "so we should",
-            "so we can",
-            "also keep",
-            "we must not include",
-            "so final output",
-            "but we must also keep",
-            "we must only output",
-            "but we must",
-        ]
-
-        for pattern in thinking_patterns:
-            if pattern in text_lower:
-                logger.warning(f"思考過程のパターンが検出されました: {pattern}")
-                return False
-
-        # プレースホルダーが含まれていないかチェック
-        placeholder_patterns = ["???", "(??)", "... ...", "|  | |", "---‐‐‐"]
-
-        for pattern in placeholder_patterns:
-            if pattern in text:
-                logger.warning(f"プレースホルダーが検出されました: {pattern}")
-                return False
-
-        # マークダウンコードブロック内に思考過程が含まれていないかチェック
-        lines = text.split("\n")
-        in_markdown_block = False
-        for line in lines:
-            if line.strip().startswith("```"):
-                lang = line.strip()[3:].strip().lower()
-                if "markdown" in lang:
-                    in_markdown_block = True
-                elif in_markdown_block:
-                    in_markdown_block = False
-            elif in_markdown_block:
-                if any(pattern in line.lower() for pattern in thinking_patterns):
-                    logger.warning("マークダウンコードブロック内に思考過程が検出されました")
-                    return False
-
-        return True
-
     def _extract_description_section(self, content: str) -> str:
         """
         Extract description section from content
@@ -1461,35 +746,3 @@ Be sure to preserve manual sections (<!-- MANUAL_START:... --> and <!-- MANUAL_E
                     dependencies["Go"] = deps
 
         return dependencies
-
-    def _collect_project_description(self) -> str | None:
-        """
-        Collect project description
-        """
-        collector = ProjectInfoCollector(self.project_root)
-        return collector.collect_project_description()
-
-    def _get_project_structure(self) -> list[str]:
-        """
-        Get project structure
-        """
-        structure = []
-        try:
-            for root, dirs, files in os.walk(self.project_root):
-                # 隠しディレクトリとキャッシュディレクトリを除外
-                dirs[:] = [
-                    d
-                    for d in dirs
-                    if not d.startswith(".") and d not in ["__pycache__", "node_modules", ".git"]
-                ]
-                level = root.replace(str(self.project_root), "").count(os.sep)
-                indent = "  " * level
-                structure.append(f"{indent}{os.path.basename(root)}/")
-                subindent = "  " * (level + 1)
-                for file in files:
-                    if not file.startswith(".") and file != ".DS_Store":
-                        structure.append(f"{subindent}{file}")
-        except Exception as e:
-            logger.warning(f"プロジェクト構造の取得に失敗しました: {e}")
-            structure = ["プロジェクト構造の取得に失敗しました"]
-        return structure

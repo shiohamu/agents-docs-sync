@@ -2,6 +2,7 @@
 設定管理モジュール
 """
 
+import logging
 from pathlib import Path
 import shutil
 from typing import Any
@@ -13,6 +14,28 @@ from .utils.file_utils import safe_read_yaml
 from .utils.logger import get_logger
 
 logger = get_logger("config_manager")
+
+
+def _configure_logging_level(debug_enabled: bool) -> None:
+    """デバッグ設定に基づいてログレベルを設定"""
+    level = logging.DEBUG if debug_enabled else logging.INFO
+
+    # 特定のロガーのレベルを設定
+    loggers_to_configure = [
+        "docgen",
+        "config_manager",
+        "llm_client",
+        "agentsgenerator",
+        "readmegenerator",
+    ]
+    for logger_name in loggers_to_configure:
+        logging.getLogger(logger_name).setLevel(level)
+
+    # 全てのハンドラーのレベルも設定
+    for logger_name in loggers_to_configure:
+        logger = logging.getLogger(logger_name)
+        for handler in logger.handlers:
+            handler.setLevel(level)
 
 
 class ConfigManager:
@@ -42,21 +65,24 @@ class ConfigManager:
         self._validate_config()
 
     def _load_config(self) -> dict[str, Any]:
-        """
-        設定ファイルを読み込む
-
-        Returns:
-            設定辞書。ファイルが存在しない場合はデフォルト設定を返す
-        """
+        """設定ファイルを読み込む"""
+        logger.info(f"Loading config from: {self.config_path}")
         if self.config_path.exists():
+            logger.info("Config file exists, reading...")
             config = safe_read_yaml(self.config_path)
             if config is not None:
+                logger.info("Config loaded successfully")
+                # デバッグ設定に基づいてログレベルを設定
+                debug_enabled = config.get("debug", {}).get("enabled", False)
+                _configure_logging_level(debug_enabled)
+                logger.debug(f"Debug mode: {debug_enabled}")
                 return config
             else:
                 logger.warning("設定ファイルの読み込みに失敗しました")
                 logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
         else:
+            logger.info("Config file does not exist, creating default")
             return self._create_default_config()
 
     def _create_default_config(self) -> dict[str, Any]:
@@ -105,6 +131,16 @@ class ConfigManager:
                     "enable_commit_message": True,
                 },
             },
+            "exclude": {
+                "directories": [],
+                "patterns": [],
+            },
+            "cache": {
+                "enabled": True,
+            },
+            "debug": {
+                "enabled": False,
+            },
         }
 
     def get_config(self) -> dict[str, Any]:
@@ -129,7 +165,11 @@ class ConfigManager:
             validated_config = DocgenConfig(**self.config)
             # バリデーション済みの設定をdictに戻す
             self.config = validated_config.model_dump()
+            # デバッグ設定に基づいてログレベルを設定
+            debug_enabled = self.config.get("debug", {}).get("enabled", False)
+            _configure_logging_level(debug_enabled)
         except ValidationError as e:
+            print(f"DEBUG: validation error: {e}")
             logger.warning(f"設定のバリデーションエラー: {e}")
             logger.info("デフォルト設定を使用します。")
             # デフォルト設定を使用

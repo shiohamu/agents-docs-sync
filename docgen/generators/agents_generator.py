@@ -13,21 +13,14 @@ from pydantic import ValidationError
 
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
-from ..collectors.project_info_collector import ProjectInfoCollector
 from ..models import AgentsDocument, ProjectInfo
-from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
-from ..utils.outlines_utils import (
-    clean_llm_output,
-    create_outlines_model,
-    should_use_outlines,
-    validate_output,
-)
+from .base_generator import BaseGenerator
 
 logger = get_logger("agents_generator")
 
 
-class AgentsGenerator:
+class AgentsGenerator(BaseGenerator):
     """AGENTS.md生成クラス（OpenAI仕様準拠）"""
 
     def __init__(
@@ -46,156 +39,68 @@ class AgentsGenerator:
             config: 設定辞書
             package_managers: 検出されたパッケージマネージャの辞書
         """
-        self.project_root: Path = project_root
-        self.languages: list[str] = languages
-        self.config: dict[str, Any] = config
-        self.package_managers: dict[str, str] = package_managers or {}
-        self.output_path: Path = Path(config.get("output", {}).get("agents_doc", "AGENTS.md"))
-        if not self.output_path.is_absolute():
-            self.output_path = project_root / self.output_path
+        super().__init__(project_root, languages, config, package_managers)
 
-        # プロジェクト情報収集器
-        self.collector: ProjectInfoCollector = ProjectInfoCollector(project_root, package_managers)
+    def _get_output_path(self, config: dict[str, Any]) -> Path:
+        output_path = Path(config.get("output", {}).get("agents_doc", "AGENTS.md"))
+        if not output_path.is_absolute():
+            output_path = self.project_root / output_path
+        return output_path
 
-        # AGENTS設定
-        self.agents_config: dict[str, Any] = config.get("agents", {})
+    def _get_mode_key(self) -> str:
+        return "agents_mode"
 
-    def _extract_manual_sections(self) -> dict[str, str]:
+    def _get_document_type(self) -> str:
+        return "AGENTS.md"
+
+    def _get_structured_model(self):
+        return AgentsDocument
+
+    def _get_project_overview_section(self, content: str) -> str:
+        return self._extract_description_section(content)
+
+    def _extract_description_section(self, content: str) -> str:
         """
-        既存のAGENTS.mdから手動セクションを抽出
-
-        Returns:
-            セクション名をキー、手動内容を値とする辞書
-        """
-        manual_sections = {}
-        if not self.output_path.exists():
-            return manual_sections
-
-        try:
-            content = self.output_path.read_text(encoding="utf-8")
-            lines = content.split("\n")
-
-            current_section = None
-            section_content = []
-            in_manual = False
-
-            for line in lines:
-                if line.strip().startswith("<!-- MANUAL_START:"):
-                    # セクション開始
-                    section_name = line.strip().split(":", 1)[1].split("-->", 1)[0].strip()
-                    current_section = section_name
-                    section_content = []
-                    in_manual = True
-                elif line.strip().startswith("<!-- MANUAL_END:") and current_section:
-                    # セクション終了
-                    if section_content:
-                        manual_sections[current_section] = "\n".join(section_content).strip()
-                    current_section = None
-                    in_manual = False
-                elif in_manual and current_section:
-                    section_content.append(line)
-
-        except Exception as e:
-            logger.warning(f"手動セクションの抽出に失敗しました: {e}")
-
-        return manual_sections
-
-    def _merge_manual_sections(self, markdown: str, manual_sections: dict[str, str]) -> str:
-        """
-        生成されたマークダウンに手動セクションをマージ
+        Extract description section from content
 
         Args:
-            markdown: 生成されたマークダウン
-            manual_sections: 手動セクションの辞書
+            content: README content
 
         Returns:
-            マージされたマークダウン
+            Description section text
         """
-        lines = markdown.split("\n")
-        result = []
-        i = 0
+        lines = content.split("\n")
+        description_lines = []
+        in_description = False
 
-        while i < len(lines):
-            line = lines[i]
-            result.append(line)
+        for line in lines:
+            if "<!-- MANUAL_START:description -->" in line:
+                in_description = True
+                continue
+            elif "<!-- MANUAL_END:description -->" in line:
+                break
+            elif in_description:
+                description_lines.append(line)
 
-            # MANUAL_STARTマーカーを見つけたら、手動内容を挿入
-            if line.strip().startswith("<!-- MANUAL_START:"):
-                section_name = line.strip().split(":", 1)[1].split("-->", 1)[0].strip()
-                if section_name in manual_sections:
-                    # MANUAL_STARTの次の空行をスキップ
-                    i += 1
-                    if i < len(lines) and lines[i].strip() == "":
-                        i += 1
-                    # 手動内容を挿入
-                    manual_content = manual_sections[section_name]
-                    result.extend(manual_content.split("\n"))
-                    # MANUAL_ENDまでスキップ
-                    while i < len(lines) and not lines[i].strip().startswith("<!-- MANUAL_END:"):
-                        i += 1
-                    if i < len(lines):
-                        result.append(lines[i])  # MANUAL_ENDを追加
-                else:
-                    # 手動セクションがない場合、次の行を処理
-                    pass
-            i += 1
+        return "\n".join(description_lines)
 
-        return "\n".join(result)
+    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
+        prompt = f"""以下のプロジェクト情報を基に、AIコーディングエージェント向けのAGENTS.mdドキュメントを生成してください。
 
-    def generate(self) -> bool:
-        """
-        AGENTS.mdを生成
+{self._format_project_info_for_prompt(project_info)}
 
-        Returns:
-            成功したかどうか
-        """
-        try:
-            # 出力ディレクトリを作成
-            self.output_path.parent.mkdir(parents=True, exist_ok=True)
+以下のセクションを含めてください:
+1. プロジェクト概要（使用技術を含む）
+2. 開発環境のセットアップ（前提条件、依存関係のインストール、LLM環境のセットアップ）
+3. ビルドおよびテスト手順
+4. コーディング規約
+5. プルリクエストの手順
 
-            # プロジェクト情報を収集
-            project_info = self.collector.collect_all()
+重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
+マークダウン形式で、構造化された明確なドキュメントを作成してください。
+手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
 
-            # マークダウンを生成
-            markdown = self._generate_markdown(project_info)
-
-            # 既存の手動セクションを保持
-            manual_sections = self._extract_manual_sections()
-            if manual_sections:
-                markdown = self._merge_manual_sections(markdown, manual_sections)
-
-            # ファイルに書き込み
-            with open(self.output_path, "w", encoding="utf-8") as f:
-                f.write(markdown)
-
-            return True
-        except Exception as e:
-            logger.error(f"AGENTS.md生成に失敗しました: {e}", exc_info=True)
-            return False
-
-    def _generate_markdown(self, project_info: ProjectInfo) -> str:
-        """
-        プロジェクト情報からマークダウンを生成
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            マークダウンの文字列
-        """
-        # 生成モードを取得（デフォルトは'template'）
-        generation_config = self.agents_config.get("generation", {})
-        mode = generation_config.get("agents_mode", "template")
-
-        if mode == "llm":
-            # LLM完全生成
-            return self._generate_with_llm(project_info)
-        elif mode == "hybrid":
-            # ハイブリッド生成
-            return self._generate_hybrid(project_info)
-        else:
-            # テンプレート生成（デフォルト）
-            return self._generate_template(project_info)
+        return prompt
 
     def _generate_template(self, project_info: ProjectInfo) -> str:
         """
@@ -290,316 +195,6 @@ class AgentsGenerator:
                 exc_info=True,
             )
             return self._generate_template(project_info)
-
-    def _should_use_outlines(self) -> bool:
-        """
-        Outlinesを使用するかどうかを判定
-
-        Returns:
-            Outlinesを使用するかどうか
-        """
-        # 設定でOutlinesが有効になっているかチェック
-        return should_use_outlines(self.config)
-
-    def _get_llm_client_with_fallback(self) -> Any:
-        """
-        LLMクライアントを取得（フォールバック付き）
-
-        Returns:
-            LLMクライアント（取得できない場合はNone）
-        """
-        llm_mode = self.agents_config.get("llm_mode", "api")
-        preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-        return LLMClientFactory.create_client_with_fallback(
-            self.agents_config, preferred_mode=preferred_mode
-        )
-
-    def _generate_with_outlines(self, project_info: ProjectInfo) -> str:
-        """
-        Outlinesを使用して構造化されたAGENTS.mdを生成
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            マークダウンの文字列
-        """
-        try:
-            # LLMクライアントを取得
-            client = self._get_llm_client_with_fallback()
-
-            if not client:
-                logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレート生成にフォールバックします。"
-                )
-                return self._generate_template(project_info)
-
-            # Outlinesモデルを作成
-            outlines_model = self._create_outlines_model(client)
-
-            # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info)
-
-            # 構造化出力モデルで生成
-            logger.info("Outlinesを使用して構造化されたAGENTS.mdを生成中...")
-            structured_data = outlines_model(prompt, AgentsDocument)
-
-            # 構造化データをマークダウンに変換
-            markdown = self._convert_structured_data_to_markdown(structured_data, project_info)
-
-            return markdown
-
-        except Exception as e:
-            logger.error(
-                f"Outlines生成中にエラーが発生しました: {e}。従来のLLM生成にフォールバックします。",
-                exc_info=True,
-            )
-            return self._generate_with_llm_legacy(project_info)
-
-    def _create_outlines_model(self, client):
-        """
-        Outlinesモデルを作成
-
-        Args:
-            client: LLMクライアント
-
-        Returns:
-            Outlinesモデル
-        """
-        return create_outlines_model(client)
-
-    def _generate_with_llm_legacy(self, project_info: ProjectInfo) -> str:
-        """
-        従来のLLM生成（Outlinesなし）
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            マークダウンの文字列
-        """
-        try:
-            # LLMクライアントを取得
-            client = self._get_llm_client_with_fallback()
-
-            if not client:
-                logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレート生成にフォールバックします。"
-                )
-                return self._generate_template(project_info)
-
-            # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info)
-
-            # システムプロンプト
-            system_prompt = """あなたは技術ドキュメント作成の専門家です。
-AIコーディングエージェントがプロジェクトで効果的に作業するためのAGENTS.mdドキュメントを生成してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
-
-            # LLMで生成
-            logger.info("LLMを使用してAGENTS.mdを生成中...")
-            generated_text = client.generate(prompt, system_prompt=system_prompt)
-
-            if generated_text:
-                # LLM出力をクリーンアップ
-                cleaned_text = clean_llm_output(generated_text)
-
-                # 出力を検証
-                if not validate_output(cleaned_text):
-                    logger.warning(
-                        "LLM出力の検証に失敗しました。テンプレート生成にフォールバックします。"
-                    )
-                    return self._generate_template(project_info)
-
-                # 生成されたテキストにタイムスタンプを追加
-                lines = cleaned_text.split("\n")
-                # フッターを追加（既に含まれていない場合）
-                if not any("自動生成されています" in line for line in lines):
-                    lines.append("")
-                    lines.append(
-                        f"*このドキュメントは自動生成されています。最終更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
-                    )
-                return "\n".join(lines)
-            else:
-                logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
-                return self._generate_template(project_info)
-
-        except Exception as e:
-            logger.error(
-                f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
-                exc_info=True,
-            )
-            return self._generate_template(project_info)
-
-    def _generate_hybrid(self, project_info: ProjectInfo) -> str:
-        """
-        テンプレートとLLMを組み合わせて生成
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            マークダウンの文字列
-        """
-        # まずテンプレートを生成
-        template_content = self._generate_template(project_info)
-
-        try:
-            # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
-
-            if not client:
-                logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
-                )
-                return template_content
-
-            # プロジェクト概要セクションのみLLMで改善
-            prompt = f"""以下のプロジェクト情報を基に、AGENTS.mdの「プロジェクト概要」セクションの内容を改善してください。
-既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
-
-プロジェクト情報:
-{self._format_project_info_for_prompt(project_info)}
-
-既存のテンプレート生成内容:
-{self._generate_project_overview(project_info)}
-
-改善されたプロジェクト概要の内容をマークダウン形式で出力してください。
-ヘッダー（## プロジェクト概要）は含めないでください。内容のみを出力してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-手動セクション（<!-- MANUAL_START:description --> と <!-- MANUAL_END:description -->）は保持してください。"""
-
-            system_prompt = """あなたは技術ドキュメント作成の専門家です。プロジェクト概要を明確で有用な形で記述してください。
-最終的な出力のみを生成し、思考過程や試行錯誤の痕跡を含めないでください。"""
-
-            logger.info("LLMを使用してプロジェクト概要セクションを改善中...")
-            improved_overview = client.generate(prompt, system_prompt=system_prompt)
-
-            if improved_overview:
-                # LLM出力をクリーンアップ
-                cleaned_overview = clean_llm_output(improved_overview)
-
-                # 出力を検証
-                if not validate_output(cleaned_overview):
-                    logger.warning("LLM出力の検証に失敗しました。テンプレートのみを使用します。")
-                    return template_content
-
-                # テンプレートのプロジェクト概要セクションを置き換え
-                lines = template_content.split("\n")
-                new_lines = []
-                skip_until_end = False
-
-                for _i, line in enumerate(lines):
-                    if "## プロジェクト概要" in line:
-                        new_lines.append(line)
-                        new_lines.append("")
-                        # 改善された概要を挿入
-                        new_lines.extend(cleaned_overview.split("\n"))
-                        skip_until_end = True
-                    elif skip_until_end and line.startswith("---"):
-                        skip_until_end = False
-                        new_lines.append("")
-                        new_lines.append(line)
-                    elif not skip_until_end:
-                        new_lines.append(line)
-
-                return "\n".join(new_lines)
-            else:
-                return template_content
-
-        except Exception as e:
-            logger.warning(
-                f"ハイブリッド生成中にエラーが発生しました: {e}。テンプレートのみを使用します。",
-                exc_info=True,
-            )
-            return template_content
-
-    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
-        """
-        LLM用のプロンプトを作成
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            プロンプト文字列
-        """
-        prompt = f"""以下のプロジェクト情報を基に、AIコーディングエージェント向けのAGENTS.mdドキュメントを生成してください。
-
-{self._format_project_info_for_prompt(project_info)}
-
-以下のセクションを含めてください:
-1. プロジェクト概要（使用技術を含む）
-2. 開発環境のセットアップ（前提条件、依存関係のインストール、LLM環境のセットアップ）
-3. ビルドおよびテスト手順
-4. コーディング規約
-5. プルリクエストの手順
-
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
-
-        return prompt
-
-    def _format_project_info_for_prompt(self, project_info: ProjectInfo) -> str:
-        """
-        プロジェクト情報をプロンプト用にフォーマット
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            フォーマットされた文字列
-        """
-        lines = []
-        lines.append(f"プロジェクト名: {self.project_root.name}")
-        lines.append(f"使用言語: {', '.join(self.languages) if self.languages else '不明'}")
-
-        description = project_info.description
-        if description:
-            lines.append(f"説明: {description}")
-
-        dependencies = project_info.dependencies or {}
-        if dependencies:
-            lines.append("依存関係:")
-            for dep_type, deps in dependencies.items():
-                lines.append(f"  - {dep_type}: {', '.join(deps[:10])}")
-
-        build_commands = project_info.get("build_commands", [])
-        if build_commands:
-            lines.append("ビルドコマンド:")
-            for cmd in build_commands:
-                lines.append(f"  - {cmd}")
-
-        test_commands = project_info.get("test_commands", [])
-        if test_commands:
-            lines.append("テストコマンド:")
-            for cmd in test_commands:
-                lines.append(f"  - {cmd}")
-
-        coding_standards = project_info.get("coding_standards", {})
-        if coding_standards:
-            lines.append("コーディング規約:")
-            if coding_standards.get("formatter"):
-                lines.append(f"  - フォーマッター: {coding_standards['formatter']}")
-            if coding_standards.get("linter"):
-                lines.append(f"  - リンター: {coding_standards['linter']}")
-            if coding_standards.get("style_guide"):
-                lines.append(f"  - スタイルガイド: {coding_standards['style_guide']}")
-
-        custom_instructions = self.agents_config.get("custom_instructions")
-        if custom_instructions:
-            lines.append(f"カスタム指示: {custom_instructions}")
-
-        return "\n".join(lines)
 
     def _generate_project_overview(self, project_info: ProjectInfo) -> list[str]:
         """プロジェクト概要セクションを生成"""
@@ -731,8 +326,8 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("")
 
         llm_mode = self.agents_config.get("llm_mode", "both")
-        api_config = self.agents_config.get("api", {})
-        local_config = self.agents_config.get("local", {})
+        api_config = self.agents_config.get("api") or {}
+        local_config = self.agents_config.get("local") or {}
 
         if llm_mode in ["api", "both"]:
             lines.append("#### APIを使用する場合")
@@ -993,27 +588,41 @@ AIコーディングエージェントがプロジェクトで効果的に作業
         lines.append("")
 
         # 開発環境のセットアップ
-        lines.extend(self._generate_setup_section_from_structured(data.setup_instructions))
+        lines.extend(
+            self._generate_setup_section_from_structured(
+                data.setup_instructions.model_dump() if data.setup_instructions else {}
+            )
+        )
         lines.append("")
         lines.append("---")
         lines.append("")
 
         # ビルドおよびテスト手順
         lines.extend(
-            self._generate_build_test_section_from_structured(data.build_test_instructions)
+            self._generate_build_test_section_from_structured(
+                data.build_test_instructions.model_dump() if data.build_test_instructions else {}
+            )
         )
         lines.append("")
         lines.append("---")
         lines.append("")
 
         # コーディング規約
-        lines.extend(self._generate_coding_standards_from_structured(data.coding_standards))
+        lines.extend(
+            self._generate_coding_standards_from_structured(
+                data.coding_standards.model_dump() if data.coding_standards else {}
+            )
+        )
         lines.append("")
         lines.append("---")
         lines.append("")
 
         # プルリクエストの手順
-        lines.extend(self._generate_pr_section_from_structured(data.pr_guidelines))
+        lines.extend(
+            self._generate_pr_section_from_structured(
+                data.pr_guidelines.model_dump() if data.pr_guidelines else {}
+            )
+        )
         lines.append("")
         lines.append("---")
         lines.append("")
@@ -1032,7 +641,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return "\n".join(lines)
 
-    def _generate_setup_section_from_structured(self, setup_data: dict[str, Any]) -> list[str]:
+    def _generate_setup_section_from_structured(self, setup_data: Any) -> list[str]:
         """構造化データからセットアップセクションを生成"""
         lines = []
         lines.append("## 開発環境のセットアップ")
@@ -1063,9 +672,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_build_test_section_from_structured(
-        self, build_test_data: dict[str, Any]
-    ) -> list[str]:
+    def _generate_build_test_section_from_structured(self, build_test_data: Any) -> list[str]:
         """構造化データからビルド/テストセクションを生成"""
         lines = []
         lines.append("## ビルドおよびテスト手順")
@@ -1143,9 +750,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_coding_standards_from_structured(
-        self, standards_data: dict[str, Any]
-    ) -> list[str]:
+    def _generate_coding_standards_from_structured(self, standards_data: Any) -> list[str]:
         """構造化データからコーディング規約セクションを生成"""
         lines = []
         lines.append("## コーディング規約")
@@ -1164,7 +769,7 @@ AIコーディングエージェントがプロジェクトで効果的に作業
 
         return lines
 
-    def _generate_pr_section_from_structured(self, pr_data: dict[str, Any]) -> list[str]:
+    def _generate_pr_section_from_structured(self, pr_data: Any) -> list[str]:
         """構造化データからプルリクエストセクションを生成"""
         lines = []
         lines.append("## プルリクエストの手順")

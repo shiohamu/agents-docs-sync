@@ -91,13 +91,6 @@ class ReadmeConfig(BaseModel):
     project_structure: list[str] | None = Field(default=None, description="プロジェクト構造の説明")
     build_commands: list[str] | None = Field(default=None, description="ビルドコマンド")
     test_commands: list[str] | None = Field(default=None, description="テストコマンド")
-    manual_sections: dict[str, Any] | None = Field(
-        default=None, description="手動で記述されたセクション"
-    )
-
-    project_structure: list[str] | None = Field(default=None, description="プロジェクト構造の説明")
-    build_commands: list[str] | None = Field(default=None, description="ビルドコマンド")
-    test_commands: list[str] | None = Field(default=None, description="テストコマンド")
     manual_sections: dict[str, str] | None = Field(
         default=None, description="手動で記述されたセクション"
     )
@@ -135,11 +128,54 @@ class AgentsGenerationConfig(BaseModel):
     enable_commit_message: bool = True
 
 
+class LLMConfig(BaseModel):
+    """LLM設定モデル"""
+
+    provider: str | None = Field(
+        default=None, description="LLMプロバイダー (openai, anthropic, ollama, local)"
+    )
+    model: str | None = Field(default=None, description="モデル名")
+    api_key: str | None = Field(default=None, description="APIキー")
+    api_key_env: str | None = Field(default=None, description="APIキー環境変数名")
+    base_url: str | None = Field(default=None, description="ベースURL")
+    endpoint: str | None = Field(default=None, description="エンドポイントURL")
+    timeout: int = Field(default=30, description="タイムアウト秒数")
+    max_retries: int = Field(default=3, description="最大リトライ回数")
+    retry_delay: float = Field(default=1.0, description="リトライ遅延秒数")
+    temperature: float | None = Field(default=None, description="温度パラメータ")
+    max_tokens: int | None = Field(default=None, description="最大トークン数")
+
+
 class AgentsConfigSection(BaseModel):
     """Agents configuration section model."""
 
     llm_mode: str = "both"
     generation: AgentsGenerationConfig = Field(default_factory=AgentsGenerationConfig)
+    api: LLMConfig | None = Field(default=None, description="API LLM設定")
+    local: LLMConfig | None = Field(default=None, description="ローカルLLM設定")
+    coding_standards: dict[str, Any] | None = Field(
+        default=None, description="コーディング規約設定"
+    )
+    custom_instructions: str | None = Field(default=None, description="プロジェクト固有の指示")
+
+
+class ExcludeConfig(BaseModel):
+    """Exclude configuration model."""
+
+    directories: list[str] = Field(default_factory=list)
+    patterns: list[str] = Field(default_factory=list)
+
+
+class CacheConfig(BaseModel):
+    """Cache configuration model."""
+
+    enabled: bool = True
+
+
+class DebugConfig(BaseModel):
+    """Debug configuration model."""
+
+    enabled: bool = False
 
 
 class DocgenConfig(BaseModel):
@@ -149,6 +185,9 @@ class DocgenConfig(BaseModel):
     output: OutputConfig = Field(default_factory=OutputConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)
     agents: AgentsConfigSection = Field(default_factory=AgentsConfigSection)
+    exclude: ExcludeConfig = Field(default_factory=ExcludeConfig)
+    cache: CacheConfig = Field(default_factory=CacheConfig)
+    debug: DebugConfig = Field(default_factory=DebugConfig)
 
 
 class ProjectInfo(BaseModel):
@@ -216,24 +255,6 @@ class APIInfo(BaseModel):
     decorators: list[str] | None = Field(default=None, description="デコレータ")
     visibility: str | None = Field(default=None, description="可視性 (public, private, protected)")
     language: str = Field(description="プログラミング言語")
-
-
-class LLMConfig(BaseModel):
-    """LLM設定モデル"""
-
-    provider: str | None = Field(
-        default=None, description="LLMプロバイダー (openai, anthropic, ollama, local)"
-    )
-    model: str | None = Field(default=None, description="モデル名")
-    api_key: str | None = Field(default=None, description="APIキー")
-    api_key_env: str | None = Field(default=None, description="APIキー環境変数名")
-    base_url: str | None = Field(default=None, description="ベースURL")
-    endpoint: str | None = Field(default=None, description="エンドポイントURL")
-    timeout: int = Field(default=30, description="タイムアウト秒数")
-    max_retries: int = Field(default=3, description="最大リトライ回数")
-    retry_delay: float = Field(default=1.0, description="リトライ遅延秒数")
-    temperature: float | None = Field(default=None, description="温度パラメータ")
-    max_tokens: int | None = Field(default=None, description="最大トークン数")
 
 
 class LLMClientConfig(BaseModel):

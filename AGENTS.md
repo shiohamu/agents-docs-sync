@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-23 15:48:31
+自動生成日時: 2025-11-24 12:21:00
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -9,28 +9,25 @@
 ## プロジェクト概要
 
 <!-- MANUAL_START:description -->
-このリポジトリは、コミットが行われるたびに自動で以下の処理を実行するパイプラインです。
+`agents-docs-sync` は、Python と Shell スクリプトで構成された GitHub Actions ベースの CI/CD パイプラインです。
 
-1. **テスト実行**
-   - Python テスト：`uv run pytest`（カバレッジ付き）
-   - JavaScript テスト：`npm test`
-   - 詳細表示と短いトレースバックでの再確認: `uv run pytest tests/ -v --tb=short`
+主な機能は以下の通り：
 
-2. **ドキュメント生成**
-   ビルドコマンドは `uv run python3 docgen/docgen.py`。
-   これにより、YAML 定義から自動的に Markdown ドキュメントが作成されます（依存ライブラリ：`pyyaml>=6.0.3`）。
+1. **コミットごとに自動実行**：Push あるいは Pull Request が発生するとワークフローが起動します。
+2. **テスト実行**：
+   - Python 用テスト: `uv run pytest`（カバレッジ・モックも併用）
+   - JavaScript/Node.js テスト（プロジェクトに含まれる場合）: `npm test`
+3. **ドキュメント生成**：Python スクリプト `docgen/docgen.py` を実行し、最新の API ドキュメントを作成します。
+4. **AGENTS.md の自動更新**：生成した情報から `AGENTS.md` を差分コミットして PR に反映させます。
 
-3. **AGENTS.md の更新**
-   - 自動生成されたドキュメントを元に AGENTS.md 内の該当セクションを書き換え、常に最新状態を保持します。
+### 依存関係
 
-### 主要な技術・ツール
+| ランタイム | パッケージ |
+|-----------|------------|
+| Python    | pyyaml>=6.0.3, pytest>=7.4.0, pytest-cov>=4.1.0, pytest-mock>=3.11.1 |
 
-- **言語**: Python, Shell
-- **依存関係**
-  - `pyyaml>=6.0.3`
-  - `pytest>=7.4.0`
-  - `pytest-cov>=4.1.0`
-  - `pytest-mock>=3.11.1`
+### ビルド・テストコマンド
+
 - **ビルド**: `uv run python3 docgen/docgen.py`
 - **テスト**: 上記の pytest と npm test
 - **コーディング規約**: Ruff リンター
@@ -97,9 +94,8 @@ uv sync
 
 1. **ローカルLLMのインストール**
 
-   - Ollamaをインストール: https://ollama.ai/
-   - モデルをダウンロード: `ollama pull llama3`
-   - サービスを起動: `ollama serve`
+   - LM Studioをインストール: https://lmstudio.ai/
+   - モデルをダウンロードして起動
    - ベースURL: http://localhost:11434
 
 2. **ローカルLLM使用時の注意事項**
@@ -171,4 +167,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このドキュメントは自動生成されています。最終更新: 2025-11-23 15:48:31*
+*このドキュメントは自動生成されています。最終更新: 2025-11-24 12:21:00*
