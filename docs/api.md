@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-24 12:20:19
+自動生成日時: 2025-11-24 12:34:07
 
 ---
 
@@ -332,7 +332,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/config_manager.py:179*
+*定義場所: docgen/config_manager.py:184*
 
 ---
 
@@ -1071,7 +1071,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:23*
+*定義場所: docgen/generators/agents_generator.py:22*
 
 ---
 
@@ -1094,7 +1094,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:26*
+*定義場所: docgen/generators/agents_generator.py:25*
 
 ---
 
@@ -3497,6 +3497,148 @@ Returns:
     ロガー
 
 *定義場所: docgen/utils/logger.py:62*
+
+---
+
+
+## docgen/utils/markdown_utils.py
+
+### extract_project_description
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def extract_project_description(project_root: Path, project_info_description: str | None, exclude_readme_path: Path | None) -> str:
+```
+
+**説明**:
+
+Extract project description from README.md or project info.
+
+Args:
+    project_root: Project root directory
+    project_info_description: Description from project info (fallback)
+    exclude_readme_path: README path to exclude (to prevent circular reference)
+
+Returns:
+    Project description text
+
+*定義場所: docgen/utils/markdown_utils.py:7*
+
+---
+
+### format_commands_with_package_manager
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def format_commands_with_package_manager(commands: list[str], package_managers: dict[str, str], language: str, max_commands: int) -> list[str]:
+```
+
+**説明**:
+
+Format build/test commands with package manager awareness.
+
+Args:
+    commands: List of commands to format
+    package_managers: Dict of language -> package manager
+    language: Programming language
+    max_commands: Maximum number of commands to display
+
+Returns:
+    Formatted command lines
+
+*定義場所: docgen/utils/markdown_utils.py:48*
+
+---
+
+### MarkdownSectionBuilder
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class MarkdownSectionBuilder:
+```
+
+**説明**:
+
+Utility class for building markdown sections.
+
+*定義場所: docgen/utils/markdown_utils.py:83*
+
+---
+
+### build_section
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def build_section(header: str, content_lines: list[str]) -> list[str]:
+```
+
+**説明**:
+
+Build a markdown section with header and content.
+
+Args:
+    header: Section header (without ##)
+    content_lines: Content lines
+
+Returns:
+    Formatted markdown lines
+
+*定義場所: docgen/utils/markdown_utils.py:87*
+
+---
+
+### build_code_block
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def build_code_block(commands: list[str], language: str) -> list[str]:
+```
+
+**説明**:
+
+Build a code block with commands.
+
+Args:
+    commands: List of commands
+    language: Code block language
+
+Returns:
+    Formatted code block lines
+
+*定義場所: docgen/utils/markdown_utils.py:104*
+
+---
+
+### clean_llm_output_advanced
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def clean_llm_output_advanced(text: str) -> str:
+```
+
+**説明**:
+
+Advanced LLM output cleaning with thinking process removal and code block handling.
+
+Args:
+    text: LLM generated text to clean
+
+Returns:
+    Cleaned text with thinking processes removed
+
+*定義場所: docgen/utils/markdown_utils.py:124*
 
 ---
 

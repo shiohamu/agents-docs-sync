@@ -169,7 +169,12 @@ class ConfigManager:
             debug_enabled = self.config.get("debug", {}).get("enabled", False)
             _configure_logging_level(debug_enabled)
         except ValidationError as e:
-            print(f"DEBUG: validation error: {e}")
+            print("設定ファイルにエラーがあります。以下の問題を修正してください:")
+            for error in e.errors():
+                field_path = ".".join(str(loc) for loc in error["loc"])
+                message = error["msg"]
+                print(f"  - {field_path}: {message}")
+            print("デフォルト設定を使用します。")
             logger.warning(f"設定のバリデーションエラー: {e}")
             logger.info("デフォルト設定を使用します。")
             # デフォルト設定を使用

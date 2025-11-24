@@ -67,35 +67,13 @@ class ReadmeGenerator(BaseGenerator):
         lines.append("## 概要")
         lines.append("")
 
-        # READMEから説明を取得（優先）
-        readme_path = self.project_root / "README.md"
-        description_found = False
-        if readme_path.exists() and readme_path != self.readme_path:
-            readme_content = readme_path.read_text(encoding="utf-8")
-            # 最初の段落を抽出（簡易版）
-            for line in readme_content.split("\n"):
-                line_stripped = line.strip()
-                if (
-                    line_stripped
-                    and not line_stripped.startswith("#")
-                    and not line_stripped.startswith("<!--")
-                ):
-                    # 汎用的なテンプレート文をスキップ
-                    if "このプロジェクトの説明をここに記述してください" not in line_stripped:
-                        lines.append(line)
-                        description_found = True
-                        break
+        # プロジェクト説明を取得
+        from ..utils.markdown_utils import extract_project_description
 
-        # READMEに説明がない場合、プロジェクト情報から取得
-        if not description_found:
-            description = project_info.description
-            if description:
-                lines.append(description)
-                description_found = True
-
-        # 説明が見つからない場合のデフォルトメッセージ
-        if not description_found:
-            lines.append("このプロジェクトの説明をここに記述してください。")
+        description = extract_project_description(
+            self.project_root, project_info.description, self.readme_path
+        )
+        lines.append(description)
 
         return lines
 
@@ -112,18 +90,12 @@ class ReadmeGenerator(BaseGenerator):
                 lines.append("### ビルド")
                 lines.append("")
                 lines.append("```bash")
-                for cmd in build_commands[:5]:  # 最大5個まで表示
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    display_cmd = cmd
-                    if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if cmd.startswith("python") and not cmd.startswith("uv run"):
-                            display_cmd = f"uv run {cmd}"
-                    lines.append(display_cmd)
-                if len(build_commands) > 5:
-                    lines.append("# ... その他のビルドコマンド")
+                from ..utils.markdown_utils import format_commands_with_package_manager
+
+                formatted_commands = format_commands_with_package_manager(
+                    build_commands, self.package_managers, "python"
+                )
+                lines.extend(formatted_commands)
                 lines.append("```")
                 lines.append("")
 
@@ -131,20 +103,10 @@ class ReadmeGenerator(BaseGenerator):
                 lines.append("### テスト")
                 lines.append("")
                 lines.append("```bash")
-                for cmd in test_commands[:5]:  # 最大5個まで表示
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    display_cmd = cmd
-                    if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if (
-                            cmd.startswith("python") or cmd.startswith("pytest")
-                        ) and not cmd.startswith("uv run"):
-                            display_cmd = f"uv run {cmd}"
-                    lines.append(display_cmd)
-                if len(test_commands) > 5:
-                    lines.append("# ... その他のテストコマンド")
+                formatted_commands = format_commands_with_package_manager(
+                    test_commands, self.package_managers, "python"
+                )
+                lines.extend(formatted_commands)
                 lines.append("```")
                 lines.append("")
 
