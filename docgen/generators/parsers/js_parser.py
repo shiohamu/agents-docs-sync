@@ -223,4 +223,8 @@ class JSParser(BaseParser):
 
     def get_supported_extensions(self) -> list[str]:
         """サポートする拡張子を返す"""
-        return [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]
+        from ...detectors.detector_patterns import DetectorPatterns
+
+        return DetectorPatterns.get_source_extensions(
+            "javascript"
+        ) + DetectorPatterns.get_source_extensions("typescript")

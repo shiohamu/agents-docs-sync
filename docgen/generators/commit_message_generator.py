@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 from typing import Any
 
+from ..utils.exceptions import ErrorMessages
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
 
@@ -122,7 +123,7 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
                 return stat_output
 
         except FileNotFoundError:
-            logger.error("gitコマンドが見つかりません。")
+            logger.error(ErrorMessages.GIT_COMMAND_NOT_FOUND)
             return None
         except Exception as e:
             logger.error(f"ステージング済みの変更の取得中にエラーが発生しました: {e}")

@@ -98,18 +98,9 @@ class BaseParser(ABC):
             全API情報のリスト
         """
         if exclude_dirs is None:
-            exclude_dirs = [
-                ".git",
-                "docgen",
-                "__pycache__",
-                "node_modules",
-                ".venv",
-                "venv",
-                "htmlcov",
-                ".pytest_cache",
-                "dist",
-                "build",
-            ]
+            from ...detectors.detector_patterns import DetectorPatterns
+
+            exclude_dirs = list(DetectorPatterns.EXCLUDE_DIRS) + ["docgen", "venv"]
 
         # キャッシュの設定
         effective_use_cache = use_cache and cache_manager is not None

@@ -9,6 +9,7 @@ import re
 from typing import Any
 
 from ..models import ProjectInfo
+from ..utils.file_utils import safe_read_file, safe_read_json
 
 
 class ProjectInfoCollector:
@@ -93,22 +94,16 @@ class ProjectInfoCollector:
                         commands.append(command)
 
         # package.json から収集
-        package_json = self.project_root / "package.json"
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "scripts" in data:
-                        pm = self.package_managers.get("javascript", "npm")
-                        for script_name, script_cmd in data["scripts"].items():
-                            if pm == "pnpm":
-                                commands.append(f"pnpm run {script_name}")
-                            elif pm == "yarn":
-                                commands.append(f"yarn run {script_name}")
-                            else:  # npm
-                                commands.append(f"npm run {script_name}")
-            except (json.JSONDecodeError, KeyError):
-                pass
+        package_data = safe_read_json(self.project_root / "package.json")
+        if package_data and "scripts" in package_data:
+            pm = self.package_managers.get("javascript", "npm")
+            for script_name, script_cmd in package_data["scripts"].items():
+                if pm == "pnpm":
+                    commands.append(f"pnpm run {script_name}")
+                elif pm == "yarn":
+                    commands.append(f"yarn run {script_name}")
+                else:  # npm
+                    commands.append(f"npm run {script_name}")
 
         # Goプロジェクトの場合
         if "go" in self.package_managers:
@@ -139,9 +134,10 @@ class ProjectInfoCollector:
         commands = []
 
         # scripts/run_tests.sh から収集
+
         test_script = self.project_root / "scripts" / "run_tests.sh"
-        if test_script.exists():
-            content = test_script.read_text(encoding="utf-8")
+        content = safe_read_file(test_script)
+        if content:
             for line in content.split("\n"):
                 if "pytest" in line or "test" in line.lower():
                     # コマンド行を抽出
@@ -198,21 +194,15 @@ class ProjectInfoCollector:
             commands.append(command)
 
         # package.json から収集
-        package_json = self.project_root / "package.json"
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "scripts" in data and "test" in data["scripts"]:
-                        pm = self.package_managers.get("javascript", "npm")
-                        if pm == "pnpm":
-                            commands.append("pnpm test")
-                        elif pm == "yarn":
-                            commands.append("yarn test")
-                        else:  # npm
-                            commands.append("npm test")
-            except (json.JSONDecodeError, KeyError):
-                pass
+        package_data = safe_read_json(self.project_root / "package.json")
+        if package_data and "scripts" in package_data and "test" in package_data["scripts"]:
+            pm = self.package_managers.get("javascript", "npm")
+            if pm == "pnpm":
+                commands.append("pnpm test")
+            elif pm == "yarn":
+                commands.append("yarn test")
+            else:  # npm
+                commands.append("npm test")
 
         # Goプロジェクトの場合
         if "go" in self.package_managers:
@@ -256,18 +246,14 @@ class ProjectInfoCollector:
             dependencies["python"] = python_deps
 
         # Node.js依存関係
-        package_json = self.project_root / "package.json"
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "dependencies" in data:
-                        node_deps = [
-                            f"{name}@{version}" for name, version in data["dependencies"].items()
-                        ]
-                        dependencies["nodejs"] = node_deps
-            except (json.JSONDecodeError, KeyError):
-                pass
+        from ..utils.file_utils import safe_read_json
+
+        package_data = safe_read_json(self.project_root / "package.json")
+        if package_data and "dependencies" in package_data:
+            node_deps = [
+                f"{name}@{version}" for name, version in package_data["dependencies"].items()
+            ]
+            dependencies["nodejs"] = node_deps
 
         # Go依存関係
         go_mod = self.project_root / "go.mod"

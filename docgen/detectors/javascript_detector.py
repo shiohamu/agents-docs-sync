@@ -3,6 +3,7 @@ JavaScript/TypeScriptプロジェクト検出モジュール
 """
 
 from .base_detector import BaseDetector
+from .detector_patterns import DetectorPatterns
 
 
 class JavaScriptDetector(BaseDetector):
@@ -62,23 +63,7 @@ class JavaScriptDetector(BaseDetector):
         Returns:
             パッケージマネージャ名またはNone
         """
-        # pnpm-lock.yamlが存在する場合（優先度最高）
-        if self._file_exists("pnpm-lock.yaml"):
-            return "pnpm"
-
-        # yarn.lockが存在する場合
-        if self._file_exists("yarn.lock"):
-            return "yarn"
-
-        # package-lock.jsonが存在する場合
-        if self._file_exists("package-lock.json"):
-            return "npm"
-
-        # package.jsonが存在する場合（デフォルトnpm）
-        if self._file_exists("package.json"):
-            return "npm"
-
-        return None
+        return DetectorPatterns.detect_package_manager("javascript", self._file_exists)
 
     def _has_files_in_dir(self, directory: str, *extensions) -> bool:
         """

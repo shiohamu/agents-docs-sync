@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-24 12:34:07
+自動生成日時: 2025-11-24 12:53:08
 
 ---
 
@@ -56,6 +56,162 @@ def generate(self) -> bool:
 ---
 
 
+## docgen/collectors/collector_utils.py
+
+### ConfigReader
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ConfigReader:
+```
+
+**説明**:
+
+Common utilities for reading various configuration files.
+
+*定義場所: docgen/collectors/collector_utils.py:10*
+
+---
+
+### read_json_file
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def read_json_file(file_path: Path) -> dict[str, Any] | None:
+```
+
+**説明**:
+
+Read and parse JSON file.
+
+*定義場所: docgen/collectors/collector_utils.py:14*
+
+---
+
+### read_package_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def read_package_json(project_root: Path) -> dict[str, Any] | None:
+```
+
+**説明**:
+
+Read package.json file.
+
+*定義場所: docgen/collectors/collector_utils.py:25*
+
+---
+
+### read_pyproject_toml
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def read_pyproject_toml(project_root: Path) -> dict[str, Any] | None:
+```
+
+**説明**:
+
+Read pyproject.toml file.
+
+*定義場所: docgen/collectors/collector_utils.py:30*
+
+---
+
+### read_makefile
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def read_makefile(project_root: Path) -> str | None:
+```
+
+**説明**:
+
+Read Makefile content.
+
+*定義場所: docgen/collectors/collector_utils.py:45*
+
+---
+
+### extract_scripts_from_package_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_scripts_from_package_json(package_data: dict[str, Any]) -> list[str]:
+```
+
+**説明**:
+
+Extract scripts from package.json.
+
+*定義場所: docgen/collectors/collector_utils.py:55*
+
+---
+
+### extract_dependencies_from_package_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_dependencies_from_package_json(package_data: dict[str, Any]) -> dict[str, list[str]]:
+```
+
+**説明**:
+
+Extract dependencies from package.json.
+
+*定義場所: docgen/collectors/collector_utils.py:61*
+
+---
+
+### parse_makefile_targets
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def parse_makefile_targets(content: str) -> list[str]:
+```
+
+**説明**:
+
+Parse Makefile targets.
+
+*定義場所: docgen/collectors/collector_utils.py:78*
+
+---
+
+### detect_language_from_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_language_from_config(project_root: Path) -> str | None:
+```
+
+**説明**:
+
+Detect programming language from configuration files.
+
+*定義場所: docgen/collectors/collector_utils.py:90*
+
+---
+
+
 ## docgen/collectors/project_info_collector.py
 
 ### ProjectInfoCollector
@@ -71,7 +227,7 @@ class ProjectInfoCollector:
 
 プロジェクト情報収集クラス
 
-*定義場所: docgen/collectors/project_info_collector.py:14*
+*定義場所: docgen/collectors/project_info_collector.py:15*
 
 ---
 
@@ -92,7 +248,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     package_managers: 言語ごとのパッケージマネージャ辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:17*
+*定義場所: docgen/collectors/project_info_collector.py:18*
 
 ---
 
@@ -112,7 +268,7 @@ def collect_all(self) -> ProjectInfo:
 Returns:
     プロジェクト情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:28*
+*定義場所: docgen/collectors/project_info_collector.py:29*
 
 ---
 
@@ -132,7 +288,7 @@ def collect_build_commands(self) -> list[str]:
 Returns:
     ビルドコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:45*
+*定義場所: docgen/collectors/project_info_collector.py:46*
 
 ---
 
@@ -152,7 +308,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:132*
+*定義場所: docgen/collectors/project_info_collector.py:127*
 
 ---
 
@@ -172,7 +328,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:232*
+*定義場所: docgen/collectors/project_info_collector.py:222*
 
 ---
 
@@ -192,7 +348,7 @@ def collect_coding_standards(self) -> dict[str, Any]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:321*
+*定義場所: docgen/collectors/project_info_collector.py:307*
 
 ---
 
@@ -212,7 +368,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:386*
+*定義場所: docgen/collectors/project_info_collector.py:372*
 
 ---
 
@@ -232,7 +388,7 @@ def collect_project_structure(self) -> dict[str, Any]:
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:406*
+*定義場所: docgen/collectors/project_info_collector.py:392*
 
 ---
 
@@ -252,7 +408,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:443*
+*定義場所: docgen/collectors/project_info_collector.py:429*
 
 ---
 
@@ -272,7 +428,7 @@ class ConfigManager:
 
 設定ファイルの管理クラス
 
-*定義場所: docgen/config_manager.py:41*
+*定義場所: docgen/config_manager.py:42*
 
 ---
 
@@ -295,7 +451,7 @@ Args:
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
     package_config_sample: パッケージ内のサンプル設定ファイルパス
 
-*定義場所: docgen/config_manager.py:44*
+*定義場所: docgen/config_manager.py:45*
 
 ---
 
@@ -312,7 +468,7 @@ def get_config(self) -> dict[str, Any]:
 
 現在の設定を取得
 
-*定義場所: docgen/config_manager.py:146*
+*定義場所: docgen/config_manager.py:147*
 
 ---
 
@@ -332,7 +488,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/config_manager.py:184*
+*定義場所: docgen/config_manager.py:185*
 
 ---
 
@@ -352,7 +508,7 @@ class BaseDetector:
 
 言語検出のベースクラス
 
-*定義場所: docgen/detectors/base_detector.py:9*
+*定義場所: docgen/detectors/base_detector.py:11*
 
 ---
 
@@ -372,7 +528,7 @@ def __init__(self, project_root: Path):
 Args:
     project_root: プロジェクトのルートディレクトリ
 
-*定義場所: docgen/detectors/base_detector.py:12*
+*定義場所: docgen/detectors/base_detector.py:14*
 
 ---
 
@@ -392,7 +548,7 @@ def detect(self) -> bool:
 Returns:
     検出された場合True
 
-*定義場所: docgen/detectors/base_detector.py:22*
+*定義場所: docgen/detectors/base_detector.py:24*
 
 ---
 
@@ -412,7 +568,7 @@ def get_language(self) -> str:
 Returns:
     言語名（例: 'python', 'javascript'）
 
-*定義場所: docgen/detectors/base_detector.py:32*
+*定義場所: docgen/detectors/base_detector.py:34*
 
 ---
 
@@ -432,7 +588,136 @@ def detect_package_manager(self) -> str | None:
 Returns:
     パッケージマネージャ名（例: 'pip', 'npm', 'yarn'）またはNone
 
-*定義場所: docgen/detectors/base_detector.py:42*
+*定義場所: docgen/detectors/base_detector.py:44*
+
+---
+
+
+## docgen/detectors/detector_patterns.py
+
+### DetectorPatterns
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DetectorPatterns:
+```
+
+**説明**:
+
+Common file detection patterns used by language detectors.
+
+*定義場所: docgen/detectors/detector_patterns.py:6*
+
+---
+
+### get_package_files
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_package_files(cls, language: str) -> list[str]:
+```
+
+**説明**:
+
+Get package manager files for a language.
+
+*定義場所: docgen/detectors/detector_patterns.py:136*
+
+---
+
+### get_source_extensions
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_source_extensions(cls, language: str) -> list[str]:
+```
+
+**説明**:
+
+Get source file extensions for a language.
+
+*定義場所: docgen/detectors/detector_patterns.py:141*
+
+---
+
+### detect_by_package_files
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_by_package_files(cls, project_root: Path, language: str) -> bool:
+```
+
+**説明**:
+
+Detect language by checking for package manager files.
+
+*定義場所: docgen/detectors/detector_patterns.py:146*
+
+---
+
+### detect_by_source_files
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_by_source_files(cls, project_root: Path, language: str) -> bool:
+```
+
+**説明**:
+
+Detect language by checking for source files.
+
+*定義場所: docgen/detectors/detector_patterns.py:152*
+
+---
+
+### is_excluded_path
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
+```
+
+**説明**:
+
+Check if a path should be excluded from detection.
+
+*定義場所: docgen/detectors/detector_patterns.py:164*
+
+---
+
+### detect_package_manager
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_package_manager(cls, language: str, file_exists_func) -> str | None:
+```
+
+**説明**:
+
+Detect package manager for a language using file existence checks.
+
+Args:
+    language: Language name
+    file_exists_func: Function that takes file patterns (str or tuple) and returns bool
+
+Returns:
+    Package manager name or None
+
+*定義場所: docgen/detectors/detector_patterns.py:174*
 
 ---
 
@@ -553,7 +838,7 @@ class GoDetector:
 
 Goプロジェクト検出クラス
 
-*定義場所: docgen/detectors/go_detector.py:8*
+*定義場所: docgen/detectors/go_detector.py:9*
 
 ---
 
@@ -573,7 +858,7 @@ Goプロジェクトかどうかを検出
 Returns:
     Goプロジェクトの場合True
 
-*定義場所: docgen/detectors/go_detector.py:11*
+*定義場所: docgen/detectors/go_detector.py:12*
 
 ---
 
@@ -590,7 +875,7 @@ def get_language(self) -> str:
 
 言語名を返す
 
-*定義場所: docgen/detectors/go_detector.py:30*
+*定義場所: docgen/detectors/go_detector.py:31*
 
 ---
 
@@ -610,7 +895,7 @@ Goプロジェクトで使用されているパッケージマネージャを検
 Returns:
     パッケージマネージャ名またはNone
 
-*定義場所: docgen/detectors/go_detector.py:34*
+*定義場所: docgen/detectors/go_detector.py:35*
 
 ---
 
@@ -630,7 +915,7 @@ class JavaScriptDetector:
 
 JavaScript/TypeScriptプロジェクト検出クラス
 
-*定義場所: docgen/detectors/javascript_detector.py:8*
+*定義場所: docgen/detectors/javascript_detector.py:9*
 
 ---
 
@@ -650,7 +935,7 @@ JavaScript/TypeScriptプロジェクトかどうかを検出
 Returns:
     JavaScript/TypeScriptプロジェクトの場合True
 
-*定義場所: docgen/detectors/javascript_detector.py:11*
+*定義場所: docgen/detectors/javascript_detector.py:12*
 
 ---
 
@@ -667,7 +952,7 @@ def get_language(self) -> str:
 
 言語名を返す
 
-*定義場所: docgen/detectors/javascript_detector.py:44*
+*定義場所: docgen/detectors/javascript_detector.py:45*
 
 ---
 
@@ -687,7 +972,7 @@ JavaScript/TypeScriptプロジェクトで使用されているパッケージ�
 Returns:
     パッケージマネージャ名またはNone
 
-*定義場所: docgen/detectors/javascript_detector.py:58*
+*定義場所: docgen/detectors/javascript_detector.py:59*
 
 ---
 
@@ -707,7 +992,7 @@ class PythonDetector:
 
 Pythonプロジェクト検出クラス
 
-*定義場所: docgen/detectors/python_detector.py:8*
+*定義場所: docgen/detectors/python_detector.py:9*
 
 ---
 
@@ -727,7 +1012,7 @@ Pythonプロジェクトかどうかを検出
 Returns:
     Pythonプロジェクトの場合True
 
-*定義場所: docgen/detectors/python_detector.py:11*
+*定義場所: docgen/detectors/python_detector.py:12*
 
 ---
 
@@ -744,7 +1029,7 @@ def get_language(self) -> str:
 
 言語名を返す
 
-*定義場所: docgen/detectors/python_detector.py:38*
+*定義場所: docgen/detectors/python_detector.py:29*
 
 ---
 
@@ -764,7 +1049,7 @@ Pythonプロジェクトで使用されているパッケージマネージャ�
 Returns:
     パッケージマネージャ名またはNone
 
-*定義場所: docgen/detectors/python_detector.py:42*
+*定義場所: docgen/detectors/python_detector.py:33*
 
 ---
 
@@ -784,7 +1069,7 @@ class DocGen:
 
 ドキュメント自動生成メインクラス
 
-*定義場所: docgen/docgen.py:28*
+*定義場所: docgen/docgen.py:29*
 
 ---
 
@@ -805,7 +1090,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ（Noneの場合は現在の作業ディレクトリ）
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
 
-*定義場所: docgen/docgen.py:31*
+*定義場所: docgen/docgen.py:32*
 
 ---
 
@@ -828,7 +1113,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/docgen.py:72*
+*定義場所: docgen/docgen.py:73*
 
 ---
 
@@ -848,7 +1133,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/docgen.py:86*
+*定義場所: docgen/docgen.py:87*
 
 ---
 
@@ -868,7 +1153,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/docgen.py:96*
+*定義場所: docgen/docgen.py:97*
 
 ---
 
@@ -885,7 +1170,7 @@ class CommandLineInterface:
 
 コマンドラインインターフェースクラス
 
-*定義場所: docgen/docgen.py:119*
+*定義場所: docgen/docgen.py:120*
 
 ---
 
@@ -900,7 +1185,7 @@ def __init__(self):
 
 *説明なし*
 
-*定義場所: docgen/docgen.py:122*
+*定義場所: docgen/docgen.py:123*
 
 ---
 
@@ -917,7 +1202,7 @@ def run(self) -> int:
 
 メイン実行メソッド
 
-*定義場所: docgen/docgen.py:125*
+*定義場所: docgen/docgen.py:126*
 
 ---
 
@@ -934,7 +1219,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:286*
+*定義場所: docgen/docgen.py:291*
 
 ---
 
@@ -1114,7 +1399,7 @@ class APIGenerator:
 
 APIドキュメント生成クラス
 
-*定義場所: docgen/generators/api_generator.py:26*
+*定義場所: docgen/generators/api_generator.py:27*
 
 ---
 
@@ -1137,7 +1422,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/api_generator.py:29*
+*定義場所: docgen/generators/api_generator.py:30*
 
 ---
 
@@ -1157,7 +1442,7 @@ APIドキュメントを生成
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/api_generator.py:58*
+*定義場所: docgen/generators/api_generator.py:59*
 
 ---
 
@@ -1240,7 +1525,7 @@ class CommitMessageGenerator:
 
 コミットメッセージ生成クラス
 
-*定義場所: docgen/generators/commit_message_generator.py:16*
+*定義場所: docgen/generators/commit_message_generator.py:17*
 
 ---
 
@@ -1261,7 +1546,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     config: 設定辞書
 
-*定義場所: docgen/generators/commit_message_generator.py:19*
+*定義場所: docgen/generators/commit_message_generator.py:20*
 
 ---
 
@@ -1281,7 +1566,7 @@ def generate(self) -> str | None:
 Returns:
     生成されたコミットメッセージ（エラー時はNone）
 
-*定義場所: docgen/generators/commit_message_generator.py:31*
+*定義場所: docgen/generators/commit_message_generator.py:32*
 
 ---
 
@@ -1566,6 +1851,128 @@ def get_supported_extensions(self) -> list[str]:
 ---
 
 
+## docgen/generators/parsers/parser_patterns.py
+
+### ParserPatterns
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ParserPatterns:
+```
+
+**説明**:
+
+Common patterns and utilities for code parsing.
+
+*定義場所: docgen/generators/parsers/parser_patterns.py:9*
+
+---
+
+### extract_docstring
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_docstring(cls, content: str, language: str, start_pos: int) -> str | None:
+```
+
+**説明**:
+
+Extract docstring/comment from content starting at a position.
+
+Args:
+    content: Source code content
+    language: Programming language
+    start_pos: Position to start searching from
+
+Returns:
+    Extracted docstring or None
+
+*定義場所: docgen/generators/parsers/parser_patterns.py:53*
+
+---
+
+### find_functions_and_classes
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def find_functions_and_classes(cls, content: str, language: str) -> list[tuple[str, str, int]]:
+```
+
+**説明**:
+
+Find all functions and classes in content.
+
+Args:
+    content: Source code content
+    language: Programming language
+
+Returns:
+    List of (name, type, position) tuples
+
+*定義場所: docgen/generators/parsers/parser_patterns.py:74*
+
+---
+
+### create_api_info
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_api_info(cls, name: str, entity_type: str, file_path: Path, project_root: Path, line_number: int | None, signature: str | None, docstring: str | None) -> APIInfo:
+```
+
+**説明**:
+
+Create APIInfo object with common fields.
+
+Args:
+    name: Function/class name
+    entity_type: Type ('function', 'class', etc.)
+    file_path: Source file path
+    project_root: Project root path
+    line_number: Line number (optional)
+    signature: Function signature (optional)
+    docstring: Documentation string (optional)
+
+Returns:
+    APIInfo object
+
+*定義場所: docgen/generators/parsers/parser_patterns.py:98*
+
+---
+
+### clean_docstring
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def clean_docstring(cls, docstring: str, language: str) -> str:
+```
+
+**説明**:
+
+Clean and normalize docstring content.
+
+Args:
+    docstring: Raw docstring
+    language: Programming language
+
+Returns:
+    Cleaned docstring
+
+*定義場所: docgen/generators/parsers/parser_patterns.py:135*
+
+---
+
+
 ## docgen/generators/parsers/python_parser.py
 
 ### PythonParser
@@ -1638,7 +2045,7 @@ class PythonASTVisitor:
 
 Python AST訪問クラス
 
-*定義場所: docgen/generators/parsers/python_parser.py:67*
+*定義場所: docgen/generators/parsers/python_parser.py:69*
 
 ---
 
@@ -1653,7 +2060,7 @@ def __init__(self, file_path: Path, project_root: Path):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:70*
+*定義場所: docgen/generators/parsers/python_parser.py:72*
 
 ---
 
@@ -1668,7 +2075,7 @@ def visit_ClassDef(self, node: ast.ClassDef):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:76*
+*定義場所: docgen/generators/parsers/python_parser.py:78*
 
 ---
 
@@ -1683,7 +2090,7 @@ def visit_FunctionDef(self, node):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:99*
+*定義場所: docgen/generators/parsers/python_parser.py:101*
 
 ---
 
@@ -1698,7 +2105,7 @@ def visit_AsyncFunctionDef(self, node):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:102*
+*定義場所: docgen/generators/parsers/python_parser.py:104*
 
 ---
 
@@ -2352,7 +2759,7 @@ class CacheManager:
 
 キャッシュ管理クラス
 
-*定義場所: docgen/utils/cache.py:18*
+*定義場所: docgen/utils/cache.py:19*
 
 ---
 
@@ -2374,7 +2781,7 @@ Args:
     cache_dir: キャッシュディレクトリ（Noneの場合は`docgen/.cache/`）
     enabled: キャッシュを有効にするかどうか
 
-*定義場所: docgen/utils/cache.py:21*
+*定義場所: docgen/utils/cache.py:22*
 
 ---
 
@@ -2397,7 +2804,7 @@ Args:
 Returns:
     ファイルのSHA256ハッシュ（16進数文字列）
 
-*定義場所: docgen/utils/cache.py:76*
+*定義場所: docgen/utils/cache.py:77*
 
 ---
 
@@ -2421,7 +2828,7 @@ Args:
 Returns:
     キャッシュキー
 
-*定義場所: docgen/utils/cache.py:97*
+*定義場所: docgen/utils/cache.py:98*
 
 ---
 
@@ -2445,7 +2852,7 @@ Args:
 Returns:
     キャッシュされた結果（存在する場合）、またはNone
 
-*定義場所: docgen/utils/cache.py:122*
+*定義場所: docgen/utils/cache.py:123*
 
 ---
 
@@ -2467,7 +2874,7 @@ Args:
     parser_type: パーサーの種類
     result: 解析結果
 
-*定義場所: docgen/utils/cache.py:162*
+*定義場所: docgen/utils/cache.py:163*
 
 ---
 
@@ -2484,7 +2891,7 @@ def clear_cache(self) -> None:
 
 キャッシュをクリア
 
-*定義場所: docgen/utils/cache.py:192*
+*定義場所: docgen/utils/cache.py:193*
 
 ---
 
@@ -2505,7 +2912,7 @@ Args:
     file_path: ファイルパス
     parser_type: パーサーの種類（Noneの場合はすべてのパーサータイプ）
 
-*定義場所: docgen/utils/cache.py:199*
+*定義場所: docgen/utils/cache.py:200*
 
 ---
 
@@ -2522,7 +2929,7 @@ def save(self) -> None:
 
 キャッシュを保存（明示的に保存する場合）
 
-*定義場所: docgen/utils/cache.py:235*
+*定義場所: docgen/utils/cache.py:236*
 
 ---
 
@@ -2542,7 +2949,7 @@ def get_cache_stats(self) -> dict[str, Any]:
 Returns:
     統計情報の辞書
 
-*定義場所: docgen/utils/cache.py:239*
+*定義場所: docgen/utils/cache.py:240*
 
 ---
 
@@ -2752,6 +3159,23 @@ Args:
 
 ## docgen/utils/exceptions.py
 
+### ErrorMessages
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ErrorMessages:
+```
+
+**説明**:
+
+共通エラーメッセージ定数
+
+*定義場所: docgen/utils/exceptions.py:9*
+
+---
+
 ### DocGenError
 
 **型**: `class`
@@ -2765,7 +3189,7 @@ class DocGenError:
 
 ドキュメント生成システムの基本例外クラス
 
-*定義場所: docgen/utils/exceptions.py:9*
+*定義場所: docgen/utils/exceptions.py:24*
 
 ---
 
@@ -2780,7 +3204,7 @@ def __init__(self, message: str, details: str | None, error_code: str | None, co
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:12*
+*定義場所: docgen/utils/exceptions.py:27*
 
 ---
 
@@ -2795,7 +3219,7 @@ def __str__(self) -> str:
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:24*
+*定義場所: docgen/utils/exceptions.py:39*
 
 ---
 
@@ -2812,7 +3236,7 @@ class ConfigError:
 
 設定関連のエラー
 
-*定義場所: docgen/utils/exceptions.py:34*
+*定義場所: docgen/utils/exceptions.py:49*
 
 ---
 
@@ -2827,7 +3251,7 @@ def __init__(self, message: str, config_path: str | None):
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:37*
+*定義場所: docgen/utils/exceptions.py:52*
 
 ---
 
@@ -2844,7 +3268,7 @@ class LLMError:
 
 LLM関連のエラー
 
-*定義場所: docgen/utils/exceptions.py:49*
+*定義場所: docgen/utils/exceptions.py:64*
 
 ---
 
@@ -2859,7 +3283,7 @@ def __init__(self, message: str, provider: str | None, model: str | None):
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:52*
+*定義場所: docgen/utils/exceptions.py:67*
 
 ---
 
@@ -2876,7 +3300,7 @@ class ParseError:
 
 解析関連のエラー
 
-*定義場所: docgen/utils/exceptions.py:66*
+*定義場所: docgen/utils/exceptions.py:81*
 
 ---
 
@@ -2891,7 +3315,7 @@ def __init__(self, message: str, file_path: str | None, language: str | None):
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:69*
+*定義場所: docgen/utils/exceptions.py:84*
 
 ---
 
@@ -2908,7 +3332,7 @@ class CacheError:
 
 キャッシュ関連のエラー
 
-*定義場所: docgen/utils/exceptions.py:85*
+*定義場所: docgen/utils/exceptions.py:100*
 
 ---
 
@@ -2923,7 +3347,7 @@ def __init__(self, message: str, cache_key: str | None):
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:88*
+*定義場所: docgen/utils/exceptions.py:103*
 
 ---
 
@@ -2940,7 +3364,7 @@ class FileOperationError:
 
 ファイル操作関連のエラー
 
-*定義場所: docgen/utils/exceptions.py:100*
+*定義場所: docgen/utils/exceptions.py:115*
 
 ---
 
@@ -2955,7 +3379,7 @@ def __init__(self, message: str, file_path: str | None, operation: str | None):
 
 *説明なし*
 
-*定義場所: docgen/utils/exceptions.py:103*
+*定義場所: docgen/utils/exceptions.py:118*
 
 ---
 
@@ -3279,9 +3703,9 @@ def generate(self, prompt: str, system_prompt: str | None) -> str | None:
 
 **説明**:
 
-OpenAI APIを使用してテキストを生成
+Anthropic APIを使用してテキストを生成
 
-*定義場所: docgen/utils/llm_client.py:138*
+*定義場所: docgen/utils/llm_client.py:140*
 
 ---
 
@@ -3298,7 +3722,7 @@ class AnthropicClient:
 
 Anthropic APIクライアント
 
-*定義場所: docgen/utils/llm_client.py:166*
+*定義場所: docgen/utils/llm_client.py:174*
 
 ---
 
@@ -3313,7 +3737,7 @@ def __init__(self, config: dict[str, Any]):
 
 *説明なし*
 
-*定義場所: docgen/utils/llm_client.py:169*
+*定義場所: docgen/utils/llm_client.py:177*
 
 ---
 
@@ -3330,7 +3754,7 @@ def generate(self, prompt: str, system_prompt: str | None) -> str | None:
 
 Anthropic APIを使用してテキストを生成
 
-*定義場所: docgen/utils/llm_client.py:188*
+*定義場所: docgen/utils/llm_client.py:198*
 
 ---
 
@@ -3347,7 +3771,7 @@ class LocalLLMClient:
 
 ローカルLLMクライアント（Ollama、LM Studio対応）
 
-*定義場所: docgen/utils/llm_client.py:224*
+*定義場所: docgen/utils/llm_client.py:234*
 
 ---
 
@@ -3362,7 +3786,7 @@ def __init__(self, config: dict[str, Any]):
 
 *説明なし*
 
-*定義場所: docgen/utils/llm_client.py:227*
+*定義場所: docgen/utils/llm_client.py:237*
 
 ---
 
@@ -3379,7 +3803,7 @@ def generate(self, prompt: str, system_prompt: str | None) -> str | None:
 
 ローカルLLMを使用してテキストを生成
 
-*定義場所: docgen/utils/llm_client.py:253*
+*定義場所: docgen/utils/llm_client.py:263*
 
 ---
 
@@ -3396,7 +3820,7 @@ class LLMClientFactory:
 
 LLMクライアントのファクトリークラス
 
-*定義場所: docgen/utils/llm_client.py:345*
+*定義場所: docgen/utils/llm_client.py:357*
 
 ---
 
@@ -3420,7 +3844,7 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:349*
+*定義場所: docgen/utils/llm_client.py:361*
 
 ---
 
@@ -3444,7 +3868,155 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:408*
+*定義場所: docgen/utils/llm_client.py:420*
+
+---
+
+
+## docgen/utils/llm_client_utils.py
+
+### LLMClientInitializer
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMClientInitializer:
+```
+
+**説明**:
+
+Common initialization patterns for LLM clients.
+
+*定義場所: docgen/utils/llm_client_utils.py:20*
+
+---
+
+### setup_provider_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def setup_provider_config(config: dict[str, Any], provider: str) -> dict[str, Any]:
+```
+
+**説明**:
+
+Set up provider-specific configuration.
+
+Args:
+    config: Configuration dictionary
+    provider: Provider name ('openai', 'anthropic', etc.)
+
+Returns:
+    Updated configuration dictionary
+
+*定義場所: docgen/utils/llm_client_utils.py:24*
+
+---
+
+### get_api_key
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_api_key(config, env_var: str, default_env: str) -> str:
+```
+
+**説明**:
+
+Get API key from config or environment.
+
+Args:
+    config: LLMConfig object
+    env_var: Environment variable name from config
+    default_env: Default environment variable name
+
+Returns:
+    API key string
+
+*定義場所: docgen/utils/llm_client_utils.py:41*
+
+---
+
+### initialize_client_with_fallback
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def initialize_client_with_fallback(client_class, config: dict[str, Any], import_name: str, package_name: str, error_prefix: str):
+```
+
+**説明**:
+
+Initialize LLM client with common error handling.
+
+Args:
+    client_class: Client class to instantiate
+    config: Configuration dictionary
+    import_name: Module name to import
+    package_name: Package name for error messages
+    error_prefix: Prefix for error messages
+
+Returns:
+    Initialized client instance
+
+Raises:
+    ImportError: If required package is not installed
+    ConfigError: If initialization fails
+
+*定義場所: docgen/utils/llm_client_utils.py:58*
+
+---
+
+### handle_api_response
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def handle_api_response(response, response_processor):
+```
+
+**説明**:
+
+Handle API response with common error checking.
+
+Args:
+    response: API response object
+    response_processor: Optional function to process response content
+
+Returns:
+    Processed response content or None
+
+*定義場所: docgen/utils/llm_client_utils.py:95*
+
+---
+
+### create_retry_wrapper
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_retry_wrapper(max_retries: int, retry_delay: float):
+```
+
+**説明**:
+
+Create a retry wrapper function.
+
+Args:
+    max_retries: Maximum number of retries
+    retry_delay: Delay between retries
+
+Returns:
+    Retry wrapper function
+
+*定義場所: docgen/utils/llm_client_utils.py:140*
 
 ---
 
@@ -3524,7 +4096,7 @@ Args:
 Returns:
     Project description text
 
-*定義場所: docgen/utils/markdown_utils.py:7*
+*定義場所: docgen/utils/markdown_utils.py:13*
 
 ---
 
@@ -3550,7 +4122,7 @@ Args:
 Returns:
     Formatted command lines
 
-*定義場所: docgen/utils/markdown_utils.py:48*
+*定義場所: docgen/utils/markdown_utils.py:54*
 
 ---
 
@@ -3567,7 +4139,7 @@ class MarkdownSectionBuilder:
 
 Utility class for building markdown sections.
 
-*定義場所: docgen/utils/markdown_utils.py:83*
+*定義場所: docgen/utils/markdown_utils.py:89*
 
 ---
 
@@ -3591,7 +4163,7 @@ Args:
 Returns:
     Formatted markdown lines
 
-*定義場所: docgen/utils/markdown_utils.py:87*
+*定義場所: docgen/utils/markdown_utils.py:93*
 
 ---
 
@@ -3615,7 +4187,7 @@ Args:
 Returns:
     Formatted code block lines
 
-*定義場所: docgen/utils/markdown_utils.py:104*
+*定義場所: docgen/utils/markdown_utils.py:110*
 
 ---
 
@@ -3638,7 +4210,7 @@ Args:
 Returns:
     Cleaned text with thinking processes removed
 
-*定義場所: docgen/utils/markdown_utils.py:124*
+*定義場所: docgen/utils/markdown_utils.py:130*
 
 ---
 

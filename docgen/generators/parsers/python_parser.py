@@ -61,7 +61,9 @@ class PythonParser(BaseParser):
 
     def get_supported_extensions(self) -> list[str]:
         """サポートする拡張子を返す"""
-        return [".py", ".pyw"]
+        from ...detectors.detector_patterns import DetectorPatterns
+
+        return DetectorPatterns.get_source_extensions("python")
 
 
 class PythonASTVisitor(ast.NodeVisitor):

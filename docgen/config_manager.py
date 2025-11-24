@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from .models import DocgenConfig
+from .utils.exceptions import ErrorMessages
 from .utils.file_utils import safe_read_yaml
 from .utils.logger import get_logger
 
@@ -78,7 +79,7 @@ class ConfigManager:
                 logger.debug(f"Debug mode: {debug_enabled}")
                 return config
             else:
-                logger.warning("設定ファイルの読み込みに失敗しました")
+                logger.warning(ErrorMessages.CONFIG_LOAD_FAILED)
                 logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
         else:
@@ -93,7 +94,7 @@ class ConfigManager:
                 config = safe_read_yaml(self.config_path)
                 return config if config is not None else self._get_default_config()
 
-        logger.warning(f"設定ファイルが見つかりません: {self.config_path}")
+        logger.warning(ErrorMessages.CONFIG_NOT_FOUND.format(path=self.config_path))
         logger.info("デフォルト設定を使用します。")
         return self._get_default_config()
 

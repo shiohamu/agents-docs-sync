@@ -176,9 +176,9 @@ class BaseGenerator(ABC):
         sections = {}
 
         # Find manual section markers
-        # <!-- MANUAL_START:section_name --> ... <!-- MANUAL_END:section_name -->
-        pattern = r"<!--\s*MANUAL_START:(\w+)\s*-->(.*?)<!--\s*MANUAL_END:\1\s*-->"
-        for match in re.finditer(pattern, content, re.DOTALL):
+        from ..utils.markdown_utils import MANUAL_MARKER_REGEX
+
+        for match in MANUAL_MARKER_REGEX.finditer(content):
             section_name = match.group(1)
             section_content = match.group(2).strip()
             # Remove nested manual markers

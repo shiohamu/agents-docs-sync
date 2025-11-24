@@ -6,6 +6,21 @@
 from typing import Any
 
 
+class ErrorMessages:
+    """共通エラーメッセージ定数"""
+
+    CONFIG_LOAD_FAILED = "設定ファイルの読み込みに失敗しました"
+    CONFIG_NOT_FOUND = "設定ファイルが見つかりません: {path}"
+    CACHE_LOAD_FAILED = "キャッシュファイルの読み込みに失敗しました: {error}"
+    API_CONFIG_NOT_FOUND = "API設定が見つかりません"
+    GIT_COMMAND_NOT_FOUND = "gitコマンドが見つかりません。"
+    HOOKS_DIR_NOT_FOUND = "docgen/hooks ディレクトリが見つかりません"
+    HOOK_SOURCE_NOT_FOUND = "{hook_name} のソースファイルが見つかりません: {source_file}"
+    LLM_UNKNOWN_ERROR = "LLM呼び出しで不明なエラーが発生しました"
+    CLIENT_INIT_FAILED = "{prefix}クライアントの初期化に失敗しました: {error}"
+    UNSUPPORTED_PROVIDER = "サポートされていないプロバイダー: {provider}"
+
+
 class DocGenError(Exception):
     """ドキュメント生成システムの基本例外クラス"""
 

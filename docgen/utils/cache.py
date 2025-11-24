@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from ..models import APIInfo, CacheEntry, CacheMetadata
+from .exceptions import ErrorMessages
 from .logger import get_logger
 
 logger = get_logger("cache")
@@ -56,7 +57,7 @@ class CacheManager:
                         self._cache_data = {}
                         logger.warning("キャッシュファイルの形式が不正です")
             except (OSError, json.JSONDecodeError) as e:
-                logger.warning(f"キャッシュファイルの読み込みに失敗しました: {e}")
+                logger.warning(ErrorMessages.CACHE_LOAD_FAILED.format(error=e))
                 self._cache_data = {}
         else:
             self._cache_data = {}

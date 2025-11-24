@@ -5,6 +5,8 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from .detector_patterns import DetectorPatterns
+
 
 class BaseDetector(ABC):
     """言語検出のベースクラス"""
@@ -93,20 +95,7 @@ class BaseDetector(ABC):
                         # 除外ディレクトリをスキップ
                         relative_path = file_path.relative_to(self.project_root)
                         if relative_path.parts and any(
-                            part
-                            in [
-                                ".venv",
-                                ".git",
-                                "__pycache__",
-                                "node_modules",
-                                "htmlcov",
-                                "coverage",
-                                ".coverage",
-                                "site-packages",
-                                "dist",
-                                "build",
-                            ]
-                            for part in relative_path.parts
+                            part in DetectorPatterns.EXCLUDE_DIRS for part in relative_path.parts
                         ):
                             continue
 

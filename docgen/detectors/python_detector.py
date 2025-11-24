@@ -3,6 +3,7 @@ Pythonプロジェクト検出モジュール
 """
 
 from .base_detector import BaseDetector
+from .detector_patterns import DetectorPatterns
 
 
 class PythonDetector(BaseDetector):
@@ -15,22 +16,12 @@ class PythonDetector(BaseDetector):
         Returns:
             Pythonプロジェクトの場合True
         """
-        # requirements.txt, setup.py, pyproject.toml, Pipfile などの存在確認
-        if self._file_exists(
-            "requirements.txt",
-            "setup.py",
-            "pyproject.toml",
-            "Pipfile",
-            "Pipfile.lock",
-            "poetry.lock",
-            "environment.yml",
-            "conda-environment.yml",
-            "uv.lock",
-        ):
+        # パッケージマネージャーファイルの存在確認
+        if DetectorPatterns.detect_by_package_files(self.project_root, "python"):
             return True
 
         # .pyファイルの存在確認
-        if self._has_files_with_ext(".py"):
+        if DetectorPatterns.detect_by_source_files(self.project_root, "python"):
             return True
 
         return False

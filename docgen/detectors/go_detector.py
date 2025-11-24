@@ -3,6 +3,7 @@ Goプロジェクト検出モジュール
 """
 
 from .base_detector import BaseDetector
+from .detector_patterns import DetectorPatterns
 
 
 class GoDetector(BaseDetector):
@@ -38,15 +39,4 @@ class GoDetector(BaseDetector):
         Returns:
             パッケージマネージャ名またはNone
         """
-        # go.modが存在する場合（Go Modules）
-        if self._file_exists("go.mod"):
-            return "go"
-
-        # 古いGoパッケージマネージャ
-        if self._file_exists("Gopkg.toml", "Gopkg.lock"):
-            return "dep"
-
-        if self._file_exists("glide.yaml", "glide.lock"):
-            return "glide"
-
-        return None
+        return DetectorPatterns.detect_package_manager("go", self._file_exists)

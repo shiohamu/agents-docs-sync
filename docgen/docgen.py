@@ -19,6 +19,7 @@ DOCGEN_DIR = Path(__file__).parent.resolve()
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator
 from .language_detector import LanguageDetector
+from .utils.exceptions import ErrorMessages
 from .utils.logger import get_logger
 
 # ロガーの初期化
@@ -196,7 +197,7 @@ class CommandLineInterface:
         docgen_hooks_dir = project_root / "docgen" / "hooks"
 
         if not docgen_hooks_dir.exists():
-            logger.error("docgen/hooks ディレクトリが見つかりません")
+            logger.error(ErrorMessages.HOOKS_DIR_NOT_FOUND)
             return 1
 
         hook_names = ["pre-commit", "post-commit", "pre-push", "commit-msg"]
@@ -219,7 +220,11 @@ class CommandLineInterface:
             hook_file = git_hooks_dir / hook_name
 
             if not source_file.exists():
-                logger.warning(f"{hook_name} のソースファイルが見つかりません: {source_file}")
+                logger.warning(
+                    ErrorMessages.HOOK_SOURCE_NOT_FOUND.format(
+                        hook_name=hook_name, source_file=source_file
+                    )
+                )
                 continue
 
             # 既存のフックをバックアップ

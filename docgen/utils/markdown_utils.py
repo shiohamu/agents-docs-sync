@@ -3,6 +3,12 @@
 from pathlib import Path
 import re
 
+# Manual section markers
+MANUAL_START_PREFIX = "<!-- MANUAL_START:"
+MANUAL_END_PREFIX = "<!-- MANUAL_END:"
+MANUAL_MARKER_PATTERN = r"<!--\s*MANUAL_START:(\w+)\s*-->(.*?)<!--\s*MANUAL_END:\1\s*-->"
+MANUAL_MARKER_REGEX = re.compile(MANUAL_MARKER_PATTERN, re.DOTALL)
+
 
 def extract_project_description(
     project_root: Path,

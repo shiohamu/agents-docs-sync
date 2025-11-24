@@ -4,12 +4,12 @@ OpenAI、Anthropic、ローカルLLM（Ollama、LM Studio）に対応
 """
 
 from abc import ABC, abstractmethod
-import os
 import time
 from typing import Any
 
 from ..models import LLMClientConfig, LLMConfig
-from ..utils.exceptions import ConfigError
+from ..utils.exceptions import ConfigError, ErrorMessages
+from ..utils.llm_client_utils import LLMClientInitializer
 from ..utils.logger import get_logger
 
 logger = get_logger("llm_client")
@@ -109,7 +109,7 @@ class BaseLLMClient(ABC):
         if last_exception:
             raise last_exception
         else:
-            raise RuntimeError("LLM呼び出しで不明なエラーが発生しました")
+            raise RuntimeError(ErrorMessages.LLM_UNKNOWN_ERROR)
 
 
 class OpenAIClient(BaseLLMClient):
@@ -117,45 +117,53 @@ class OpenAIClient(BaseLLMClient):
 
     def __init__(self, config: dict[str, Any]):
         # OpenAIクライアント用にproviderを設定
-        if isinstance(config, dict):
-            config["provider"] = "openai"
+        config = LLMClientInitializer.setup_provider_config(config, "openai")
         super().__init__(config)
-        try:
+
+        # OpenAIクライアントの初期化
+        def create_openai_client(config):
             import openai
 
-            self.client: openai.OpenAI = openai.OpenAI(
-                api_key=os.getenv(self.config.api_key_env or "OPENAI_API_KEY", ""),
-                base_url=self.config.base_url,  # カスタムエンドポイント対応
+            api_key = LLMClientInitializer.get_api_key(config, config.api_key_env, "OPENAI_API_KEY")
+            return openai.OpenAI(
+                api_key=api_key,
+                base_url=config.base_url,  # カスタムエンドポイント対応
             )
-            self.model: str = self.config.model or "gpt-4o"
-        except ImportError:
-            raise ImportError(
-                "openaiパッケージが必要です。`pip install openai`でインストールしてください。"
-            ) from None
-        except Exception as e:
-            raise ConfigError(f"OpenAIクライアントの初期化に失敗しました: {e}") from e
+
+        self.client = LLMClientInitializer.initialize_client_with_fallback(
+            create_openai_client, self.config, "openai", "openai", "OpenAI"
+        )
+        from .llm_client_utils import DEFAULT_MODELS
+
+        self.model: str = self.config.model or DEFAULT_MODELS["openai"]
 
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
-        """OpenAI APIを使用してテキストを生成"""
+        """Anthropic APIを使用してテキストを生成"""
         try:
-            messages = []
+            messages = [{"role": "user", "content": prompt}]
+
+            api_kwargs = {
+                "model": self.model,
+                "max_tokens": kwargs.get("max_tokens", 4096),
+                "messages": messages,
+                "timeout": self.timeout,
+            }
+
             if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
+                api_kwargs["system"] = system_prompt
 
-            response = self._retry_with_backoff(
-                self.client.chat.completions.create,
-                model=self.model,
-                messages=messages,
-                timeout=self.timeout,
-                **kwargs,
-            )
+            response = self._retry_with_backoff(self.client.messages.create, **api_kwargs)
 
-            if response and response.choices and response.choices[0].message.content:
-                return response.choices[0].message.content.strip()
+            if response and response.content:
+                # Anthropicのレスポンス形式に合わせて処理
+                text_content = ""
+                for block in response.content:
+                    if hasattr(block, "text") and block.text:
+                        text_content += block.text
+                return text_content.strip() if text_content else None
             return None
         except Exception as e:
-            logger.error(f"OpenAI API呼び出しエラー: {e}")
+            logger.error(f"Anthropic API呼び出しエラー: {e}")
             return None
 
     def _create_outlines_model_internal(self, outlines):
@@ -168,22 +176,24 @@ class AnthropicClient(BaseLLMClient):
 
     def __init__(self, config: dict[str, Any]):
         # Anthropicクライアント用にproviderを設定
-        if isinstance(config, dict):
-            config["provider"] = "anthropic"
+        config = LLMClientInitializer.setup_provider_config(config, "anthropic")
         super().__init__(config)
-        try:
+
+        # Anthropicクライアントの初期化
+        def create_anthropic_client(config):
             import anthropic
 
-            self.client = anthropic.Anthropic(
-                api_key=os.getenv(self.config.api_key_env or "ANTHROPIC_API_KEY", "")
+            api_key = LLMClientInitializer.get_api_key(
+                config, config.api_key_env, "ANTHROPIC_API_KEY"
             )
-            self.model = self.config.model or "claude-3-5-sonnet-20241022"
-        except ImportError:
-            raise ImportError(
-                "anthropicパッケージが必要です。`pip install anthropic`でインストールしてください。"
-            ) from None
-        except Exception as e:
-            raise ConfigError(f"Anthropicクライアントの初期化に失敗しました: {e}") from e
+            return anthropic.Anthropic(api_key=api_key)
+
+        self.client = LLMClientInitializer.initialize_client_with_fallback(
+            create_anthropic_client, self.config, "anthropic", "anthropic", "Anthropic"
+        )
+        from .llm_client_utils import DEFAULT_MODELS
+
+        self.model = self.config.model or DEFAULT_MODELS["anthropic"]
 
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """Anthropic APIを使用してテキストを生成"""
@@ -259,7 +269,9 @@ class LocalLLMClient(BaseLLMClient):
             elif self.config.provider in ["lmstudio", "custom", "local"]:
                 return self._generate_openai_compatible(prompt, system_prompt, **kwargs)
             else:
-                raise ConfigError(f"サポートされていないプロバイダー: {self.config.provider}")
+                raise ConfigError(
+                    ErrorMessages.UNSUPPORTED_PROVIDER.format(provider=self.config.provider)
+                )
         except Exception as e:
             logger.error(f"ローカルLLM呼び出しエラー: {e}")
             return None
@@ -364,7 +376,7 @@ class LLMClientFactory:
                 if isinstance(config, LLMClientConfig):
                     client_config = config.openai or config.anthropic
                     if not client_config:
-                        logger.error("API設定が見つかりません")
+                        logger.error(ErrorMessages.API_CONFIG_NOT_FOUND)
                         return None
 
                     provider = client_config.provider

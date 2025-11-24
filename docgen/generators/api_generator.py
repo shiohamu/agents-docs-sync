@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from ..detectors.detector_patterns import DetectorPatterns
 from ..models import APIInfo
 from .parsers.generic_parser import GenericParser
 from .parsers.js_parser import JSParser
@@ -73,18 +74,7 @@ class APIGenerator(BaseGenerator):
             # 除外ディレクトリとファイルパターンを設定
             exclude_dirs = self.config.get("exclude", {}).get(
                 "directories",
-                [
-                    ".git",
-                    "docgen",
-                    "__pycache__",
-                    "node_modules",
-                    ".venv",
-                    "venv",
-                    "htmlcov",
-                    ".pytest_cache",
-                    "dist",
-                    "build",
-                ],
+                list(DetectorPatterns.EXCLUDE_DIRS) + ["docgen", "venv"],
             )
 
             # キャッシュの使用設定
