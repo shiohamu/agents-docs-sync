@@ -3,7 +3,6 @@ AGENTS.md生成モジュール（OpenAI仕様準拠）
 Outlines統合で構造化出力を実現
 """
 
-from datetime import datetime
 import json
 from pathlib import Path
 from typing import Any
@@ -14,6 +13,12 @@ from pydantic import ValidationError
 # フォールバック: 絶対インポート
 from ..models import AgentsDocument, ProjectInfo
 from ..utils.logger import get_logger
+from ..utils.markdown_utils import (
+    DESCRIPTION_END,
+    DESCRIPTION_START,
+    UNKNOWN,
+    get_current_timestamp,
+)
 from .base_generator import BaseGenerator
 
 logger = get_logger("agents_generator")
@@ -73,10 +78,10 @@ class AgentsGenerator(BaseGenerator):
         in_description = False
 
         for line in lines:
-            if "<!-- MANUAL_START:description -->" in line:
+            if DESCRIPTION_START in line:
                 in_description = True
                 continue
-            elif "<!-- MANUAL_END:description -->" in line:
+            elif DESCRIPTION_END in line:
                 break
             elif in_description:
                 description_lines.append(line)
@@ -116,7 +121,7 @@ class AgentsGenerator(BaseGenerator):
         # ヘッダー
         lines.append("# AGENTS ドキュメント")
         lines.append("")
-        lines.append(f"自動生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"自動生成日時: {get_current_timestamp()}")
         lines.append("")
         lines.append(
             "このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。"
@@ -164,7 +169,7 @@ class AgentsGenerator(BaseGenerator):
 
         # フッター
         lines.append(
-            f"*このドキュメントは自動生成されています。最終更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+            f"*このドキュメントは自動生成されています。最終更新: {get_current_timestamp()}*"
         )
         lines.append("")
 
@@ -201,7 +206,7 @@ class AgentsGenerator(BaseGenerator):
         lines.append("## プロジェクト概要")
         lines.append("")
 
-        lines.append("<!-- MANUAL_START:description -->")
+        lines.append(DESCRIPTION_START)
         lines.append("")
 
         # プロジェクト説明を取得
@@ -211,9 +216,9 @@ class AgentsGenerator(BaseGenerator):
         lines.append(description)
 
         lines.append("")
-        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}")
+        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else UNKNOWN}")
         lines.append("")
-        lines.append("<!-- MANUAL_END:description -->")
+        lines.append(DESCRIPTION_END)
         return lines
 
     def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
@@ -539,7 +544,7 @@ class AgentsGenerator(BaseGenerator):
         # ヘッダー
         lines.append(f"# {data.title}")
         lines.append("")
-        lines.append(f"自動生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"自動生成日時: {get_current_timestamp()}")
         lines.append("")
         lines.append(
             "このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。"
@@ -551,13 +556,13 @@ class AgentsGenerator(BaseGenerator):
         # プロジェクト概要
         lines.append("## プロジェクト概要")
         lines.append("")
-        lines.append("<!-- MANUAL_START:description -->")
+        lines.append(DESCRIPTION_START)
         lines.append("")
         lines.append(data.description)
         lines.append("")
-        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else '不明'}")
+        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else UNKNOWN}")
         lines.append("")
-        lines.append("<!-- MANUAL_END:description -->")
+        lines.append(DESCRIPTION_END)
         lines.append("")
         lines.append("---")
         lines.append("")

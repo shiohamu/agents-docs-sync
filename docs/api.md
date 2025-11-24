@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-24 12:53:08
+自動生成日時: 2025-11-24 12:59:22
 
 ---
 
@@ -1356,7 +1356,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:22*
+*定義場所: docgen/generators/agents_generator.py:27*
 
 ---
 
@@ -1379,7 +1379,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:25*
+*定義場所: docgen/generators/agents_generator.py:30*
 
 ---
 
@@ -2125,7 +2125,7 @@ class ReadmeGenerator:
 
 README generation class
 
-*定義場所: docgen/generators/readme_generator.py:18*
+*定義場所: docgen/generators/readme_generator.py:28*
 
 ---
 
@@ -2148,7 +2148,7 @@ Args:
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
 
-*定義場所: docgen/generators/readme_generator.py:21*
+*定義場所: docgen/generators/readme_generator.py:31*
 
 ---
 
@@ -2163,7 +2163,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:41*
+*定義場所: docgen/generators/readme_generator.py:51*
 
 ---
 
@@ -4075,6 +4075,23 @@ Returns:
 
 ## docgen/utils/markdown_utils.py
 
+### get_current_timestamp
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def get_current_timestamp() -> str:
+```
+
+**説明**:
+
+Get current timestamp in standard format.
+
+*定義場所: docgen/utils/markdown_utils.py:29*
+
+---
+
 ### extract_project_description
 
 **型**: `function`
@@ -4096,7 +4113,7 @@ Args:
 Returns:
     Project description text
 
-*定義場所: docgen/utils/markdown_utils.py:13*
+*定義場所: docgen/utils/markdown_utils.py:36*
 
 ---
 
@@ -4122,7 +4139,7 @@ Args:
 Returns:
     Formatted command lines
 
-*定義場所: docgen/utils/markdown_utils.py:54*
+*定義場所: docgen/utils/markdown_utils.py:77*
 
 ---
 
@@ -4139,7 +4156,7 @@ class MarkdownSectionBuilder:
 
 Utility class for building markdown sections.
 
-*定義場所: docgen/utils/markdown_utils.py:89*
+*定義場所: docgen/utils/markdown_utils.py:112*
 
 ---
 
@@ -4163,7 +4180,7 @@ Args:
 Returns:
     Formatted markdown lines
 
-*定義場所: docgen/utils/markdown_utils.py:93*
+*定義場所: docgen/utils/markdown_utils.py:116*
 
 ---
 
@@ -4187,7 +4204,7 @@ Args:
 Returns:
     Formatted code block lines
 
-*定義場所: docgen/utils/markdown_utils.py:110*
+*定義場所: docgen/utils/markdown_utils.py:133*
 
 ---
 
@@ -4210,7 +4227,7 @@ Args:
 Returns:
     Cleaned text with thinking processes removed
 
-*定義場所: docgen/utils/markdown_utils.py:130*
+*定義場所: docgen/utils/markdown_utils.py:153*
 
 ---
 

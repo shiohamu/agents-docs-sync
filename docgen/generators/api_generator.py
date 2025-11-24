@@ -2,12 +2,12 @@
 APIドキュメント生成モジュール
 """
 
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ..detectors.detector_patterns import DetectorPatterns
 from ..models import APIInfo
+from ..utils.markdown_utils import get_current_timestamp
 from .parsers.generic_parser import GenericParser
 from .parsers.js_parser import JSParser
 from .parsers.python_parser import PythonParser
@@ -139,7 +139,7 @@ class APIGenerator(BaseGenerator):
         # ヘッダー
         lines.append("# API ドキュメント")
         lines.append("")
-        lines.append(f"自動生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        lines.append(f"自動生成日時: {get_current_timestamp()}")
         lines.append("")
         lines.append("---")
         lines.append("")

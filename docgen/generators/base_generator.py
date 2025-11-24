@@ -4,7 +4,6 @@ AGENTS.mdとREADME.mdのジェネレーターの共通部分を共通化
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +11,7 @@ from ..models import ProjectInfo
 from ..utils.file_utils import safe_write_file
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
+from ..utils.markdown_utils import UNKNOWN, get_current_timestamp
 
 
 class BaseGenerator(ABC):
@@ -417,7 +417,7 @@ class BaseGenerator(ABC):
                 # 生成されたテキストにタイムスタンプを追加
                 lines = cleaned_text.split("\n")
                 # フッターを追加（既に含まれていない場合）
-                footer_text = f"*この{self._get_document_type()}は自動生成されています。最終更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+                footer_text = f"*この{self._get_document_type()}は自動生成されています。最終更新: {get_current_timestamp()}*"
                 if not any(footer_text.split("*")[1] in line for line in lines):
                     lines.append("")
                     lines.append(footer_text)
@@ -537,7 +537,7 @@ class BaseGenerator(ABC):
         """
         lines = []
         lines.append(f"プロジェクト名: {self.project_root.name}")
-        lines.append(f"使用言語: {', '.join(self.languages) if self.languages else '不明'}")
+        lines.append(f"使用言語: {', '.join(self.languages) if self.languages else UNKNOWN}")
 
         description = project_info.description
         if description:

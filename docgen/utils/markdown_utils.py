@@ -9,6 +9,29 @@ MANUAL_END_PREFIX = "<!-- MANUAL_END:"
 MANUAL_MARKER_PATTERN = r"<!--\s*MANUAL_START:(\w+)\s*-->(.*?)<!--\s*MANUAL_END:\1\s*-->"
 MANUAL_MARKER_REGEX = re.compile(MANUAL_MARKER_PATTERN, re.DOTALL)
 
+# Specific manual markers
+DESCRIPTION_START = "<!-- MANUAL_START:description -->"
+DESCRIPTION_END = "<!-- MANUAL_END:description -->"
+SETUP_START = "<!-- MANUAL_START:setup -->"
+SETUP_END = "<!-- MANUAL_END:setup -->"
+USAGE_START = "<!-- MANUAL_START:usage -->"
+USAGE_END = "<!-- MANUAL_END:usage -->"
+OTHER_START = "<!-- MANUAL_START:other -->"
+OTHER_END = "<!-- MANUAL_END:other -->"
+
+# Common strings
+UNKNOWN = "不明"
+
+# Timestamp format
+CURRENT_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def get_current_timestamp() -> str:
+    """Get current timestamp in standard format."""
+    from datetime import datetime
+
+    return datetime.now().strftime(CURRENT_TIMESTAMP_FORMAT)
+
 
 def extract_project_description(
     project_root: Path,

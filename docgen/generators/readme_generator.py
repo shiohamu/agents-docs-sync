@@ -3,13 +3,23 @@ README generation module
 Achieve structured output with Outlines integration
 """
 
-from datetime import datetime
 from pathlib import Path
 import re
 from typing import Any
 
 from ..models import ProjectInfo, ReadmeDocument
 from ..utils.logger import get_logger
+from ..utils.markdown_utils import (
+    DESCRIPTION_END,
+    DESCRIPTION_START,
+    OTHER_END,
+    OTHER_START,
+    SETUP_END,
+    SETUP_START,
+    USAGE_END,
+    USAGE_START,
+    get_current_timestamp,
+)
 from .base_generator import BaseGenerator
 
 logger = get_logger("readme_generator")
@@ -327,7 +337,7 @@ class ReadmeGenerator(BaseGenerator):
         lines.append("")
 
         # Manual section: Description
-        lines.append("<!-- MANUAL_START:description -->")
+        lines.append(DESCRIPTION_START)
         if "description" in manual_sections:
             lines.append(manual_sections["description"])
         else:
@@ -341,7 +351,7 @@ class ReadmeGenerator(BaseGenerator):
                 lines.append("## 概要")
                 lines.append("")
                 lines.append("Please describe this project here.")
-        lines.append("<!-- MANUAL_END:description -->")
+        lines.append(DESCRIPTION_END)
         lines.append("")
 
         # Auto-generated section: Technologies used
@@ -385,7 +395,7 @@ class ReadmeGenerator(BaseGenerator):
         # セットアップ手順
         lines.append("## セットアップ")
         lines.append("")
-        lines.append("<!-- MANUAL_START:setup -->")
+        lines.append(SETUP_START)
         if "setup" in manual_sections:
             # 手動セクションがある場合は、パッケージマネージャに基づいて内容を更新
             updated_setup = self._update_manual_setup_section(manual_sections["setup"])
@@ -393,16 +403,16 @@ class ReadmeGenerator(BaseGenerator):
         else:
             # 自動生成
             lines.extend(self._generate_setup_section())
-        lines.append("<!-- MANUAL_END:setup -->")
+        lines.append(SETUP_END)
         lines.append("")
 
         # 使用方法
         if "usage" in manual_sections:
             lines.append("## 使用方法")
             lines.append("")
-            lines.append("<!-- MANUAL_START:usage -->")
+            lines.append(USAGE_START)
             lines.append(manual_sections["usage"])
-            lines.append("<!-- MANUAL_END:usage -->")
+            lines.append(USAGE_END)
             lines.append("")
 
         # ビルドおよびテスト
@@ -453,17 +463,15 @@ class ReadmeGenerator(BaseGenerator):
 
         # 手動セクション: その他
         if "other" in manual_sections:
-            lines.append("<!-- MANUAL_START:other -->")
+            lines.append(OTHER_START)
             lines.append(manual_sections["other"])
-            lines.append("<!-- MANUAL_END:other -->")
+            lines.append(OTHER_END)
             lines.append("")
 
         # フッター
         lines.append("---")
         lines.append("")
-        lines.append(
-            f"*このREADMEは自動生成されています。最終更新: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
-        )
+        lines.append(f"*このREADMEは自動生成されています。最終更新: {get_current_timestamp()}*")
         lines.append("")
 
         return "\n".join(lines)
@@ -596,10 +604,10 @@ class ReadmeGenerator(BaseGenerator):
         in_description = False
 
         for line in lines:
-            if "<!-- MANUAL_START:description -->" in line:
+            if DESCRIPTION_START in line:
                 in_description = True
                 continue
-            elif "<!-- MANUAL_END:description -->" in line:
+            elif DESCRIPTION_END in line:
                 break
             elif in_description:
                 description_lines.append(line)
