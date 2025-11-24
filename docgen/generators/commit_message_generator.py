@@ -11,8 +11,6 @@ from ..utils.exceptions import ErrorMessages
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
 
-logger = get_logger("commit_message_generator")
-
 
 class CommitMessageGenerator:
     """コミットメッセージ生成クラス"""
@@ -28,6 +26,7 @@ class CommitMessageGenerator:
         self.project_root = project_root
         self.config = config
         self.agents_config = config.get("agents", {})
+        self.logger = get_logger("commit_message_generator")
 
     def generate(self) -> str | None:
         """
@@ -41,7 +40,7 @@ class CommitMessageGenerator:
             staged_changes = self._get_staged_changes()
 
             if not staged_changes:
-                logger.warning("ステージング済みの変更がありません。")
+                self.logger.warning("ステージング済みの変更がありません。")
                 return None
 
             # LLMクライアントを取得
@@ -53,7 +52,7 @@ class CommitMessageGenerator:
             )
 
             if not client:
-                logger.warning("LLMクライアントの作成に失敗しました。")
+                self.logger.warning("LLMクライアントの作成に失敗しました。")
                 return None
 
             # プロンプトを作成
@@ -66,7 +65,7 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
 簡潔で明確なメッセージを1行で生成してください。"""
 
             # LLMで生成
-            logger.info("LLMを使用してコミットメッセージを生成中...")
+            self.logger.info("LLMを使用してコミットメッセージを生成中...")
             generated_message = client.generate(prompt, system_prompt=system_prompt)
 
             if generated_message:
@@ -74,11 +73,11 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
                 message = generated_message.strip().split("\n")[0].strip()
                 return message
             else:
-                logger.warning("LLM生成が空でした。")
+                self.logger.warning("LLM生成が空でした。")
                 return None
 
         except Exception as e:
-            logger.error(f"コミットメッセージ生成中にエラーが発生しました: {e}", exc_info=True)
+            self.logger.error(f"コミットメッセージ生成中にエラーが発生しました: {e}", exc_info=True)
             return None
 
     def _get_staged_changes(self) -> str | None:
@@ -98,7 +97,7 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
             )
 
             if result.returncode != 0:
-                logger.warning(f"git diff --cachedが失敗しました: {result.stderr}")
+                self.logger.warning(f"git diff --cachedが失敗しました: {result.stderr}")
                 return None
 
             # 統計情報とdiffの両方を取得
@@ -123,10 +122,10 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
                 return stat_output
 
         except FileNotFoundError:
-            logger.error(ErrorMessages.GIT_COMMAND_NOT_FOUND)
+            self.logger.error(ErrorMessages.GIT_COMMAND_NOT_FOUND)
             return None
         except Exception as e:
-            logger.error(f"ステージング済みの変更の取得中にエラーが発生しました: {e}")
+            self.logger.error(f"ステージング済みの変更の取得中にエラーが発生しました: {e}")
             return None
 
     def _create_prompt(self, staged_changes: str) -> str:

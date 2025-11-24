@@ -21,6 +21,8 @@ OTHER_END = "<!-- MANUAL_END:other -->"
 
 # Common strings
 UNKNOWN = "不明"
+GENERATION_TIMESTAMP_LABEL = "自動生成日時:"
+SECTION_SEPARATOR = "---"
 
 # Timestamp format
 CURRENT_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"

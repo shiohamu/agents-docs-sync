@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-24 12:59:22
+自動生成日時: 2025-11-24 13:15:17
 
 ---
 
@@ -1356,7 +1356,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:27*
+*定義場所: docgen/generators/agents_generator.py:26*
 
 ---
 
@@ -1379,7 +1379,22 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:30*
+*定義場所: docgen/generators/agents_generator.py:29*
+
+---
+
+### agents_path
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def agents_path(self):
+```
+
+*説明なし*
+
+*定義場所: docgen/generators/agents_generator.py:48*
 
 ---
 
@@ -1399,7 +1414,7 @@ class APIGenerator:
 
 APIドキュメント生成クラス
 
-*定義場所: docgen/generators/api_generator.py:27*
+*定義場所: docgen/generators/api_generator.py:25*
 
 ---
 
@@ -1422,7 +1437,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/api_generator.py:30*
+*定義場所: docgen/generators/api_generator.py:28*
 
 ---
 
@@ -1442,7 +1457,7 @@ APIドキュメントを生成
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/api_generator.py:59*
+*定義場所: docgen/generators/api_generator.py:65*
 
 ---
 
@@ -1505,7 +1520,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:122*
+*定義場所: docgen/generators/base_generator.py:172*
 
 ---
 
@@ -1525,7 +1540,7 @@ class CommitMessageGenerator:
 
 コミットメッセージ生成クラス
 
-*定義場所: docgen/generators/commit_message_generator.py:17*
+*定義場所: docgen/generators/commit_message_generator.py:15*
 
 ---
 
@@ -1546,7 +1561,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     config: 設定辞書
 
-*定義場所: docgen/generators/commit_message_generator.py:20*
+*定義場所: docgen/generators/commit_message_generator.py:18*
 
 ---
 
@@ -1566,7 +1581,7 @@ def generate(self) -> str | None:
 Returns:
     生成されたコミットメッセージ（エラー時はNone）
 
-*定義場所: docgen/generators/commit_message_generator.py:32*
+*定義場所: docgen/generators/commit_message_generator.py:31*
 
 ---
 
@@ -2125,7 +2140,7 @@ class ReadmeGenerator:
 
 README generation class
 
-*定義場所: docgen/generators/readme_generator.py:28*
+*定義場所: docgen/generators/readme_generator.py:25*
 
 ---
 
@@ -2148,7 +2163,7 @@ Args:
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
 
-*定義場所: docgen/generators/readme_generator.py:31*
+*定義場所: docgen/generators/readme_generator.py:28*
 
 ---
 
@@ -2163,7 +2178,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:51*
+*定義場所: docgen/generators/readme_generator.py:48*
 
 ---
 
@@ -4088,7 +4103,7 @@ def get_current_timestamp() -> str:
 
 Get current timestamp in standard format.
 
-*定義場所: docgen/utils/markdown_utils.py:29*
+*定義場所: docgen/utils/markdown_utils.py:31*
 
 ---
 
@@ -4113,7 +4128,7 @@ Args:
 Returns:
     Project description text
 
-*定義場所: docgen/utils/markdown_utils.py:36*
+*定義場所: docgen/utils/markdown_utils.py:38*
 
 ---
 
@@ -4139,7 +4154,7 @@ Args:
 Returns:
     Formatted command lines
 
-*定義場所: docgen/utils/markdown_utils.py:77*
+*定義場所: docgen/utils/markdown_utils.py:79*
 
 ---
 
@@ -4156,7 +4171,7 @@ class MarkdownSectionBuilder:
 
 Utility class for building markdown sections.
 
-*定義場所: docgen/utils/markdown_utils.py:112*
+*定義場所: docgen/utils/markdown_utils.py:114*
 
 ---
 
@@ -4180,7 +4195,7 @@ Args:
 Returns:
     Formatted markdown lines
 
-*定義場所: docgen/utils/markdown_utils.py:116*
+*定義場所: docgen/utils/markdown_utils.py:118*
 
 ---
 
@@ -4204,7 +4219,7 @@ Args:
 Returns:
     Formatted code block lines
 
-*定義場所: docgen/utils/markdown_utils.py:133*
+*定義場所: docgen/utils/markdown_utils.py:135*
 
 ---
 
@@ -4227,7 +4242,7 @@ Args:
 Returns:
     Cleaned text with thinking processes removed
 
-*定義場所: docgen/utils/markdown_utils.py:153*
+*定義場所: docgen/utils/markdown_utils.py:155*
 
 ---
 

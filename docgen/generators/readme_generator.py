@@ -8,21 +8,18 @@ import re
 from typing import Any
 
 from ..models import ProjectInfo, ReadmeDocument
-from ..utils.logger import get_logger
 from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,
     OTHER_END,
     OTHER_START,
+    SECTION_SEPARATOR,
     SETUP_END,
     SETUP_START,
     USAGE_END,
     USAGE_START,
-    get_current_timestamp,
 )
 from .base_generator import BaseGenerator
-
-logger = get_logger("readme_generator")
 
 
 class ReadmeGenerator(BaseGenerator):
@@ -51,13 +48,11 @@ class ReadmeGenerator(BaseGenerator):
     def readme_path(self):
         return self.output_path
 
-    def _get_output_path(self, config: dict[str, Any]) -> Path:
-        output_config = config.get("output", {})
-        readme_filename = output_config.get("readme", "README.md")
-        return self.project_root / readme_filename
-
     def _get_mode_key(self) -> str:
         return "readme_mode"
+
+    def _get_output_key(self) -> str:
+        return "readme"
 
     def _get_document_type(self) -> str:
         return "README.md"
@@ -67,6 +62,25 @@ class ReadmeGenerator(BaseGenerator):
 
     def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
         return self._create_readme_prompt(project_info)
+
+    def _create_readme_prompt(self, project_info: ProjectInfo) -> str:
+        """README生成用のLLMプロンプトを作成"""
+        prompt = f"""以下のプロジェクト情報を基に、README.mdドキュメントを生成してください。
+
+{self._format_project_info_for_prompt(project_info)}
+
+以下のセクションを含めてください:
+1. プロジェクト名と概要
+2. セットアップ手順
+3. 使用方法
+4. 技術スタック
+5. その他の情報
+
+重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
+マークダウン形式で、構造化された明確なドキュメントを作成してください。
+手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
+
+        return prompt
 
     def _get_project_overview_section(self, content: str) -> str:
         return self._extract_description_section(content)
@@ -319,16 +333,23 @@ class ReadmeGenerator(BaseGenerator):
 
         return "\n".join(lines)
 
-    def _generate_template(self, manual_sections: dict[str, str]) -> str:
+    def _generate_template(self, project_info: ProjectInfo) -> str:
         """
         Generate README based on template (existing implementation)
 
         Args:
-            manual_sections: Manual sections to preserve
+            project_info: Project info
 
         Returns:
             README content
         """
+        # Extract manual sections from existing README
+        try:
+            existing_content = self.readme_path.read_text()
+            manual_sections = self._extract_manual_sections(existing_content)
+        except (FileNotFoundError, OSError):
+            manual_sections = {}
+
         lines = []
 
         # Project name (inferred from directory name)
@@ -469,9 +490,9 @@ class ReadmeGenerator(BaseGenerator):
             lines.append("")
 
         # フッター
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
-        lines.append(f"*このREADMEは自動生成されています。最終更新: {get_current_timestamp()}*")
+        lines.append(self._generate_footer())
         lines.append("")
 
         return "\n".join(lines)
@@ -588,31 +609,6 @@ class ReadmeGenerator(BaseGenerator):
             lines.append("")
 
         return lines
-
-    def _extract_description_section(self, content: str) -> str:
-        """
-        Extract description section from content
-
-        Args:
-            content: README content
-
-        Returns:
-            Description section text
-        """
-        lines = content.split("\n")
-        description_lines = []
-        in_description = False
-
-        for line in lines:
-            if DESCRIPTION_START in line:
-                in_description = True
-                continue
-            elif DESCRIPTION_END in line:
-                break
-            elif in_description:
-                description_lines.append(line)
-
-        return "\n".join(description_lines)
 
     def _detect_dependencies(self) -> dict[str, list[str]]:
         """

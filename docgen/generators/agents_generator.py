@@ -12,16 +12,15 @@ from pydantic import ValidationError
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
 from ..models import AgentsDocument, ProjectInfo
-from ..utils.logger import get_logger
 from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,
+    GENERATION_TIMESTAMP_LABEL,
+    SECTION_SEPARATOR,
     UNKNOWN,
     get_current_timestamp,
 )
 from .base_generator import BaseGenerator
-
-logger = get_logger("agents_generator")
 
 
 class AgentsGenerator(BaseGenerator):
@@ -45,14 +44,15 @@ class AgentsGenerator(BaseGenerator):
         """
         super().__init__(project_root, languages, config, package_managers)
 
-    def _get_output_path(self, config: dict[str, Any]) -> Path:
-        output_path = Path(config.get("output", {}).get("agents_doc", "AGENTS.md"))
-        if not output_path.is_absolute():
-            output_path = self.project_root / output_path
-        return output_path
+    @property
+    def agents_path(self):
+        return self.output_path
 
     def _get_mode_key(self) -> str:
         return "agents_mode"
+
+    def _get_output_key(self) -> str:
+        return "agents_doc"
 
     def _get_document_type(self) -> str:
         return "AGENTS.md"
@@ -62,31 +62,6 @@ class AgentsGenerator(BaseGenerator):
 
     def _get_project_overview_section(self, content: str) -> str:
         return self._extract_description_section(content)
-
-    def _extract_description_section(self, content: str) -> str:
-        """
-        Extract description section from content
-
-        Args:
-            content: README content
-
-        Returns:
-            Description section text
-        """
-        lines = content.split("\n")
-        description_lines = []
-        in_description = False
-
-        for line in lines:
-            if DESCRIPTION_START in line:
-                in_description = True
-                continue
-            elif DESCRIPTION_END in line:
-                break
-            elif in_description:
-                description_lines.append(line)
-
-        return "\n".join(description_lines)
 
     def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
         prompt = f"""以下のプロジェクト情報を基に、AIコーディングエージェント向けのAGENTS.mdドキュメントを生成してください。
@@ -116,47 +91,54 @@ class AgentsGenerator(BaseGenerator):
         Returns:
             マークダウンの文字列
         """
+        # Extract manual sections from existing AGENTS.md
+        try:
+            existing_content = self.agents_path.read_text()
+            manual_sections = self._extract_manual_sections(existing_content)
+        except (FileNotFoundError, OSError):
+            manual_sections = {}
+
         lines = []
 
         # ヘッダー
         lines.append("# AGENTS ドキュメント")
         lines.append("")
-        lines.append(f"自動生成日時: {get_current_timestamp()}")
+        lines.append(f"{GENERATION_TIMESTAMP_LABEL} {get_current_timestamp()}")
         lines.append("")
         lines.append(
             "このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。"
         )
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # プロジェクト概要
-        lines.extend(self._generate_project_overview(project_info))
-        lines.append("---")
+        lines.extend(self._generate_project_overview(project_info, manual_sections))
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # 開発環境のセットアップ
         lines.extend(self._generate_setup_section(project_info))
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # ビルドおよびテスト手順
         lines.extend(self._generate_build_test_section(project_info))
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # コーディング規約
         lines.extend(self._generate_coding_standards_section(project_info))
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # プルリクエストの手順
         lines.extend(self._generate_pr_section(project_info))
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # カスタム指示
@@ -164,13 +146,11 @@ class AgentsGenerator(BaseGenerator):
         if custom_instructions:
             lines.extend(self._generate_custom_instructions_section(custom_instructions))
             lines.append("")
-            lines.append("---")
+            lines.append(SECTION_SEPARATOR)
             lines.append("")
 
         # フッター
-        lines.append(
-            f"*このドキュメントは自動生成されています。最終更新: {get_current_timestamp()}*"
-        )
+        lines.append(self._generate_footer())
         lines.append("")
 
         return "\n".join(lines)
@@ -194,13 +174,15 @@ class AgentsGenerator(BaseGenerator):
             return self._generate_with_llm_legacy(project_info)
 
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
                 exc_info=True,
             )
             return self._generate_template(project_info)
 
-    def _generate_project_overview(self, project_info: ProjectInfo) -> list[str]:
+    def _generate_project_overview(
+        self, project_info: ProjectInfo, manual_sections: dict[str, str]
+    ) -> list[str]:
         """プロジェクト概要セクションを生成"""
         lines = []
         lines.append("## プロジェクト概要")
@@ -209,11 +191,14 @@ class AgentsGenerator(BaseGenerator):
         lines.append(DESCRIPTION_START)
         lines.append("")
 
-        # プロジェクト説明を取得
-        from ..utils.markdown_utils import extract_project_description
+        if "description" in manual_sections:
+            lines.append(manual_sections["description"])
+        else:
+            # プロジェクト説明を取得
+            from ..utils.markdown_utils import extract_project_description
 
-        description = extract_project_description(self.project_root, project_info.description)
-        lines.append(description)
+            description = extract_project_description(self.project_root, project_info.description)
+            lines.append(description)
 
         lines.append("")
         lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else UNKNOWN}")
@@ -544,13 +529,13 @@ class AgentsGenerator(BaseGenerator):
         # ヘッダー
         lines.append(f"# {data.title}")
         lines.append("")
-        lines.append(f"自動生成日時: {get_current_timestamp()}")
+        lines.append(f"{GENERATION_TIMESTAMP_LABEL} {get_current_timestamp()}")
         lines.append("")
         lines.append(
             "このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。"
         )
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # プロジェクト概要
@@ -564,7 +549,7 @@ class AgentsGenerator(BaseGenerator):
         lines.append("")
         lines.append(DESCRIPTION_END)
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # 開発環境のセットアップ
@@ -574,7 +559,7 @@ class AgentsGenerator(BaseGenerator):
             )
         )
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # ビルドおよびテスト手順
@@ -584,7 +569,7 @@ class AgentsGenerator(BaseGenerator):
             )
         )
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # コーディング規約
@@ -594,7 +579,7 @@ class AgentsGenerator(BaseGenerator):
             )
         )
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # プルリクエストの手順
@@ -604,7 +589,7 @@ class AgentsGenerator(BaseGenerator):
             )
         )
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         # カスタム指示
@@ -612,7 +597,7 @@ class AgentsGenerator(BaseGenerator):
         if custom_instructions:
             lines.extend(self._generate_custom_instructions_section(custom_instructions))
             lines.append("")
-            lines.append("---")
+            lines.append(SECTION_SEPARATOR)
             lines.append("")
 
         # フッター
@@ -820,7 +805,7 @@ class AgentsGenerator(BaseGenerator):
                 or "<|message|>" in text
                 or "commentary/analysis" in text_lower
             ):
-                logger.warning("特殊なマーカーパターンが検出されました")
+                self.logger.warning("特殊なマーカーパターンが検出されました")
                 return False
 
             # 思考過程のパターンが含まれていないかチェック
@@ -869,7 +854,7 @@ class AgentsGenerator(BaseGenerator):
 
             for pattern in thinking_patterns:
                 if pattern in text_lower:
-                    logger.warning(f"思考過程のパターンが検出されました: {pattern}")
+                    self.logger.warning(f"思考過程のパターンが検出されました: {pattern}")
                     return False
 
             # プレースホルダーが含まれていないかチェック
@@ -884,7 +869,7 @@ class AgentsGenerator(BaseGenerator):
 
             for pattern in placeholder_patterns:
                 if pattern in text:
-                    logger.warning(f"プレースホルダーが検出されました: {pattern}")
+                    self.logger.warning(f"プレースホルダーが検出されました: {pattern}")
                     return False
 
         # マークダウンコードブロック内に思考過程が含まれていないかチェック
@@ -899,7 +884,7 @@ class AgentsGenerator(BaseGenerator):
                     in_markdown_block = False
             elif in_markdown_block:
                 if any(pattern in line.lower() for pattern in thinking_patterns):
-                    logger.warning("マークダウンコードブロック内に思考過程が検出されました")
+                    self.logger.warning("マークダウンコードブロック内に思考過程が検出されました")
                     return False
 
         return True

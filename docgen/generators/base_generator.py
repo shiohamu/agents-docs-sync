@@ -38,6 +38,7 @@ class BaseGenerator(ABC):
         self.config: dict[str, Any] = config
         self.package_managers: dict[str, str] = package_managers or {}
         self.output_path: Path = self._get_output_path(config)
+        self.logger = get_logger(self.__class__.__name__.lower())
 
         # プロジェクト情報収集器
         from ..collectors.project_info_collector import ProjectInfoCollector
@@ -58,9 +59,58 @@ class BaseGenerator(ABC):
         pass
 
     @abstractmethod
+    def _get_output_key(self) -> str:
+        """出力キーを取得（サブクラスで実装）"""
+        pass
+
+    @abstractmethod
     def _get_document_type(self) -> str:
         """ドキュメントタイプを取得（サブクラスで実装）"""
         pass
+
+    def _get_output_path(self, config: dict[str, Any]) -> Path:
+        """出力パスを取得"""
+        output_config = config.get("output", {})
+        filename = output_config.get(self._get_output_key(), self._get_default_filename())
+        output_path = Path(filename)
+        if not output_path.is_absolute():
+            output_path = self.project_root / output_path
+        return output_path
+
+    def _get_default_filename(self) -> str:
+        """デフォルトファイル名を取得（サブクラスでオーバーライド可能）"""
+        return f"{self._get_document_type()}"
+
+    def _generate_footer(self) -> str:
+        """フッターを生成"""
+        return f"*この{self._get_document_type()}は自動生成されています。最終更新: {get_current_timestamp()}*"
+
+    def _extract_description_section(self, content: str) -> str:
+        """
+        Extract description section from content
+
+        Args:
+            content: Document content
+
+        Returns:
+            Description section text
+        """
+        from ..utils.markdown_utils import DESCRIPTION_END, DESCRIPTION_START
+
+        lines = content.split("\n")
+        description_lines = []
+        in_description = False
+
+        for line in lines:
+            if DESCRIPTION_START in line:
+                in_description = True
+                continue
+            elif DESCRIPTION_END in line:
+                break
+            elif in_description:
+                description_lines.append(line)
+
+        return "\n".join(description_lines)
 
     @abstractmethod
     def _get_structured_model(self) -> Any:
@@ -147,8 +197,7 @@ class BaseGenerator(ABC):
 
             return True
         except Exception as e:
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.error(f"ドキュメント生成に失敗しました: {e}", exc_info=True)
+            self.logger.error(f"ドキュメント生成に失敗しました: {e}", exc_info=True)
             return False
 
     def _extract_manual_sections_from_existing(self) -> dict[str, str]:
@@ -275,8 +324,7 @@ class BaseGenerator(ABC):
             return self._generate_with_llm_legacy(project_info)
 
         except Exception as e:
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.error(
+            self.logger.error(
                 f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
                 exc_info=True,
             )
@@ -323,8 +371,7 @@ class BaseGenerator(ABC):
             client = self._get_llm_client_with_fallback()
 
             if not client:
-                logger = get_logger(self.__class__.__name__.lower())
-                logger.warning(
+                self.logger.warning(
                     "LLMクライアントの作成に失敗しました。テンプレート生成にフォールバックします。"
                 )
                 return self._generate_template(project_info)
@@ -336,8 +383,7 @@ class BaseGenerator(ABC):
             prompt = self._create_llm_prompt(project_info)
 
             # 構造化出力モデルで生成
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.info("Outlinesを使用して構造化されたドキュメントを生成中...")
+            self.logger.info("Outlinesを使用して構造化されたドキュメントを生成中...")
             structured_data = outlines_model(prompt, self._get_structured_model())
 
             # 構造化データをマークダウンに変換
@@ -346,8 +392,7 @@ class BaseGenerator(ABC):
             return markdown
 
         except Exception as e:
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.error(
+            self.logger.error(
                 f"Outlines生成中にエラーが発生しました: {e}。従来のLLM生成にフォールバックします。",
                 exc_info=True,
             )
@@ -382,8 +427,7 @@ class BaseGenerator(ABC):
             client = self._get_llm_client_with_fallback()
 
             if not client:
-                logger = get_logger(self.__class__.__name__.lower())
-                logger.warning(
+                self.logger.warning(
                     "LLMクライアントの作成に失敗しました。テンプレート生成にフォールバックします。"
                 )
                 return self._generate_template(project_info)
@@ -399,8 +443,7 @@ class BaseGenerator(ABC):
 手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
 
             # LLMで生成
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.info(f"LLMを使用して{self._get_document_type()}を生成中...")
+            self.logger.info(f"LLMを使用して{self._get_document_type()}を生成中...")
             generated_text = client.generate(prompt, system_prompt=system_prompt)
 
             if generated_text:
@@ -409,7 +452,7 @@ class BaseGenerator(ABC):
 
                 # 出力を検証
                 if not self._validate_output(cleaned_text):
-                    logger.warning(
+                    self.logger.warning(
                         "LLM出力の検証に失敗しました。テンプレート生成にフォールバックします。"
                     )
                     return self._generate_template(project_info)
@@ -417,18 +460,17 @@ class BaseGenerator(ABC):
                 # 生成されたテキストにタイムスタンプを追加
                 lines = cleaned_text.split("\n")
                 # フッターを追加（既に含まれていない場合）
-                footer_text = f"*この{self._get_document_type()}は自動生成されています。最終更新: {get_current_timestamp()}*"
+                footer_text = self._generate_footer()
                 if not any(footer_text.split("*")[1] in line for line in lines):
                     lines.append("")
                     lines.append(footer_text)
                 return "\n".join(lines)
             else:
-                logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
+                self.logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
                 return self._generate_template(project_info)
 
         except Exception as e:
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.error(
+            self.logger.error(
                 f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
                 exc_info=True,
             )
@@ -457,8 +499,7 @@ class BaseGenerator(ABC):
             )
 
             if not client:
-                logger = get_logger(self.__class__.__name__.lower())
-                logger.warning(
+                self.logger.warning(
                     "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
                 )
                 return template_content
@@ -481,8 +522,7 @@ class BaseGenerator(ABC):
             system_prompt = """あなたは技術ドキュメント作成の専門家です。プロジェクト概要を明確で有用な形で記述してください。
 最終的な出力のみを生成し、思考過程や試行錯誤の痕跡を含めないでください。"""
 
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.info("LLMを使用してプロジェクト概要セクションを改善中...")
+            self.logger.info("LLMを使用してプロジェクト概要セクションを改善中...")
             improved_overview = client.generate(prompt, system_prompt=system_prompt)
 
             if improved_overview:
@@ -491,7 +531,9 @@ class BaseGenerator(ABC):
 
                 # 出力を検証
                 if not self._validate_output(cleaned_overview):
-                    logger.warning("LLM出力の検証に失敗しました。テンプレートのみを使用します。")
+                    self.logger.warning(
+                        "LLM出力の検証に失敗しました。テンプレートのみを使用します。"
+                    )
                     return template_content
 
                 # テンプレートのプロジェクト概要セクションを置き換え
@@ -518,8 +560,7 @@ class BaseGenerator(ABC):
                 return template_content
 
         except Exception as e:
-            logger = get_logger(self.__class__.__name__.lower())
-            logger.warning(
+            self.logger.warning(
                 f"ハイブリッド生成中にエラーが発生しました: {e}。テンプレートのみを使用します。",
                 exc_info=True,
             )

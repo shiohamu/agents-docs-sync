@@ -77,7 +77,7 @@ class LLMClientInitializer:
         """
         try:
             # Import the module
-            module = __import__(import_name)
+            __import__(import_name)
 
             # Create client instance
             return client_class(config)
@@ -153,12 +153,10 @@ class LLMClientInitializer:
             """Execute function with retry logic."""
             import time
 
-            last_exception = None
             for attempt in range(max_retries):
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
-                    last_exception = e
                     if attempt < max_retries - 1:
                         time.sleep(retry_delay * (2**attempt))  # Exponential backoff
                     else:

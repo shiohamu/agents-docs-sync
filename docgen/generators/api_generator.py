@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Any
 
 from ..detectors.detector_patterns import DetectorPatterns
 from ..models import APIInfo
-from ..utils.markdown_utils import get_current_timestamp
+from ..utils.cache import CacheManager
+from ..utils.logger import get_logger
+from ..utils.markdown_utils import (
+    GENERATION_TIMESTAMP_LABEL,
+    SECTION_SEPARATOR,
+    get_current_timestamp,
+)
 from .parsers.generic_parser import GenericParser
 from .parsers.js_parser import JSParser
 from .parsers.python_parser import PythonParser
@@ -15,16 +21,8 @@ from .parsers.python_parser import PythonParser
 if TYPE_CHECKING:
     from .parsers.base_parser import BaseParser
 
-# ロガーのインポート
-from ..base_generator import BaseGenerator
-from ..generators.parsers.base_parser import BaseParser
-from ..utils.cache import CacheManager
-from ..utils.logger import get_logger
 
-logger = get_logger("api_generator")
-
-
-class APIGenerator(BaseGenerator):
+class APIGenerator:
     """APIドキュメント生成クラス"""
 
     def __init__(
@@ -43,15 +41,23 @@ class APIGenerator(BaseGenerator):
             config: 設定辞書
             package_managers: 検出されたパッケージマネージャの辞書
         """
-        super().__init__(project_root, languages, config, package_managers)
-        self.output_path = Path(config.get("output", {}).get("api_doc", "docs/api.md"))
+        self.project_root = project_root
+        self.languages = languages
+        self.config = config
+        self.package_managers = package_managers or {}
+        self.logger = get_logger("api_generator")
+
+        # Set output path
+        output_config = self.config.get("output", {})
+        filename = output_config.get("api_doc", "docs/api.md")
+        self.output_path = Path(filename)
         if not self.output_path.is_absolute():
-            self.output_path = project_root / self.output_path
+            self.output_path = self.project_root / self.output_path
 
         # キャッシュマネージャーの初期化
-        cache_enabled = config.get("cache", {}).get("enabled", True)
+        cache_enabled = self.config.get("cache", {}).get("enabled", True)
         self.cache_manager = (
-            CacheManager(project_root=project_root, enabled=cache_enabled)
+            CacheManager(project_root=self.project_root, enabled=cache_enabled)
             if cache_enabled
             else None
         )
@@ -100,7 +106,7 @@ class APIGenerator(BaseGenerator):
 
             return True
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 f"APIドキュメント生成中に予期しないエラーが発生しました: {e}", exc_info=True
             )
             return False
@@ -139,9 +145,9 @@ class APIGenerator(BaseGenerator):
         # ヘッダー
         lines.append("# API ドキュメント")
         lines.append("")
-        lines.append(f"自動生成日時: {get_current_timestamp()}")
+        lines.append(f"{GENERATION_TIMESTAMP_LABEL} {get_current_timestamp()}")
         lines.append("")
-        lines.append("---")
+        lines.append(SECTION_SEPARATOR)
         lines.append("")
 
         if not apis:
@@ -186,7 +192,7 @@ class APIGenerator(BaseGenerator):
 
             lines.append(f"*定義場所: {file_path}:{api['line']}*")
             lines.append("")
-            lines.append("---")
+            lines.append(SECTION_SEPARATOR)
             lines.append("")
 
         return "\n".join(lines)
