@@ -75,6 +75,30 @@ class AgentsGenerator(BaseGenerator):
 重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
 手動セクションのマーカー（<!-- MANUAL_START:... --> など）は含めないでください。内容のみを出力してください。"""
 
+    def _replace_overview_section(self, content: str, new_overview: str) -> str:
+        """
+        プロジェクト概要セクションを置き換え（BaseGeneratorのオーバーライド）
+        AGENTS.mdでは「プロジェクト概要」セクションを置き換える
+        """
+        import re
+
+        # "## プロジェクト概要" セクションの内容を置き換え
+        # パターン: "## プロジェクト概要" から次のセクション（## で始まる行）の前まで
+        pattern = r"(## プロジェクト概要\s*\n)(.*?)(\n## )"
+        replacement = r"\1\n" + new_overview + r"\3"
+
+        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+
+        # デバッグ: 置換が成功したか確認
+        if updated_content == content:
+            self.logger.warning(
+                "Overview section replacement did not match. Pattern may need adjustment."
+            )
+        else:
+            self.logger.debug("Overview section successfully replaced.")
+
+        return updated_content
+
     def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
         prompt = f"""以下のプロジェクト情報を基に、AIコーディングエージェント向けのAGENTS.mdドキュメントを生成してください。
 
@@ -119,8 +143,8 @@ class AgentsGenerator(BaseGenerator):
             "go": "go" in self.languages,
             "llm_mode": self.agents_config.get("llm_mode", "both"),
             "package_managers": self.package_managers,
-            "build_commands": project_info.build_commands or [],
-            "test_commands": project_info.test_commands or [],
+            "build_commands": self._format_commands(project_info.build_commands or []),
+            "test_commands": self._format_commands(project_info.test_commands or []),
             "coding_standards": project_info.coding_standards or {},
             "custom_instructions": self._generate_custom_instructions_content(),
         }
@@ -148,6 +172,26 @@ class AgentsGenerator(BaseGenerator):
         if custom_instructions:
             return "\n".join(self._generate_custom_instructions_section(custom_instructions))
         return ""
+
+    def _format_commands(self, commands: list[str]) -> str:
+        """
+        コマンドリストをマークダウンのコードブロックとしてフォーマット
+
+        Args:
+            commands: コマンドのリスト
+
+        Returns:
+            フォーマットされたマークダウン文字列
+        """
+        if not commands:
+            return ""
+        parts = ["```bash"]
+        for cmd in commands[:5]:  # 最大5個
+            parts.append(cmd)
+        if len(commands) > 5:
+            parts.append("# ... その他のコマンド")
+        parts.append("```")
+        return "\n".join(parts)
 
     def _convert_structured_data_to_markdown(
         self, data: AgentsDocument, project_info: ProjectInfo

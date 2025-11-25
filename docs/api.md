@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-26 05:27:33
+自動生成日時: 2025-11-26 06:24:58
 
 ---
 
@@ -1547,7 +1547,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:684*
+*定義場所: docgen/generators/base_generator.py:681*
 
 ---
 

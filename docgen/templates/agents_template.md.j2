@@ -103,9 +103,9 @@ go mod download
 
 ---
 
+
 ## ビルドおよびテスト手順
 
-<!-- MANUAL_START:usage -->
 ### ビルド手順
 
 {% if build_commands %}
@@ -117,25 +117,10 @@ go mod download
 ### テスト実行
 
 {% if test_commands %}
-{% for cmd in test_commands %}
-#### APIを使用する場合
-
-```bash
-{{ cmd }}
-```
-
-#### ローカルLLMを使用する場合
-
-```bash
-{{ cmd }}
-```
-
-**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
-{% endfor %}
+{{ test_commands }}
 {% else %}
 テストコマンドは設定されていません。
 {% endif %}
-<!-- MANUAL_END:usage -->
 
 ---
 

@@ -311,12 +311,27 @@ class ReadmeGenerator(BaseGenerator):
         """
         import re
 
-        # description_sectionの内容を置き換え
-        # パターン: MANUAL_START:description ... MANUAL_END:description の後から、次のセクション（## 使用技術など）の前まで
-        pattern = r"(<!-- MANUAL_START:description -->\n<!-- MANUAL_END:description -->\n)(.*?)(\n## 使用技術)"
-        replacement = r"\1" + new_overview + r"\3"
+        # パターン1: 手動セクションマーカーがある場合
+        # MANUAL_START:description ... MANUAL_END:description の後から、次のセクション（## 使用技術など）の前まで
+        pattern_with_markers = r"(<!-- MANUAL_START:description -->\s*<!-- MANUAL_END:description -->\s*)(.*?)(\s*## 使用技術)"
 
-        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+        if re.search(pattern_with_markers, content, flags=re.DOTALL):
+            replacement = r"\1" + new_overview + r"\3"
+            updated_content = re.sub(pattern_with_markers, replacement, content, flags=re.DOTALL)
+        else:
+            # パターン2: マーカーがない場合（テンプレート変更後）、タイトルと「使用技術」の間を置換
+            # タイトル行（# ...）の次の行から ## 使用技術 の前まで
+            pattern_no_markers = r"(# .*?\n)(.*?)(\n## 使用技術)"
+            replacement = r"\1\n" + new_overview + r"\3"
+            updated_content = re.sub(pattern_no_markers, replacement, content, flags=re.DOTALL)
+
+        # デバッグ: 置換が成功したか確認
+        if updated_content == content:
+            self.logger.warning(
+                "Overview section replacement did not match. Pattern may need adjustment."
+            )
+        else:
+            self.logger.debug("Overview section successfully replaced.")
 
         return updated_content
 

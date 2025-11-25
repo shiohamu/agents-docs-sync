@@ -1,38 +1,47 @@
 # agents-docs-sync
 
-<!-- MANUAL_START:description -->
+agents-docs-sync は、コミットごとに自動でテスト実行・ドキュメント生成を行い、その結果を AGENTS.md に反映させる CI/CD パイプラインです。  
+Python とシェルスクリプトの組み合わせで構成されており、以下のようなワークフローが想定されています。
 
-<!-- MANUAL_END:description -->
-`agents‑docs‐sync`は、コミットごとに自動でテストを実行し、ドキュメントを生成して `AGENTS.md` を更新するパイプラインです。  
-主な構成要素は以下の通りです。
+* **テスト実行** – `pytest`（Python）、`npm test`（Node.js）と `go test ./...` を順に走らせることで、多言語プロジェクト全体を網羅的に検証します。  
+* **ドキュメント生成** – `docgen/docgen.py` が YAML 形式の設定ファイルから API ドキュメントや利用例を書き出し、AGENTS.md を自動更新します。  
+* **ビルド・デプロイ** – uv（Python パッケージマネージャ）を使い依存関係同期 (`uv sync`) とパッケージ化(`uv build`)、スクリプト実行 (`uv run python3 docgen/docgen.py`) を一連のビルドステップとしてまとめています。  
 
-- **使用言語**：Python とシェルスクリプト
-- **主要機能**
-  - コミット時にテスト（pytest、npm test、go test）を実行し失敗したらビルド停止  
-  - 成功後 `docgen/docgen.py` を走らせて最新の API ドキュメントと `AGENTS.md` を自動生成
-- **依存関係**（Python）
-  ```text
-  pyyaml>=6.0.3
-  pytest>=7.4.0
-  pytest-cov>=4.1.0
-  pytest-mock>=3.11.1
-  ```
-- **ビルド手順**
-  ```bash
-  uv sync           # 必要なパッケージを同期（仮想環境作成・依存関係解決）
-  uv build          # ビルドプロセスの実行
-  uv run python3 docgen/docgen.py   # ドキュメント生成スクリプトの起動
-  ```
-- **テスト手順**
-  ```bash
-  uv run pytest tests/ -v --tb=short    # Python テスト（詳細出力）
-  npm test                               # Node.js のユニット／統合テスト
-  go test ./...                          # Go モジュール全体のテスト実行
-  ```
-- **コーディング規約**  
-  - 静的解析・フォーマッティングは `ruff` を使用
+### 主要な技術スタック
 
-このプロジェクトにより、リポジトリ内で最新状態を保つドキュメントと一貫した品質保証が自動化されます。
+| コンポーネント | バージョン要件 |
+|-----------------|---------------|
+| Python          | `pyyaml>=6.0.3`<br>`pytest>=7.4.0`<br>`pytest-cov>=4.1.0`<br>`pytest-mock>=3.11.1` |
+| シェルスクリプト | 標準的な POSIX 互換シェル（Bash 等） |
+
+### コーディング規約
+
+* **リンタ**：Ruff を使用して静的解析とコードフォーマットを統一します。  
+* テストは `-v` オプションで詳細出力、短いトレースバック (`--tb=short`) で可読性向上。
+
+### ビルド・テストコマンド
+
+```bash
+# Build（依存関係同期＋パッケージ化）
+uv sync
+uv build
+
+# ドキュメント生成と AGENTS.md の更新
+uv run python3 docgen/docgen.py
+
+# テスト実行
+uv run pytest tests/ -v --tb=short   # Pythonテスト
+npm test                               # Node.jsテスト
+go test ./...                          # Go言語のユニットテスト
+```
+
+### 期待される成果物
+
+* **AGENTS.md**：最新の API スペックと使用例を含むマークダウンファイル。  
+* **ドキュメントディレクトリ**（`docs/` 等）：自動生成された HTML や Markdown ファイル。  
+* テストカバレッジレポートやログは CI 環境に出力され、変更履歴と共にプルリクエストで確認可能。
+
+このプロジェクトを導入することで、開発者はコードの品質チェックだけでなく、ドキュメントの最新化まで一括して管理できるため、継続的デリバリー（CD）環境下でも整合性と可読性が保たれます。
 ## 使用技術
 
 - Python
@@ -52,9 +61,6 @@
 
 ## セットアップ
 
-<!-- MANUAL_START:setup -->
-# Setup
-
 
 ## Prerequisites
 
@@ -99,53 +105,7 @@ uv sync
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
-<!-- MANUAL_END:setup -->
-# Setup
 
-
-## Prerequisites
-
-- Python 3.12以上
-
-
-
-## Installation
-
-
-### Python
-
-```bash
-# uvを使用する場合
-uv sync
-```
-
-
-
-
-## LLM環境のセットアップ
-
-### APIを使用する場合
-
-1. **APIキーの取得と設定**
-
-   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
-   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
-
-2. **API使用時の注意事項**
-   - APIレート制限に注意してください
-   - コスト管理のために使用量を監視してください
-
-### ローカルLLMを使用する場合
-
-1. **ローカルLLMのインストール**
-
-   - Ollamaをインストール: https://ollama.ai/
-   - モデルをダウンロード: `ollama pull llama3`
-   - サービスを起動: `ollama serve`
-
-2. **ローカルLLM使用時の注意事項**
-   - モデルが起動していることを確認してください
-   - ローカルリソース（メモリ、CPU）を監視してください
 
 
 
@@ -175,4 +135,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-26 05:27:33*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-26 06:24:58*

@@ -496,27 +496,24 @@ class BaseGenerator(ABC):
         Returns:
             置き換え後のコンテンツ
         """
+        import re
+
         # デフォルト実装: "## プロジェクト概要" または "## 概要" セクションを置き換え
-        lines = content.split("\n")
-        new_lines = []
-        skip_until_end = False
-        replaced = False
+        # パターン: ヘッダーから次のセクション（## で始まる行）の前まで
+        pattern = r"(## (プロジェクト概要|概要)\s*\n)(.*?)(\n## )"
+        replacement = r"\1\n" + new_overview + r"\3"
 
-        for line in lines:
-            if not replaced and ("## プロジェクト概要" in line or "## 概要" in line):
-                new_lines.append(line)
-                new_lines.append("")
-                new_lines.extend(new_overview.split("\n"))
-                skip_until_end = True
-                replaced = True
-            elif skip_until_end and line.startswith("## "):
-                skip_until_end = False
-                new_lines.append("")
-                new_lines.append(line)
-            elif not skip_until_end:
-                new_lines.append(line)
+        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
-        return "\n".join(new_lines)
+        # デバッグ: 置換が成功したか確認
+        if updated_content == content:
+            self.logger.warning(
+                "Overview section replacement did not match. Pattern may need adjustment."
+            )
+        else:
+            self.logger.debug("Overview section successfully replaced.")
+
+        return updated_content
 
     def _generate_overview_with_llm(
         self, project_info: ProjectInfo, existing_overview: str
