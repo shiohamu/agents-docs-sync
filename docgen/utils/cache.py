@@ -9,7 +9,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from ..models import APIInfo, CacheEntry, CacheMetadata
+from ..models.api import APIInfo
+from ..models.cache import CacheEntry, CacheMetadata
 from .exceptions import ErrorMessages
 from .logger import get_logger
 

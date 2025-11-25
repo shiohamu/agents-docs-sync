@@ -3,7 +3,7 @@
 from pathlib import Path
 import re
 
-from ..models import APIInfo
+from ...models.api import APIInfo
 
 
 class ParserPatterns:

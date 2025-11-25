@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import time
 from typing import Any
 
-from ..models import LLMClientConfig, LLMConfig
+from ..models.llm import LLMClientConfig, LLMConfig
 from ..utils.exceptions import ConfigError, ErrorMessages
 from ..utils.llm_client_utils import LLMClientInitializer
 from ..utils.logger import get_logger

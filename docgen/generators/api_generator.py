@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ..detectors.detector_patterns import DetectorPatterns
-from ..models import APIInfo
+from ..models.api import APIInfo
 from ..utils.cache import CacheManager
 from ..utils.logger import get_logger
 from ..utils.markdown_utils import (

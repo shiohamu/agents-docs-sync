@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from ..models import ProjectInfo
+from ..models.project import ProjectInfo
 from ..utils.file_utils import safe_write_file
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger

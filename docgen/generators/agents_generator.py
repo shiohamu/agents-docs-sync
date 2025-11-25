@@ -11,7 +11,8 @@ from pydantic import ValidationError
 
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
-from ..models import AgentsDocument, ProjectInfo
+from ..models.agents import AgentsDocument
+from ..models.project import ProjectInfo
 from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,

@@ -7,7 +7,8 @@ from pathlib import Path
 import re
 from typing import Any
 
-from ..models import ProjectInfo, ReadmeDocument
+from ..models.project import ProjectInfo
+from ..models.readme import ReadmeDocument
 from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,
