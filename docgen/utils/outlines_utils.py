@@ -51,14 +51,24 @@ def create_outlines_model(client, provider: str = "openai"):
             return outlines.from_openai(client.client, client.model)
         elif hasattr(client, "base_url"):
             # ローカルLLMクライアント
-            # OpenAI互換APIとして扱う
-            import openai
+            provider = getattr(client, "provider", "ollama")
 
-            openai_client = openai.OpenAI(
-                base_url=client.base_url,
-                api_key="dummy",  # ローカルでは不要
-            )
-            return outlines.from_openai(openai_client, client.model)
+            if provider == "ollama":
+                # Ollamaの場合
+                return outlines.from_ollama(client.model, client.base_url)
+            elif provider == "lmstudio":
+                # LM StudioはOpenAI互換だが、Outlinesとの互換性が不十分
+                # 従来のLLM生成を使用
+                return outlines.from_llamacpp(client.model)
+            else:
+                # その他のローカルLLMはOpenAI互換APIとして扱う
+                import openai
+
+                openai_client = openai.OpenAI(
+                    base_url=client.base_url,
+                    api_key="dummy",  # ローカルでは不要
+                )
+                return outlines.from_openai(openai_client, client.model)
         else:
             raise ValueError("サポートされていないクライアントタイプ")
     except Exception:

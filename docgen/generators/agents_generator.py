@@ -390,11 +390,8 @@ class AgentsGenerator(BaseGenerator):
             "custom_instructions": "",
         }
 
-        # Jinja2テンプレートでレンダリング
-        markdown = self._render_template("agents_template.md.j2", context)
-
-        # 手動セクションをマージ
-        return self._merge_manual_sections(markdown, manual_sections)
+        # 構造化データをマークダウンに変換（未使用）
+        return ""
 
     def _format_structured_installation(self, setup_instructions) -> str:
         """構造化データをインストール手順にフォーマット"""

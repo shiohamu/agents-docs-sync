@@ -188,45 +188,78 @@ Standard installation instructions.
         # LLMを使用する場合のテスト（モックを使用）
         write_file(temp_project, "requirements.txt", "pytest>=7.0.0\n")
 
-        # LLMクライアントをモック
+        # LLMクライアントをモック（ローカルLLMとして設定）
         from unittest.mock import Mock, patch
 
         mock_client = Mock()
-        mock_client.generate.return_value = (
-            '{"title": "Test Project", "description": "This is an LLM generated description."}'
-        )
-        # Outlinesモデル作成のために必要な属性を追加
-        mock_client.client = Mock()
-        mock_client.client.api_key = "dummy"
-        mock_client.model = "gpt-4"
+        mock_client.generate.return_value = """# Test Project
 
-        # Outlinesモデルもモック
-        from docgen.models.readme import ReadmeDocument
+<!-- MANUAL_START:description -->
+This is an LLM generated description.
+<!-- MANUAL_END:description -->
 
-        mock_structured_data = ReadmeDocument(
-            title="Test Project",
-            description="This is an LLM generated description.",
-            technologies=["Python"],
-            dependencies=None,
-            setup_instructions=None,
-            project_structure=None,
-            build_commands=None,
-            test_commands=None,
-            manual_sections=None,
-        )
+## 使用技術
 
-        mock_outlines_model = Mock()
-        mock_outlines_model.return_value = mock_structured_data
+- Python
 
-        with (
-            patch(
-                "docgen.generators.base_generator.BaseGenerator._get_llm_client_with_fallback",
-                return_value=mock_client,
-            ),
-            patch(
-                "docgen.generators.base_generator.BaseGenerator._create_outlines_model",
-                return_value=mock_outlines_model,
-            ),
+## 依存関係
+
+### Python
+- pytest>=7.0.0
+
+## セットアップ
+
+<!-- MANUAL_START:setup -->
+## Prerequisites
+
+- Python 3.12以上
+
+## Installation
+
+### Python
+
+```bash
+pip install -r requirements.txt
+```
+
+## LLM環境のセットアップ
+
+### APIを使用する場合
+
+1. **APIキーの取得と設定**
+
+   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
+   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
+
+2. **API使用時の注意事項**
+   - APIレート制限に注意してください
+   - コスト管理のために使用量を監視してください
+
+### ローカルLLMを使用する場合
+
+1. **ローカルLLMのインストール**
+
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
+
+2. **ローカルLLM使用時の注意事項**
+   - モデルが起動していることを確認してください
+   - ローカルリソース（メモリ、CPU）を監視してください
+
+<!-- MANUAL_END:setup -->
+
+---
+
+*このREADME.mdは自動生成されています。最終更新: 2025-11-25 15:56:23*"""
+        # ローカルLLMとして設定（Outlinesを使用しない）
+        mock_client.provider = "lmstudio"
+        mock_client.base_url = "http://192.168.10.113:1234"
+        mock_client.model = "openai/gpt-oss-20b"
+
+        with patch(
+            "docgen.generators.base_generator.BaseGenerator._get_llm_client_with_fallback",
+            return_value=mock_client,
         ):
             config = {
                 "output": {"readme": "README.md"},

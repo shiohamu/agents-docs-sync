@@ -385,7 +385,7 @@ class BaseGenerator(ABC):
 
     def _generate_with_llm(self, project_info: ProjectInfo) -> str:
         """
-        LLMを使用してドキュメントを生成（Outlinesを使用）
+        LLMを使用してドキュメントを生成
 
         Args:
             project_info: プロジェクト情報の辞書
@@ -394,8 +394,12 @@ class BaseGenerator(ABC):
             マークダウンの文字列（エラー時はテンプレート生成にフォールバック）
         """
         try:
-            # Outlinesを使用した構造化生成
-            return self._generate_with_outlines(project_info)
+            if self._should_use_outlines():
+                # Outlinesを使用した構造化生成
+                return self._generate_with_outlines(project_info)
+            else:
+                # 従来のLLM生成
+                return self._generate_with_llm_legacy(project_info)
 
         except Exception as e:
             self.logger.error(
@@ -413,7 +417,7 @@ class BaseGenerator(ABC):
 
     def _should_use_outlines(self) -> bool:
         """
-        Outlinesを使用するかどうかを判定（常に使用）
+        Outlinesを使用するかどうかを判定
 
         Returns:
             常にTrue（Outlinesを使用）
@@ -457,6 +461,11 @@ class BaseGenerator(ABC):
             # Outlinesモデルを作成
             outlines_model = self._create_outlines_model(client)
 
+            if outlines_model is None:
+                # Outlinesがサポートされていない場合、従来のLLM生成にフォールバック
+                self.logger.info("Outlinesがサポートされていないため、従来のLLM生成を使用します。")
+                return self._generate_with_llm_legacy(project_info)
+
             # プロンプトを作成
             prompt = self._create_llm_prompt(project_info)
 
@@ -471,8 +480,83 @@ class BaseGenerator(ABC):
 
         except Exception as e:
             self.logger.error(
-                f"Outlines生成中にエラーが発生しました: {e}テンプレート生成にフォールバックします",
+                f"Outlines生成中にエラーが発生しました: {e}。従来のLLM生成にフォールバックします。",
                 exc_info=True,
+            )
+            return self._generate_with_llm_legacy(project_info)
+
+    def _generate_with_llm_legacy(self, project_info: ProjectInfo) -> str:
+        """
+        従来のLLM生成（マークダウン出力）
+
+        Args:
+            project_info: プロジェクト情報
+
+        Returns:
+            生成された文字列
+        """
+        try:
+            # LLMクライアントを取得
+            client = self._get_llm_client_with_fallback()
+
+            if not client:
+                self.logger.warning(
+                    "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
+                )
+                return self._generate_template(project_info)
+
+            # プロンプトを作成
+            prompt = self._create_llm_prompt(project_info)
+
+            # LLMで生成
+            self.logger.info("LLMを使用してドキュメントを生成中...")
+            generated_content = client.generate(prompt)
+
+            if generated_content:
+                # 生成されたコンテンツをクリーンアップ
+                cleaned_content = self._clean_llm_output(generated_content)
+
+                # 検証
+                if not self._validate_output(cleaned_content):
+                    self.logger.warning("LLM出力の検証に失敗しました。テンプレートを使用します。")
+                    return self._generate_template(project_info)
+
+                # LLM生成の場合は手動セクションをマージ
+                return self._merge_manual_sections(cleaned_content, {})
+            else:
+                self.logger.warning("LLM生成が空でした。テンプレートを使用します。")
+                return self._generate_template(project_info)
+
+        except Exception as e:
+            self.logger.error(
+                f"LLM生成中にエラーが発生しました: {e}。テンプレートを使用します。", exc_info=True
+            )
+            return self._generate_template(project_info)
+
+            # プロンプトを作成
+            prompt = self._create_llm_prompt(project_info)
+
+            # LLMで生成
+            self.logger.info("LLMを使用してドキュメントを生成中...")
+            generated_content = client.generate(prompt)
+
+            if generated_content:
+                # 生成されたコンテンツをクリーンアップ
+                cleaned_content = self._clean_llm_output(generated_content)
+
+                # 検証
+                if not self._validate_output(cleaned_content):
+                    self.logger.warning("LLM出力の検証に失敗しました。テンプレートを使用します。")
+                    return self._generate_template(project_info)
+
+                return cleaned_content
+            else:
+                self.logger.warning("LLM生成が空でした。テンプレートを使用します。")
+                return self._generate_template(project_info)
+
+        except Exception as e:
+            self.logger.error(
+                f"LLM生成中にエラーが発生しました: {e}。テンプレートを使用します。", exc_info=True
             )
             return self._generate_template(project_info)
 

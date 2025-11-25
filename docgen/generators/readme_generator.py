@@ -96,7 +96,13 @@ class ReadmeGenerator(BaseGenerator):
 
         return prompt
 
+    def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
+        """READMEの構造化データをマークダウン形式に変換（未使用）"""
+        # LLM生成では直接マークダウンを生成するため、このメソッドは使用しない
+        return ""
+
     def _get_project_overview_section(self, content: str) -> str:
+        """プロジェクト概要セクションを取得"""
         return self._extract_description_section(content)
 
     def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
@@ -123,41 +129,6 @@ class ReadmeGenerator(BaseGenerator):
         lines.append("")
 
         return lines
-
-    def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
-        """READMEの構造化データをマークダウン形式に変換（テンプレート使用）"""
-        # LLM生成の場合は手動セクションを抽出しない（LLM出力を優先）
-        manual_sections = {}
-
-        # 構造化データをテンプレートコンテキストに変換
-        context = {
-            "project_name": data.title,
-            "description_section": data.description,
-            "technologies": self._format_technologies_list(data.technologies)
-            if hasattr(data, "technologies") and data.technologies
-            else "",
-            "dependencies_section": self._format_structured_dependencies(data.dependencies)
-            if hasattr(data, "dependencies") and data.dependencies
-            else "",
-            "setup_section": self._format_structured_setup(data.setup_instructions)
-            if hasattr(data, "setup_instructions") and data.setup_instructions
-            else "",
-            "usage_section": "",
-            "build_commands": self._format_structured_commands(data.build_commands)
-            if hasattr(data, "build_commands") and data.build_commands
-            else "",
-            "test_commands": self._format_structured_commands(data.test_commands)
-            if hasattr(data, "test_commands") and data.test_commands
-            else "",
-            "other_section": "",
-            "footer": "*このREADME.mdは自動生成されています。最終更新: 2025-11-25 12:40:12*",
-        }
-
-        # Jinja2テンプレートでレンダリング
-        markdown = self._render_template("readme_template.md.j2", context)
-
-        # 手動セクションをマージ
-        return self._merge_manual_sections(markdown, manual_sections)
 
     def _collect_project_description(self) -> str:
         """プロジェクト説明を収集"""
