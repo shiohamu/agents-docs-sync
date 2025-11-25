@@ -371,12 +371,8 @@ class AgentsGenerator(BaseGenerator):
         Returns:
             マークダウン形式の文字列
         """
-        # Extract manual sections from existing AGENTS.md
-        try:
-            existing_content = self.agents_path.read_text()
-            manual_sections = self._extract_manual_sections(existing_content)
-        except (FileNotFoundError, OSError):
-            manual_sections = {}
+        # LLM生成の場合は手動セクションを抽出しない（LLM出力を優先）
+        manual_sections = {}
 
         # 構造化データをテンプレートコンテキストに変換
         context = {
@@ -395,7 +391,10 @@ class AgentsGenerator(BaseGenerator):
         }
 
         # Jinja2テンプレートでレンダリング
-        return self._render_template("agents_template.md.j2", context)
+        markdown = self._render_template("agents_template.md.j2", context)
+
+        # 手動セクションをマージ
+        return self._merge_manual_sections(markdown, manual_sections)
 
     def _format_structured_installation(self, setup_instructions) -> str:
         """構造化データをインストール手順にフォーマット"""

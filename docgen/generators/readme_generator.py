@@ -126,12 +126,8 @@ class ReadmeGenerator(BaseGenerator):
 
     def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
         """READMEの構造化データをマークダウン形式に変換（テンプレート使用）"""
-        # Extract manual sections from existing README.md
-        try:
-            existing_content = self.readme_path.read_text()
-            manual_sections = self._extract_manual_sections(existing_content)
-        except (FileNotFoundError, OSError):
-            manual_sections = {}
+        # LLM生成の場合は手動セクションを抽出しない（LLM出力を優先）
+        manual_sections = {}
 
         # 構造化データをテンプレートコンテキストに変換
         context = {
@@ -158,7 +154,10 @@ class ReadmeGenerator(BaseGenerator):
         }
 
         # Jinja2テンプレートでレンダリング
-        return self._render_template("readme_template.md.j2", context)
+        markdown = self._render_template("readme_template.md.j2", context)
+
+        # 手動セクションをマージ
+        return self._merge_manual_sections(markdown, manual_sections)
 
     def _collect_project_description(self) -> str:
         """プロジェクト説明を収集"""

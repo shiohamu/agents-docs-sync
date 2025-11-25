@@ -29,7 +29,7 @@
 
 ## Prerequisites
 
-- Python 3.8以上
+- Python 3.12以上
 
 
 
@@ -40,10 +40,38 @@
 
 ```bash
 # uvを使用する場合
-uv venv
-source .venv/bin/activate  # Linux/macOS
-uv pip install -e .
+uv sync
 ```
+
+
+
+
+
+## LLM環境のセットアップ
+
+### APIを使用する場合
+
+1. **APIキーの取得と設定**
+
+   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
+   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
+
+2. **API使用時の注意事項**
+   - APIレート制限に注意してください
+   - コスト管理のために使用量を監視してください
+
+### ローカルLLMを使用する場合
+
+1. **ローカルLLMのインストール**
+
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
+
+2. **ローカルLLM使用時の注意事項**
+   - モデルが起動していることを確認してください
+   - ローカルリソース（メモリ、CPU）を監視してください
+
 <!-- MANUAL_END:setup -->
 
 
@@ -74,4 +102,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-25 15:08:57*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-25 15:31:46*

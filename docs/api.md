@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 15:08:57
+自動生成日時: 2025-11-25 15:31:46
 
 ---
 
@@ -7411,6 +7411,21 @@ def test_generate_readme_preserve_manual_sections(self, temp_project):
 *説明なし*
 
 *定義場所: tests/test_generators/test_readme_generator.py:160*
+
+---
+
+### test_generate_readme_with_llm
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_generate_readme_with_llm(self, temp_project, monkeypatch):
+```
+
+*説明なし*
+
+*定義場所: tests/test_generators/test_readme_generator.py:187*
 
 ---
 

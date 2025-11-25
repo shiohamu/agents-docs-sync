@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-25 15:09:35
+自動生成日時: 2025-11-25 15:32:17
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -9,21 +9,34 @@
 ## プロジェクト概要
 
 <!-- MANUAL_START:description -->
-このプロジェクトは、コミットごとに自動でテスト実行・ドキュメント生成を行い、その結果を `AGENTS.md` に反映させるパイプラインです。
-主な構成要素は以下の通りです。
+このプロジェクトは、**agents-docs-sync** と呼ばれる CI パイプラインを提供します。  
+各コミット時に以下の処理が自動的に実行されます。
 
-- **言語 & ツール**：Python（3.11+）とシェルスクリプトで実装し、依存関係には `pyyaml>=6.0.3`、`pytest>=7.4.0`、`pytest-cov>=4.1.0`、`pytest-mock>=3.11.1` を使用。Linting は Ruff で統一しています。
-- **ビルド**：
-  ```bash
-  uv run python3 docgen/docgen.py
-  ```
-  により `docgen/` 内のスクリプトが YAML 定義から Markdown ドキュメントを生成します。
-- **テスト実行**：
-  - Python テストは `uv run pytest`、詳細オプション付きで `uv run pytest tests/ -v --tb=short`。
-  - Node.js の補助スクリプトも存在し、`npm test` により併せて走らせます。
-- **AGENTS.md 自動更新**：テストとドキュメント生成が成功した後に、最新の内容を `AGENTS.md` にマージ。これによりコードベースとドキュメントの同期状態が常に保たれます。
+- **テスト実行**：Python の `pytest`（pyyaml, pytest-cov, pytest-mock 依存）と、必要なら npm を利用した JavaScript テスト (`npm test`) が走ります。  
+- **ドキュメント生成**：`docgen/docgen.py` スクリプトを実行し、YAML 定義から API ドキュメントやサンプルコード等を自動で作成します。このスクリプトは `uv run python3 docgen/docgen.py` というビルドコマンドで呼び出されます。  
+- **AGENTS.md の更新**：生成された情報に基づき、リポジトリ内の AGENTS.md を自動的に再構築します。このファイルはエージェント一覧とその仕様をまとめた中心的なドキュメントです。
 
-このパイプラインは CI/CD で毎回トリガーされるため、コミットごとの品質保証と文書整合性を自動的に確保します。
+使用言語・ツール  
+- **Python & Shell**：メインロジック（docgen スクリプト）およびビルド/テストスクリプト。  
+- **uv**：仮想環境管理とパッケージ実行に利用。`uv run pytest`, `uv run python3 docgen/docgen.py` などで一貫した依存解決を保証します。
+
+主な依存ライブラリ（Python）  
+
+| ライブラリ | バージョン要件 |
+|------------|----------------|
+| pyyaml     | >=6.0.3        |
+| pytest     | >=7.4.0        |
+| pytest-cov | >=4.1.0        |
+| pytest-mock| >=3.11.1       |
+
+ビルド／テストコマンド  
+- ビルド: `uv run python3 docgen/docgen.py`  
+- テスト (Python): `uv run pytest`, `uv run pytest tests/ -v --tb=short`  
+- テスト (JavaScript): `npm test`
+
+**コード品質管理**：リントツールとして **ruff** を採用し、スタイルと静的解析を一括で実行します。  
+
+このパイプラインにより、エージェントの仕様変更がコミットされるたびにテスト失敗やドキュメント不整合を即座に検知・修正でき、開発者は最新かつ正確な情報だけを手元で確認できます。
 <!-- MANUAL_END:description -->
 
 ---
@@ -39,24 +52,32 @@
 
 ### 依存関係のインストール
 
+
 #### Python依存関係
 
 ```bash
+
 uv sync
+
 ```
 
 
-### LLM環境のセットアップ
+
+
+
 
 ### LLM環境のセットアップ
+
+
+
 
 #### ローカルLLMを使用する場合
 
 1. **ローカルLLMのインストール**
 
-   - LM Studioをインストール: https://lmstudio.ai/
-   - モデルをダウンロードして起動
-   - ベースURL: http://localhost:11434
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
 
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
@@ -70,21 +91,14 @@ uv sync
 <!-- MANUAL_START:usage -->
 ### ビルド手順
 
-```bash
-uv run python3 docgen/docgen.py
-```
+
+ビルド手順は設定されていません。
+
 
 ### テスト実行
 
-#### ローカルLLMを使用する場合
 
-```bash
-uv run pytest
-npm test
-uv run pytest tests/ -v --tb=short
-```
-
-**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
+テストコマンドは設定されていません。
 <!-- MANUAL_END:usage -->
 
 ---
@@ -92,10 +106,6 @@ uv run pytest tests/ -v --tb=short
 ## コーディング規約
 
 <!-- MANUAL_START:other -->
-## プルリクエストの手順
-
-
-
 1. **ブランチの作成**
    ```bash
    git checkout -b feature/your-feature-name
@@ -107,9 +117,9 @@ uv run pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   uv run pytest
-   npm test
-   uv run pytest tests/ -v --tb=short
+   
+   # テストコマンドを実行
+   
    ```
 
 4. **プルリクエストの作成**
@@ -122,10 +132,6 @@ uv run pytest tests/ -v --tb=short
 ## プルリクエストの手順
 
 <!-- MANUAL_START:other -->
-## プルリクエストの手順
-
-
-
 1. **ブランチの作成**
    ```bash
    git checkout -b feature/your-feature-name
@@ -137,9 +143,9 @@ uv run pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   uv run pytest
-   npm test
-   uv run pytest tests/ -v --tb=short
+   
+   # テストコマンドを実行
+   
    ```
 
 4. **プルリクエストの作成**
@@ -151,4 +157,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 15:09:35*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 15:32:17*

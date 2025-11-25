@@ -183,3 +183,62 @@ Standard installation instructions.
 
         content = (temp_project / "README.md").read_text(encoding="utf-8")
         assert "This is a manual description that should be preserved." in content
+
+    def test_generate_readme_with_llm(self, temp_project, monkeypatch):
+        # LLMを使用する場合のテスト（モックを使用）
+        write_file(temp_project, "requirements.txt", "pytest>=7.0.0\n")
+
+        # LLMクライアントをモック
+        from unittest.mock import Mock, patch
+
+        mock_client = Mock()
+        mock_client.generate.return_value = (
+            '{"title": "Test Project", "description": "This is an LLM generated description."}'
+        )
+        # Outlinesモデル作成のために必要な属性を追加
+        mock_client.client = Mock()
+        mock_client.client.api_key = "dummy"
+        mock_client.model = "gpt-4"
+
+        # Outlinesモデルもモック
+        from docgen.models.readme import ReadmeDocument
+
+        mock_structured_data = ReadmeDocument(
+            title="Test Project",
+            description="This is an LLM generated description.",
+            technologies=["Python"],
+            dependencies=None,
+            setup_instructions=None,
+            project_structure=None,
+            build_commands=None,
+            test_commands=None,
+            manual_sections=None,
+        )
+
+        mock_outlines_model = Mock()
+        mock_outlines_model.return_value = mock_structured_data
+
+        with (
+            patch(
+                "docgen.generators.base_generator.BaseGenerator._get_llm_client_with_fallback",
+                return_value=mock_client,
+            ),
+            patch(
+                "docgen.generators.base_generator.BaseGenerator._create_outlines_model",
+                return_value=mock_outlines_model,
+            ),
+        ):
+            config = {
+                "output": {"readme": "README.md"},
+                "agents": {"generation": {"readme_mode": "llm"}},
+            }
+
+            generator = ReadmeGenerator(temp_project, ["python"], config)
+            result = generator.generate()
+
+            assert result is True
+            assert (temp_project / "README.md").exists()
+
+            content = (temp_project / "README.md").read_text(encoding="utf-8")
+            # LLM生成の場合は手動セクションをマージしないので、LLMのdescriptionが適用される
+            assert "This is an LLM generated description." in content
