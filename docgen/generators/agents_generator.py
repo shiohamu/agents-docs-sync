@@ -3,11 +3,8 @@ AGENTS.md生成モジュール（OpenAI仕様準拠）
 Outlines統合で構造化出力を実現
 """
 
-import json
 from pathlib import Path
 from typing import Any
-
-from pydantic import ValidationError
 
 # 相対インポートを使用（docgenがパッケージとして認識される場合）
 # フォールバック: 絶対インポート
@@ -16,10 +13,8 @@ from ..models.project import ProjectInfo
 from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,
-    GENERATION_TIMESTAMP_LABEL,
     OTHER_END,
     OTHER_START,
-    SECTION_SEPARATOR,
     SETUP_END,
     SETUP_START,
     UNKNOWN,
@@ -111,6 +106,8 @@ class AgentsGenerator(BaseGenerator):
             "timestamp": get_current_timestamp(),
             "description": self._generate_project_overview_content(project_info, manual_sections),
             "languages": self.languages,
+            "javascript": "javascript" in self.languages,
+            "go": "go" in self.languages,
             "installation_steps": "\n".join(self._generate_installation_section()),
             "llm_setup": "\n".join(self._generate_llm_setup_section()),
             "build_commands": self._generate_build_commands_content(project_info),
@@ -477,7 +474,7 @@ class AgentsGenerator(BaseGenerator):
         self, data: AgentsDocument, project_info: ProjectInfo
     ) -> str:
         """
-        構造化データをマークダウン形式に変換
+        構造化データをマークダウン形式に変換（テンプレート使用）
 
         Args:
             data: 構造化されたAGENTSドキュメントデータ
@@ -486,380 +483,122 @@ class AgentsGenerator(BaseGenerator):
         Returns:
             マークダウン形式の文字列
         """
-        lines = []
-
-        # ヘッダー
-        lines.append(f"# {data.title}")
-        lines.append("")
-        lines.append(f"{GENERATION_TIMESTAMP_LABEL} {get_current_timestamp()}")
-        lines.append("")
-        lines.append(
-            "このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。"
-        )
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-
-        # プロジェクト概要
-        lines.append("## プロジェクト概要")
-        lines.append("")
-        lines.append(DESCRIPTION_START)
-        lines.append("")
-        lines.append(data.description)
-        lines.append("")
-        lines.append(f"**使用技術**: {', '.join(self.languages) if self.languages else UNKNOWN}")
-        lines.append("")
-        lines.append(DESCRIPTION_END)
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-
-        # 開発環境のセットアップ
-        lines.extend(
-            self._generate_setup_section_from_structured(
-                data.setup_instructions.model_dump() if data.setup_instructions else {}
-            )
-        )
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-
-        # ビルドおよびテスト手順
-        lines.extend(
-            self._generate_build_test_section_from_structured(
-                data.build_test_instructions.model_dump() if data.build_test_instructions else {}
-            )
-        )
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-
-        # コーディング規約
-        lines.extend(
-            self._generate_coding_standards_from_structured(
-                data.coding_standards.model_dump() if data.coding_standards else {}
-            )
-        )
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-
-        # プルリクエストの手順
-        lines.extend(
-            self._generate_pr_section_from_structured(
-                data.pr_guidelines.model_dump() if data.pr_guidelines else {}
-            )
-        )
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-
-        # カスタム指示
-        custom_instructions = self.agents_config.get("custom_instructions")
-        if custom_instructions:
-            lines.extend(self._generate_custom_instructions_section(custom_instructions))
-            lines.append("")
-            lines.append(SECTION_SEPARATOR)
-            lines.append("")
-
-        # フッター
-        lines.append(data.auto_generated_note)
-        lines.append("")
-
-        return "\n".join(lines)
-
-    def _generate_setup_section_from_structured(self, setup_data: Any) -> list[str]:
-        """構造化データからセットアップセクションを生成"""
-        lines = []
-        lines.append("## 開発環境のセットアップ")
-        lines.append("")
-        lines.append(SETUP_START)
-        lines.append("")
-
-        # 前提条件
-        prerequisites = setup_data.get("prerequisites", [])
-        if prerequisites:
-            lines.append("### 前提条件")
-            lines.append("")
-            for prereq in prerequisites:
-                lines.append(f"- {prereq}")
-            lines.append("")
-
-        # 依存関係のインストール
-        installation_steps = setup_data.get("installation_steps", [])
-        if installation_steps:
-            lines.append("### 依存関係のインストール")
-            lines.append("")
-            lines.append("```bash")
-            for step in installation_steps:
-                lines.append(step)
-            lines.append("```")
-            lines.append("")
-
-        # LLM環境のセットアップ
-        lines.extend(self._generate_llm_setup_section())
-
-        lines.append("")
-        lines.append(SETUP_END)
-        return lines
-
-    def _generate_build_test_section_from_structured(self, build_test_data: Any) -> list[str]:
-        """構造化データからビルド/テストセクションを生成"""
-        lines = []
-        lines.append("## ビルドおよびテスト手順")
-        lines.append("")
-        lines.append(USAGE_START)
-        lines.append("")
-
-        # ビルド手順
-        build_commands = build_test_data.get("build_commands", [])
-        if build_commands:
-            lines.append("### ビルド手順")
-            lines.append("")
-            lines.append("```bash")
-            for cmd in build_commands:
-                # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                display_cmd = cmd
-                if "python" in self.package_managers and self.package_managers["python"] == "uv":
-                    if cmd.startswith("python") and not cmd.startswith("uv run"):
-                        display_cmd = f"uv run {cmd}"
-                lines.append(display_cmd)
-            lines.append("```")
-        else:
-            lines.append("ビルド手順は設定されていません。")
-        lines.append("")
-
-        # テスト実行
-        test_commands = build_test_data.get("test_commands", [])
-        if test_commands:
-            lines.append("### テスト実行")
-            lines.append("")
-            llm_mode = self.agents_config.get("llm_mode", "both")
-
-            if llm_mode in ["api", "both"]:
-                lines.append("#### APIを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                for cmd in test_commands:
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    display_cmd = cmd
-                    if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if (
-                            cmd.startswith("python") or cmd.startswith("pytest")
-                        ) and not cmd.startswith("uv run"):
-                            display_cmd = f"uv run {cmd}"
-                    lines.append(display_cmd)
-                lines.append("```")
-                lines.append("")
-
-            if llm_mode in ["local", "both"]:
-                lines.append("#### ローカルLLMを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                for cmd in test_commands:
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    display_cmd = cmd
-                    if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if (
-                            cmd.startswith("python") or cmd.startswith("pytest")
-                        ) and not cmd.startswith("uv run"):
-                            display_cmd = f"uv run {cmd}"
-                    lines.append(display_cmd)
-                lines.append("```")
-                lines.append("")
-                lines.append(
-                    "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
-                )
-                lines.append("")
-        else:
-            lines.append("テストコマンドは設定されていません。")
-        lines.append("")
-        lines.append(USAGE_END)
-
-        return lines
-
-    def _generate_coding_standards_from_structured(self, standards_data: Any) -> list[str]:
-        """構造化データからコーディング規約セクションを生成"""
-        lines = []
-        lines.append("## コーディング規約")
-        lines.append("")
-        lines.append(OTHER_START)
-        lines.append("")
-
-        standards = standards_data.get("standards", [])
-        if standards:
-            for standard in standards:
-                lines.append(f"- {standard}")
-            lines.append("")
-        else:
-            lines.append(
-                "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
-            )
-            lines.append("")
-        lines.append(OTHER_END)
-
-        return lines
-
-    def _generate_pr_section_from_structured(self, pr_data: Any) -> list[str]:
-        """構造化データからプルリクエストセクションを生成"""
-        lines = []
-        lines.append("## プルリクエストの手順")
-        lines.append("")
-        lines.append(OTHER_START)
-        lines.append("")
-
-        branch_creation = pr_data.get("branch_creation", "ブランチを作成")
-        lines.append("1. **ブランチの作成**")
-        lines.append(f"   {branch_creation}")
-        lines.append("")
-
-        commit_guidelines = pr_data.get("commit_guidelines", "コミットメッセージは明確で説明的に")
-        lines.append("2. **変更のコミット**")
-        lines.append(f"   - {commit_guidelines}")
-        lines.append("")
-
-        lines.append("3. **テストの実行**")
-        lines.append("   ```bash")
-        lines.append("   # テストコマンドを実行")
-        lines.append("   ```")
-        lines.append("")
-
-        pr_creation = pr_data.get("pr_creation", "プルリクエストを作成")
-        lines.append("4. **プルリクエストの作成**")
-        lines.append(f"   - {pr_creation}")
-        lines.append("")
-        lines.append(OTHER_END)
-
-        return lines
-
-    def _clean_llm_output(self, text: str) -> str:
-        """
-        LLMの出力から思考過程や試行錯誤の痕跡を削除
-
-        Args:
-            text: LLMで生成されたテキスト
-
-        Returns:
-            クリーンアップされたテキスト
-        """
-        from ..utils.markdown_utils import clean_llm_output_advanced
-
-        return clean_llm_output_advanced(text)
-
-    def _validate_output(self, text: str) -> bool:
-        """
-        LLMの出力を検証して、Pydanticモデルでパースできるかチェック
-
-        Args:
-            text: 検証するテキスト
-
-        Returns:
-            検証に合格したかどうか
-        """
-        if not text or not text.strip():
-            return False
-
+        # Extract manual sections from existing AGENTS.md
         try:
-            # JSONとしてパースを試みる（LLM出力がJSON形式の場合）
-            data = json.loads(text)
-            AgentsDocument(**data)
-            return True
-        except (json.JSONDecodeError, ValidationError):
-            # マークダウン形式の場合は基本的なチェックのみ
-            text_lower = text.lower()
+            existing_content = self.agents_path.read_text()
+            manual_sections = self._extract_manual_sections(existing_content)
+        except (FileNotFoundError, OSError):
+            manual_sections = {}
 
-            # 特殊なマーカーパターンをチェック
-            if (
-                "<|channel|>" in text
-                or "<|message|>" in text
-                or "commentary/analysis" in text_lower
-            ):
-                self.logger.warning("特殊なマーカーパターンが検出されました")
-                return False
+        # 構造化データをテンプレートコンテキストに変換
+        context = {
+            "timestamp": get_current_timestamp(),
+            "description": data.description,
+            "languages": self.languages,
+            "javascript": "javascript" in self.languages,
+            "go": "go" in self.languages,
+            "installation_steps": self._format_structured_installation(data.setup_instructions),
+            "llm_setup": self._format_structured_llm_setup(data.setup_instructions),
+            "build_commands": self._format_structured_build_commands(data.build_test_instructions),
+            "test_commands": self._format_structured_test_commands(data.build_test_instructions),
+            "coding_standards": self._format_structured_coding_standards(data.coding_standards),
+            "pr_guidelines": self._format_structured_pr_guidelines(data.pr_guidelines),
+            "custom_instructions": "",
+        }
 
-            # 思考過程のパターンが含まれていないかチェック
-            thinking_patterns = [
-                "thus final answer",
-                "let's generate",
-                "but we need",
-                "i will produce",
-                "i think",
-                "let's finalize",
-                "we should produce",
-                "we will output",
-                "thus the final",
-                "i'm going to",
-                "let's output",
-                "let's produce",
-                "but i think it's",
-                "thus final answer will be",
-                "以下が、",
-                "改訂版です",
-                "we should now",
-                "we will not include",
-                "should we keep",
-                "possibly they want",
-                "but we must keep",
-                "but we might need",
-                "however, user wrote",
-                "also note",
-                "but the user",
-                "ok final output",
-                "ok. i'll generate",
-                "let's create final output",
-                "check that it doesn't",
-                "now i will provide",
-                "the user wants",
-                "they gave",
-                "so we should",
-                "so we can",
-                "also keep",
-                "we must not include",
-                "so final output",
-                "but we must also keep",
-                "we must only output",
-                "but we must",
-            ]
+        # Jinja2テンプレートでレンダリング
+        return self._render_template("agents_template.md.j2", context)
 
-            for pattern in thinking_patterns:
-                if pattern in text_lower:
-                    self.logger.warning(f"思考過程のパターンが検出されました: {pattern}")
-                    return False
+    def _format_structured_installation(self, setup_instructions) -> str:
+        """構造化データをインストール手順にフォーマット"""
+        if not setup_instructions or not setup_instructions.installation_commands:
+            return "インストール手順は設定されていません。"
+        return "\n".join(f"```bash\n{cmd}\n```" for cmd in setup_instructions.installation_commands)
 
-            # プレースホルダーが含まれていないかチェック
-            placeholder_patterns = [
-                "???",
-                "(??)",
-                "... ...",
-                "|  | |",
-                "---‐‐‐",
-                "# ... (continue)",
-            ]
+    def _format_structured_llm_setup(self, setup_instructions) -> str:
+        """構造化データをLLMセットアップにフォーマット"""
+        if not setup_instructions or not setup_instructions.llm_setup:
+            return "LLM環境のセットアップは設定されていません。"
+        lines = []
+        if setup_instructions.llm_setup.api_setup:
+            lines.append("#### APIを使用する場合")
+            lines.append("")
+            lines.append(setup_instructions.llm_setup.api_setup)
+            lines.append("")
+        if setup_instructions.llm_setup.local_setup:
+            lines.append("#### ローカルLLMを使用する場合")
+            lines.append("")
+            lines.append(setup_instructions.llm_setup.local_setup)
+            lines.append("")
+        return "\n".join(lines).strip()
 
-            for pattern in placeholder_patterns:
-                if pattern in text:
-                    self.logger.warning(f"プレースホルダーが検出されました: {pattern}")
-                    return False
+    def _format_structured_build_commands(self, build_test_instructions) -> str:
+        """構造化データをビルドコマンドにフォーマット"""
+        if not build_test_instructions or not build_test_instructions.build_commands:
+            return "ビルド手順は設定されていません。"
+        return "\n".join(f"```bash\n{cmd}\n```" for cmd in build_test_instructions.build_commands)
 
-        # マークダウンコードブロック内に思考過程が含まれていないかチェック
-        lines = text.split("\n")
-        in_markdown_block = False
-        for line in lines:
-            if line.strip().startswith("```"):
-                lang = line.strip()[3:].strip().lower()
-                if "markdown" in lang:
-                    in_markdown_block = True
-                elif in_markdown_block:
-                    in_markdown_block = False
-            elif in_markdown_block:
-                if any(pattern in line.lower() for pattern in thinking_patterns):
-                    self.logger.warning("マークダウンコードブロック内に思考過程が検出されました")
-                    return False
+    def _format_structured_test_commands(self, build_test_instructions) -> str:
+        """構造化データをテストコマンドにフォーマット"""
+        if not build_test_instructions or not build_test_instructions.test_commands:
+            return "テストコマンドは設定されていません。"
+        lines = []
+        llm_mode = self.agents_config.get("llm_mode", "api")
+        if llm_mode in ["api", "both"]:
+            lines.append("#### APIを使用する場合")
+            lines.append("")
+            lines.append("```bash")
+            for cmd in build_test_instructions.test_commands:
+                lines.append(cmd)
+            lines.append("```")
+            lines.append("")
+        if llm_mode in ["local", "both"]:
+            lines.append("#### ローカルLLMを使用する場合")
+            lines.append("")
+            lines.append("```bash")
+            for cmd in build_test_instructions.test_commands:
+                lines.append(cmd)
+            lines.append("```")
+            lines.append("")
+        return "\n".join(lines).strip()
 
-        return True
+    def _format_structured_coding_standards(self, coding_standards) -> str:
+        """構造化データをコーディング規約にフォーマット"""
+        if not coding_standards:
+            return ""
+        lines = []
+        if coding_standards.formatter:
+            lines.append("### フォーマッター")
+            lines.append("")
+            lines.append(f"- **{coding_standards.formatter}** を使用")
+            if coding_standards.formatter == "black":
+                lines.append("  ```bash")
+                lines.append("  black .")
+                lines.append("  ```")
+            elif coding_standards.formatter == "prettier":
+                lines.append("  ```bash")
+                lines.append("  npx prettier --write .")
+                lines.append("  ```")
+            lines.append("")
+        if coding_standards.linter:
+            lines.append("### リンター")
+            lines.append("")
+            lines.append(f"- **{coding_standards.linter}** を使用")
+            if coding_standards.linter == "ruff":
+                lines.append("  ```bash")
+                lines.append("  ruff check .")
+                lines.append("  ruff format .")
+                lines.append("  ```")
+            lines.append("")
+        if coding_standards.style_guide:
+            lines.append("### スタイルガイド")
+            lines.append("")
+            lines.append(f"- {coding_standards.style_guide} に準拠")
+            lines.append("")
+        return "\n".join(lines).strip()
+
+    def _format_structured_pr_guidelines(self, pr_guidelines) -> str:
+        """構造化データをPRガイドラインにフォーマット"""
+        if not pr_guidelines:
+            return ""
+        return pr_guidelines.content if pr_guidelines.content else ""

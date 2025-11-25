@@ -1,0 +1,54 @@
+# Setup
+
+{% if has_python or has_javascript or has_go %}
+## Prerequisites
+
+{% if has_python %}- Python 3.8以上{% endif %}
+{% if has_javascript %}{% if has_python %}
+{% endif %}- Node.js (推奨バージョン: 18以上){% endif %}
+{% if has_go %}{% if has_python or has_javascript %}
+{% endif %}- Go 1.16以上{% endif %}
+
+## Installation
+
+{% if has_python %}
+### Python
+{% if python_pm == "uv" %}
+```bash
+# uvを使用する場合
+uv venv
+source .venv/bin/activate  # Linux/macOS
+uv pip install -e .
+```
+{% elif python_pm == "poetry" %}
+```bash
+# Poetryを使用する場合
+poetry install
+```
+{% else %}
+```bash
+pip install -r requirements.txt
+```
+{% endif %}
+{% endif %}
+
+{% if has_javascript %}
+### JavaScript
+{% if js_pm == "yarn" %}
+```bash
+# Yarnを使用する場合
+yarn install
+```
+{% elif js_pm == "pnpm" %}
+```bash
+# pnpmを使用する場合
+pnpm install
+```
+{% else %}
+```bash
+# npmを使用する場合
+npm install
+```
+{% endif %}
+{% endif %}
+{% endif %}

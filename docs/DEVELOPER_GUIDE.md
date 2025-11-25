@@ -40,7 +40,7 @@ agents-docs-sync/
 │   ├── hooks/                  # Git hooks
 │   │   ├── pre-commit
 │   │   └── post-commit
-│   ├── templates/              # テンプレート（将来の拡張用）
+│   ├── templates/              # Jinja2テンプレート（AGENTS.md, README.md生成用）
 │   ├── config.yaml.sample      # 設定ファイルのサンプル
 │   └── docgen.py               # メインエントリーポイント
 ├── tests/                      # テストファイル
@@ -143,8 +143,9 @@ pip install -e .
 #### 3. ドキュメント生成器（Generators）
 
 - **APIGenerator**: `docs/api.md`を生成
-- **ReadmeGenerator**: `README.md`を更新（手動セクションを保持）
-- **AgentsGenerator**: `AGENTS.md`を生成（OpenAI仕様準拠）
+- **ReadmeGenerator**: `README.md`を更新（手動セクションを保持、Jinja2テンプレート使用）
+- **AgentsGenerator**: `AGENTS.md`を生成（OpenAI仕様準拠、Jinja2テンプレート使用）
+- **BaseGenerator**: 共通のテンプレートレンダリング機能を提供
 
 #### 4. プロジェクト情報収集器（Collectors）
 
@@ -163,12 +164,12 @@ pip install -e .
    │   └─> 各Parserがプロジェクトを解析
    │   └─> API情報を収集
    │   └─> Markdownを生成
-   ├─> ReadmeGenerator.generate()
-   │   └─> 既存READMEから手動セクションを抽出
-   │   └─> 新しいREADMEを生成
-   └─> AgentsGenerator.generate()
-       └─> ProjectInfoCollectorで情報収集
-       └─> Markdownを生成
+    ├─> ReadmeGenerator.generate()
+    │   └─> 既存READMEから手動セクションを抽出
+    │   └─> Jinja2テンプレートで新しいREADMEを生成
+    └─> AgentsGenerator.generate()
+        └─> ProjectInfoCollectorで情報収集
+        └─> Jinja2テンプレートでMarkdownを生成
 ```
 
 ---
