@@ -137,89 +137,28 @@ class ReadmeGenerator(BaseGenerator):
 
         return lines
 
-    def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
-        """README用のコーディング規約セクションを生成"""
+    def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
+        """README用のコーディング規約のフォーマット"""
         lines = []
-        coding_standards = project_info.coding_standards or {}
-
-        if coding_standards:
-            lines.append("## コーディング規約")
-            lines.append("")
-
-            # フォーマッター
-            formatter = coding_standards.get("formatter")
-            if formatter:
-                lines.append(f"- **フォーマッター**: {formatter}")
-
-            # リンター
-            linter = coding_standards.get("linter")
-            if linter:
-                lines.append(f"- **リンター**: {linter}")
-
-            # スタイルガイド
-            style_guide = coding_standards.get("style_guide")
-            if style_guide:
-                lines.append(f"- **スタイルガイド**: {style_guide}")
-
-            lines.append("")
-        else:
-            lines.append("## コーディング規約")
-            lines.append("")
-            lines.append(
-                "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
-            )
-            lines.append("")
-
-        return lines
-
-    def _generate_pr_section(self, project_info: ProjectInfo) -> list[str]:
-        """README用のPRセクションを生成"""
-        lines = []
-        lines.append("## プルリクエストの手順")
-        lines.append("")
-        lines.append("1. **ブランチの作成**")
-        lines.append("   ```bash")
-        lines.append("   git checkout -b feature/your-feature-name")
-        lines.append("   ```")
-        lines.append("")
-        lines.append("2. **変更のコミット**")
-        lines.append("   - コミットメッセージは明確で説明的に")
-        lines.append("   - 関連するIssue番号を含める")
-        lines.append("")
-        lines.append("3. **テストの実行**")
-        lines.append("   ```bash")
-        test_commands = project_info.test_commands
-        for cmd in test_commands[:3]:
-            lines.append(f"   {cmd}")
-        if not test_commands:
-            lines.append("   # テストコマンドを実行")
-        lines.append("   ```")
-        lines.append("")
-        lines.append("4. **プルリクエストの作成**")
-        lines.append("   - タイトル: `[種類] 簡潔な説明`")
-        lines.append("   - 説明: 変更内容、テスト結果、関連Issueを記載")
+        lines.append("## コーディング規約")
         lines.append("")
 
-        return lines
+        # フォーマッター
+        formatter = coding_standards.get("formatter")
+        if formatter:
+            lines.append(f"- **フォーマッター**: {formatter}")
 
-    def _generate_custom_instructions_section(
-        self, custom_instructions: str | dict[str, Any]
-    ) -> list[str]:
-        """README用のカスタム指示セクションを生成"""
-        lines = []
-        if custom_instructions:
-            lines.append("## プロジェクト固有の指示")
-            lines.append("")
+        # リンター
+        linter = coding_standards.get("linter")
+        if linter:
+            lines.append(f"- **リンター**: {linter}")
 
-            if isinstance(custom_instructions, str):
-                lines.append(custom_instructions)
-            elif isinstance(custom_instructions, dict):
-                # dictの場合はキーをセクションとして扱う
-                for key, value in custom_instructions.items():
-                    lines.append(f"### {key}")
-                    lines.append("")
-                    lines.append(str(value))
-                    lines.append("")
+        # スタイルガイド
+        style_guide = coding_standards.get("style_guide")
+        if style_guide:
+            lines.append(f"- **スタイルガイド**: {style_guide}")
+
+        lines.append("")
 
         return lines
 
@@ -424,7 +363,7 @@ class ReadmeGenerator(BaseGenerator):
             lines.append(updated_setup)
         else:
             # 自動生成
-            lines.extend(self._generate_setup_section())
+            lines.extend(self._generate_setup_section(project_info))
         lines.append(SETUP_END)
         lines.append("")
 
@@ -550,7 +489,7 @@ class ReadmeGenerator(BaseGenerator):
 
         return manual_content
 
-    def _generate_setup_section(self) -> list[str]:
+    def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
         """
         Detect dependencies
 
@@ -571,43 +510,7 @@ class ReadmeGenerator(BaseGenerator):
         lines.append("### インストール")
         lines.append("")
 
-        if "python" in self.languages:
-            pm = self.package_managers.get("python", "pip")
-            lines.append("```bash")
-            if pm == "uv":
-                lines.append("uv sync")
-            elif pm == "poetry":
-                lines.append("poetry install")
-            elif pm == "conda":
-                lines.append("conda env create -f environment.yml")
-            else:  # pip
-                lines.append("pip install -r requirements.txt")
-            lines.append("```")
-            lines.append("")
-
-        if "javascript" in self.languages or "typescript" in self.languages:
-            pm = self.package_managers.get("javascript", "npm")
-            lines.append("```bash")
-            if pm == "pnpm":
-                lines.append("pnpm install")
-            elif pm == "yarn":
-                lines.append("yarn install")
-            else:  # npm
-                lines.append("npm install")
-            lines.append("```")
-            lines.append("")
-
-        if "go" in self.languages:
-            pm = self.package_managers.get("go", "go")
-            lines.append("```bash")
-            if pm == "dep":
-                lines.append("dep ensure")
-            elif pm == "glide":
-                lines.append("glide install")
-            else:  # go modules
-                lines.append("go mod download")
-            lines.append("```")
-            lines.append("")
+        lines.extend(self._generate_installation_section())
 
         return lines
 

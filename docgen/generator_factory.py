@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any
 
-from .base_generator import BaseGenerator
+from .generators.base_generator import BaseGenerator
 from .utils.logger import get_logger
 
 logger = get_logger("generator_factory")

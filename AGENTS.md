@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-25 09:55:00
+自動生成日時: 2025-11-25 10:36:02
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -8,71 +8,39 @@
 
 ## プロジェクト概要
 
-<!-- MANUAL_START:description -->
-`agents-docs-sync` は、Python と Shell スクリプトで構成された GitHub Actions ベースの CI/CD パイプラインです。
+**agents-docs-sync** は、GitHub Actions を利用した CI/CD パイプラインであり、コミットごとにテスト実行・ドキュメント生成を自動化し、その結果 `AGENTS.md` も最新の状態へ更新します。  
 
-主な機能は以下の通り：
+### 主な処理フロー  
+1. **ビルド**：  
+   ```bash
+   uv run python3 docgen/docgen.py
+   ```  
+   Python スクリプトがプロジェクト全体から API/クラス情報を抽出し、Markdown ドキュメントへ変換します。  
 
-1. **コミットごとに自動実行**：Push あるいは Pull Request が発生するとワークフローが起動します。
-2. **テスト実行**：
-   - Python 用テスト: `uv run pytest`（カバレッジ・モックも併用）
-   - JavaScript/Node.js テスト（プロジェクトに含まれる場合）: `npm test`
-3. **ドキュメント生成**：Python スクリプト `docgen/docgen.py` を実行し、最新の API ドキュメントを作成します。
-4. **AGENTS.md の自動更新**：生成した情報から `AGENTS.md` を差分コミットして PR に反映させます。
+2. **テスト実行**（Python & Node.js）：  
+   - `uv run pytest`  
+   - `npm test`  
+   - `uv run pytest tests/ -v --tb=short`  
+   これにより両言語の単体・統合テストが網羅的に走ります。  
+
+3. **AGENTS.md 更新**：  
+   ドキュメント生成後、スクリプトが自動で `AGENTS.md` を再構築し、最新情報を反映します。
 
 ### 技術スタック
-- **言語・実装**: Python 3.x, Shell スクリプト
-- **ビルド/テストツール**: `uv`（Python パッケージ管理） + `pytest`, `npm`
-- **依存ライブラリ (Python)**:
-```text
-pyyaml>=6.0.3
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-mock>=3.11.1
-```
-- **コード品質**: `ruff` を利用した静的リンティング
-- **CI/CD 実装**: GitHub Actions（`.github/workflows/ci.yml` など）
+| 言語 | ツール / ライブラリ |
+|------|---------------------|
+| Python | uv, pyyaml≥6.0.3, pytest≥7.4.0, pytest-cov≥4.1.0, pytest-mock≥3.11.1 |
+| Shell  | Bash（スクリプト実行） |
 
-### 使用方法
+### コーディング規約
+- **Linting**：`ruff`
 
-・フックの有効化
-```bash
-user@hogehoge: ~$ agents_docs_sync hooks enable  # git hookで自動テスト、AGENTS.md、README.md更新
-```
+### 実装ポイント  
+* `uv` は高速な依存関係管理と仮想環境構築を提供。  
+* カスタムドキュメント生成 (`docgen/docgen.py`) により、手動での Markdown 更新作業が不要に。  
 
-・フックの無効化
-```bash
-user@hogehoge: ~$ agents_docs_sync hooks disable  # git hook無効化
-```
+このパイプラインはコミットごとに最新かつ正確な API 仕様・使い方情報を保証し、開発者間の情報共有を円滑化します。
 
-・ヘルプ
-```bash
-user@hogehoge: ~$ agents_docs_sync --help
-
-usage: agents_docs_sync [-h] [--version] [--config CONFIG] [--detect-only] [--no-api-doc] [--no-readme] {commit-msg,hooks} ...
-
-汎用ドキュメント自動生成システム
-
-positional arguments:
-  {commit-msg,hooks}  実行するコマンド
-    commit-msg        コミットメッセージ生成
-    hooks             Git hooksの管理
-
-options:
-  -h, --help          show this help message and exit
-  --version           show program's version number and exit
-  --config CONFIG     設定ファイルのパス
-  --detect-only       言語検出のみ実行
-  --no-api-doc        APIドキュメントを生成しない
-  --no-readme         READMEを更新しない
-```
-
-### 利点
-* コミットごとに自動で検証・文書化が行われるため、ドキュメント不整合を防止。
-* 変更箇所だけを即座に反映でき、手作業による更新の手間が大幅削減されます。
-
-これらの機能は開発フロー全体で品質と一貫性を維持するために設計されています。
-<!-- MANUAL_END:description -->
 ---
 
 ## 開発環境のセットアップ
@@ -168,4 +136,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 09:55:00*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 10:36:02*

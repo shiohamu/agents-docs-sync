@@ -1,60 +1,8 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 09:54:10
+自動生成日時: 2025-11-25 10:35:23
 
 ---
-
-## docgen/base_generator.py
-
-### BaseGenerator
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class BaseGenerator:
-```
-
-**説明**:
-
-ジェネレーターの基底クラス
-
-*定義場所: docgen/base_generator.py:10*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, project_root: Path, detected_languages: list[str], config: dict[str, Any], detected_package_managers: dict[str, str] | None):
-```
-
-*説明なし*
-
-*定義場所: docgen/base_generator.py:13*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self) -> bool:
-```
-
-**説明**:
-
-ドキュメントを生成
-
-*定義場所: docgen/base_generator.py:27*
-
----
-
 
 ## docgen/collectors/collector_utils.py
 
@@ -1356,7 +1304,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:26*
+*定義場所: docgen/generators/agents_generator.py:27*
 
 ---
 
@@ -1379,7 +1327,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:29*
+*定義場所: docgen/generators/agents_generator.py:30*
 
 ---
 
@@ -1394,7 +1342,7 @@ def agents_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/agents_generator.py:48*
+*定義場所: docgen/generators/agents_generator.py:49*
 
 ---
 
@@ -1520,7 +1468,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:172*
+*定義場所: docgen/generators/base_generator.py:292*
 
 ---
 
@@ -5770,40 +5718,6 @@ def test_initialization_default(self, temp_project):
 
 ---
 
-### test_initialization_with_config
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def test_initialization_with_config(self, temp_project):
-```
-
-**説明**:
-
-設定ファイル指定での初期化テスト
-
-*定義場所: tests/test_docgen.py:31*
-
----
-
-### test_load_config_existing_file
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def test_load_config_existing_file(self, temp_project):
-```
-
-**説明**:
-
-既存の設定ファイル読み込みテスト
-
-*定義場所: tests/test_docgen.py:44*
-
----
-
 ### test_load_config_missing_file
 
 **型**: `method`
@@ -5817,24 +5731,7 @@ def test_load_config_missing_file(self, temp_project):
 
 設定ファイルが存在しない場合のテスト
 
-*定義場所: tests/test_docgen.py:58*
-
----
-
-### test_validate_config_missing_sections
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def test_validate_config_missing_sections(self, temp_project):
-```
-
-**説明**:
-
-設定セクションが不足している場合のテスト
-
-*定義場所: tests/test_docgen.py:68*
+*定義場所: tests/test_docgen.py:31*
 
 ---
 
@@ -5851,7 +5748,7 @@ def test_update_config(self, temp_project):
 
 設定更新テスト
 
-*定義場所: tests/test_docgen.py:80*
+*定義場所: tests/test_docgen.py:41*
 
 ---
 
@@ -5868,7 +5765,7 @@ def test_detect_languages_parallel(self, mock_generic, mock_go, mock_js, mock_py
 
 並列言語検出テスト
 
-*定義場所: tests/test_docgen.py:95*
+*定義場所: tests/test_docgen.py:56*
 
 ---
 
@@ -5885,7 +5782,7 @@ def test_detect_languages_sequential(self, mock_generic, mock_go, mock_js, mock_
 
 逐次言語検出テスト
 
-*定義場所: tests/test_docgen.py:124*
+*定義場所: tests/test_docgen.py:85*
 
 ---
 
@@ -5902,7 +5799,7 @@ def test_generate_documents_success(self, mock_agents, mock_readme, mock_api, te
 
 ドキュメント生成成功テスト
 
-*定義場所: tests/test_docgen.py:151*
+*定義場所: tests/test_docgen.py:112*
 
 ---
 
@@ -5919,7 +5816,7 @@ def test_generate_documents_partial_failure(self, mock_agents, mock_readme, mock
 
 ドキュメント生成一部失敗テスト
 
-*定義場所: tests/test_docgen.py:171*
+*定義場所: tests/test_docgen.py:132*
 
 ---
 
@@ -5936,7 +5833,7 @@ def test_generate_documents_no_languages(self, temp_project):
 
 言語が検出されない場合のテスト
 
-*定義場所: tests/test_docgen.py:187*
+*定義場所: tests/test_docgen.py:148*
 
 ---
 
@@ -5953,7 +5850,7 @@ def test_main_commit_msg_command(self, mock_generator, temp_project, capsys):
 
 commit-msgコマンドのテスト
 
-*定義場所: tests/test_docgen.py:198*
+*定義場所: tests/test_docgen.py:159*
 
 ---
 
@@ -5970,7 +5867,7 @@ def test_main_detect_only(self, temp_project, caplog):
 
 detect-onlyオプションのテスト
 
-*定義場所: tests/test_docgen.py:215*
+*定義場所: tests/test_docgen.py:176*
 
 ---
 

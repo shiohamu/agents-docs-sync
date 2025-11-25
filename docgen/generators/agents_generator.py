@@ -18,6 +18,7 @@ from ..utils.markdown_utils import (
     GENERATION_TIMESTAMP_LABEL,
     SECTION_SEPARATOR,
     UNKNOWN,
+    format_commands_with_package_manager,
     get_current_timestamp,
 )
 from .base_generator import BaseGenerator
@@ -224,133 +225,10 @@ class AgentsGenerator(BaseGenerator):
         lines.append("### 依存関係のインストール")
         lines.append("")
 
-        # Python依存関係
-        if "python" in self.languages:
-            pm = self.package_managers.get("python", "pip")
-            lines.append("#### Python依存関係")
-            lines.append("")
-            lines.append("```bash")
-            if pm == "uv":
-                lines.append("uv sync")
-            elif pm == "poetry":
-                lines.append("poetry install")
-            elif pm == "conda":
-                lines.append("conda env create -f environment.yml")
-            else:  # pip
-                for dep_file in [
-                    "requirements.txt",
-                    "requirements-docgen.txt",
-                    "requirements-test.txt",
-                ]:
-                    req_path = self.project_root / dep_file
-                    if req_path.exists():
-                        lines.append(f"pip install -r {dep_file}")
-            lines.append("```")
-            lines.append("")
-
-        # JavaScript/TypeScript依存関係
-        if "javascript" in self.languages or "typescript" in self.languages:
-            pm = self.package_managers.get("javascript", "npm")
-            lang_name = "TypeScript" if "typescript" in self.languages else "JavaScript"
-            lines.append(f"#### {lang_name}依存関係")
-            lines.append("")
-            lines.append("```bash")
-            if pm == "pnpm":
-                lines.append("pnpm install")
-            elif pm == "yarn":
-                lines.append("yarn install")
-            else:  # npm
-                lines.append("npm install")
-            lines.append("```")
-            lines.append("")
-
-        # Go依存関係
-        if "go" in self.languages:
-            pm = self.package_managers.get("go", "go")
-            lines.append("#### Go依存関係")
-            lines.append("")
-            lines.append("```bash")
-            if pm == "dep":
-                lines.append("dep ensure")
-            elif pm == "glide":
-                lines.append("glide install")
-            else:  # go modules
-                lines.append("go mod download")
-            lines.append("```")
-            lines.append("")
+        lines.extend(self._generate_installation_section())
 
         # LLM環境のセットアップ
         lines.extend(self._generate_llm_setup_section())
-
-        return lines
-
-    def _generate_llm_setup_section(self) -> list[str]:
-        """LLM環境セットアップセクションを生成"""
-        lines = []
-        lines.append("### LLM環境のセットアップ")
-        lines.append("")
-
-        llm_mode = self.agents_config.get("llm_mode", "both")
-        api_config = self.agents_config.get("api") or {}
-        local_config = self.agents_config.get("local") or {}
-
-        if llm_mode in ["api", "both"]:
-            lines.append("#### APIを使用する場合")
-            lines.append("")
-
-            lines.append("1. **APIキーの取得と設定**")
-            lines.append("")
-
-            api_provider = api_config.get("provider", "openai")
-            api_key_env = api_config.get("api_key_env", "OPENAI_API_KEY")
-
-            if api_provider == "openai":
-                lines.append("   - OpenAI APIキーを取得: https://platform.openai.com/api-keys")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-            elif api_provider == "anthropic":
-                lines.append("   - Anthropic APIキーを取得: https://console.anthropic.com/")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-            else:
-                api_endpoint = api_config.get("endpoint", "")
-                lines.append(f"   - カスタムAPIエンドポイントを使用: {api_endpoint}")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-
-            lines.append("")
-            lines.append("2. **API使用時の注意事項**")
-            lines.append("   - APIレート制限に注意してください")
-            lines.append("   - コスト管理のために使用量を監視してください")
-            lines.append("")
-
-        if llm_mode in ["local", "both"]:
-            lines.append("#### ローカルLLMを使用する場合")
-            lines.append("")
-
-            lines.append("1. **ローカルLLMのインストール**")
-            lines.append("")
-
-            local_provider = local_config.get("provider", "ollama")
-            local_model = local_config.get("model", "llama3")
-            # 一般的な手順としてlocalhostを使用
-            local_base_url = "http://localhost:11434"
-
-            if local_provider == "ollama":
-                lines.append("   - Ollamaをインストール: https://ollama.ai/")
-                lines.append(f"   - モデルをダウンロード: `ollama pull {local_model}`")
-                lines.append("   - サービスを起動: `ollama serve`")
-                lines.append(f"   - ベースURL: {local_base_url}")
-            elif local_provider == "lmstudio":
-                lines.append("   - LM Studioをインストール: https://lmstudio.ai/")
-                lines.append("   - モデルをダウンロードして起動")
-                lines.append(f"   - ベースURL: {local_base_url}")
-            else:
-                lines.append("   - カスタムローカルLLMを設定")
-                lines.append(f"   - ベースURL: {local_base_url}")
-
-            lines.append("")
-            lines.append("2. **ローカルLLM使用時の注意事項**")
-            lines.append("   - モデルが起動していることを確認してください")
-            lines.append("   - ローカルリソース（メモリ、CPU）を監視してください")
-            lines.append("")
 
         return lines
 
@@ -366,8 +244,10 @@ class AgentsGenerator(BaseGenerator):
         build_commands = project_info.build_commands
         if build_commands:
             lines.append("```bash")
-            for cmd in build_commands:
-                lines.append(cmd)
+            formatted_commands = format_commands_with_package_manager(
+                build_commands, self.package_managers, "python"
+            )
+            lines.extend(formatted_commands)
             lines.append("```")
         else:
             lines.append("ビルド手順は設定されていません。")
@@ -384,8 +264,10 @@ class AgentsGenerator(BaseGenerator):
                 lines.append("#### APIを使用する場合")
                 lines.append("")
                 lines.append("```bash")
-                for cmd in test_commands:
-                    lines.append(cmd)
+                formatted_commands = format_commands_with_package_manager(
+                    test_commands, self.package_managers, "python"
+                )
+                lines.extend(formatted_commands)
                 lines.append("```")
                 lines.append("")
 
@@ -393,8 +275,10 @@ class AgentsGenerator(BaseGenerator):
                 lines.append("#### ローカルLLMを使用する場合")
                 lines.append("")
                 lines.append("```bash")
-                for cmd in test_commands:
-                    lines.append(cmd)
+                formatted_commands = format_commands_with_package_manager(
+                    test_commands, self.package_managers, "python"
+                )
+                lines.extend(formatted_commands)
                 lines.append("```")
                 lines.append("")
                 lines.append(
@@ -407,109 +291,53 @@ class AgentsGenerator(BaseGenerator):
 
         return lines
 
-    def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
-        """コーディング規約セクションを生成"""
+    def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
+        """コーディング規約のフォーマット"""
         lines = []
         lines.append("## コーディング規約")
         lines.append("")
 
-        coding_standards = project_info.coding_standards or {}
+        # フォーマッター
+        formatter = coding_standards.get("formatter")
+        if formatter:
+            lines.append("### フォーマッター")
+            lines.append("")
+            lines.append(f"- **{formatter}** を使用")
+            if formatter == "black":
+                lines.append("  ```bash")
+                lines.append("  black .")
+                lines.append("  ```")
+            elif formatter == "prettier":
+                lines.append("  ```bash")
+                lines.append("  npx prettier --write .")
+                lines.append("  ```")
+            lines.append("")
 
-        if coding_standards:
-            # フォーマッター
-            formatter = coding_standards.get("formatter")
-            if formatter:
-                lines.append("### フォーマッター")
-                lines.append("")
-                lines.append(f"- **{formatter}** を使用")
-                if formatter == "black":
-                    lines.append("  ```bash")
-                    lines.append("  black .")
-                    lines.append("  ```")
-                elif formatter == "prettier":
-                    lines.append("  ```bash")
-                    lines.append("  npx prettier --write .")
-                    lines.append("  ```")
-                lines.append("")
+        # リンター
+        linter = coding_standards.get("linter")
+        if linter:
+            lines.append("### リンター")
+            lines.append("")
+            lines.append(f"- **{linter}** を使用")
+            if linter == "ruff":
+                lines.append("  ```bash")
+                lines.append("  ruff check .")
+                lines.append("  ruff format .")
+                lines.append("  ```")
+            lines.append("")
 
-            # リンター
-            linter = coding_standards.get("linter")
-            if linter:
-                lines.append("### リンター")
-                lines.append("")
-                lines.append(f"- **{linter}** を使用")
-                if linter == "ruff":
-                    lines.append("  ```bash")
-                    lines.append("  ruff check .")
-                    lines.append("  ruff format .")
-                    lines.append("  ```")
-                lines.append("")
-
-            # スタイルガイド
-            style_guide = coding_standards.get("style_guide")
-            if style_guide:
-                lines.append("### スタイルガイド")
-                lines.append("")
-                lines.append(f"- {style_guide} に準拠")
-                lines.append("")
-        else:
-            lines.append(
-                "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
-            )
+        # スタイルガイド
+        style_guide = coding_standards.get("style_guide")
+        if style_guide:
+            lines.append("### スタイルガイド")
+            lines.append("")
+            lines.append(f"- {style_guide} に準拠")
             lines.append("")
 
         return lines
 
     def _generate_pr_section(self, project_info: ProjectInfo) -> list[str]:
-        """プルリクエストセクションを生成"""
-        lines = []
-        lines.append("## プルリクエストの手順")
-        lines.append("")
-        lines.append("1. **ブランチの作成**")
-        lines.append("   ```bash")
-        lines.append("   git checkout -b feature/your-feature-name")
-        lines.append("   ```")
-        lines.append("")
-        lines.append("2. **変更のコミット**")
-        lines.append("   - コミットメッセージは明確で説明的に")
-        lines.append("   - 関連するIssue番号を含める")
-        lines.append("")
-        lines.append("3. **テストの実行**")
-        lines.append("   ```bash")
-        test_commands = project_info.test_commands
-        for cmd in test_commands:
-            lines.append(f"   {cmd}")
-        if not test_commands:
-            lines.append("   # テストコマンドを実行")
-        lines.append("   ```")
-        lines.append("")
-        lines.append("4. **プルリクエストの作成**")
-        lines.append("   - タイトル: `[種類] 簡潔な説明`")
-        lines.append("   - 説明: 変更内容、テスト結果、関連Issueを記載")
-        lines.append("")
-
-        return lines
-
-    def _generate_custom_instructions_section(
-        self, custom_instructions: str | dict[str, Any]
-    ) -> list[str]:
-        """カスタム指示セクションを生成"""
-        lines = []
-        lines.append("## プロジェクト固有の指示")
-        lines.append("")
-
-        if isinstance(custom_instructions, str):
-            lines.append(custom_instructions)
-        elif isinstance(custom_instructions, dict):
-            # dictの場合はキーをセクションとして扱う
-            for key, value in custom_instructions.items():
-                lines.append(f"### {key}")
-                lines.append("")
-                lines.append(str(value))
-                lines.append("")
-
-        lines.append("")
-        return lines
+        return super()._generate_pr_section(project_info, max_test_commands=None)
 
     def _convert_structured_data_to_markdown(
         self, data: AgentsDocument, project_info: ProjectInfo

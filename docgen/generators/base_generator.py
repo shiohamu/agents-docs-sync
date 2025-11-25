@@ -137,6 +137,70 @@ class BaseGenerator(ABC):
         """プロジェクト概要セクションを生成（サブクラスで実装）"""
         pass
 
+    def _generate_installation_section(self) -> list[str]:
+        """依存関係インストールセクションを生成"""
+        lines = []
+
+        # Python依存関係
+        if "python" in self.languages:
+            pm = self.package_managers.get("python", "pip")
+            lines.append("#### Python依存関係")
+            lines.append("")
+
+            lines.append("```bash")
+            if pm == "uv":
+                lines.append("uv sync")
+            elif pm == "poetry":
+                lines.append("poetry install")
+            elif pm == "conda":
+                lines.append("conda env create -f environment.yml")
+            else:  # pip
+                for dep_file in [
+                    "requirements.txt",
+                    "requirements-docgen.txt",
+                    "requirements-test.txt",
+                ]:
+                    req_path = self.project_root / dep_file
+                    if req_path.exists():
+                        lines.append(f"pip install -r {dep_file}")
+            lines.append("```")
+            lines.append("")
+
+        # JavaScript/TypeScript依存関係
+        if "javascript" in self.languages or "typescript" in self.languages:
+            pm = self.package_managers.get("javascript", "npm")
+            lang_name = "TypeScript" if "typescript" in self.languages else "JavaScript"
+            lines.append(f"#### {lang_name}依存関係")
+            lines.append("")
+
+            lines.append("```bash")
+            if pm == "pnpm":
+                lines.append("pnpm install")
+            elif pm == "yarn":
+                lines.append("yarn install")
+            else:  # npm
+                lines.append("npm install")
+            lines.append("```")
+            lines.append("")
+
+        # Go依存関係
+        if "go" in self.languages:
+            pm = self.package_managers.get("go", "go")
+            lines.append("#### Go依存関係")
+            lines.append("")
+
+            lines.append("```bash")
+            if pm == "dep":
+                lines.append("dep ensure")
+            elif pm == "glide":
+                lines.append("glide install")
+            else:  # go modules
+                lines.append("go mod download")
+            lines.append("```")
+            lines.append("")
+
+        return lines
+
     @abstractmethod
     def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
         """開発環境セットアップセクションを生成（サブクラスで実装）"""
@@ -148,21 +212,77 @@ class BaseGenerator(ABC):
         pass
 
     @abstractmethod
+    def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
+        """コーディング規約のフォーマット（サブクラスで実装）"""
+        pass
+
     def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
-        """コーディング規約セクションを生成（サブクラスで実装）"""
-        pass
+        """コーディング規約セクションを生成"""
+        lines = []
+        coding_standards = project_info.coding_standards or {}
 
-    @abstractmethod
-    def _generate_pr_section(self, project_info: ProjectInfo) -> list[str]:
-        """プルリクエストセクションを生成（サブクラスで実装）"""
-        pass
+        if coding_standards:
+            lines.extend(self._format_coding_standards(coding_standards))
+        else:
+            lines.append(
+                "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
+            )
+            lines.append("")
 
-    @abstractmethod
+        return lines
+
+    def _generate_pr_section(
+        self, project_info: ProjectInfo, max_test_commands: int | None = 3
+    ) -> list[str]:
+        """プルリクエストセクションを生成"""
+        lines = []
+        lines.append("## プルリクエストの手順")
+        lines.append("")
+        lines.append("1. **ブランチの作成**")
+        lines.append("   ```bash")
+        lines.append("   git checkout -b feature/your-feature-name")
+        lines.append("   ```")
+        lines.append("")
+        lines.append("2. **変更のコミット**")
+        lines.append("   - コミットメッセージは明確で説明的に")
+        lines.append("   - 関連するIssue番号を含める")
+        lines.append("")
+        lines.append("3. **テストの実行**")
+        lines.append("   ```bash")
+        test_commands = project_info.test_commands
+        for cmd in test_commands[:max_test_commands] if max_test_commands else test_commands:
+            lines.append(f"   {cmd}")
+        if not test_commands:
+            lines.append("   # テストコマンドを実行")
+        lines.append("   ```")
+        lines.append("")
+        lines.append("4. **プルリクエストの作成**")
+        lines.append("   - タイトル: `[種類] 簡潔な説明`")
+        lines.append("   - 説明: 変更内容、テスト結果、関連Issueを記載")
+        lines.append("")
+
+        return lines
+
     def _generate_custom_instructions_section(
         self, custom_instructions: str | dict[str, Any]
     ) -> list[str]:
-        """カスタム指示セクションを生成（サブクラスで実装）"""
-        pass
+        """カスタム指示セクションを生成"""
+        lines = []
+        lines.append("## プロジェクト固有の指示")
+        lines.append("")
+
+        if isinstance(custom_instructions, str):
+            lines.append(custom_instructions)
+        elif isinstance(custom_instructions, dict):
+            # dictの場合はキーをセクションとして扱う
+            for key, value in custom_instructions.items():
+                lines.append(f"### {key}")
+                lines.append("")
+                lines.append(str(value))
+                lines.append("")
+
+        lines.append("")
+        return lines
 
     @abstractmethod
     def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
@@ -407,7 +527,6 @@ class BaseGenerator(ABC):
         from ..utils.outlines_utils import create_outlines_model
 
         return create_outlines_model(client)
-
 
     def _generate_hybrid(self, project_info: ProjectInfo) -> str:
         """

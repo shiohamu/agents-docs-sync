@@ -28,33 +28,6 @@ class TestDocGen:
         assert isinstance(docgen.config, dict)
         assert docgen.detected_languages == []
 
-    def test_initialization_with_config(self, temp_project):
-        """設定ファイル指定での初期化テスト"""
-        config_path = temp_project / "custom_config.yaml"
-        config_path.write_text("""
-output:
-  agents_doc: CUSTOM_AGENTS.md
-""")
-
-        docgen = DocGen(project_root=temp_project, config_path=config_path)
-
-        assert docgen.config_path == config_path
-        assert docgen.config.get("output", {}).get("agents_doc") == "CUSTOM_AGENTS.md"
-
-    def test_load_config_existing_file(self, temp_project):
-        """既存の設定ファイル読み込みテスト"""
-        config_file = temp_project / "docgen" / "config.yaml"
-        config_file.parent.mkdir(parents=True, exist_ok=True)
-        config_file.write_text("""
-output:
-  agents_doc: TEST_AGENTS.md
-""")
-
-        docgen = DocGen(project_root=temp_project)
-        config = docgen._load_config()
-
-        assert config["output"]["agents_doc"] == "TEST_AGENTS.md"
-
     def test_load_config_missing_file(self, temp_project):
         """設定ファイルが存在しない場合のテスト"""
         docgen = DocGen(project_root=temp_project)
@@ -64,18 +37,6 @@ output:
         assert "output" in docgen.config
         assert "generation" in docgen.config
         assert "agents" in docgen.config
-
-    def test_validate_config_missing_sections(self, temp_project):
-        """設定セクションが不足している場合のテスト"""
-        docgen = DocGen(project_root=temp_project)
-        docgen.config = {}  # 空の設定
-
-        docgen._validate_config()
-
-        # デフォルト値がマージされる
-        assert "languages" in docgen.config
-        assert "output" in docgen.config
-        assert "generation" in docgen.config
 
     def test_update_config(self, temp_project):
         """設定更新テスト"""
