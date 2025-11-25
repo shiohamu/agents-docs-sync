@@ -14,12 +14,6 @@ from .base_generator import BaseGenerator
 class ReadmeGenerator(BaseGenerator):
     """README generation class"""
 
-    def _should_use_llm(self) -> bool:
-        """README generation uses LLM based on mode setting"""
-        generation_config = self.agents_config.get("generation", {})
-        mode = generation_config.get(self._get_mode_key(), "template")
-        return mode in ["llm", "hybrid"]
-
     def __init__(
         self,
         project_root: Path,
@@ -38,6 +32,12 @@ class ReadmeGenerator(BaseGenerator):
         """
         super().__init__(project_root, languages, config, package_managers)
         self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
+
+    def _should_use_llm(self) -> bool:
+        """README generation uses LLM based on mode setting"""
+        generation_config = self.agents_config.get("generation", {})
+        mode = generation_config.get(self._get_mode_key(), "template")
+        return mode in ["llm", "hybrid"]
 
     @property
     def readme_path(self):
@@ -105,31 +105,6 @@ class ReadmeGenerator(BaseGenerator):
         """プロジェクト概要セクションを取得"""
         return self._extract_description_section(content)
 
-    def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
-        """README用のコーディング規約のフォーマット"""
-        lines = []
-        lines.append("## コーディング規約")
-        lines.append("")
-
-        # フォーマッター
-        formatter = coding_standards.get("formatter")
-        if formatter:
-            lines.append(f"- **フォーマッター**: {formatter}")
-
-        # リンター
-        linter = coding_standards.get("linter")
-        if linter:
-            lines.append(f"- **リンター**: {linter}")
-
-        # スタイルガイド
-        style_guide = coding_standards.get("style_guide")
-        if style_guide:
-            lines.append(f"- **スタイルガイド**: {style_guide}")
-
-        lines.append("")
-
-        return lines
-
     def _collect_project_description(self) -> str:
         """プロジェクト説明を収集"""
         from ..utils.markdown_utils import extract_project_description
@@ -157,82 +132,6 @@ class ReadmeGenerator(BaseGenerator):
 
         # セットアップ用のサブテンプレートをレンダリング
         return self._render_template("setup_template.md.j2", setup_context)
-
-    def _format_structured_dependencies(self, dependencies) -> str:
-        """構造化データを依存関係にフォーマット"""
-        if not dependencies:
-            return ""
-        parts = []
-        # Dependenciesモデルのフィールドを処理
-        if hasattr(dependencies, "python") and dependencies.python:
-            parts.append("### Python\n")
-            for dep in dependencies.python:
-                parts.append(f"- {dep}\n")
-            parts.append("\n")
-        if hasattr(dependencies, "nodejs") and dependencies.nodejs:
-            parts.append("### Node.js\n")
-            for dep in dependencies.nodejs:
-                parts.append(f"- {dep}\n")
-            parts.append("\n")
-        if hasattr(dependencies, "other") and dependencies.other:
-            parts.append("### Other\n")
-            for dep in dependencies.other:
-                parts.append(f"- {dep}\n")
-            parts.append("\n")
-        return "".join(parts).rstrip()
-
-    def _format_structured_setup(self, setup_instructions) -> str:
-        """構造化データをセットアップにフォーマット"""
-        if not setup_instructions:
-            return ""
-        parts = []
-
-        # ReadmeSetupInstructionsモデルのフィールドを処理
-        if hasattr(setup_instructions, "prerequisites") and setup_instructions.prerequisites:
-            parts.append("### Prerequisites\n\n")
-            for prereq in setup_instructions.prerequisites:
-                parts.append(f"- {prereq}\n")
-            parts.append("\n")
-
-        if (
-            hasattr(setup_instructions, "installation_steps")
-            and setup_instructions.installation_steps
-        ):
-            parts.append("### インストール\n\n")
-            parts.append("```bash\n")
-            for step in setup_instructions.installation_steps:
-                parts.append(f"{step}\n")
-            parts.append("```\n")
-
-        return "".join(parts).rstrip()
-
-    def _format_structured_commands(self, commands) -> str:
-        """構造化データをコマンドにフォーマット"""
-        if not commands:
-            return ""
-        parts = ["```bash\n"]
-        for cmd in commands:
-            parts.append(f"{cmd}\n")
-        parts.append("```")
-        return "".join(parts)
-
-    def _format_technologies_list(self, technologies) -> str:
-        """技術スタックのリストをフォーマット"""
-        if not technologies:
-            return ""
-        return "\n".join(f"- {tech}" for tech in technologies)
-
-    def _generate_project_overview(self, project_info: ProjectInfo) -> list[str]:
-        """プロジェクト概要セクションを生成（BaseGeneratorの抽象メソッド実装）"""
-        return []
-
-    def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
-        """セットアップセクションを生成（BaseGeneratorの抽象メソッド実装）"""
-        return []
-
-    def _generate_build_test_section(self, project_info: ProjectInfo) -> list[str]:
-        """ビルド/テストセクションを生成（BaseGeneratorの抽象メソッド実装）"""
-        return []
 
     def _format_languages(self) -> str:
         """言語リストをフォーマット"""

@@ -4,10 +4,8 @@
 ## Prerequisites
 
 {% if has_python %}- Python 3.12以上{% endif %}
-{% if has_javascript %}{% if has_python %}
-{% endif %}- Node.js (推奨バージョン: 18以上){% endif %}
-{% if has_go %}{% if has_python or has_javascript %}
-{% endif %}- Go 1.21以上{% endif %}
+{% if has_javascript %}- Node.js (推奨バージョン: 18以上){% endif %}
+{% if has_go %}- Go 1.21以上{% endif %}
 
 ## Installation
 
@@ -27,8 +25,7 @@ poetry install
 ```bash
 pip install -r requirements.txt
 ```
-{% endif %}
-{% endif %}
+{% endif %}{% endif %}
 
 {% if has_javascript %}
 ### JavaScript

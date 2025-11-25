@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 from ..models.project import ProjectInfo
-from ..utils.file_utils import safe_write_file
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
 from ..utils.markdown_utils import UNKNOWN, get_current_timestamp
@@ -49,11 +48,6 @@ class BaseGenerator(ABC):
         self.agents_config: dict[str, Any] = config.get("agents", {})
 
     @abstractmethod
-    def _get_output_path(self, config: dict[str, Any]) -> Path:
-        """出力パスを取得（サブクラスで実装）"""
-        pass
-
-    @abstractmethod
     def _get_mode_key(self) -> str:
         """モードキーを取得（サブクラスで実装）"""
         pass
@@ -66,6 +60,18 @@ class BaseGenerator(ABC):
     @abstractmethod
     def _get_document_type(self) -> str:
         """ドキュメントタイプを取得（サブクラスで実装）"""
+        pass
+
+    @abstractmethod
+    def _convert_structured_data_to_markdown(
+        self, structured_data: Any, project_info: ProjectInfo
+    ) -> str:
+        """構造化データをマークダウンに変換（サブクラスで実装）"""
+        pass
+
+    @abstractmethod
+    def _get_project_overview_section(self, content: str) -> str:
+        """プロジェクト概要セクションを取得（サブクラスで実装）"""
         pass
 
     def _get_output_path(self, config: dict[str, Any]) -> Path:
@@ -123,28 +129,8 @@ class BaseGenerator(ABC):
         pass
 
     @abstractmethod
-    def _get_project_overview_section(self, content: str) -> str:
-        """プロジェクト概要セクションを取得（サブクラスで実装）"""
-        pass
-
-    @abstractmethod
     def _generate_template(self, project_info: ProjectInfo) -> str:
         """テンプレートベースでマークダウンを生成（サブクラスで実装）"""
-        pass
-
-    @abstractmethod
-    def _generate_project_overview(self, project_info: ProjectInfo) -> list[str]:
-        """プロジェクト概要セクションを生成（サブクラスで実装）"""
-        pass
-
-    @abstractmethod
-    def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
-        """開発環境セットアップセクションを生成（サブクラスで実装）"""
-        pass
-
-    @abstractmethod
-    def _generate_build_test_section(self, project_info: ProjectInfo) -> list[str]:
-        """ビルド/テストセクションを生成（サブクラスで実装）"""
         pass
 
     def _generate_custom_instructions_section(
@@ -167,42 +153,6 @@ class BaseGenerator(ABC):
 
         lines.append("")
         return lines
-
-    @abstractmethod
-    def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
-        """構造化データをマークダウン形式に変換（サブクラスで実装）"""
-        pass
-
-    def generate(self) -> bool:
-        """
-        ドキュメントを生成
-
-        Returns:
-            成功したかどうか
-        """
-        try:
-            # 出力ディレクトリを作成
-            self.output_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # プロジェクト情報を収集
-            project_info = self.collector.collect_all()
-
-            # マークダウンを生成
-            markdown = self._generate_markdown(project_info)
-
-            # 既存の手動セクションを保持
-            manual_sections = self._extract_manual_sections_from_existing()
-            if manual_sections:
-                markdown = self._merge_manual_sections(markdown, manual_sections)
-
-            # ファイルに書き込み
-            if not safe_write_file(self.output_path, markdown):
-                return False
-
-            return True
-        except Exception as e:
-            self.logger.error(f"ドキュメント生成に失敗しました: {e}", exc_info=True)
-            return False
 
     def _extract_manual_sections_from_existing(self) -> dict[str, str]:
         """既存ファイルから手動セクションを抽出"""
@@ -394,19 +344,7 @@ class BaseGenerator(ABC):
             マークダウンの文字列（エラー時はテンプレート生成にフォールバック）
         """
         try:
-            if self._should_use_outlines():
-                # Outlinesを使用した構造化生成
-                return self._generate_with_outlines(project_info)
-            else:
-                # 従来のLLM生成
-                return self._generate_with_llm_legacy(project_info)
-
-        except Exception as e:
-            self.logger.error(
-                f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
-                exc_info=True,
-            )
-            return self._generate_template(project_info)
+            return self._generate_with_outlines(project_info)
 
         except Exception as e:
             self.logger.error(
@@ -432,7 +370,7 @@ class BaseGenerator(ABC):
             LLMクライアント（取得できない場合はNone）
         """
         llm_mode = self.agents_config.get("llm_mode", "api")
-        preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
+        preferred_mode = "api" if llm_mode in "api" else "local"
 
         return LLMClientFactory.create_client_with_fallback(
             self.agents_config, preferred_mode=preferred_mode
@@ -462,9 +400,11 @@ class BaseGenerator(ABC):
             outlines_model = self._create_outlines_model(client)
 
             if outlines_model is None:
-                # Outlinesがサポートされていない場合、従来のLLM生成にフォールバック
-                self.logger.info("Outlinesがサポートされていないため、従来のLLM生成を使用します。")
-                return self._generate_with_llm_legacy(project_info)
+                # Outlinesがサポートされていない場合、テンプレート生成にフォールバック
+                self.logger.info(
+                    "Outlinesがサポートされていないため、テンプレート生成にフォールバックします。"
+                )
+                return self._generate_template(project_info)
 
             # プロンプトを作成
             prompt = self._create_llm_prompt(project_info)
@@ -480,83 +420,8 @@ class BaseGenerator(ABC):
 
         except Exception as e:
             self.logger.error(
-                f"Outlines生成中にエラーが発生しました: {e}。従来のLLM生成にフォールバックします。",
+                f"Outlines生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
                 exc_info=True,
-            )
-            return self._generate_with_llm_legacy(project_info)
-
-    def _generate_with_llm_legacy(self, project_info: ProjectInfo) -> str:
-        """
-        従来のLLM生成（マークダウン出力）
-
-        Args:
-            project_info: プロジェクト情報
-
-        Returns:
-            生成された文字列
-        """
-        try:
-            # LLMクライアントを取得
-            client = self._get_llm_client_with_fallback()
-
-            if not client:
-                self.logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
-                )
-                return self._generate_template(project_info)
-
-            # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info)
-
-            # LLMで生成
-            self.logger.info("LLMを使用してドキュメントを生成中...")
-            generated_content = client.generate(prompt)
-
-            if generated_content:
-                # 生成されたコンテンツをクリーンアップ
-                cleaned_content = self._clean_llm_output(generated_content)
-
-                # 検証
-                if not self._validate_output(cleaned_content):
-                    self.logger.warning("LLM出力の検証に失敗しました。テンプレートを使用します。")
-                    return self._generate_template(project_info)
-
-                # LLM生成の場合は手動セクションをマージ
-                return self._merge_manual_sections(cleaned_content, {})
-            else:
-                self.logger.warning("LLM生成が空でした。テンプレートを使用します。")
-                return self._generate_template(project_info)
-
-        except Exception as e:
-            self.logger.error(
-                f"LLM生成中にエラーが発生しました: {e}。テンプレートを使用します。", exc_info=True
-            )
-            return self._generate_template(project_info)
-
-            # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info)
-
-            # LLMで生成
-            self.logger.info("LLMを使用してドキュメントを生成中...")
-            generated_content = client.generate(prompt)
-
-            if generated_content:
-                # 生成されたコンテンツをクリーンアップ
-                cleaned_content = self._clean_llm_output(generated_content)
-
-                # 検証
-                if not self._validate_output(cleaned_content):
-                    self.logger.warning("LLM出力の検証に失敗しました。テンプレートを使用します。")
-                    return self._generate_template(project_info)
-
-                return cleaned_content
-            else:
-                self.logger.warning("LLM生成が空でした。テンプレートを使用します。")
-                return self._generate_template(project_info)
-
-        except Exception as e:
-            self.logger.error(
-                f"LLM生成中にエラーが発生しました: {e}。テンプレートを使用します。", exc_info=True
             )
             return self._generate_template(project_info)
 
@@ -749,6 +614,42 @@ class BaseGenerator(ABC):
         Collect project description
         """
         return self.collector.collect_project_description()
+
+    def generate(self) -> bool:
+        """
+        ドキュメントを生成
+
+        Returns:
+            成功したかどうか
+        """
+        try:
+            # 出力ディレクトリを作成
+            self.output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # プロジェクト情報を収集
+            project_info = self.collector.collect_all()
+
+            # マークダウンを生成
+            markdown = self._generate_markdown(project_info)
+
+            # 手動セクションをマージ
+            manual_sections = self._extract_manual_sections_from_existing()
+            merged_markdown = self._merge_manual_sections(markdown, manual_sections)
+
+            # フッターを追加
+            final_markdown = merged_markdown + "\n\n" + self._generate_footer()
+
+            # ファイルに書き込み
+            with open(self.output_path, "w", encoding="utf-8") as f:
+                f.write(final_markdown)
+
+            return True
+        except Exception as e:
+            self.logger.error(
+                f"{self._get_document_type()}生成中に予期しないエラーが発生しました: {e}",
+                exc_info=True,
+            )
+            return False
 
     def _render_template(self, template_name: str, context: dict[str, Any]) -> str:
         """
