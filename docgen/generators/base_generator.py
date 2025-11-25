@@ -358,9 +358,11 @@ class BaseGenerator(ABC):
         Outlinesを使用するかどうかを判定
 
         Returns:
-            常にTrue（Outlinesを使用）
+            Outlinesを使用するかどうか
         """
-        return True
+        from ..utils.outlines_utils import should_use_outlines
+
+        return should_use_outlines(self.agents_config)
 
     def _get_llm_client_with_fallback(self) -> Any:
         """

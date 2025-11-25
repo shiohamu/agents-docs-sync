@@ -132,6 +132,50 @@ class DetectorPatterns:
         ".tox",
     }
 
+    # Languages supported by GenericDetector
+    GENERIC_LANGUAGES = {
+        "rust": [".rs"],
+        "java": [".java"],
+        "kotlin": [".kt", ".kts"],
+        "scala": [".scala"],
+        "ruby": [".rb"],
+        "php": [".php"],
+        "c": [".c", ".h"],
+        "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".hxx"],
+        "csharp": [".cs"],
+        "swift": [".swift"],
+        "dart": [".dart"],
+        "r": [".r", ".R"],
+        "lua": [".lua"],
+        "perl": [".pl", ".pm"],
+        "shell": [".sh", ".bash", ".zsh"],
+        "powershell": [".ps1"],
+    }
+
+    # JavaScript/TypeScript config and test files to exclude
+    EXCLUDE_JS_FILES = {
+        "webpack.config",
+        "rollup.config",
+        "vite.config",
+        "babel.config",
+        ".eslintrc",
+        ".prettierrc",
+        "jest.config",
+        "vitest.config",
+        "tsconfig",
+        "jsconfig",
+        "package-lock",
+        "yarn.lock",
+        "pnpm-lock",
+        ".test.",
+        ".spec.",
+        "test.",
+        "spec.",
+        "coverage",
+        "htmlcov",
+        ".coverage",
+    }
+
     @classmethod
     def get_package_files(cls, language: str) -> list[str]:
         """Get package manager files for a language."""
@@ -155,6 +199,35 @@ class DetectorPatterns:
         for ext in extensions:
             try:
                 for _ in project_root.rglob(f"*{ext}"):
+                    return True
+            except (OSError, PermissionError):
+                continue
+        return False
+
+    @classmethod
+    def detect_by_source_files_with_exclusions(cls, project_root: Path, language: str) -> bool:
+        """Detect language by checking for source files, excluding common directories."""
+        extensions = cls.get_source_extensions(language)
+        for ext in extensions:
+            try:
+                for file_path in project_root.rglob(f"*{ext}"):
+                    if cls.is_excluded_path(file_path, project_root):
+                        continue
+                    return True
+            except (OSError, PermissionError):
+                continue
+        return False
+
+    @classmethod
+    def detect_by_extensions_with_exclusions(
+        cls, project_root: Path, extensions: list[str]
+    ) -> bool:
+        """Detect files by extensions, excluding common directories."""
+        for ext in extensions:
+            try:
+                for file_path in project_root.rglob(f"*{ext}"):
+                    if cls.is_excluded_path(file_path, project_root):
+                        continue
                     return True
             except (OSError, PermissionError):
                 continue
@@ -189,4 +262,53 @@ class DetectorPatterns:
             else:
                 if file_exists_func(file_patterns):
                     return manager
+        return None
+
+    @classmethod
+    def is_js_config_or_test(cls, file_path: Path) -> bool:
+        """Check if a file is likely a JavaScript config or test file."""
+        name = file_path.name.lower()
+        return any(pattern in name for pattern in cls.EXCLUDE_JS_FILES)
+
+    @classmethod
+    def detect_python_package_manager(cls, project_root: Path) -> str | None:
+        """Detect Python package manager with special handling for pyproject.toml."""
+        # uv.lockが存在する場合（優先度最高）
+        if (project_root / "uv.lock").exists():
+            return "uv"
+
+        # poetry.lockが存在する場合
+        if (project_root / "poetry.lock").exists():
+            return "poetry"
+
+        # pyproject.tomlが存在し、[tool.poetry]セクションがある場合
+        pyproject_path = project_root / "pyproject.toml"
+        if pyproject_path.exists():
+            try:
+                import tomllib
+
+                with open(pyproject_path, "rb") as f:
+                    data = tomllib.load(f)
+                    if "tool" in data and "poetry" in data["tool"]:
+                        return "poetry"
+            except ImportError:
+                # tomllibが利用できない場合（Python 3.10以前）
+                pass
+            except Exception:
+                pass
+
+        # environment.ymlまたはconda-environment.ymlが存在する場合
+        if (project_root / "environment.yml").exists() or (
+            project_root / "conda-environment.yml"
+        ).exists():
+            return "conda"
+
+        # requirements.txtが存在する場合（デフォルト）
+        if (project_root / "requirements.txt").exists():
+            return "pip"
+
+        # setup.pyが存在する場合
+        if (project_root / "setup.py").exists():
+            return "pip"
+
         return None

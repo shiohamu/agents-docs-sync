@@ -26,8 +26,12 @@ def should_use_outlines(config: dict[str, Any]) -> bool:
     Returns:
         Outlinesを使用するかどうか
     """
+    # Outlinesライブラリが利用可能かチェック
+    if not OUTLINES_AVAILABLE:
+        return False
+
     # 設定でOutlinesが有効になっているかチェック
-    return True
+    return config.get("use_outlines", False)
 
 
 def create_outlines_model(client, provider: str = "openai"):
@@ -41,18 +45,23 @@ def create_outlines_model(client, provider: str = "openai"):
     Returns:
         Outlinesモデルインスタンス（作成できない場合はNone）
     """
+    if not OUTLINES_AVAILABLE:
+        return None
+
     try:
         # クライアントの種類に応じてOutlinesモデルを作成
         if hasattr(client, "client") and hasattr(client.client, "api_key"):
             # OpenAIクライアント
-            return outlines.from_openai(client.client, client.model)
+            if outlines is not None:
+                return outlines.from_openai(client.client, client.model)  # type: ignore
         elif hasattr(client, "base_url"):
             # ローカルLLMクライアント
             provider = getattr(client, "provider", "ollama")
 
             if provider == "ollama":
                 # Ollamaの場合
-                return outlines.from_ollama(client.model, client.base_url)
+                if outlines is not None:
+                    return outlines.from_ollama(client.model, client.base_url)  # type: ignore
             else:
                 # その他のローカルLLMはOpenAI互換APIとして扱う
                 import openai
@@ -63,7 +72,8 @@ def create_outlines_model(client, provider: str = "openai"):
                     else f"{client.base_url}/v1",
                     api_key="dummy",  # ローカルでは不要
                 )
-                return outlines.from_openai(openai_client, client.model)
+                if outlines is not None:
+                    return outlines.from_openai(openai_client, client.model)  # type: ignore
         else:
             raise ValueError("サポートされていないクライアントタイプ")
     except Exception:

@@ -119,10 +119,10 @@ def long_function() -> None:
         """読み取り専用ファイルシステムでのReadmeGeneratorテスト"""
         # 書き込み権限をモックしてエラーをシミュレート
 
-        def mock_write_text(self, content, encoding=None):
+        def mock_open(*args, **kwargs):
             raise PermissionError("Read-only filesystem")
 
-        monkeypatch.setattr(Path, "write_text", mock_write_text)
+        monkeypatch.setattr("builtins.open", mock_open)
 
         config = {"output": {"readme": "README.md"}}
         generator = ReadmeGenerator(temp_project, ["python"], config)

@@ -189,7 +189,7 @@ Standard installation instructions.
         write_file(temp_project, "requirements.txt", "pytest>=7.0.0\n")
 
         # LLMクライアントをモック（ローカルLLMとして設定）
-        from unittest.mock import Mock, patch
+        from unittest.mock import MagicMock, Mock, patch
 
         mock_client = Mock()
         mock_client.generate.return_value = """# Test Project
@@ -252,14 +252,21 @@ pip install -r requirements.txt
 ---
 
 *このREADME.mdは自動生成されています。最終更新: 2025-11-25 15:56:23*"""
-        # ローカルLLMとして設定（Outlinesを使用しない）
+        # ローカルLLMとして設定
         mock_client.provider = "lmstudio"
         mock_client.base_url = "http://192.168.10.113:1234"
         mock_client.model = "openai/gpt-oss-20b"
+        mock_client.generate = MagicMock(return_value="This is an LLM generated description.")
 
-        with patch(
-            "docgen.generators.base_generator.BaseGenerator._get_llm_client_with_fallback",
-            return_value=mock_client,
+        with (
+            patch(
+                "docgen.generators.base_generator.BaseGenerator._get_llm_client_with_fallback",
+                return_value=mock_client,
+            ),
+            patch(
+                "docgen.generators.base_generator.BaseGenerator._generate_with_outlines",
+                return_value="# Test Project\n\nThis is an LLM generated description.\n\n## Technologies Used\n\n- Python\n",
+            ),
         ):
             config = {
                 "output": {"readme": "README.md"},

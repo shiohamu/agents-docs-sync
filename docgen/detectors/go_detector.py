@@ -16,14 +16,12 @@ class GoDetector(BaseDetector):
         Returns:
             Goプロジェクトの場合True
         """
-        # go.mod, go.sum, Gopkg.toml などの存在確認
-        if self._file_exists(
-            "go.mod", "go.sum", "Gopkg.toml", "Gopkg.lock", "glide.yaml", "glide.lock"
-        ):
+        # パッケージマネージャーファイルの存在確認
+        if self._detect_by_package_files("go"):
             return True
 
         # .goファイルの存在確認
-        if self._has_files_with_ext(".go"):
+        if self._detect_by_extensions("go"):
             return True
 
         return False

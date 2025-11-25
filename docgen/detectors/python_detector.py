@@ -17,11 +17,11 @@ class PythonDetector(BaseDetector):
             Pythonプロジェクトの場合True
         """
         # パッケージマネージャーファイルの存在確認
-        if DetectorPatterns.detect_by_package_files(self.project_root, "python"):
+        if self._detect_by_package_files("python"):
             return True
 
         # .pyファイルの存在確認
-        if DetectorPatterns.detect_by_source_files(self.project_root, "python"):
+        if self._detect_by_extensions("python"):
             return True
 
         return False
@@ -37,39 +37,4 @@ class PythonDetector(BaseDetector):
         Returns:
             パッケージマネージャ名またはNone
         """
-        # uv.lockが存在する場合（優先度最高）
-        if self._file_exists("uv.lock"):
-            return "uv"
-
-        # poetry.lockが存在する場合
-        if self._file_exists("poetry.lock"):
-            return "poetry"
-
-        # pyproject.tomlが存在し、[tool.poetry]セクションがある場合
-        if self._file_exists("pyproject.toml"):
-            try:
-                import tomllib
-
-                with open(self.project_root / "pyproject.toml", "rb") as f:
-                    data = tomllib.load(f)
-                    if "tool" in data and "poetry" in data["tool"]:
-                        return "poetry"
-            except ImportError:
-                # tomllibが利用できない場合（Python 3.10以前）
-                pass
-            except Exception:
-                pass
-
-        # environment.ymlまたはconda-environment.ymlが存在する場合
-        if self._file_exists("environment.yml", "conda-environment.yml"):
-            return "conda"
-
-        # requirements.txtが存在する場合（デフォルト）
-        if self._file_exists("requirements.txt"):
-            return "pip"
-
-        # setup.pyが存在する場合
-        if self._file_exists("setup.py"):
-            return "pip"
-
-        return None
+        return DetectorPatterns.detect_python_package_manager(self.project_root)

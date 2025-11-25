@@ -4,30 +4,11 @@
 """
 
 from .base_detector import BaseDetector
+from .detector_patterns import DetectorPatterns
 
 
 class GenericDetector(BaseDetector):
     """汎用言語検出クラス"""
-
-    # サポートする言語とその拡張子
-    SUPPORTED_LANGUAGES = {
-        "rust": [".rs"],
-        "java": [".java"],
-        "kotlin": [".kt", ".kts"],
-        "scala": [".scala"],
-        "ruby": [".rb"],
-        "php": [".php"],
-        "c": [".c", ".h"],
-        "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".hxx"],
-        "csharp": [".cs"],
-        "swift": [".swift"],
-        "dart": [".dart"],
-        "r": [".r", ".R"],
-        "lua": [".lua"],
-        "perl": [".pl", ".pm"],
-        "shell": [".sh", ".bash", ".zsh"],
-        "powershell": [".ps1"],
-    }
 
     def detect(self) -> bool:
         """
@@ -36,7 +17,7 @@ class GenericDetector(BaseDetector):
         Returns:
             サポート言語が検出された場合True
         """
-        for _lang, extensions in self.SUPPORTED_LANGUAGES.items():
+        for _lang, extensions in DetectorPatterns.GENERIC_LANGUAGES.items():
             if self._has_files_with_ext(*extensions):
                 return True
         return False
@@ -49,7 +30,7 @@ class GenericDetector(BaseDetector):
         Returns:
             言語名
         """
-        for lang, extensions in self.SUPPORTED_LANGUAGES.items():
+        for lang, extensions in DetectorPatterns.GENERIC_LANGUAGES.items():
             if self._has_files_with_ext(*extensions):
                 return lang
         return "generic"
@@ -62,7 +43,7 @@ class GenericDetector(BaseDetector):
             検出された言語のリスト
         """
         detected = []
-        for lang, extensions in self.SUPPORTED_LANGUAGES.items():
+        for lang, extensions in DetectorPatterns.GENERIC_LANGUAGES.items():
             if self._has_files_with_ext(*extensions):
                 detected.append(lang)
         return detected

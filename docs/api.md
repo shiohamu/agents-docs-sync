@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 19:08:38
+自動生成日時: 2025-11-26 00:15:45
 
 ---
 
@@ -604,7 +604,7 @@ def get_package_files(cls, language: str) -> list[str]:
 
 Get package manager files for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:136*
+*定義場所: docgen/detectors/detector_patterns.py:180*
 
 ---
 
@@ -621,7 +621,7 @@ def get_source_extensions(cls, language: str) -> list[str]:
 
 Get source file extensions for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:141*
+*定義場所: docgen/detectors/detector_patterns.py:185*
 
 ---
 
@@ -638,7 +638,7 @@ def detect_by_package_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for package manager files.
 
-*定義場所: docgen/detectors/detector_patterns.py:146*
+*定義場所: docgen/detectors/detector_patterns.py:190*
 
 ---
 
@@ -655,7 +655,41 @@ def detect_by_source_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for source files.
 
-*定義場所: docgen/detectors/detector_patterns.py:152*
+*定義場所: docgen/detectors/detector_patterns.py:196*
+
+---
+
+### detect_by_source_files_with_exclusions
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_by_source_files_with_exclusions(cls, project_root: Path, language: str) -> bool:
+```
+
+**説明**:
+
+Detect language by checking for source files, excluding common directories.
+
+*定義場所: docgen/detectors/detector_patterns.py:208*
+
+---
+
+### detect_by_extensions_with_exclusions
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_by_extensions_with_exclusions(cls, project_root: Path, extensions: list[str]) -> bool:
+```
+
+**説明**:
+
+Detect files by extensions, excluding common directories.
+
+*定義場所: docgen/detectors/detector_patterns.py:222*
 
 ---
 
@@ -672,7 +706,7 @@ def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
 
 Check if a path should be excluded from detection.
 
-*定義場所: docgen/detectors/detector_patterns.py:164*
+*定義場所: docgen/detectors/detector_patterns.py:237*
 
 ---
 
@@ -696,7 +730,41 @@ Args:
 Returns:
     Package manager name or None
 
-*定義場所: docgen/detectors/detector_patterns.py:174*
+*定義場所: docgen/detectors/detector_patterns.py:247*
+
+---
+
+### is_js_config_or_test
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def is_js_config_or_test(cls, file_path: Path) -> bool:
+```
+
+**説明**:
+
+Check if a file is likely a JavaScript config or test file.
+
+*定義場所: docgen/detectors/detector_patterns.py:268*
+
+---
+
+### detect_python_package_manager
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_python_package_manager(cls, project_root: Path) -> str | None:
+```
+
+**説明**:
+
+Detect Python package manager with special handling for pyproject.toml.
+
+*定義場所: docgen/detectors/detector_patterns.py:274*
 
 ---
 
@@ -716,7 +784,7 @@ class GenericDetector:
 
 汎用言語検出クラス
 
-*定義場所: docgen/detectors/generic_detector.py:9*
+*定義場所: docgen/detectors/generic_detector.py:10*
 
 ---
 
@@ -736,7 +804,7 @@ def detect(self) -> bool:
 Returns:
     サポート言語が検出された場合True
 
-*定義場所: docgen/detectors/generic_detector.py:32*
+*定義場所: docgen/detectors/generic_detector.py:13*
 
 ---
 
@@ -757,7 +825,7 @@ def get_language(self) -> str:
 Returns:
     言語名
 
-*定義場所: docgen/detectors/generic_detector.py:44*
+*定義場所: docgen/detectors/generic_detector.py:25*
 
 ---
 
@@ -777,7 +845,7 @@ def get_all_detected_languages(self) -> list:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/detectors/generic_detector.py:57*
+*定義場所: docgen/detectors/generic_detector.py:38*
 
 ---
 
@@ -797,7 +865,7 @@ def detect_package_manager(self) -> str | None:
 Returns:
     パッケージマネージャ名またはNone
 
-*定義場所: docgen/detectors/generic_detector.py:70*
+*定義場所: docgen/detectors/generic_detector.py:51*
 
 ---
 
@@ -854,7 +922,7 @@ def get_language(self) -> str:
 
 言語名を返す
 
-*定義場所: docgen/detectors/go_detector.py:31*
+*定義場所: docgen/detectors/go_detector.py:29*
 
 ---
 
@@ -874,7 +942,7 @@ Goプロジェクトで使用されているパッケージマネージャを検
 Returns:
     パッケージマネージャ名またはNone
 
-*定義場所: docgen/detectors/go_detector.py:35*
+*定義場所: docgen/detectors/go_detector.py:33*
 
 ---
 
@@ -931,7 +999,7 @@ def get_language(self) -> str:
 
 言語名を返す
 
-*定義場所: docgen/detectors/javascript_detector.py:45*
+*定義場所: docgen/detectors/javascript_detector.py:46*
 
 ---
 
@@ -951,7 +1019,7 @@ JavaScript/TypeScriptプロジェクトで使用されているパッケージ�
 Returns:
     パッケージマネージャ名またはNone
 
-*定義場所: docgen/detectors/javascript_detector.py:59*
+*定義場所: docgen/detectors/javascript_detector.py:60*
 
 ---
 
@@ -1499,7 +1567,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:618*
+*定義場所: docgen/generators/base_generator.py:620*
 
 ---
 
@@ -4306,7 +4374,7 @@ Args:
 Returns:
     Outlinesモデルインスタンス（作成できない場合はNone）
 
-*定義場所: docgen/utils/outlines_utils.py:33*
+*定義場所: docgen/utils/outlines_utils.py:37*
 
 ---
 
@@ -4330,7 +4398,7 @@ Args:
 Returns:
     LLMクライアントインスタンス
 
-*定義場所: docgen/utils/outlines_utils.py:74*
+*定義場所: docgen/utils/outlines_utils.py:84*
 
 ---
 
@@ -4353,7 +4421,7 @@ Args:
 Returns:
     クリーンアップされたテキスト
 
-*定義場所: docgen/utils/outlines_utils.py:93*
+*定義場所: docgen/utils/outlines_utils.py:103*
 
 ---
 
@@ -4376,7 +4444,7 @@ Args:
 Returns:
     検証に合格したかどうか
 
-*定義場所: docgen/utils/outlines_utils.py:303*
+*定義場所: docgen/utils/outlines_utils.py:313*
 
 ---
 

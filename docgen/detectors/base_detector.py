@@ -75,40 +75,77 @@ class BaseDetector(ABC):
         Returns:
             該当ファイルが存在する場合True
         """
-        # プロジェクトルートを正規化（絶対パスに変換）
-        project_root_resolved = self.project_root.resolve()
+        return DetectorPatterns.detect_by_extensions_with_exclusions(
+            self.project_root, list(extensions)
+        )
+
+    def _detect_by_extensions(self, language: str) -> bool:
+        """
+        指定言語のソースファイル拡張子で検出
+
+        Args:
+            language: 言語名
+
+        Returns:
+            該当ファイルが存在する場合True
+        """
+        return DetectorPatterns.detect_by_source_files_with_exclusions(self.project_root, language)
+
+    def _detect_by_package_files(self, language: str) -> bool:
+        """
+        指定言語のパッケージマネージャーファイルで検出
+
+        Args:
+            language: 言語名
+
+        Returns:
+            該当ファイルが存在する場合True
+        """
+        return DetectorPatterns.detect_by_package_files(self.project_root, language)
+
+    def _has_files_in_dir(self, directory: str, *extensions, exclude_config: bool = False) -> bool:
+        """
+        特定ディレクトリ内のファイル存在確認
+
+        Args:
+            directory: ディレクトリ名
+            *extensions: 拡張子
+            exclude_config: 設定ファイルを除外する場合True
+
+        Returns:
+            該当ファイルが存在する場合True
+        """
+        dir_path = self.project_root / directory
+        if not dir_path.exists():
+            return False
 
         for ext in extensions:
             try:
-                for file_path in self.project_root.rglob(f"*{ext}"):
-                    try:
-                        # パスの正規化（シンボリックリンクを解決）
-                        file_path_resolved = file_path.resolve()
-
-                        # プロジェクトルート外へのアクセスを防止
-                        try:
-                            file_path_resolved.relative_to(project_root_resolved)
-                        except ValueError:
-                            # プロジェクトルート外のファイルはスキップ
-                            continue
-
-                        # 除外ディレクトリをスキップ
-                        relative_path = file_path.relative_to(self.project_root)
-                        if relative_path.parts and any(
-                            part in DetectorPatterns.EXCLUDE_DIRS for part in relative_path.parts
-                        ):
-                            continue
-
-                        # シンボリックリンクをスキップ（オプション）
-                        if file_path.is_symlink():
-                            continue
-
-                        # 有効なファイルが見つかった
-                        return True
-                    except (OSError, PermissionError):
-                        # ファイルアクセスエラーは無視して続行
+                for file_path in dir_path.rglob(f"*{ext}"):
+                    if exclude_config and DetectorPatterns.is_js_config_or_test(file_path):
                         continue
+                    return True
             except (OSError, PermissionError):
-                # ディレクトリアクセスエラーは無視して続行
+                continue
+        return False
+
+    def _has_files_in_root(self, *extensions, exclude_config: bool = False) -> bool:
+        """
+        プロジェクトルート直下のファイル存在確認
+
+        Args:
+            *extensions: 拡張子
+            exclude_config: 設定ファイルを除外する場合True
+
+        Returns:
+            該当ファイルが存在する場合True
+        """
+        for ext in extensions:
+            try:
+                for file_path in self.project_root.glob(f"*{ext}"):
+                    if exclude_config and DetectorPatterns.is_js_config_or_test(file_path):
+                        continue
+                    return True
+            except (OSError, PermissionError):
                 continue
         return False
