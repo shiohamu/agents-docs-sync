@@ -56,6 +56,25 @@ class AgentsGenerator(BaseGenerator):
     def _get_project_overview_section(self, content: str) -> str:
         return self._extract_description_section(content)
 
+    def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
+        """
+        概要生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）
+        AGENTS.md専用のプロンプトを提供
+        """
+        return f"""以下のプロジェクト情報を基に、AGENTS.mdの「概要」セクションの内容を改善してください。
+既存のテンプレート生成内容を参考に、AIエージェントにとって有用な、より詳細な説明を生成してください。
+
+プロジェクト情報:
+{self._format_project_info_for_prompt(project_info)}
+
+既存のテンプレート生成内容:
+{existing_overview}
+
+改善された概要の内容をマークダウン形式で出力してください。
+ヘッダー（## 概要）は含めないでください。内容のみを出力してください。
+重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
+手動セクションのマーカー（<!-- MANUAL_START:... --> など）は含めないでください。内容のみを出力してください。"""
+
     def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
         prompt = f"""以下のプロジェクト情報を基に、AIコーディングエージェント向けのAGENTS.mdドキュメントを生成してください。
 

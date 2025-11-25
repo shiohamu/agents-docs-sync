@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-26 00:15:45
+自動生成日時: 2025-11-26 05:27:33
 
 ---
 
@@ -1461,7 +1461,7 @@ class APIGenerator:
 
 APIドキュメント生成クラス
 
-*定義場所: docgen/generators/api_generator.py:25*
+*定義場所: docgen/generators/api_generator.py:26*
 
 ---
 
@@ -1484,27 +1484,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/api_generator.py:28*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self) -> bool:
-```
-
-**説明**:
-
-APIドキュメントを生成
-
-Returns:
-    成功したかどうか
-
-*定義場所: docgen/generators/api_generator.py:65*
+*定義場所: docgen/generators/api_generator.py:29*
 
 ---
 
@@ -1567,7 +1547,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:620*
+*定義場所: docgen/generators/base_generator.py:684*
 
 ---
 

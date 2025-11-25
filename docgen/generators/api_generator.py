@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING, Any
 
 from ..detectors.detector_patterns import DetectorPatterns
 from ..models.api import APIInfo
+from ..models.project import ProjectInfo
 from ..utils.cache import CacheManager
-from ..utils.logger import get_logger
 from ..utils.markdown_utils import (
     GENERATION_TIMESTAMP_LABEL,
     SECTION_SEPARATOR,
     get_current_timestamp,
 )
+from .base_generator import BaseGenerator
 from .parsers.generic_parser import GenericParser
 from .parsers.js_parser import JSParser
 from .parsers.python_parser import PythonParser
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from .parsers.base_parser import BaseParser
 
 
-class APIGenerator:
+class APIGenerator(BaseGenerator):
     """APIドキュメント生成クラス"""
 
     def __init__(
@@ -41,18 +42,7 @@ class APIGenerator:
             config: 設定辞書
             package_managers: 検出されたパッケージマネージャの辞書
         """
-        self.project_root = project_root
-        self.languages = languages
-        self.config = config
-        self.package_managers = package_managers or {}
-        self.logger = get_logger("api_generator")
-
-        # Set output path
-        output_config = self.config.get("output", {})
-        filename = output_config.get("api_doc", "docs/api.md")
-        self.output_path = Path(filename)
-        if not self.output_path.is_absolute():
-            self.output_path = self.project_root / self.output_path
+        super().__init__(project_root, languages, config, package_managers)
 
         # キャッシュマネージャーの初期化
         cache_enabled = self.config.get("cache", {}).get("enabled", True)
@@ -62,83 +52,82 @@ class APIGenerator:
             else None
         )
 
-    def generate(self) -> bool:
-        """
-        APIドキュメントを生成
+    def _get_mode_key(self) -> str:
+        return "api_mode"
 
-        Returns:
-            成功したかどうか
-        """
-        try:
-            # 出力ディレクトリを作成
-            self.output_path.parent.mkdir(parents=True, exist_ok=True)
+    def _get_output_key(self) -> str:
+        return "api_doc"
 
-            # 各言語のパーサーでAPI情報を収集
-            all_apis = []
-            parsers = self._get_parsers()
+    def _get_document_type(self) -> str:
+        return "APIドキュメント"
 
-            # 除外ディレクトリとファイルパターンを設定
-            exclude_dirs = self.config.get("exclude", {}).get(
-                "directories",
-                list(DetectorPatterns.EXCLUDE_DIRS) + ["venv"],
-            )
+    def _get_structured_model(self) -> Any:
+        # 現在は構造化出力を使用していないためNoneを返す
+        return None
 
-            # キャッシュの使用設定
-            use_cache = self.config.get("cache", {}).get("enabled", True)
+    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
+        # 現在はLLM生成を使用していないため空文字を返す
+        return ""
 
-            for parser in parsers:
-                apis = parser.parse_project(
-                    exclude_dirs=exclude_dirs,
-                    use_cache=use_cache,
-                    cache_manager=self.cache_manager,
-                )
-                all_apis.extend(apis)
+    def _generate_template(self, project_info: ProjectInfo) -> str:
+        # テンプレート生成の代わりにパーサーベースの生成を行う
+        # BaseGeneratorのgenerateフローから呼ばれる場合、ここが実質的な生成ロジックの一部になる
+        # ただし、API生成は特殊なので、_generate_markdownで処理する
+        return ""
 
-            # API情報をソート（ファイル名、行番号順）
-            all_apis.sort(key=lambda x: (x["file"], x["line"]))
+    def _get_project_overview_section(self, content: str) -> str:
+        return ""
 
-            # マークダウンを生成
-            markdown = self._generate_markdown(all_apis)
+    def _convert_structured_data_to_markdown(
+        self, structured_data: Any, project_info: ProjectInfo
+    ) -> str:
+        return ""
 
-            # ファイルに書き込み
-            with open(self.output_path, "w", encoding="utf-8") as f:
-                f.write(markdown)
-
-            return True
-        except Exception as e:
-            self.logger.error(
-                f"APIドキュメント生成中に予期しないエラーが発生しました: {e}", exc_info=True
-            )
-            return False
-
-    def _get_parsers(self) -> list["BaseParser"]:
-        """
-        言語に応じたパーサーのリストを取得
-
-        Returns:
-            パーサーのリスト
-        """
-        parsers = []
-
-        for lang in self.languages:
-            if lang == "python":
-                parsers.append(PythonParser(self.project_root))
-            elif lang in ["javascript", "typescript"]:
-                parsers.append(JSParser(self.project_root))
-            else:
-                parsers.append(GenericParser(self.project_root, language=lang))
-
-        return parsers
-
-    def _generate_markdown(self, apis: list[APIInfo]) -> str:
+    def _generate_markdown(self, project_info: ProjectInfo) -> str:
         """
         API情報からマークダウンを生成
+
+        Args:
+            project_info: プロジェクト情報（このクラスでは主に使用しないが、インターフェースとして必要）
+
+        Returns:
+            マークダウンの文字列
+        """
+        # 各言語のパーサーでAPI情報を収集
+        all_apis = []
+        parsers = self._get_parsers()
+
+        # 除外ディレクトリとファイルパターンを設定
+        exclude_dirs = self.config.get("exclude", {}).get(
+            "directories",
+            list(DetectorPatterns.EXCLUDE_DIRS) + ["venv"],
+        )
+
+        # キャッシュの使用設定
+        use_cache = self.config.get("cache", {}).get("enabled", True)
+
+        for parser in parsers:
+            apis = parser.parse_project(
+                exclude_dirs=exclude_dirs,
+                use_cache=use_cache,
+                cache_manager=self.cache_manager,
+            )
+            all_apis.extend(apis)
+
+        # API情報をソート（ファイル名、行番号順）
+        all_apis.sort(key=lambda x: (x["file"], x["line"]))
+
+        return self._render_api_markdown(all_apis)
+
+    def _render_api_markdown(self, apis: list[APIInfo]) -> str:
+        """
+        API情報のリストからマークダウンをレンダリング
 
         Args:
             apis: API情報のリスト
 
         Returns:
-            マークダウンの文字列
+            マークダウン文字列
         """
         lines = []
 
@@ -196,3 +185,22 @@ class APIGenerator:
             lines.append("")
 
         return "\n".join(lines)
+
+    def _get_parsers(self) -> list["BaseParser"]:
+        """
+        言語に応じたパーサーのリストを取得
+
+        Returns:
+            パーサーのリスト
+        """
+        parsers = []
+
+        for lang in self.languages:
+            if lang == "python":
+                parsers.append(PythonParser(self.project_root))
+            elif lang in ["javascript", "typescript"]:
+                parsers.append(JSParser(self.project_root))
+            else:
+                parsers.append(GenericParser(self.project_root, language=lang))
+
+        return parsers

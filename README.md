@@ -3,33 +3,36 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-agents-docs-sync は、コミットごとに自動でテスト実行・ドキュメント生成を行い、その結果を `AGENTS.md` に反映させる CI/CD パイプラインです。  
-主な構成は次の通りです。
+`agents‑docs‐sync`は、コミットごとに自動でテストを実行し、ドキュメントを生成して `AGENTS.md` を更新するパイプラインです。  
+主な構成要素は以下の通りです。
 
 - **使用言語**：Python とシェルスクリプト
-- **主要タスク**
-  - Python テスト（pytest + pytest‑cov）を実行し、コードカバレッジを確認
-  - `docgen/docgen.py` を走らせて API ドキュメントとサンプルリファレンスを生成  
-    (`uv run python3 docgen/docgen.py`)
-  - 自動更新されたドキュメント内容で `AGENTS.md` を再構築し、コミットに含める
+- **主要機能**
+  - コミット時にテスト（pytest、npm test、go test）を実行し失敗したらビルド停止  
+  - 成功後 `docgen/docgen.py` を走らせて最新の API ドキュメントと `AGENTS.md` を自動生成
 - **依存関係**（Python）
-  ```toml
+  ```text
   pyyaml>=6.0.3
   pytest>=7.4.0
   pytest-cov>=4.1.0
   pytest-mock>=3.11.1
   ```
 - **ビルド手順**
-  1. `uv sync` – 依存関係の同期  
-  2. `uv build` – ビルド（必要に応じて）  
-  3. `uv run python3 docgen/docgen.py`
-- **テスト実行**  
-  - Python: `uv run pytest tests/ -v --tb=short`  
-  - JavaScript (npm): `npm test`  
-  - Go: `go test ./...`
-- **コーディング規約**：リントツールとして Ruff を使用し、コード品質を維持
+  ```bash
+  uv sync           # 必要なパッケージを同期（仮想環境作成・依存関係解決）
+  uv build          # ビルドプロセスの実行
+  uv run python3 docgen/docgen.py   # ドキュメント生成スクリプトの起動
+  ```
+- **テスト手順**
+  ```bash
+  uv run pytest tests/ -v --tb=short    # Python テスト（詳細出力）
+  npm test                               # Node.js のユニット／統合テスト
+  go test ./...                          # Go モジュール全体のテスト実行
+  ```
+- **コーディング規約**  
+  - 静的解析・フォーマッティングは `ruff` を使用
 
-このプロジェクトにより、コミット時点で常に最新のテスト結果とドキュメントが生成されるため、開発者は一貫した情報を迅速に確認できます。
+このプロジェクトにより、リポジトリ内で最新状態を保つドキュメントと一貫した品質保証が自動化されます。
 ## 使用技術
 
 - Python
@@ -97,6 +100,52 @@ uv sync
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
 <!-- MANUAL_END:setup -->
+# Setup
+
+
+## Prerequisites
+
+- Python 3.12以上
+
+
+
+## Installation
+
+
+### Python
+
+```bash
+# uvを使用する場合
+uv sync
+```
+
+
+
+
+## LLM環境のセットアップ
+
+### APIを使用する場合
+
+1. **APIキーの取得と設定**
+
+   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
+   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
+
+2. **API使用時の注意事項**
+   - APIレート制限に注意してください
+   - コスト管理のために使用量を監視してください
+
+### ローカルLLMを使用する場合
+
+1. **ローカルLLMのインストール**
+
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
+
+2. **ローカルLLM使用時の注意事項**
+   - モデルが起動していることを確認してください
+   - ローカルリソース（メモリ、CPU）を監視してください
 
 
 
@@ -126,4 +175,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-26 00:15:45*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-26 05:27:33*

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-26 00:16:07
+自動生成日時: 2025-11-26 05:28:03
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -8,38 +8,55 @@
 
 ## プロジェクト概要
 
-`agents-docs-sync` は、コミットごとに自動でテスト実行・ドキュメント生成を行い、その結果を `AGENTS.md` に反映させる CI/CD パイプラインです。  
-主要な技術スタックは **Python** と **Shell スクリプト** で構成され、以下のように動作します。
+This repository implements an automated documentation sync system named **agents-docs-sync** that keeps the `AGENTS.md` file in lockstep with your codebase and test suite. Every time a commit lands on any branch (or via CI), it triggers a sequence of actions:
 
-### 主な機能
-- **テスト実行**: `uv run pytest`（Python）、`npm test`（JavaScript）および `go test ./...`（Go）の各言語向けテストを並列で走らせます。  
-- **ドキュメント生成**: Python スクリプト (`docgen/docgen.py`) が API 定義やコードコメントから Markdown ドキュメントを自動作成します。  
-- **AGENTS.md の更新**: 生成されたドキュメントの内容と構造に合わせて `AGENTS.md` を再生成し、最新情報を常に反映させます。
+1. **Dependency resolution** – Uses *uv* to install all required Python packages (`pyyaml`, `pytest`, etc.) ensuring the environment matches the declared constraints.
+2. **Build & packaging** – Executes `uv build` so that your package can be installed in editable mode if needed, and verifies metadata consistency with PyPI standards.
+3. **Documentation generation** – Runs a custom script located at `docgen/docgen.py`. This script parses YAML configuration files for each agent, extracts docstrings from the source code, and compiles them into Markdown snippets that are merged into `AGENTS.md`.
+4. **Testing matrix** – The pipeline runs tests in three ecosystems to guarantee cross‑language compatibility:
+   - Python: `uv run pytest tests/ -v --tb=short` (with coverage via `pytest-cov`)
+   - Node.js: `npm test`
+   - Go: `go test ./...`
 
-### 開発環境
-| コンポーネント | バージョン要件 |
-|-----------------|---------------|
-| Python          | 3.10+         |
-| Shell           | Bash ≥5       |
+5. **Linting** – Before committing the updated documentation, the codebase is linted with *ruff* to enforce PEP‑8 style guidelines and catch common syntax issues.
 
-#### 主な依存パッケージ（Python）
-- `pyyaml>=6.0.3`
-- `pytest>=7.4.0`
-- `pytest-cov>=4.1.0`
-- `pytest-mock>=3.11.1`
+6. **Commit & push** – After successful build, tests, and linter pass, a new commit containing the regenerated `AGENTS.md` (and any auxiliary docs) is automatically pushed back to the repository, ensuring that documentation never falls out of sync with implementation changes.
 
-### ビルド・テストフロー
-| ステップ | コマンド |
-|----------|---------|
-| **ビルド** | ```bash\nuv sync && uv build && uv run python3 docgen/docgen.py\``` |
-| **テスト** | ```bash\nuv run pytest tests/ -v --tb=short\nnpm test\ngo test ./...\n```
+### How it works for AI agents
 
-### コーディング規約
-- リンター: `ruff`（Pythonコードは PEP8 と一貫性を保ちます）
+- Each agent’s configuration resides in YAML files under `/agents/`. The generator parses these files and embeds them into a consistent table format within `AGENTS.md`.
+- Docstrings from Python modules are extracted using introspection, enabling the documentation to reflect real‑time API signatures without manual updates.
+- By integrating with CI (GitHub Actions / GitLab), any push triggers this pipeline; agents can also invoke it locally via the provided shell scripts.
 
----
+### Usage
 
-このパイプラインにより、各コミットでテストが失敗した場合やドキュメントの不整合が検出された際には即座にフィードバックされ、チーム全体が最新かつ正確な情報へアクセスできるようになります。
+```bash
+# Install uv if not already present:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Run full sync manually:
+uv sync          # install dependencies
+uv build         # prepare package
+uv run python3 docgen/docgen.py  # generate docs
+```
+
+Running the tests and linter is optional but recommended:
+
+```bash
+uv run pytest tests/ -v --tb=short   # Python unit tests
+npm test                              # JavaScript tests
+go test ./...                         # Go tests
+
+ruff check .                           # Linting pass/fail
+```
+
+The repository’s CI configuration automatically performs these steps, so contributors only need to commit changes; the pipeline takes care of updating documentation and ensuring quality.
+
+## 概要
+
+コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
+
+**使用技術**: python, shell
 
 ---
 
@@ -195,4 +212,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-26 00:16:07*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-26 05:28:03*

@@ -289,7 +289,7 @@ class ReadmeGenerator(BaseGenerator):
         return self._render_template("readme_template.md.j2", context)
 
     def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
-        """概要生成用のLLMプロンプトを作成"""
+        """README生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）"""
         return f"""以下のプロジェクト情報を基に、README.mdの「プロジェクト概要」セクションの内容を改善してください。
 既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
 
@@ -304,83 +304,21 @@ class ReadmeGenerator(BaseGenerator):
 重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
 手動セクションのマーカー（<!-- MANUAL_START:... --> など）は含めないでください。内容のみを出力してください。"""
 
-    def _generate_overview_with_llm(self, project_info: ProjectInfo, existing_overview: str) -> str:
-        """LLMを使用してプロジェクト概要を生成"""
-        try:
-            # LLMクライアントを取得
-            client = self._get_llm_client_with_fallback()
-            if not client:
-                self.logger.warning("LLMクライアントの作成に失敗しました。既存の概要を使用します。")
-                return existing_overview
-
-            # プロンプトを作成
-            prompt = self._create_overview_prompt(project_info, existing_overview)
-
-            system_prompt = """あなたは技術ドキュメント作成の専門家です。プロジェクト概要を明確で有用な形で記述してください。
-最終的な出力のみを生成し、思考過程や試行錯誤の痕跡を含めないでください。"""
-
-            self.logger.info("LLMを使用してプロジェクト概要を生成中...")
-            improved_overview = client.generate(prompt, system_prompt=system_prompt)
-
-            if improved_overview:
-                # LLM出力をクリーンアップ
-                cleaned_overview = self._clean_llm_output(improved_overview)
-
-                # 出力を検証
-                if self._validate_overview_output(cleaned_overview):
-                    return cleaned_overview
-                else:
-                    self.logger.warning("LLM出力の検証に失敗しました。既存の概要を使用します。")
-                    return existing_overview
-            else:
-                return existing_overview
-
-        except Exception as e:
-            self.logger.warning(
-                f"概要LLM生成中にエラーが発生しました: {e}。既存の概要を使用します。"
-            )
-            return existing_overview
-
-    def _validate_overview_output(self, text: str) -> bool:
-        """概要LLM出力を検証"""
-        if not text or not text.strip():
-            return False
-        # 基本的な検証：マークダウン形式で、過度に長いものではない
-        if len(text) > 2000:  # 適当な上限
-            return False
-        return True
-
-    def _generate_hybrid(self, project_info: ProjectInfo) -> str:
+    def _replace_overview_section(self, content: str, new_overview: str) -> str:
         """
-        テンプレートとLLMを組み合わせて生成（README専用）
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            マークダウンの文字列
+        プロジェクト概要セクションを置き換え（BaseGeneratorのオーバーライド）
+        READMEではdescriptionセクションを置き換える
         """
-        # まずテンプレートを生成
-        template_content = self._generate_template(project_info)
+        import re
 
-        # プロジェクト概要セクションのみLLMで改善
-        existing_overview = self._get_project_overview_section(template_content)
-        improved_overview = self._generate_overview_with_llm(project_info, existing_overview)
+        # description_sectionの内容を置き換え
+        # パターン: MANUAL_START:description ... MANUAL_END:description の後から、次のセクション（## 使用技術など）の前まで
+        pattern = r"(<!-- MANUAL_START:description -->\n<!-- MANUAL_END:description -->\n)(.*?)(\n## 使用技術)"
+        replacement = r"\1" + new_overview + r"\3"
 
-        if improved_overview != existing_overview:
-            # 概要が改善された場合、置き換え
-            # descriptionセクションを置き換え
-            import re
+        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
 
-            # description_sectionの内容を置き換え
-            pattern = r"(<!-- MANUAL_START:description -->\n<!-- MANUAL_END:description -->\n)(.*?)(\n## 使用技術)"
-            replacement = r"\1" + improved_overview + r"\3"
-
-            updated_content = re.sub(pattern, replacement, template_content, flags=re.DOTALL)
-
-            return updated_content
-        else:
-            return template_content
+        return updated_content
 
     def _generate_description_section(self, manual_sections: dict[str, str]) -> str:
         """説明セクションの内容を生成"""

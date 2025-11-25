@@ -314,7 +314,7 @@ def test_generate_markdown_llm_mode(temp_project):
     assert "# AGENTS ドキュメント" in markdown
 
 
-def test_generate_markdown_hybrid_mode(temp_project):
+def test_generate_markdown_hybrid_mode(temp_project, monkeypatch):
     """ハイブリッドモードでのマークダウン生成テスト"""
     # テスト用のファイルを作成
     (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n")
@@ -329,13 +329,24 @@ def test_generate_markdown_hybrid_mode(temp_project):
     }
 
     generator = AgentsGenerator(temp_project, ["python"], config)
+
+    # LLMクライアントをモック
+    from unittest.mock import Mock
+
+    mock_client = Mock()
+    mock_client.generate.return_value = "LLM improved overview content."
+
+    monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: mock_client)
+    monkeypatch.setattr(generator, "_clean_llm_output", lambda x: x)
+    monkeypatch.setattr(generator, "_validate_output", lambda x: True)
+
     project_info = generator.collector.collect_all()
 
-    # ハイブリッドモードではエラーが発生してもフォールバックする
+    # ハイブリッドモードで生成
     markdown = generator._generate_markdown(project_info)
 
-    # フォールバックでテンプレートが使用される
-    assert "# AGENTS ドキュメント" in markdown
+    # LLMで生成された内容が含まれていることを確認
+    assert "LLM improved overview content." in markdown
 
 
 def test_generate_error_handling(temp_project):

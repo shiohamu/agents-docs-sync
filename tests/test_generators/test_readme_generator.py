@@ -325,7 +325,7 @@ pip install -r requirements.txt
 
         monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: mock_client)
         monkeypatch.setattr(generator, "_clean_llm_output", lambda x: x)
-        monkeypatch.setattr(generator, "_validate_overview_output", lambda x: True)
+        monkeypatch.setattr(generator, "_validate_output", lambda x: True)
 
         result = generator._generate_overview_with_llm(project_info, "existing overview")
 
@@ -348,22 +348,7 @@ pip install -r requirements.txt
         existing_overview = "existing overview"
         result = generator._generate_overview_with_llm(project_info, existing_overview)
 
-        assert result == existing_overview
-
-    def test_validate_overview_output(self, temp_project):
-        """概要出力検証のテスト"""
-        config = {"output": {"readme": "README.md"}}
-        generator = ReadmeGenerator(temp_project, ["python"], config)
-
-        # 有効な出力
-        assert generator._validate_overview_output("Valid overview content.")
-
-        # 空の出力
-        assert not generator._validate_overview_output("")
-
-        # 長すぎる出力
-        long_content = "a" * 3000
-        assert not generator._validate_overview_output(long_content)
+        assert result is None
 
     def test_generate_hybrid_readme(self, temp_project, monkeypatch):
         """ハイブリッドモードのテスト"""

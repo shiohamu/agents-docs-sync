@@ -470,19 +470,78 @@ class BaseGenerator(ABC):
                 return template_content
 
             # プロジェクト概要セクションのみLLMで改善
-            prompt = f"""以下のプロジェクト情報を基に、{self._get_document_type()}の「プロジェクト概要」セクションの内容を改善してください。
-既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
+            existing_overview = self._get_project_overview_section(template_content)
+            improved_overview = self._generate_overview_with_llm(project_info, existing_overview)
 
-プロジェクト情報:
-{self._format_project_info_for_prompt(project_info)}
+            if improved_overview and improved_overview != existing_overview:
+                return self._replace_overview_section(template_content, improved_overview)
+            else:
+                return template_content
 
-既存のテンプレート生成内容:
-{self._get_project_overview_section(template_content)}
+        except Exception as e:
+            self.logger.warning(
+                f"ハイブリッド生成中にエラーが発生しました: {e}。テンプレートのみを使用します。",
+                exc_info=True,
+            )
+            return template_content
 
-改善されたプロジェクト概要の内容をマークダウン形式で出力してください。
-ヘッダー（## プロジェクト概要）は含めないでください。内容のみを出力してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-手動セクション（<!-- MANUAL_START:description --> と <!-- MANUAL_END:description -->）は保持してください。"""
+    def _replace_overview_section(self, content: str, new_overview: str) -> str:
+        """
+        プロジェクト概要セクションを置き換え（サブクラスでオーバーライド可能）
+
+        Args:
+            content: 元のコンテンツ
+            new_overview: 新しい概要
+
+        Returns:
+            置き換え後のコンテンツ
+        """
+        # デフォルト実装: "## プロジェクト概要" または "## 概要" セクションを置き換え
+        lines = content.split("\n")
+        new_lines = []
+        skip_until_end = False
+        replaced = False
+
+        for line in lines:
+            if not replaced and ("## プロジェクト概要" in line or "## 概要" in line):
+                new_lines.append(line)
+                new_lines.append("")
+                new_lines.extend(new_overview.split("\n"))
+                skip_until_end = True
+                replaced = True
+            elif skip_until_end and line.startswith("## "):
+                skip_until_end = False
+                new_lines.append("")
+                new_lines.append(line)
+            elif not skip_until_end:
+                new_lines.append(line)
+
+        return "\n".join(new_lines)
+
+    def _generate_overview_with_llm(
+        self, project_info: ProjectInfo, existing_overview: str
+    ) -> str | None:
+        """
+        LLMを使用してプロジェクト概要を生成
+
+        Args:
+            project_info: プロジェクト情報
+            existing_overview: 既存の概要
+
+        Returns:
+            改善された概要（生成失敗時はNone）
+        """
+        try:
+            # LLMクライアントを取得
+            client = self._get_llm_client_with_fallback()
+
+            if not client:
+                self.logger.warning(
+                    "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
+                )
+                return None
+
+            prompt = self._create_overview_prompt(project_info, existing_overview)
 
             system_prompt = """あなたは技術ドキュメント作成の専門家です。プロジェクト概要を明確で有用な形で記述してください。
 最終的な出力のみを生成し、思考過程や試行錯誤の痕跡を含めないでください。"""
@@ -499,37 +558,42 @@ class BaseGenerator(ABC):
                     self.logger.warning(
                         "LLM出力の検証に失敗しました。テンプレートのみを使用します。"
                     )
-                    return template_content
+                    return None
 
-                # テンプレートのプロジェクト概要セクションを置き換え
-                lines = template_content.split("\n")
-                new_lines = []
-                skip_until_end = False
-
-                for _i, line in enumerate(lines):
-                    if "## プロジェクト概要" in line:
-                        new_lines.append(line)
-                        new_lines.append("")
-                        # 改善された概要を挿入
-                        new_lines.extend(cleaned_overview.split("\n"))
-                        skip_until_end = True
-                    elif skip_until_end and line.startswith("---"):
-                        skip_until_end = False
-                        new_lines.append("")
-                        new_lines.append(line)
-                    elif not skip_until_end:
-                        new_lines.append(line)
-
-                return "\n".join(new_lines)
+                return cleaned_overview
             else:
-                return template_content
-
+                return None
         except Exception as e:
             self.logger.warning(
-                f"ハイブリッド生成中にエラーが発生しました: {e}。テンプレートのみを使用します。",
+                f"概要生成中にエラーが発生しました: {e}",
                 exc_info=True,
             )
-            return template_content
+            return None
+
+    def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
+        """
+        プロジェクト概要生成用のプロンプトを作成（サブクラスでオーバーライド可能）
+
+        Args:
+            project_info: プロジェクト情報
+            existing_overview: 既存の概要（テンプレート生成結果）
+
+        Returns:
+            プロンプト文字列
+        """
+        return f"""以下のプロジェクト情報を基に、{self._get_document_type()}の「プロジェクト概要」セクションの内容を改善してください。
+既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
+
+プロジェクト情報:
+{self._format_project_info_for_prompt(project_info)}
+
+既存のテンプレート生成内容:
+{existing_overview}
+
+改善されたプロジェクト概要の内容をマークダウン形式で出力してください。
+ヘッダー（## プロジェクト概要）は含めないでください。内容のみを出力してください。
+重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
+手動セクション（<!-- MANUAL_START:description --> と <!-- MANUAL_END:description -->）は保持してください。"""
 
     def _format_project_info_for_prompt(self, project_info: ProjectInfo) -> str:
         """
