@@ -3,53 +3,28 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-agents‑docs‑sync は、コミットごとに自動的にテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新するパイプラインです。  
-主な機能は以下の通りです。
+agents-docs-sync は、コミットごとに自動的にテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新する CI/CD パイプラインです。  
+主な機能は以下の通り：
 
-- **CI/CD ワークフロー**: コードが push されると GitHub Actions が起動し、テスト実行 → ドキュメント生成 (`docgen/docgen.py`) → `AGENTS.md` の差分反映という一連の処理を順次走らせます。  
-- **多言語サポート**: Python（ドキュメンテーションジェネレータ）、Shell スクリプトで構成されており、Python だけではなく `npm test` や Go のユニットテストも同時に走らせます。  
-- **依存関係管理**: `uv` を使用して Python パッケージ（pyyaml, pytest 系）とビルドツールを解決します。Go と Node.js はそれぞれの標準的なコマンドでテストが実行されます。  
+- **Python と Shell のスクリプト** で構成されており、複数言語にまたがるプロジェクトでも一貫したビルド・テストを実現します。
+- `uv` を利用して依存関係管理と環境構築（`uv sync`, `uv build`) が行われます。  
+  - **Python**: pyyaml≥6.0.3, pytest≥7.4.0, pytest‑cov≥4.1.0, pytest-mock≥3.11.1
+- ビルドステップは次の順序で実施されます：
+  1. `uv sync` – 必要なパッケージをインストール  
+  2. `uv build` – バイナリやビルド成果物を生成  
+  3. `uv run python3 docgen/docgen.py` – ドキュメントの自動生成と `AGENTS.md` の更新
+- テスト実行は多言語対応で、以下コマンドが走ります：
+  - Python: `uv run pytest tests/ -v --tb=short`
+  - Node.js: `npm test`
+  - Go: `go test ./...`
+- コーディング規約として **ruff** を使用し、コード品質と整合性を保ちます。
 
-### 主要ファイル
+### 利用フロー
+1. プロジェクトに変更をコミット  
+2. CI が自動でビルド・テスト → ドキュメント生成 & `AGENTS.md` 更新  
+3. 失敗時はログが出力され、修正後再度プッシュ
 
-- **docgen/docgen.py**: ドキュメント生成ロジック（YAML を読み込み、Markdown のテンプレートへ変換）。  
-- **AGENTS.md**: 自動更新対象のドキュメントハブ。  
-- **.github/workflows/***：CI/CD 定義ファイル。
-
-### 依存関係
-
-| 言語 | パッケージ |
-|------|------------|
-| Python | `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` |
-| Node.js | 省略（テストフレームワークは npm test にて管理） |
-| Go | 標準ライブラリ＋go.modで定義 |
-
-### ビルド & テスト
-
-```bash
-# 環境セットアップ (Python)
-uv sync            # 仮想環境作成と依存パッケージインストール
-uv build           # パッケージビルド（必要に応じて）
-
-# ドキュメント生成
-uv run python3 docgen/docgen.py
-
-# テスト実行 (Python)
-uv run pytest tests/ -v --tb=short
-
-# Node.js のテスト
-npm test
-
-# Go のテスト
-go test ./...
-```
-
-### コーディング規約
-
-- Python ソースは `ruff` で linting を強制します。  
-- スタイルガイドに従い、PEP8 準拠を目指してください。
-
-このリポジトリを利用することで、コードベースとドキュメントが常に同期し、手動更新の手間を大幅に削減できます。
+この仕組みにより、最新の API 情報や設定手順を常に反映した README とマニュアルを維持でき、開発者間で情報共有がスムーズになります。
 ## 使用技術
 
 - Python
@@ -146,4 +121,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-25 18:17:17*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-25 18:38:33*
