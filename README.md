@@ -4,12 +4,12 @@
 コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 <!-- MANUAL_END:description -->
 
-## Technologies Used
+## 使用技術
 
 - Python
 - Shell
 
-## Dependencies
+## 依存関係
 
 ### Python
 - anthropic>=0.74.1
@@ -21,7 +21,7 @@
 - pytest>=9.0.1
 - pyyaml>=6.0.3
 
-## Setup
+## セットアップ
 
 <!-- MANUAL_START:setup -->
 # Setup
@@ -44,17 +44,12 @@ uv venv
 source .venv/bin/activate  # Linux/macOS
 uv pip install -e .
 ```
-
-
-
-
-
 <!-- MANUAL_END:setup -->
 
 
 
 
-## Build and Test
+## ビルドおよびテスト
 
 
 ### ビルド
@@ -79,4 +74,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-25 14:30:42*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-25 14:44:50*

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 14:30:42
+自動生成日時: 2025-11-25 14:44:50
 
 ---
 
@@ -2111,7 +2111,7 @@ Args:
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
 
-*定義場所: docgen/generators/readme_generator.py:21*
+*定義場所: docgen/generators/readme_generator.py:23*
 
 ---
 
@@ -2126,7 +2126,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:41*
+*定義場所: docgen/generators/readme_generator.py:43*
 
 ---
 

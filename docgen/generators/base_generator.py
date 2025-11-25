@@ -535,7 +535,7 @@ class BaseGenerator(ABC):
 
     def _generate_with_llm(self, project_info: ProjectInfo) -> str:
         """
-        LLMを使用してドキュメントを生成
+        LLMを使用してドキュメントを生成（Outlinesを使用）
 
         Args:
             project_info: プロジェクト情報の辞書
@@ -544,8 +544,15 @@ class BaseGenerator(ABC):
             マークダウンの文字列（エラー時はテンプレート生成にフォールバック）
         """
         try:
-            # Outlinesを使用した構造化生成を試す
+            # Outlinesを使用した構造化生成
             return self._generate_with_outlines(project_info)
+
+        except Exception as e:
+            self.logger.error(
+                f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
+                exc_info=True,
+            )
+            return self._generate_template(project_info)
 
         except Exception as e:
             self.logger.error(
@@ -556,15 +563,12 @@ class BaseGenerator(ABC):
 
     def _should_use_outlines(self) -> bool:
         """
-        Outlinesを使用するかどうかを判定
+        Outlinesを使用するかどうかを判定（常に使用）
 
         Returns:
-            Outlinesを使用するかどうか
+            常にTrue（Outlinesを使用）
         """
-        # 設定でOutlinesが有効になっているかチェック
-        from ..utils.outlines_utils import should_use_outlines
-
-        return should_use_outlines(self.config)
+        return True
 
     def _get_llm_client_with_fallback(self) -> Any:
         """

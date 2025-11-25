@@ -15,8 +15,10 @@ class ReadmeGenerator(BaseGenerator):
     """README generation class"""
 
     def _should_use_llm(self) -> bool:
-        """README generation uses LLM by default"""
-        return True
+        """README generation uses LLM based on mode setting"""
+        generation_config = self.agents_config.get("generation", {})
+        mode = generation_config.get(self._get_mode_key(), "template")
+        return mode in ["llm", "hybrid"]
 
     def __init__(
         self,

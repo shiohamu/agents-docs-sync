@@ -3,11 +3,11 @@
 {% if has_python or has_javascript or has_go %}
 ## Prerequisites
 
-{% if has_python %}- Python 3.8以上{% endif %}
+{% if has_python %}- Python 3.12以上{% endif %}
 {% if has_javascript %}{% if has_python %}
 {% endif %}- Node.js (推奨バージョン: 18以上){% endif %}
 {% if has_go %}{% if has_python or has_javascript %}
-{% endif %}- Go 1.16以上{% endif %}
+{% endif %}- Go 1.21以上{% endif %}
 
 ## Installation
 
@@ -16,9 +16,7 @@
 {% if python_pm == "uv" %}
 ```bash
 # uvを使用する場合
-uv venv
-source .venv/bin/activate  # Linux/macOS
-uv pip install -e .
+uv sync
 ```
 {% elif python_pm == "poetry" %}
 ```bash
