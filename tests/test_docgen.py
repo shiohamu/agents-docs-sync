@@ -109,15 +109,19 @@ class TestDocGen:
     @patch("docgen.generators.api_generator.APIGenerator")
     @patch("docgen.generators.readme_generator.ReadmeGenerator")
     @patch("docgen.generators.agents_generator.AgentsGenerator")
-    def test_generate_documents_success(self, mock_agents, mock_readme, mock_api, temp_project):
+    @patch("docgen.docgen.LanguageDetector")
+    def test_generate_documents_success(
+        self, mock_language_detector, mock_agents, mock_readme, mock_api, temp_project
+    ):
         """ドキュメント生成成功テスト"""
         # モックの設定
+        mock_language_detector.return_value.detect_languages.return_value = ["python"]
+        mock_language_detector.return_value.detected_package_managers = {}
         mock_api.return_value.generate.return_value = True
         mock_readme.return_value.generate.return_value = True
         mock_agents.return_value.generate.return_value = True
 
         docgen = DocGen(project_root=temp_project)
-        docgen.language_detector.detected_languages = ["python"]  # 言語を事前に設定
 
         result = docgen.generate_documents()
 

@@ -154,7 +154,7 @@ class CommandLineInterface:
             generator = CommitMessageGenerator(project_root, self.docgen.config)
             message = generator.generate()
             if message:
-                logger.debug(message)
+                print(message)
                 return 0
             else:
                 return 1

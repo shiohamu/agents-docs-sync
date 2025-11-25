@@ -90,10 +90,12 @@ class TestOpenAIClient:
         result = client.generate("Test prompt")
         assert result is None
 
-    @patch("httpx.post")
-    def test_ollama_client_error_handling(self, mock_post):
+    @patch("httpx.Client")
+    def test_ollama_client_error_handling(self, mock_client_class):
         """Ollamaクライアントのエラーハンドリングテスト"""
-        mock_post.side_effect = Exception("Connection Error")
+        mock_client = MagicMock()
+        mock_client.post.side_effect = Exception("Connection Error")
+        mock_client_class.return_value = mock_client
 
         config = {"base_url": "http://localhost:11434", "model": "llama3"}
         client = LocalLLMClient(config)
@@ -126,23 +128,27 @@ class TestLocalLLMClient:
         result = client.generate("Test prompt")
         assert result == "Test response"
 
-    @patch("httpx.post")
-    def test_local_client_generate_openai_compatible_success(self, mock_post):
+    @patch("httpx.Client")
+    def test_local_client_generate_openai_compatible_success(self, mock_client_class):
         """LocalLLMClientのOpenAI互換generate成功テスト"""
+        mock_client = MagicMock()
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"choices": [{"message": {"content": "Test response"}}]}
-        mock_post.return_value = mock_response
+        mock_client.post.return_value = mock_response
+        mock_client_class.return_value = mock_client
 
         config = {"base_url": "http://localhost:11434", "model": "llama3", "provider": "lmstudio"}
         client = LocalLLMClient(config)
         result = client.generate("Test prompt")
         assert result == "Test response"
 
-    @patch("httpx.post")
-    def test_local_client_generate_error(self, mock_post):
+    @patch("httpx.Client")
+    def test_local_client_generate_error(self, mock_client_class):
         """LocalLLMClientのgenerateエラーテスト"""
-        mock_post.side_effect = Exception("Connection error")
+        mock_client = MagicMock()
+        mock_client.post.side_effect = Exception("Connection error")
+        mock_client_class.return_value = mock_client
 
         config = {"base_url": "http://localhost:11434", "model": "llama3"}
         client = LocalLLMClient(config)

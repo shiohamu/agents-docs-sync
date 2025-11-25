@@ -140,7 +140,10 @@ class OpenAIClient(BaseLLMClient):
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
         """OpenAI APIを使用してテキストを生成"""
         try:
-            messages = [{"role": "user", "content": prompt}]
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
 
             api_kwargs = {
                 "model": self.model,
@@ -149,18 +152,10 @@ class OpenAIClient(BaseLLMClient):
                 "timeout": self.timeout,
             }
 
-            if system_prompt:
-                api_kwargs["system"] = system_prompt
+            response = self._retry_with_backoff(self.client.chat.completions.create, **api_kwargs)
 
-            response = self._retry_with_backoff(self.client.messages.create, **api_kwargs)
-
-            if response and response.content:
-                # Anthropicのレスポンス形式に合わせて処理
-                text_content = ""
-                for block in response.content:
-                    if hasattr(block, "text") and block.text:
-                        text_content += block.text
-                return text_content.strip() if text_content else None
+            if response and response.choices:
+                return response.choices[0].message.content
             return None
         except Exception as e:
             logger.error(f"OpenAI API呼び出しエラー: {e}")

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 10:35:23
+自動生成日時: 2025-11-25 11:06:04
 
 ---
 
@@ -1304,7 +1304,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:27*
+*定義場所: docgen/generators/agents_generator.py:28*
 
 ---
 
@@ -1327,7 +1327,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:30*
+*定義場所: docgen/generators/agents_generator.py:31*
 
 ---
 
@@ -1342,7 +1342,7 @@ def agents_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/agents_generator.py:49*
+*定義場所: docgen/generators/agents_generator.py:50*
 
 ---
 
@@ -2088,7 +2088,7 @@ class ReadmeGenerator:
 
 README generation class
 
-*定義場所: docgen/generators/readme_generator.py:25*
+*定義場所: docgen/generators/readme_generator.py:26*
 
 ---
 
@@ -2111,7 +2111,7 @@ Args:
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
 
-*定義場所: docgen/generators/readme_generator.py:28*
+*定義場所: docgen/generators/readme_generator.py:29*
 
 ---
 
@@ -2126,7 +2126,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:48*
+*定義場所: docgen/generators/readme_generator.py:49*
 
 ---
 
@@ -2228,7 +2228,24 @@ def get_detected_package_managers(self) -> dict[str, str]:
 ---
 
 
-## docgen/models.py
+## docgen/models/agents.py
+
+### LLMConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMConfig:
+```
+
+**説明**:
+
+LLM設定モデル
+
+*定義場所: docgen/models/agents.py:8*
+
+---
 
 ### ProjectOverview
 
@@ -2243,7 +2260,7 @@ class ProjectOverview:
 
 Project overview model.
 
-*定義場所: docgen/models.py:9*
+*定義場所: docgen/models/agents.py:26*
 
 ---
 
@@ -2260,7 +2277,7 @@ class LLMSetup:
 
 LLM setup model.
 
-*定義場所: docgen/models.py:17*
+*定義場所: docgen/models/agents.py:34*
 
 ---
 
@@ -2277,7 +2294,7 @@ class SetupInstructions:
 
 Setup instructions model.
 
-*定義場所: docgen/models.py:24*
+*定義場所: docgen/models/agents.py:41*
 
 ---
 
@@ -2294,7 +2311,7 @@ class BuildTestInstructions:
 
 Build and test instructions model.
 
-*定義場所: docgen/models.py:32*
+*定義場所: docgen/models/agents.py:49*
 
 ---
 
@@ -2311,7 +2328,7 @@ class CodingStandards:
 
 Coding standards model.
 
-*定義場所: docgen/models.py:40*
+*定義場所: docgen/models/agents.py:57*
 
 ---
 
@@ -2328,7 +2345,7 @@ class PRGuidelines:
 
 PR guidelines model.
 
-*定義場所: docgen/models.py:47*
+*定義場所: docgen/models/agents.py:64*
 
 ---
 
@@ -2345,109 +2362,7 @@ class AgentsConfig:
 
 Configuration model for agents documentation.
 
-*定義場所: docgen/models.py:55*
-
----
-
-### Dependencies
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class Dependencies:
-```
-
-**説明**:
-
-Dependencies model.
-
-*定義場所: docgen/models.py:68*
-
----
-
-### ReadmeSetupInstructions
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ReadmeSetupInstructions:
-```
-
-**説明**:
-
-Setup instructions for README.
-
-*定義場所: docgen/models.py:76*
-
----
-
-### ReadmeConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ReadmeConfig:
-```
-
-**説明**:
-
-Configuration model for README documentation.
-
-*定義場所: docgen/models.py:83*
-
----
-
-### LanguagesConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LanguagesConfig:
-```
-
-**説明**:
-
-Languages configuration model.
-
-*定義場所: docgen/models.py:99*
-
----
-
-### OutputConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class OutputConfig:
-```
-
-**説明**:
-
-Output configuration model.
-
-*定義場所: docgen/models.py:106*
-
----
-
-### GenerationConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class GenerationConfig:
-```
-
-**説明**:
-
-Generation configuration model.
-
-*定義場所: docgen/models.py:114*
+*定義場所: docgen/models/agents.py:72*
 
 ---
 
@@ -2464,24 +2379,7 @@ class AgentsGenerationConfig:
 
 Agents generation configuration model.
 
-*定義場所: docgen/models.py:123*
-
----
-
-### LLMConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LLMConfig:
-```
-
-**説明**:
-
-LLM設定モデル
-
-*定義場所: docgen/models.py:131*
+*定義場所: docgen/models/agents.py:85*
 
 ---
 
@@ -2498,92 +2396,7 @@ class AgentsConfigSection:
 
 Agents configuration section model.
 
-*定義場所: docgen/models.py:149*
-
----
-
-### ExcludeConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ExcludeConfig:
-```
-
-**説明**:
-
-Exclude configuration model.
-
-*定義場所: docgen/models.py:162*
-
----
-
-### CacheConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class CacheConfig:
-```
-
-**説明**:
-
-Cache configuration model.
-
-*定義場所: docgen/models.py:169*
-
----
-
-### DebugConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class DebugConfig:
-```
-
-**説明**:
-
-Debug configuration model.
-
-*定義場所: docgen/models.py:175*
-
----
-
-### DocgenConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class DocgenConfig:
-```
-
-**説明**:
-
-Main configuration model for docgen.
-
-*定義場所: docgen/models.py:181*
-
----
-
-### ProjectInfo
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ProjectInfo:
-```
-
-**説明**:
-
-Project information model.
-
-*定義場所: docgen/models.py:193*
+*定義場所: docgen/models/agents.py:93*
 
 ---
 
@@ -2600,26 +2413,12 @@ class AgentsDocument:
 
 AGENTS.mdドキュメントの構造化データモデル
 
-*定義場所: docgen/models.py:205*
+*定義場所: docgen/models/agents.py:106*
 
 ---
 
-### ReadmeDocument
 
-**型**: `class`
-
-**シグネチャ**:
-```
-class ReadmeDocument:
-```
-
-**説明**:
-
-READMEドキュメントの構造化データモデル
-
-*定義場所: docgen/models.py:218*
-
----
+## docgen/models/api.py
 
 ### APIParameter
 
@@ -2634,7 +2433,7 @@ class APIParameter:
 
 APIパラメータモデル
 
-*定義場所: docgen/models.py:234*
+*定義場所: docgen/models/api.py:8*
 
 ---
 
@@ -2651,26 +2450,12 @@ class APIInfo:
 
 API情報モデル
 
-*定義場所: docgen/models.py:244*
+*定義場所: docgen/models/api.py:18*
 
 ---
 
-### LLMClientConfig
 
-**型**: `class`
-
-**シグネチャ**:
-```
-class LLMClientConfig:
-```
-
-**説明**:
-
-LLMクライアント設定モデル
-
-*定義場所: docgen/models.py:260*
-
----
+## docgen/models/cache.py
 
 ### CacheEntry
 
@@ -2685,7 +2470,7 @@ class CacheEntry:
 
 キャッシュエントリーモデル
 
-*定義場所: docgen/models.py:270*
+*定義場所: docgen/models/cache.py:10*
 
 ---
 
@@ -2702,7 +2487,257 @@ class CacheMetadata:
 
 キャッシュメタデータモデル
 
-*定義場所: docgen/models.py:279*
+*定義場所: docgen/models/cache.py:19*
+
+---
+
+
+## docgen/models/config.py
+
+### LanguagesConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LanguagesConfig:
+```
+
+**説明**:
+
+Languages configuration model.
+
+*定義場所: docgen/models/config.py:10*
+
+---
+
+### OutputConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class OutputConfig:
+```
+
+**説明**:
+
+Output configuration model.
+
+*定義場所: docgen/models/config.py:17*
+
+---
+
+### GenerationConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class GenerationConfig:
+```
+
+**説明**:
+
+Generation configuration model.
+
+*定義場所: docgen/models/config.py:25*
+
+---
+
+### ExcludeConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ExcludeConfig:
+```
+
+**説明**:
+
+Exclude configuration model.
+
+*定義場所: docgen/models/config.py:34*
+
+---
+
+### CacheConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CacheConfig:
+```
+
+**説明**:
+
+Cache configuration model.
+
+*定義場所: docgen/models/config.py:41*
+
+---
+
+### DebugConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DebugConfig:
+```
+
+**説明**:
+
+Debug configuration model.
+
+*定義場所: docgen/models/config.py:47*
+
+---
+
+### DocgenConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DocgenConfig:
+```
+
+**説明**:
+
+Main configuration model for docgen.
+
+*定義場所: docgen/models/config.py:53*
+
+---
+
+
+## docgen/models/llm.py
+
+### LLMConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMConfig:
+```
+
+**説明**:
+
+LLM設定モデル
+
+*定義場所: docgen/models/llm.py:6*
+
+---
+
+### LLMClientConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMClientConfig:
+```
+
+**説明**:
+
+LLMクライアント設定モデル
+
+*定義場所: docgen/models/llm.py:24*
+
+---
+
+
+## docgen/models/project.py
+
+### ProjectInfo
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ProjectInfo:
+```
+
+**説明**:
+
+Project information model.
+
+*定義場所: docgen/models/project.py:8*
+
+---
+
+
+## docgen/models/readme.py
+
+### Dependencies
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class Dependencies:
+```
+
+**説明**:
+
+Dependencies model.
+
+*定義場所: docgen/models/readme.py:6*
+
+---
+
+### ReadmeSetupInstructions
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ReadmeSetupInstructions:
+```
+
+**説明**:
+
+Setup instructions for README.
+
+*定義場所: docgen/models/readme.py:14*
+
+---
+
+### ReadmeConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ReadmeConfig:
+```
+
+**説明**:
+
+Configuration model for README documentation.
+
+*定義場所: docgen/models/readme.py:21*
+
+---
+
+### ReadmeDocument
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ReadmeDocument:
+```
+
+**説明**:
+
+READMEドキュメントの構造化データモデル
+
+*定義場所: docgen/models/readme.py:37*
 
 ---
 
@@ -2722,7 +2757,7 @@ class CacheManager:
 
 キャッシュ管理クラス
 
-*定義場所: docgen/utils/cache.py:19*
+*定義場所: docgen/utils/cache.py:20*
 
 ---
 
@@ -2744,7 +2779,7 @@ Args:
     cache_dir: キャッシュディレクトリ（Noneの場合は`docgen/.cache/`）
     enabled: キャッシュを有効にするかどうか
 
-*定義場所: docgen/utils/cache.py:22*
+*定義場所: docgen/utils/cache.py:23*
 
 ---
 
@@ -2767,7 +2802,7 @@ Args:
 Returns:
     ファイルのSHA256ハッシュ（16進数文字列）
 
-*定義場所: docgen/utils/cache.py:77*
+*定義場所: docgen/utils/cache.py:78*
 
 ---
 
@@ -2791,7 +2826,7 @@ Args:
 Returns:
     キャッシュキー
 
-*定義場所: docgen/utils/cache.py:98*
+*定義場所: docgen/utils/cache.py:99*
 
 ---
 
@@ -2815,7 +2850,7 @@ Args:
 Returns:
     キャッシュされた結果（存在する場合）、またはNone
 
-*定義場所: docgen/utils/cache.py:123*
+*定義場所: docgen/utils/cache.py:124*
 
 ---
 
@@ -2837,7 +2872,7 @@ Args:
     parser_type: パーサーの種類
     result: 解析結果
 
-*定義場所: docgen/utils/cache.py:163*
+*定義場所: docgen/utils/cache.py:164*
 
 ---
 
@@ -2854,7 +2889,7 @@ def clear_cache(self) -> None:
 
 キャッシュをクリア
 
-*定義場所: docgen/utils/cache.py:193*
+*定義場所: docgen/utils/cache.py:194*
 
 ---
 
@@ -2875,7 +2910,7 @@ Args:
     file_path: ファイルパス
     parser_type: パーサーの種類（Noneの場合はすべてのパーサータイプ）
 
-*定義場所: docgen/utils/cache.py:200*
+*定義場所: docgen/utils/cache.py:201*
 
 ---
 
@@ -2892,7 +2927,7 @@ def save(self) -> None:
 
 キャッシュを保存（明示的に保存する場合）
 
-*定義場所: docgen/utils/cache.py:236*
+*定義場所: docgen/utils/cache.py:237*
 
 ---
 
@@ -2912,7 +2947,7 @@ def get_cache_stats(self) -> dict[str, Any]:
 Returns:
     統計情報の辞書
 
-*定義場所: docgen/utils/cache.py:240*
+*定義場所: docgen/utils/cache.py:241*
 
 ---
 
@@ -3685,7 +3720,7 @@ class AnthropicClient:
 
 Anthropic APIクライアント
 
-*定義場所: docgen/utils/llm_client.py:174*
+*定義場所: docgen/utils/llm_client.py:169*
 
 ---
 
@@ -3700,7 +3735,7 @@ def __init__(self, config: dict[str, Any]):
 
 *説明なし*
 
-*定義場所: docgen/utils/llm_client.py:177*
+*定義場所: docgen/utils/llm_client.py:172*
 
 ---
 
@@ -3717,7 +3752,7 @@ def generate(self, prompt: str, system_prompt: str | None) -> str | None:
 
 Anthropic APIを使用してテキストを生成
 
-*定義場所: docgen/utils/llm_client.py:198*
+*定義場所: docgen/utils/llm_client.py:193*
 
 ---
 
@@ -3734,7 +3769,7 @@ class LocalLLMClient:
 
 ローカルLLMクライアント（Ollama、LM Studio対応）
 
-*定義場所: docgen/utils/llm_client.py:234*
+*定義場所: docgen/utils/llm_client.py:229*
 
 ---
 
@@ -3749,7 +3784,7 @@ def __init__(self, config: dict[str, Any]):
 
 *説明なし*
 
-*定義場所: docgen/utils/llm_client.py:237*
+*定義場所: docgen/utils/llm_client.py:232*
 
 ---
 
@@ -3766,7 +3801,7 @@ def generate(self, prompt: str, system_prompt: str | None) -> str | None:
 
 ローカルLLMを使用してテキストを生成
 
-*定義場所: docgen/utils/llm_client.py:263*
+*定義場所: docgen/utils/llm_client.py:258*
 
 ---
 
@@ -3783,7 +3818,7 @@ class LLMClientFactory:
 
 LLMクライアントのファクトリークラス
 
-*定義場所: docgen/utils/llm_client.py:357*
+*定義場所: docgen/utils/llm_client.py:352*
 
 ---
 
@@ -3807,7 +3842,7 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:361*
+*定義場所: docgen/utils/llm_client.py:356*
 
 ---
 
@@ -3831,7 +3866,7 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:420*
+*定義場所: docgen/utils/llm_client.py:415*
 
 ---
 
@@ -5792,14 +5827,14 @@ def test_detect_languages_sequential(self, mock_generic, mock_go, mock_js, mock_
 
 **シグネチャ**:
 ```
-def test_generate_documents_success(self, mock_agents, mock_readme, mock_api, temp_project):
+def test_generate_documents_success(self, mock_language_detector, mock_agents, mock_readme, mock_api, temp_project):
 ```
 
 **説明**:
 
 ドキュメント生成成功テスト
 
-*定義場所: tests/test_docgen.py:112*
+*定義場所: tests/test_docgen.py:113*
 
 ---
 
@@ -5816,7 +5851,7 @@ def test_generate_documents_partial_failure(self, mock_agents, mock_readme, mock
 
 ドキュメント生成一部失敗テスト
 
-*定義場所: tests/test_docgen.py:132*
+*定義場所: tests/test_docgen.py:136*
 
 ---
 
@@ -5833,7 +5868,7 @@ def test_generate_documents_no_languages(self, temp_project):
 
 言語が検出されない場合のテスト
 
-*定義場所: tests/test_docgen.py:148*
+*定義場所: tests/test_docgen.py:152*
 
 ---
 
@@ -5850,7 +5885,7 @@ def test_main_commit_msg_command(self, mock_generator, temp_project, capsys):
 
 commit-msgコマンドのテスト
 
-*定義場所: tests/test_docgen.py:159*
+*定義場所: tests/test_docgen.py:163*
 
 ---
 
@@ -5867,7 +5902,7 @@ def test_main_detect_only(self, temp_project, caplog):
 
 detect-onlyオプションのテスト
 
-*定義場所: tests/test_docgen.py:176*
+*定義場所: tests/test_docgen.py:180*
 
 ---
 
@@ -9833,7 +9868,7 @@ OpenAIClientのgenerateエラーテスト
 
 **シグネチャ**:
 ```
-def test_ollama_client_error_handling(self, mock_post):
+def test_ollama_client_error_handling(self, mock_client_class):
 ```
 
 **説明**:
@@ -9857,7 +9892,7 @@ class TestLocalLLMClient:
 
 LocalLLMClientクラスのテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:106*
+*定義場所: tests/test_utils/test_llm_client.py:108*
 
 ---
 
@@ -9874,7 +9909,7 @@ def test_local_client_initialization_success(self):
 
 LocalLLMClientの正常初期化テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:109*
+*定義場所: tests/test_utils/test_llm_client.py:111*
 
 ---
 
@@ -9891,7 +9926,7 @@ def test_local_client_generate_ollama_success(self, mock_post):
 
 LocalLLMClientのOllama generate成功テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:117*
+*定義場所: tests/test_utils/test_llm_client.py:119*
 
 ---
 
@@ -9901,14 +9936,14 @@ LocalLLMClientのOllama generate成功テスト
 
 **シグネチャ**:
 ```
-def test_local_client_generate_openai_compatible_success(self, mock_post):
+def test_local_client_generate_openai_compatible_success(self, mock_client_class):
 ```
 
 **説明**:
 
 LocalLLMClientのOpenAI互換generate成功テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:130*
+*定義場所: tests/test_utils/test_llm_client.py:132*
 
 ---
 
@@ -9918,14 +9953,14 @@ LocalLLMClientのOpenAI互換generate成功テスト
 
 **シグネチャ**:
 ```
-def test_local_client_generate_error(self, mock_post):
+def test_local_client_generate_error(self, mock_client_class):
 ```
 
 **説明**:
 
 LocalLLMClientのgenerateエラーテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:143*
+*定義場所: tests/test_utils/test_llm_client.py:147*
 
 ---
 
@@ -9942,7 +9977,7 @@ class TestAnthropicClient:
 
 AnthropicClientクラスのテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:153*
+*定義場所: tests/test_utils/test_llm_client.py:159*
 
 ---
 
@@ -9959,7 +9994,7 @@ def test_anthropic_client_initialization_success(self):
 
 AnthropicClientの正常初期化テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:156*
+*定義場所: tests/test_utils/test_llm_client.py:162*
 
 ---
 
@@ -9976,7 +10011,7 @@ def test_anthropic_client_initialization_config_error(self, mock_anthropic):
 
 AnthropicClientの設定エラーテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:163*
+*定義場所: tests/test_utils/test_llm_client.py:169*
 
 ---
 
@@ -9993,7 +10028,7 @@ def test_anthropic_client_generate_success(self, mock_anthropic):
 
 AnthropicClientのgenerate成功テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:171*
+*定義場所: tests/test_utils/test_llm_client.py:177*
 
 ---
 
@@ -10010,7 +10045,7 @@ def test_anthropic_client_generate_error(self, mock_anthropic):
 
 AnthropicClientのgenerateエラーテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:186*
+*定義場所: tests/test_utils/test_llm_client.py:192*
 
 ---
 
@@ -10027,7 +10062,7 @@ class TestLLMClientFactory:
 
 LLMClientFactoryクラスのテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:198*
+*定義場所: tests/test_utils/test_llm_client.py:204*
 
 ---
 
@@ -10044,7 +10079,7 @@ def test_create_client_openai(self, mock_openai_client):
 
 OpenAIクライアント作成テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:202*
+*定義場所: tests/test_utils/test_llm_client.py:208*
 
 ---
 
@@ -10061,7 +10096,7 @@ def test_create_client_anthropic(self, mock_anthropic_client):
 
 Anthropicクライアント作成テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:210*
+*定義場所: tests/test_utils/test_llm_client.py:216*
 
 ---
 
@@ -10078,7 +10113,7 @@ def test_create_client_local(self, mock_local_client):
 
 Localクライアント作成テスト
 
-*定義場所: tests/test_utils/test_llm_client.py:220*
+*定義場所: tests/test_utils/test_llm_client.py:226*
 
 ---
 
@@ -10095,7 +10130,7 @@ def test_create_client_unknown_provider(self):
 
 不明なプロバイダーテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:229*
+*定義場所: tests/test_utils/test_llm_client.py:235*
 
 ---
 
@@ -10112,7 +10147,7 @@ def test_create_client_unknown_mode(self):
 
 不明なモードテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:235*
+*定義場所: tests/test_utils/test_llm_client.py:241*
 
 ---
 
@@ -10129,7 +10164,7 @@ def test_create_client_with_fallback_api_to_local(self, mock_create_client):
 
 APIからLocalへのフォールバックテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:242*
+*定義場所: tests/test_utils/test_llm_client.py:248*
 
 ---
 
@@ -10146,7 +10181,7 @@ def test_create_client_with_fallback_local_to_api(self, mock_create_client):
 
 LocalからAPIへのフォールバックテスト
 
-*定義場所: tests/test_utils/test_llm_client.py:250*
+*定義場所: tests/test_utils/test_llm_client.py:256*
 
 ---
 
