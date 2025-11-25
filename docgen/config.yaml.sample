@@ -53,41 +53,6 @@ generation:
   #   agents: schemas/agents_schema.json
   #   readme: schemas/readme_schema.json
 
-# 除外設定（オプション）
-exclude:
-  # 除外するディレクトリ
-  directories:
-    - .venv
-    - venv
-    - .git
-    - __pycache__
-    - node_modules
-    - htmlcov
-    - coverage
-    - .coverage
-    - site-packages
-    - dist
-    - build
-    - .next
-    - .nuxt
-    - target
-    - bin
-    - obj
-    - .gradle
-    - .idea
-    - .vscode
-    - .DS_Store
-    - .pytest_cache
-    - .mypy_cache
-    - .tox
-    - docgen
-
-  # 除外するファイルパターン（glob形式）
-  patterns:
-    - "*.pyc"
-    - "*.pyo"
-    - "*.log"
-
 # キャッシュ設定（オプション）
 cache:
   # キャッシュを有効にするかどうか（デフォルト: true）
@@ -156,3 +121,44 @@ agents:
 #   # READMEのテンプレート（将来の拡張用）
 #   # readme_template: null
 
+# 除外設定（オプション）
+exclude:
+  # 除外するディレクトリ
+  directories:
+    - .venv
+    - venv
+    - .git
+    - __pycache__
+    - node_modules
+    - htmlcov
+    - coverage
+    - .coverage
+    - site-packages
+    - dist
+    - build
+    - .next
+    - .nuxt
+    - target
+    - bin
+    - obj
+    - .gradle
+    - .idea
+    - .vscode
+    - .DS_Store
+    - .pytest_cache
+    - .mypy_cache
+    - .tox
+    - docgen
+    - .tests
+    - tests
+    - .test
+    - test
+    - __tests__
+    - __test__
+    - docs
+
+  # 除外するファイルパターン（glob形式）
+  patterns:
+    - "*.pyc"
+    - "*.pyo"
+    - "*.log"
