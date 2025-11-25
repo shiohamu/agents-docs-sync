@@ -1,47 +1,66 @@
 # agents-docs-sync
 
-agents-docs-sync は、コミットごとに自動でテスト実行・ドキュメント生成を行い、その結果を AGENTS.md に反映させる CI/CD パイプラインです。  
-Python とシェルスクリプトの組み合わせで構成されており、以下のようなワークフローが想定されています。
+`agents‑docs‑sync`は、リポジトリにコミットがあるたびに自動で以下を実行するCI/CDパイプラインです。
 
-* **テスト実行** – `pytest`（Python）、`npm test`（Node.js）と `go test ./...` を順に走らせることで、多言語プロジェクト全体を網羅的に検証します。  
-* **ドキュメント生成** – `docgen/docgen.py` が YAML 形式の設定ファイルから API ドキュメントや利用例を書き出し、AGENTS.md を自動更新します。  
-* **ビルド・デプロイ** – uv（Python パッケージマネージャ）を使い依存関係同期 (`uv sync`) とパッケージ化(`uv build`)、スクリプト実行 (`uv run python3 docgen/docgen.py`) を一連のビルドステップとしてまとめています。  
+- **テストの実行**  
+  - Python: `uv run pytest tests/ -v --tb=short`
+  - Node.js: `npm test`（必要な場合）
+  - Go: `go test ./...`
 
-### 主要な技術スタック
+- **ドキュメント生成**  
+  - `python3 docgen/docgen.py` を実行し、テスト結果やコードコメントから最新のAPI・使用方法を含む Markdown ドキュメントを作成します。
 
-| コンポーネント | バージョン要件 |
-|-----------------|---------------|
-| Python          | `pyyaml>=6.0.3`<br>`pytest>=7.4.0`<br>`pytest-cov>=4.1.0`<br>`pytest-mock>=3.11.1` |
-| シェルスクリプト | 標準的な POSIX 互換シェル（Bash 等） |
+- **AGENTS.md の自動更新**  
+  - スクリプトがプロジェクト内にあるエージェント定義ファイル（YAML 等）を解析し、`AGENTS.md` を最新状態へ書き換えます。これによりドキュメントと実装の整合性が保たれます。
 
-### コーディング規約
+## 技術スタック
 
-* **リンタ**：Ruff を使用して静的解析とコードフォーマットを統一します。  
-* テストは `-v` オプションで詳細出力、短いトレースバック (`--tb=short`) で可読性向上。
+| カテゴリ | 言語 / ツール |
+|----------|----------------|
+| スクリプト言語 | Python 3.x, Shell (bash) |
+| パッケージマネージャ | uv（Python） |
 
-### ビルド・テストコマンド
+## 主な依存関係
+
+- **PyYAML** ≥ 6.0.3  
+- **pytest** ≥ 7.4.0  
+- **pytest‑cov** ≥ 4.1.0  
+- **pytest‑mock** ≥ 3.11.1  
+
+（`uv sync` でこれらをインストール）
+
+## ビルド手順
 
 ```bash
-# Build（依存関係同期＋パッケージ化）
-uv sync
-uv build
-
-# ドキュメント生成と AGENTS.md の更新
-uv run python3 docgen/docgen.py
-
-# テスト実行
-uv run pytest tests/ -v --tb=short   # Pythonテスト
-npm test                               # Node.jsテスト
-go test ./...                          # Go言語のユニットテスト
+# 必要なパッケージの同期とビルド
+$ uv sync          # deps install / lockfile update
+$ uv build         # optional packaging step (e.g., wheel)
+$ uv run python3 docgen/docgen.py  # ドキュメント生成
 ```
 
-### 期待される成果物
+## テスト実行
 
-* **AGENTS.md**：最新の API スペックと使用例を含むマークダウンファイル。  
-* **ドキュメントディレクトリ**（`docs/` 等）：自動生成された HTML や Markdown ファイル。  
-* テストカバレッジレポートやログは CI 環境に出力され、変更履歴と共にプルリクエストで確認可能。
+```bash
+# Python のテスト
+$ uv run pytest tests/ -v --tb=short
 
-このプロジェクトを導入することで、開発者はコードの品質チェックだけでなく、ドキュメントの最新化まで一括して管理できるため、継続的デリバリー（CD）環境下でも整合性と可読性が保たれます。
+# Node.js（必要に応じて）
+$ npm test
+
+# Go (モノレポ構成の場合)
+$ go test ./...
+```
+
+## コーディング規約とスタイルチェック
+
+- **リンター**: `ruff` を使用し、Python のコード品質を保ちます。  
+  ```bash
+  $ ruff check .
+  ```
+
+---
+
+このプロジェクトは、コミットごとの自動化によりドキュメントの鮮度とエージェント仕様書（AGENTS.md）の正確性を保証し、開発者が常に最新情報へアクセスできるよう設計されています。
 ## 使用技術
 
 - Python
@@ -135,4 +154,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-26 06:24:58*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-26 06:33:33*

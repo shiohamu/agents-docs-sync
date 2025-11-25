@@ -455,23 +455,11 @@ class BaseGenerator(ABC):
         template_content = self._generate_template(project_info)
 
         try:
-            # LLMクライアントを取得
-            llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in "api" else "local"
-
-            client = LLMClientFactory.create_client_with_fallback(
-                self.agents_config, preferred_mode=preferred_mode
-            )
-
-            if not client:
-                self.logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレートのみを使用します。"
-                )
-                return template_content
-
             # プロジェクト概要セクションのみLLMで改善
             existing_overview = self._get_project_overview_section(template_content)
-            improved_overview = self._generate_overview_with_llm(project_info, existing_overview)
+            improved_overview = self._generate_overview_with_llm(
+                project_info, existing_overview
+            )
 
             if improved_overview and improved_overview != existing_overview:
                 return self._replace_overview_section(template_content, improved_overview)
