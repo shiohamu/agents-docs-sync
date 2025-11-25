@@ -8,14 +8,6 @@ from ..utils.logger import get_logger
 
 logger = get_logger("llm_client_utils")
 
-# Default LLM models
-DEFAULT_MODELS = {
-    "openai": "gpt-4o",
-    "anthropic": "claude-3-5-sonnet-20241022",
-    "ollama": "llama3",
-    "lmstudio": "llama3",
-}
-
 
 class LLMClientInitializer:
     """Common initialization patterns for LLM clients."""

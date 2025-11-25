@@ -457,9 +457,7 @@ class BaseGenerator(ABC):
         try:
             # プロジェクト概要セクションのみLLMで改善
             existing_overview = self._get_project_overview_section(template_content)
-            improved_overview = self._generate_overview_with_llm(
-                project_info, existing_overview
-            )
+            improved_overview = self._generate_overview_with_llm(project_info, existing_overview)
 
             if improved_overview and improved_overview != existing_overview:
                 return self._replace_overview_section(template_content, improved_overview)
@@ -642,9 +640,9 @@ class BaseGenerator(ABC):
         Returns:
             クリーンアップされたテキスト
         """
-        from ..utils.outlines_utils import clean_llm_output
+        from ..utils.markdown_utils import clean_llm_output_advanced
 
-        return clean_llm_output(text)
+        return clean_llm_output_advanced(text)
 
     def _validate_output(self, text: str) -> bool:
         """

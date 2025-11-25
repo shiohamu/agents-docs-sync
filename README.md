@@ -1,66 +1,39 @@
 # agents-docs-sync
 
-`agents‑docs‑sync`は、リポジトリにコミットがあるたびに自動で以下を実行するCI/CDパイプラインです。
+<!-- MANUAL_START:description -->
+<!-- MANUAL_END:description -->
+`agents-docs-sync` は、コードベースに対するコミットごとに自動で以下を実行し、ドキュメントの整合性を保つパイプラインです。  
 
-- **テストの実行**  
-  - Python: `uv run pytest tests/ -v --tb=short`
-  - Node.js: `npm test`（必要な場合）
-  - Go: `go test ./...`
+1. **テスト実行** – Python の `pytest`（カバレッジ・モック付き）、Node.js (`npm test`) 及び Go (`go test ./...`) を順に走らせ、コード品質と機能の正確性を検証します。  
+2. **ドキュメント生成** – `docgen/docgen.py` スクリプトが YAML 設定から API/Agent の仕様書を抽出し、Markdown 形式で自動作成します。これにより最新のコードと同期した docs が常時保持されます。  
+3. **AGENTS.md 更新** – 生成されたドキュメント情報を元に `AGENTS.md` を再構築し、プロジェクト内の主要なエージェント一覧が更新されます。
 
-- **ドキュメント生成**  
-  - `python3 docgen/docgen.py` を実行し、テスト結果やコードコメントから最新のAPI・使用方法を含む Markdown ドキュメントを作成します。
+### 主な技術スタック
+- **Python (≥3.11)**  
+  - `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` を使用し、テストと YAML パースを担います。  
+- **Shell** – ビルド・実行スクリプトのシェル化でクロス環境対応。  
+- **Node.js / Go** – それぞれ独自に提供されるユニット／インテグレーションテストを走らせます。
 
-- **AGENTS.md の自動更新**  
-  - スクリプトがプロジェクト内にあるエージェント定義ファイル（YAML 等）を解析し、`AGENTS.md` を最新状態へ書き換えます。これによりドキュメントと実装の整合性が保たれます。
-
-## 技術スタック
-
-| カテゴリ | 言語 / ツール |
-|----------|----------------|
-| スクリプト言語 | Python 3.x, Shell (bash) |
-| パッケージマネージャ | uv（Python） |
-
-## 主な依存関係
-
-- **PyYAML** ≥ 6.0.3  
-- **pytest** ≥ 7.4.0  
-- **pytest‑cov** ≥ 4.1.0  
-- **pytest‑mock** ≥ 3.11.1  
-
-（`uv sync` でこれらをインストール）
-
-## ビルド手順
-
+### 開発フロー
 ```bash
-# 必要なパッケージの同期とビルド
-$ uv sync          # deps install / lockfile update
-$ uv build         # optional packaging step (e.g., wheel)
-$ uv run python3 docgen/docgen.py  # ドキュメント生成
+# 依存パッケージの同期・ビルド
+uv sync
+uv build
+
+# ドキュメント生成（Python スクリプト実行）
+uv run python3 docgen/docgen.py
+
+# テスト実行
+uv run pytest tests/ -v --tb=short   # Python
+npm test                               # Node.js
+go test ./...                          # Go
 ```
 
-## テスト実行
+### コーディング規約  
+- **リンター**: `ruff` を採用し、PEP8 への準拠と静的型チェックを自動化。  
 
-```bash
-# Python のテスト
-$ uv run pytest tests/ -v --tb=short
+このパイプラインにより、コミット時点でテストが通過したコードのみがドキュメントへ反映されるため、常に正確かつ最新の情報を保持できます。また、複数言語環境下でも一貫したビルド・検証プロセスが実現されています。
 
-# Node.js（必要に応じて）
-$ npm test
-
-# Go (モノレポ構成の場合)
-$ go test ./...
-```
-
-## コーディング規約とスタイルチェック
-
-- **リンター**: `ruff` を使用し、Python のコード品質を保ちます。  
-  ```bash
-  $ ruff check .
-  ```
-
----
-
-このプロジェクトは、コミットごとの自動化によりドキュメントの鮮度とエージェント仕様書（AGENTS.md）の正確性を保証し、開発者が常に最新情報へアクセスできるよう設計されています。
 ## 使用技術
 
 - Python
@@ -154,4 +127,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-26 06:33:33*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-26 07:18:52*

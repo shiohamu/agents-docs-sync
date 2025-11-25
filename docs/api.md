@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-26 06:33:33
+自動生成日時: 2025-11-26 07:18:52
 
 ---
 
@@ -1547,7 +1547,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:669*
+*定義場所: docgen/generators/base_generator.py:667*
 
 ---
 
@@ -3141,99 +3141,6 @@ Returns:
 ---
 
 
-## docgen/utils/error.py
-
-### DocGenError
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class DocGenError:
-```
-
-**説明**:
-
-DocGenの基本例外クラス
-
-*定義場所: docgen/utils/error.py:13*
-
----
-
-### ConfigError
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ConfigError:
-```
-
-**説明**:
-
-設定関連のエラー
-
-*定義場所: docgen/utils/error.py:19*
-
----
-
-### LanguageDetectionError
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LanguageDetectionError:
-```
-
-**説明**:
-
-言語検出関連のエラー
-
-*定義場所: docgen/utils/error.py:25*
-
----
-
-### DocumentGenerationError
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class DocumentGenerationError:
-```
-
-**説明**:
-
-ドキュメント生成関連のエラー
-
-*定義場所: docgen/utils/error.py:31*
-
----
-
-### handle_error
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def handle_error(error: Exception, context: str, raise_exception: bool) -> None:
-```
-
-**説明**:
-
-エラーを統一的に処理
-
-Args:
-    error: 発生した例外
-    context: エラーのコンテキスト情報
-    raise_exception: DocGenErrorを発生させるかどうか
-
-*定義場所: docgen/utils/error.py:37*
-
----
-
-
 ## docgen/utils/exceptions.py
 
 ### ErrorMessages
@@ -3655,235 +3562,6 @@ Returns:
 
 ## docgen/utils/llm_client.py
 
-### BaseLLMClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class BaseLLMClient:
-```
-
-**説明**:
-
-LLMクライアントの抽象基底クラス
-
-*定義場所: docgen/utils/llm_client.py:18*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any] | LLMConfig):
-```
-
-**説明**:
-
-初期化
-
-Args:
-    config: LLM設定辞書またはLLMConfigオブジェクト
-
-*定義場所: docgen/utils/llm_client.py:21*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-テキストを生成
-
-Args:
-    prompt: プロンプト
-    system_prompt: システムプロンプト（オプション）
-    **kwargs: その他のパラメータ
-
-Returns:
-    生成されたテキスト（エラー時はNone）
-
-*定義場所: docgen/utils/llm_client.py:38*
-
----
-
-### create_outlines_model
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def create_outlines_model(self):
-```
-
-**説明**:
-
-Outlinesモデルを作成
-
-Returns:
-    Outlinesモデルインスタンス（Outlinesが利用できない場合はNone）
-
-*定義場所: docgen/utils/llm_client.py:52*
-
----
-
-### OpenAIClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class OpenAIClient:
-```
-
-**説明**:
-
-OpenAI APIクライアント
-
-*定義場所: docgen/utils/llm_client.py:115*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any]):
-```
-
-*説明なし*
-
-*定義場所: docgen/utils/llm_client.py:118*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-OpenAI APIを使用してテキストを生成
-
-*定義場所: docgen/utils/llm_client.py:140*
-
----
-
-### AnthropicClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class AnthropicClient:
-```
-
-**説明**:
-
-Anthropic APIクライアント
-
-*定義場所: docgen/utils/llm_client.py:169*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any]):
-```
-
-*説明なし*
-
-*定義場所: docgen/utils/llm_client.py:172*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-Anthropic APIを使用してテキストを生成
-
-*定義場所: docgen/utils/llm_client.py:193*
-
----
-
-### LocalLLMClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LocalLLMClient:
-```
-
-**説明**:
-
-ローカルLLMクライアント（Ollama、LM Studio対応）
-
-*定義場所: docgen/utils/llm_client.py:229*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any]):
-```
-
-*説明なし*
-
-*定義場所: docgen/utils/llm_client.py:232*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-ローカルLLMを使用してテキストを生成
-
-*定義場所: docgen/utils/llm_client.py:258*
-
----
-
 ### LLMClientFactory
 
 **型**: `class`
@@ -3897,7 +3575,7 @@ class LLMClientFactory:
 
 LLMクライアントのファクトリークラス
 
-*定義場所: docgen/utils/llm_client.py:352*
+*定義場所: docgen/utils/llm_client.py:16*
 
 ---
 
@@ -3921,7 +3599,7 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:356*
+*定義場所: docgen/utils/llm_client.py:20*
 
 ---
 
@@ -3945,7 +3623,7 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:415*
+*定義場所: docgen/utils/llm_client.py:79*
 
 ---
 
@@ -3965,7 +3643,7 @@ class LLMClientInitializer:
 
 Common initialization patterns for LLM clients.
 
-*定義場所: docgen/utils/llm_client_utils.py:20*
+*定義場所: docgen/utils/llm_client_utils.py:12*
 
 ---
 
@@ -3989,7 +3667,7 @@ Args:
 Returns:
     Updated configuration dictionary
 
-*定義場所: docgen/utils/llm_client_utils.py:24*
+*定義場所: docgen/utils/llm_client_utils.py:16*
 
 ---
 
@@ -4014,7 +3692,7 @@ Args:
 Returns:
     API key string
 
-*定義場所: docgen/utils/llm_client_utils.py:41*
+*定義場所: docgen/utils/llm_client_utils.py:33*
 
 ---
 
@@ -4045,7 +3723,7 @@ Raises:
     ImportError: If required package is not installed
     ConfigError: If initialization fails
 
-*定義場所: docgen/utils/llm_client_utils.py:58*
+*定義場所: docgen/utils/llm_client_utils.py:50*
 
 ---
 
@@ -4069,7 +3747,7 @@ Args:
 Returns:
     Processed response content or None
 
-*定義場所: docgen/utils/llm_client_utils.py:95*
+*定義場所: docgen/utils/llm_client_utils.py:87*
 
 ---
 
@@ -4093,7 +3771,336 @@ Args:
 Returns:
     Retry wrapper function
 
-*定義場所: docgen/utils/llm_client_utils.py:140*
+*定義場所: docgen/utils/llm_client_utils.py:132*
+
+---
+
+
+## docgen/utils/llm_clients.py
+
+### LLMClientInitializer
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMClientInitializer:
+```
+
+**説明**:
+
+Common initialization patterns for LLM clients.
+
+*定義場所: docgen/utils/llm_clients.py:26*
+
+---
+
+### setup_provider_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def setup_provider_config(config: dict[str, Any], provider: str) -> dict[str, Any]:
+```
+
+**説明**:
+
+Set up provider-specific configuration.
+
+Args:
+    config: Configuration dictionary
+    provider: Provider name ('openai', 'anthropic', etc.)
+
+Returns:
+    Updated configuration dictionary
+
+*定義場所: docgen/utils/llm_clients.py:30*
+
+---
+
+### get_api_key
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_api_key(config, env_var: str, default_env: str) -> str:
+```
+
+**説明**:
+
+Get API key from config or environment.
+
+Args:
+    config: LLMConfig object
+    env_var: Environment variable name from config
+    default_env: Default environment variable name
+
+Returns:
+    API key string
+
+*定義場所: docgen/utils/llm_clients.py:47*
+
+---
+
+### initialize_client_with_fallback
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def initialize_client_with_fallback(client_class, config: dict[str, Any], import_name: str, package_name: str, error_prefix: str):
+```
+
+**説明**:
+
+Initialize LLM client with common error handling.
+
+Args:
+    client_class: Client class to instantiate
+    config: Configuration dictionary
+    import_name: Module name to import
+    package_name: Package name for error messages
+    error_prefix: Prefix for error messages
+
+Returns:
+    Initialized client instance
+
+Raises:
+    ImportError: If required package is not installed
+    ConfigError: If initialization fails
+
+*定義場所: docgen/utils/llm_clients.py:64*
+
+---
+
+### BaseLLMClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BaseLLMClient:
+```
+
+**説明**:
+
+LLMクライアントの抽象基底クラス
+
+*定義場所: docgen/utils/llm_clients.py:101*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any] | LLMConfig):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    config: LLM設定辞書またはLLMConfigオブジェクト
+
+*定義場所: docgen/utils/llm_clients.py:104*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+テキストを生成
+
+Args:
+    prompt: プロンプト
+    system_prompt: システムプロンプト（オプション）
+    **kwargs: その他のパラメータ
+
+Returns:
+    生成されたテキスト（エラー時はNone）
+
+*定義場所: docgen/utils/llm_clients.py:121*
+
+---
+
+### create_outlines_model
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_outlines_model(self):
+```
+
+**説明**:
+
+Outlinesモデルを作成
+
+Returns:
+    Outlinesモデルインスタンス（Outlinesが利用できない場合はNone）
+
+*定義場所: docgen/utils/llm_clients.py:135*
+
+---
+
+### OpenAIClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class OpenAIClient:
+```
+
+**説明**:
+
+OpenAI APIクライアント
+
+*定義場所: docgen/utils/llm_clients.py:198*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/llm_clients.py:201*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+OpenAI APIを使用してテキストを生成
+
+*定義場所: docgen/utils/llm_clients.py:221*
+
+---
+
+### AnthropicClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class AnthropicClient:
+```
+
+**説明**:
+
+Anthropic APIクライアント
+
+*定義場所: docgen/utils/llm_clients.py:250*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/llm_clients.py:253*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+Anthropic APIを使用してテキストを生成
+
+*定義場所: docgen/utils/llm_clients.py:272*
+
+---
+
+### LocalLLMClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LocalLLMClient:
+```
+
+**説明**:
+
+ローカルLLMクライアント（Ollama、LM Studio対応）
+
+*定義場所: docgen/utils/llm_clients.py:308*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/llm_clients.py:311*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+ローカルLLMを使用してテキストを生成
+
+*定義場所: docgen/utils/llm_clients.py:337*
 
 ---
 
@@ -4382,29 +4389,6 @@ Returns:
 
 ---
 
-### clean_llm_output
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def clean_llm_output(text: str) -> str:
-```
-
-**説明**:
-
-LLMの出力から思考過程や試行錯誤の痕跡を削除
-
-Args:
-    text: LLMで生成されたテキスト
-
-Returns:
-    クリーンアップされたテキスト
-
-*定義場所: docgen/utils/outlines_utils.py:103*
-
----
-
 ### validate_output
 
 **型**: `function`
@@ -4424,7 +4408,7 @@ Args:
 Returns:
     検証に合格したかどうか
 
-*定義場所: docgen/utils/outlines_utils.py:313*
+*定義場所: docgen/utils/outlines_utils.py:103*
 
 ---
 
