@@ -235,8 +235,12 @@ class BaseGenerator(ABC):
         self, project_info: ProjectInfo, max_test_commands: int | None = 3
     ) -> list[str]:
         """プルリクエストセクションを生成"""
+        from ..utils.markdown_utils import OTHER_END, OTHER_START
+
         lines = []
         lines.append("## プルリクエストの手順")
+        lines.append("")
+        lines.append(OTHER_START)
         lines.append("")
         lines.append("1. **ブランチの作成**")
         lines.append("   ```bash")
@@ -260,6 +264,7 @@ class BaseGenerator(ABC):
         lines.append("   - タイトル: `[種類] 簡潔な説明`")
         lines.append("   - 説明: 変更内容、テスト結果、関連Issueを記載")
         lines.append("")
+        lines.append(OTHER_END)
 
         return lines
 

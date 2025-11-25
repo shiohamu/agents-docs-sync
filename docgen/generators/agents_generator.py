@@ -17,8 +17,14 @@ from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,
     GENERATION_TIMESTAMP_LABEL,
+    OTHER_END,
+    OTHER_START,
     SECTION_SEPARATOR,
+    SETUP_END,
+    SETUP_START,
     UNKNOWN,
+    USAGE_END,
+    USAGE_START,
     format_commands_with_package_manager,
     get_current_timestamp,
 )
@@ -213,6 +219,8 @@ class AgentsGenerator(BaseGenerator):
         lines = []
         lines.append("## 開発環境のセットアップ")
         lines.append("")
+        lines.append(SETUP_START)
+        lines.append("")
 
         # 前提条件
         lines.append("### 前提条件")
@@ -231,12 +239,16 @@ class AgentsGenerator(BaseGenerator):
         # LLM環境のセットアップ
         lines.extend(self._generate_llm_setup_section())
 
+        lines.append("")
+        lines.append(SETUP_END)
         return lines
 
     def _generate_build_test_section(self, project_info: ProjectInfo) -> list[str]:
         """ビルド/テストセクションを生成"""
         lines = []
         lines.append("## ビルドおよびテスト手順")
+        lines.append("")
+        lines.append(USAGE_START)
         lines.append("")
 
         # ビルド手順
@@ -289,6 +301,7 @@ class AgentsGenerator(BaseGenerator):
         else:
             lines.append("テストコマンドは設定されていません。")
         lines.append("")
+        lines.append(USAGE_END)
 
         return lines
 
@@ -296,6 +309,8 @@ class AgentsGenerator(BaseGenerator):
         """コーディング規約のフォーマット"""
         lines = []
         lines.append("## コーディング規約")
+        lines.append("")
+        lines.append(OTHER_START)
         lines.append("")
 
         # フォーマッター
@@ -334,6 +349,7 @@ class AgentsGenerator(BaseGenerator):
             lines.append("")
             lines.append(f"- {style_guide} に準拠")
             lines.append("")
+        lines.append(OTHER_END)
 
         return lines
 
@@ -440,6 +456,8 @@ class AgentsGenerator(BaseGenerator):
         lines = []
         lines.append("## 開発環境のセットアップ")
         lines.append("")
+        lines.append(SETUP_START)
+        lines.append("")
 
         # 前提条件
         prerequisites = setup_data.get("prerequisites", [])
@@ -464,12 +482,16 @@ class AgentsGenerator(BaseGenerator):
         # LLM環境のセットアップ
         lines.extend(self._generate_llm_setup_section())
 
+        lines.append("")
+        lines.append(SETUP_END)
         return lines
 
     def _generate_build_test_section_from_structured(self, build_test_data: Any) -> list[str]:
         """構造化データからビルド/テストセクションを生成"""
         lines = []
         lines.append("## ビルドおよびテスト手順")
+        lines.append("")
+        lines.append(USAGE_START)
         lines.append("")
 
         # ビルド手順
@@ -541,6 +563,7 @@ class AgentsGenerator(BaseGenerator):
         else:
             lines.append("テストコマンドは設定されていません。")
         lines.append("")
+        lines.append(USAGE_END)
 
         return lines
 
@@ -548,6 +571,8 @@ class AgentsGenerator(BaseGenerator):
         """構造化データからコーディング規約セクションを生成"""
         lines = []
         lines.append("## コーディング規約")
+        lines.append("")
+        lines.append(OTHER_START)
         lines.append("")
 
         standards = standards_data.get("standards", [])
@@ -560,6 +585,7 @@ class AgentsGenerator(BaseGenerator):
                 "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
             )
             lines.append("")
+        lines.append(OTHER_END)
 
         return lines
 
@@ -567,6 +593,8 @@ class AgentsGenerator(BaseGenerator):
         """構造化データからプルリクエストセクションを生成"""
         lines = []
         lines.append("## プルリクエストの手順")
+        lines.append("")
+        lines.append(OTHER_START)
         lines.append("")
 
         branch_creation = pr_data.get("branch_creation", "ブランチを作成")
@@ -589,6 +617,7 @@ class AgentsGenerator(BaseGenerator):
         lines.append("4. **プルリクエストの作成**")
         lines.append(f"   - {pr_creation}")
         lines.append("")
+        lines.append(OTHER_END)
 
         return lines
 
