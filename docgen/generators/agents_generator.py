@@ -13,8 +13,6 @@ from ..models.project import ProjectInfo
 from ..utils.markdown_utils import (
     DESCRIPTION_END,
     DESCRIPTION_START,
-    OTHER_END,
-    OTHER_START,
     SETUP_END,
     SETUP_START,
     UNKNOWN,
@@ -108,9 +106,9 @@ class AgentsGenerator(BaseGenerator):
             "languages": self.languages,
             "javascript": "javascript" in self.languages,
             "go": "go" in self.languages,
-            "llm_mode": self.agents_config.get("llm_mode", "llm"),
-            "installation_steps": "\n".join(self._generate_installation_section()),
-            "coding_standards": "\n".join(self._generate_coding_standards_section(project_info)),
+            "llm_mode": self.agents_config.get("llm_mode", "both"),
+            "package_managers": self.package_managers,
+            "coding_standards": project_info.coding_standards or {},
             "custom_instructions": self._generate_custom_instructions_content(),
         }
 
@@ -357,54 +355,6 @@ class AgentsGenerator(BaseGenerator):
             lines.append("テストコマンドは設定されていません。")
         lines.append("")
         lines.append(USAGE_END)
-
-        return lines
-
-    def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
-        """コーディング規約のフォーマット"""
-        lines = []
-        lines.append("## コーディング規約")
-        lines.append("")
-        lines.append(OTHER_START)
-        lines.append("")
-
-        # フォーマッター
-        formatter = coding_standards.get("formatter")
-        if formatter:
-            lines.append("### フォーマッター")
-            lines.append("")
-            lines.append(f"- **{formatter}** を使用")
-            if formatter == "black":
-                lines.append("  ```bash")
-                lines.append("  black .")
-                lines.append("  ```")
-            elif formatter == "prettier":
-                lines.append("  ```bash")
-                lines.append("  npx prettier --write .")
-                lines.append("  ```")
-            lines.append("")
-
-        # リンター
-        linter = coding_standards.get("linter")
-        if linter:
-            lines.append("### リンター")
-            lines.append("")
-            lines.append(f"- **{linter}** を使用")
-            if linter == "ruff":
-                lines.append("  ```bash")
-                lines.append("  ruff check .")
-                lines.append("  ruff format .")
-                lines.append("  ```")
-            lines.append("")
-
-        # スタイルガイド
-        style_guide = coding_standards.get("style_guide")
-        if style_guide:
-            lines.append("### スタイルガイド")
-            lines.append("")
-            lines.append(f"- {style_guide} に準拠")
-            lines.append("")
-        lines.append(OTHER_END)
 
         return lines
 

@@ -137,70 +137,6 @@ class BaseGenerator(ABC):
         """プロジェクト概要セクションを生成（サブクラスで実装）"""
         pass
 
-    def _generate_installation_section(self) -> list[str]:
-        """依存関係インストールセクションを生成"""
-        lines = []
-
-        # Python依存関係
-        if "python" in self.languages:
-            pm = self.package_managers.get("python", "pip")
-            lines.append("#### Python依存関係")
-            lines.append("")
-
-            lines.append("```bash")
-            if pm == "uv":
-                lines.append("uv sync")
-            elif pm == "poetry":
-                lines.append("poetry install")
-            elif pm == "conda":
-                lines.append("conda env create -f environment.yml")
-            else:  # pip
-                for dep_file in [
-                    "requirements.txt",
-                    "requirements-docgen.txt",
-                    "requirements-test.txt",
-                ]:
-                    req_path = self.project_root / dep_file
-                    if req_path.exists():
-                        lines.append(f"pip install -r {dep_file}")
-            lines.append("```")
-            lines.append("")
-
-        # JavaScript/TypeScript依存関係
-        if "javascript" in self.languages or "typescript" in self.languages:
-            pm = self.package_managers.get("javascript", "npm")
-            lang_name = "TypeScript" if "typescript" in self.languages else "JavaScript"
-            lines.append(f"#### {lang_name}依存関係")
-            lines.append("")
-
-            lines.append("```bash")
-            if pm == "pnpm":
-                lines.append("pnpm install")
-            elif pm == "yarn":
-                lines.append("yarn install")
-            else:  # npm
-                lines.append("npm install")
-            lines.append("```")
-            lines.append("")
-
-        # Go依存関係
-        if "go" in self.languages:
-            pm = self.package_managers.get("go", "go")
-            lines.append("#### Go依存関係")
-            lines.append("")
-
-            lines.append("```bash")
-            if pm == "dep":
-                lines.append("dep ensure")
-            elif pm == "glide":
-                lines.append("glide install")
-            else:  # go modules
-                lines.append("go mod download")
-            lines.append("```")
-            lines.append("")
-
-        return lines
-
     @abstractmethod
     def _generate_setup_section(self, project_info: ProjectInfo) -> list[str]:
         """開発環境セットアップセクションを生成（サブクラスで実装）"""
@@ -210,55 +146,6 @@ class BaseGenerator(ABC):
     def _generate_build_test_section(self, project_info: ProjectInfo) -> list[str]:
         """ビルド/テストセクションを生成（サブクラスで実装）"""
         pass
-
-    @abstractmethod
-    def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
-        """コーディング規約のフォーマット"""
-        lines = []
-
-        # フォーマッター
-        formatter = coding_standards.get("formatter")
-        if formatter:
-            lines.append(f"- **{formatter}** を使用")
-            if formatter == "black":
-                lines.append("  ```bash")
-                lines.append("  black .")
-                lines.append("  ```")
-            elif formatter == "prettier":
-                lines.append("  ```bash")
-                lines.append("  npx prettier --write .")
-                lines.append("  ```")
-
-        # リンター
-        linter = coding_standards.get("linter")
-        if linter:
-            lines.append(f"- **{linter}** を使用")
-            if linter == "ruff":
-                lines.append("  ```bash")
-                lines.append("  ruff check .")
-                lines.append("  ruff format .")
-                lines.append("  ```")
-
-        # スタイルガイド
-        style_guide = coding_standards.get("style_guide")
-        if style_guide:
-            lines.append(f"- {style_guide} に準拠")
-
-        return lines
-
-    def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
-        """コーディング規約セクションを生成"""
-        lines = []
-        coding_standards = project_info.coding_standards or {}
-
-        if coding_standards:
-            lines.extend(self._format_coding_standards(coding_standards))
-        else:
-            lines.append(
-                "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
-            )
-
-        return lines
 
     def _generate_custom_instructions_section(
         self, custom_instructions: str | dict[str, Any]

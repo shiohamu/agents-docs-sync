@@ -27,7 +27,49 @@
 
 ### 依存関係のインストール
 
-{{ installation_steps }}
+{% if "python" in languages %}
+#### Python依存関係
+
+```bash
+{% if package_managers.python == "uv" %}
+uv sync
+{% elif package_managers.python == "poetry" %}
+poetry install
+{% elif package_managers.python == "conda" %}
+conda env create -f environment.yml
+{% else %}
+pip install -r requirements.txt
+{% endif %}
+```
+{% endif %}
+
+{% if "javascript" in languages or "typescript" in languages %}
+#### {{ "TypeScript" if "typescript" in languages else "JavaScript" }}依存関係
+
+```bash
+{% if package_managers.javascript == "pnpm" %}
+pnpm install
+{% elif package_managers.javascript == "yarn" %}
+yarn install
+{% else %}
+npm install
+{% endif %}
+```
+{% endif %}
+
+{% if "go" in languages %}
+#### Go依存関係
+
+```bash
+{% if package_managers.go == "dep" %}
+dep ensure
+{% elif package_managers.go == "glide" %}
+glide install
+{% else %}
+go mod download
+{% endif %}
+```
+{% endif %}
 
 ### LLM環境のセットアップ
 
@@ -100,12 +142,37 @@
 ## コーディング規約
 
 <!-- MANUAL_START:other -->
-{% if coding_standards %}
-{% for standard in coding_standards %}
-{{ standard }}
-{% endfor %}
-{% else %}
-コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。
+{% if coding_standards.formatter %}
+### フォーマッター
+
+- **{{ coding_standards.formatter }}** を使用
+{% if coding_standards.formatter == "black" %}
+  ```bash
+  black .
+  ```
+{% elif coding_standards.formatter == "prettier" %}
+  ```bash
+  npx prettier --write .
+  ```
+{% endif %}
+{% endif %}
+
+{% if coding_standards.linter %}
+### リンター
+
+- **{{ coding_standards.linter }}** を使用
+{% if coding_standards.linter == "ruff" %}
+  ```bash
+  ruff check .
+  ruff format .
+  ```
+{% endif %}
+{% endif %}
+
+{% if coding_standards.style_guide %}
+### スタイルガイド
+
+- {{ coding_standards.style_guide }} に準拠
 {% endif %}
 <!-- MANUAL_END:other -->
 

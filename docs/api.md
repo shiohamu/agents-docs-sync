@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 15:03:38
+自動生成日時: 2025-11-25 15:08:57
 
 ---
 
@@ -1304,7 +1304,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:29*
+*定義場所: docgen/generators/agents_generator.py:27*
 
 ---
 
@@ -1327,7 +1327,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:32*
+*定義場所: docgen/generators/agents_generator.py:30*
 
 ---
 
@@ -1342,7 +1342,7 @@ def agents_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/agents_generator.py:51*
+*定義場所: docgen/generators/agents_generator.py:49*
 
 ---
 
@@ -1468,7 +1468,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:289*
+*定義場所: docgen/generators/base_generator.py:176*
 
 ---
 
