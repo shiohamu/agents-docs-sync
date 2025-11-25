@@ -213,8 +213,38 @@ class BaseGenerator(ABC):
 
     @abstractmethod
     def _format_coding_standards(self, coding_standards: dict[str, Any]) -> list[str]:
-        """コーディング規約のフォーマット（サブクラスで実装）"""
-        pass
+        """コーディング規約のフォーマット"""
+        lines = []
+
+        # フォーマッター
+        formatter = coding_standards.get("formatter")
+        if formatter:
+            lines.append(f"- **{formatter}** を使用")
+            if formatter == "black":
+                lines.append("  ```bash")
+                lines.append("  black .")
+                lines.append("  ```")
+            elif formatter == "prettier":
+                lines.append("  ```bash")
+                lines.append("  npx prettier --write .")
+                lines.append("  ```")
+
+        # リンター
+        linter = coding_standards.get("linter")
+        if linter:
+            lines.append(f"- **{linter}** を使用")
+            if linter == "ruff":
+                lines.append("  ```bash")
+                lines.append("  ruff check .")
+                lines.append("  ruff format .")
+                lines.append("  ```")
+
+        # スタイルガイド
+        style_guide = coding_standards.get("style_guide")
+        if style_guide:
+            lines.append(f"- {style_guide} に準拠")
+
+        return lines
 
     def _generate_coding_standards_section(self, project_info: ProjectInfo) -> list[str]:
         """コーディング規約セクションを生成"""
@@ -227,7 +257,6 @@ class BaseGenerator(ABC):
             lines.append(
                 "コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。"
             )
-            lines.append("")
 
         return lines
 
@@ -374,10 +403,13 @@ class BaseGenerator(ABC):
         Returns:
             マージされたマークダウン
         """
+        if not manual_sections:
+            return markdown
 
         lines = markdown.split("\n")
         result = []
         i = 0
+        inserted_sections = set()
 
         while i < len(lines):
             line = lines[i]
@@ -399,12 +431,83 @@ class BaseGenerator(ABC):
                         i += 1
                     if i < len(lines):
                         result.append(lines[i])  # MANUAL_ENDを追加
+                    inserted_sections.add(section_name)
                 else:
                     # 手動セクションがない場合、次の行を処理
                     pass
             i += 1
 
+        # 挿入されていない手動セクションを適切な位置に追加
+        for section_name, manual_content in manual_sections.items():
+            if section_name not in inserted_sections:
+                # セクションに応じた挿入位置を決定
+                insert_position = self._find_insert_position(result, section_name)
+                if insert_position is not None:
+                    # MANUAL_START/ENDを追加して挿入
+                    manual_lines = [
+                        "",
+                        f"<!-- MANUAL_START:{section_name} -->",
+                        manual_content,
+                        f"<!-- MANUAL_END:{section_name} -->",
+                        "",
+                    ]
+                    result[insert_position:insert_position] = manual_lines
+
         return "\n".join(result)
+
+    def _find_insert_position(self, lines: list[str], section_name: str) -> int | None:
+        """
+        手動セクションを挿入する位置を見つける
+
+        Args:
+            lines: マークダウンの行リスト
+            section_name: セクション名
+
+        Returns:
+            挿入位置（行インデックス）、見つからない場合はNone
+        """
+        if section_name == "description":
+            # プロジェクト名の後に挿入
+            for i, line in enumerate(lines):
+                if line.startswith("# "):
+                    # プロジェクト名の次の空行の後
+                    j = i + 1
+                    while j < len(lines) and lines[j].strip() == "":
+                        j += 1
+                    return j
+        elif section_name == "setup":
+            # Technologies Usedの後に挿入
+            for i, line in enumerate(lines):
+                if line.strip() == "## Technologies Used":
+                    # セクションの終わりを見つける
+                    j = i + 1
+                    while j < len(lines) and not (
+                        lines[j].startswith("## ") and lines[j] != "## Technologies Used"
+                    ):
+                        j += 1
+                    return j
+        elif section_name == "usage":
+            # Setupの後に挿入
+            for i, line in enumerate(lines):
+                if line.strip() == "## Setup":
+                    # セクションの終わりを見つける
+                    j = i + 1
+                    while j < len(lines) and not (
+                        lines[j].startswith("## ") and lines[j] != "## Setup"
+                    ):
+                        j += 1
+                    return j
+        elif section_name == "other":
+            # 最後のセクションの後に挿入
+            for i in range(len(lines) - 1, -1, -1):
+                if lines[i].startswith("## "):
+                    # セクションの終わりを見つける
+                    j = i + 1
+                    while j < len(lines) and not lines[j].startswith("---"):
+                        j += 1
+                    return j
+
+        return None
 
     def _generate_markdown(self, project_info: ProjectInfo) -> str:
         """
@@ -782,3 +885,45 @@ class BaseGenerator(ABC):
         Collect project description
         """
         return self.collector.collect_project_description()
+
+    def _render_template(self, template_name: str, context: dict[str, Any]) -> str:
+        """
+        Jinja2テンプレートをレンダリング
+
+        Args:
+            template_name: テンプレートファイル名（templates/配下）
+            context: テンプレートに渡す変数辞書
+
+        Returns:
+            レンダリングされた文字列
+
+        Raises:
+            Exception: テンプレート読み込みまたはレンダリングエラー
+        """
+        from importlib import resources
+
+        import jinja2
+
+        try:
+            # テンプレートファイルを読み込み
+            template_content = (
+                resources.files("docgen.templates")
+                .joinpath(template_name)
+                .read_text(encoding="utf-8")
+            )
+
+            # Jinja2テンプレートを作成
+            template = jinja2.Template(template_content)
+
+            # コンテキストでレンダリング
+            return template.render(**context)
+
+        except FileNotFoundError:
+            self.logger.error(f"テンプレートファイルが見つかりません: {template_name}")
+            raise
+        except jinja2.TemplateError as e:
+            self.logger.error(f"テンプレートレンダリングエラー: {e}")
+            raise
+        except Exception as e:
+            self.logger.error(f"予期しないエラー: {e}")
+            raise

@@ -1,0 +1,78 @@
+# AGENTS ドキュメント
+
+自動生成日時: {{ timestamp }}
+
+このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
+
+---
+
+## プロジェクト概要
+
+<!-- MANUAL_START:description -->
+{{ description }}
+<!-- MANUAL_END:description -->
+
+**使用技術**: {{ languages|join(', ') }}
+
+---
+
+## 開発環境のセットアップ
+
+<!-- MANUAL_START:setup -->
+### 前提条件
+
+- Python 3.12以上
+{% if javascript %}- Node.js 18以上{% endif %}
+
+### 依存関係のインストール
+
+{{ installation_steps }}
+
+### LLM環境のセットアップ
+
+{{ llm_setup }}
+<!-- MANUAL_END:setup -->
+
+---
+
+## ビルドおよびテスト手順
+
+<!-- MANUAL_START:usage -->
+### ビルド手順
+
+{{ build_commands }}
+
+### テスト実行
+
+{{ test_commands }}
+<!-- MANUAL_END:usage -->
+
+---
+
+## コーディング規約
+
+<!-- MANUAL_START:other -->
+{% if coding_standards %}
+{{ coding_standards }}
+{% else %}
+コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。
+{% endif %}
+<!-- MANUAL_END:other -->
+
+---
+
+## プルリクエストの手順
+
+<!-- MANUAL_START:other -->
+{{ pr_guidelines }}
+<!-- MANUAL_END:other -->
+
+{% if custom_instructions %}
+---
+
+{{ custom_instructions }}
+{% endif %}
+
+---
+
+*このAGENTS.mdは自動生成されています。最終更新: {{ timestamp }}*

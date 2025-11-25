@@ -1,0 +1,53 @@
+# {{ project_name }}
+
+<!-- MANUAL_START:description -->
+{{ description_section }}
+<!-- MANUAL_END:description -->
+
+## Technologies Used
+
+{{ technologies }}
+
+## Dependencies
+
+{{ dependencies_section }}
+
+## Setup
+
+<!-- MANUAL_START:setup -->
+{{ setup_section }}
+<!-- MANUAL_END:setup -->
+
+{% if usage_section %}
+## Usage
+
+<!-- MANUAL_START:usage -->
+{{ usage_section }}
+<!-- MANUAL_END:usage -->
+{% endif %}
+
+{% if build_commands or test_commands %}
+## Build and Test
+
+{% if build_commands %}
+### ビルド
+
+{{ build_commands }}
+{% endif %}
+
+{% if test_commands %}
+### テスト
+
+{{ test_commands }}
+{% endif %}
+{% endif %}
+
+{% if other_section %}
+<!-- MANUAL_START:other -->
+{{ other_section }}
+<!-- MANUAL_END:other -->
+{% endif %}
+
+---
+
+{{ footer }}

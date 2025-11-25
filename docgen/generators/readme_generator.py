@@ -9,22 +9,15 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..models.readme import ReadmeDocument
-from ..utils.markdown_utils import (
-    DESCRIPTION_END,
-    DESCRIPTION_START,
-    OTHER_END,
-    OTHER_START,
-    SECTION_SEPARATOR,
-    SETUP_END,
-    SETUP_START,
-    USAGE_END,
-    USAGE_START,
-)
 from .base_generator import BaseGenerator
 
 
 class ReadmeGenerator(BaseGenerator):
     """README generation class"""
+
+    def _should_use_llm(self) -> bool:
+        """README generation uses LLM by default"""
+        return True
 
     def __init__(
         self,
@@ -276,7 +269,7 @@ class ReadmeGenerator(BaseGenerator):
 
     def _generate_template(self, project_info: ProjectInfo) -> str:
         """
-        Generate README based on template (existing implementation)
+        Jinja2テンプレートを使用してREADMEを生成
 
         Args:
             project_info: Project info
@@ -291,152 +284,117 @@ class ReadmeGenerator(BaseGenerator):
         except (FileNotFoundError, OSError):
             manual_sections = {}
 
-        lines = []
+        # コンテキストの準備
+        context = {
+            "project_name": self.project_root.name,
+            "description_section": self._generate_description_section(manual_sections),
+            "technologies": self._generate_technologies_section(),
+            "dependencies_section": self._generate_dependencies_section(),
+            "setup_section": self._generate_setup_section_content(project_info, manual_sections),
+            "usage_section": manual_sections.get("usage", ""),
+            "build_commands": self._generate_build_commands(project_info),
+            "test_commands": self._generate_test_commands(project_info),
+            "other_section": manual_sections.get("other", ""),
+            "footer": self._generate_footer(),
+        }
 
-        # Project name (inferred from directory name)
-        project_name = self.project_root.name
-        lines.append(f"# {project_name}")
-        lines.append("")
+        # Jinja2テンプレートでレンダリング
+        return self._render_template("readme_template.md.j2", context)
 
-        # Manual section: Description
-        lines.append(DESCRIPTION_START)
+    def _generate_description_section(self, manual_sections: dict[str, str]) -> str:
+        """説明セクションの内容を生成"""
         if "description" in manual_sections:
-            lines.append(manual_sections["description"])
+            return manual_sections["description"]
         else:
-            # Collect project description
             description = self._collect_project_description()
             if description:
-                lines.append("## 概要")
-                lines.append("")
-                lines.append(description)
+                return description
             else:
-                lines.append("## 概要")
-                lines.append("")
-                lines.append("Please describe this project here.")
-        lines.append(DESCRIPTION_END)
-        lines.append("")
+                return "Please describe this project here."
 
-        # Auto-generated section: Technologies used
-        lines.append("## Technologies Used")
-        lines.append("")
-        if self.languages:
-            lang_display = {
-                "python": "Python",
-                "javascript": "JavaScript",
-                "typescript": "TypeScript",
-                "go": "Go",
-                "rust": "Rust",
-                "java": "Java",
-                "cpp": "C++",
-                "c": "C",
-                "ruby": "Ruby",
-                "php": "PHP",
-            }
-            for lang in self.languages:
-                display_name = lang_display.get(lang, lang.capitalize())
-                lines.append(f"- {display_name}")
-        else:
-            lines.append("- Not detected")
-        lines.append("")
+    def _generate_technologies_section(self) -> str:
+        """技術セクションの内容を生成"""
+        lang_display = {
+            "python": "Python",
+            "javascript": "JavaScript",
+            "typescript": "TypeScript",
+            "go": "Go",
+            "rust": "Rust",
+            "java": "Java",
+            "cpp": "C++",
+            "c": "C",
+            "ruby": "Ruby",
+            "php": "PHP",
+        }
+        lines = []
+        for lang in self.languages:
+            display_name = lang_display.get(lang, lang.capitalize())
+            lines.append(f"- {display_name}")
+        return "\n".join(lines) if lines else "- Not detected"
 
-        # Dependency information
+    def _generate_dependencies_section(self) -> str:
+        """依存関係セクションの内容を生成"""
         dependencies = self._detect_dependencies()
         if dependencies:
-            lines.append("## 依存関係")
-            lines.append("")
+            lines = []
             for dep_type, deps in dependencies.items():
                 if deps:
                     lines.append(f"### {dep_type}")
                     lines.append("")
-                    for dep in deps[:10]:  # Show up to 10
+                    for dep in deps[:10]:
                         lines.append(f"- {dep}")
                     if len(deps) > 10:
                         lines.append(f"- ... 他 {len(deps) - 10} 個")
                     lines.append("")
+            return "\n".join(lines)
+        return ""
 
-        # セットアップ手順
-        lines.append("## セットアップ")
-        lines.append("")
-        lines.append(SETUP_START)
+    def _generate_setup_section_content(
+        self, project_info: ProjectInfo, manual_sections: dict[str, str]
+    ) -> str:
+        """セットアップセクションの内容を生成"""
         if "setup" in manual_sections:
-            # 手動セクションがある場合は、パッケージマネージャに基づいて内容を更新
-            updated_setup = self._update_manual_setup_section(manual_sections["setup"])
-            lines.append(updated_setup)
+            return self._update_manual_setup_section(manual_sections["setup"])
         else:
-            # 自動生成
-            lines.extend(self._generate_setup_section(project_info))
-        lines.append(SETUP_END)
-        lines.append("")
+            return "\n".join(self._generate_setup_section(project_info))
 
-        # 使用方法
-        if "usage" in manual_sections:
-            lines.append("## 使用方法")
-            lines.append("")
-            lines.append(USAGE_START)
-            lines.append(manual_sections["usage"])
-            lines.append(USAGE_END)
-            lines.append("")
-
-        # ビルドおよびテスト
-        project_info = self.collector.collect_all()
+    def _generate_build_commands(self, project_info: ProjectInfo) -> str:
+        """ビルドコマンドの内容を生成"""
         build_commands = project_info.build_commands
-        test_commands = project_info.test_commands
-        if build_commands or test_commands:
-            lines.append("## ビルドおよびテスト")
-            lines.append("")
-
-            if build_commands:
-                lines.append("### ビルド")
-                lines.append("")
-                lines.append("```bash")
-                for cmd in build_commands[:5]:  # 最大5個まで表示
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    display_cmd = cmd
-                    if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if cmd.startswith("python") and not cmd.startswith("uv run"):
-                            display_cmd = f"uv run {cmd}"
-                    lines.append(display_cmd)
-                if len(build_commands) > 5:
-                    lines.append("# ... その他のビルドコマンド")
+        if build_commands:
+            lines = ["```bash"]
+            for cmd in build_commands[:5]:
+                display_cmd = cmd
+                if "python" in self.package_managers and self.package_managers["python"] == "uv":
+                    if cmd.startswith("python") and not cmd.startswith("uv run"):
+                        display_cmd = f"uv run {cmd}"
+                lines.append(display_cmd)
+            if len(build_commands) > 5:
+                lines.append("# ... その他のビルドコマンド")
             lines.append("```")
-            lines.append("")
+            return "\n".join(lines)
+        return ""
 
+    def _generate_test_commands(self, project_info: ProjectInfo) -> str:
+        """テストコマンドの内容を生成"""
         test_commands = project_info.test_commands
         if test_commands:
-            lines.append("### テスト")
-            lines.append("")
-            lines.append("```bash")
-            for cmd in test_commands[:5]:  # 最大5個まで表示
-                # uvプロジェクトの場合はpythonコマンドにuv runをつける
+            lines = ["```bash"]
+            for cmd in test_commands[:5]:
                 display_cmd = cmd
                 if "python" in self.package_managers and self.package_managers["python"] == "uv":
                     if (
-                        cmd.startswith("python") or cmd.startswith("pytest")
-                    ) and not cmd.startswith("uv run"):
+                        cmd.startswith("python")
+                        or cmd.startswith("pytest")
+                        and not cmd.startswith("uv run")
+                    ):
                         display_cmd = f"uv run {cmd}"
                 lines.append(display_cmd)
             if len(test_commands) > 5:
                 lines.append("# ... その他のテストコマンド")
             lines.append("```")
-            lines.append("")
-
-        # 手動セクション: その他
-        if "other" in manual_sections:
-            lines.append(OTHER_START)
-            lines.append(manual_sections["other"])
-            lines.append(OTHER_END)
-            lines.append("")
-
-        # フッター
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
-        lines.append(self._generate_footer())
-        lines.append("")
-
-        return "\n".join(lines)
+            return "\n".join(lines)
+        return ""
 
     def _update_manual_setup_section(self, manual_content: str) -> str:
         """

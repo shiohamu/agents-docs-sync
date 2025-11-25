@@ -91,7 +91,7 @@ class AgentsGenerator(BaseGenerator):
 
     def _generate_template(self, project_info: ProjectInfo) -> str:
         """
-        テンプレートベースでマークダウンを生成（既存の実装）
+        Jinja2テンプレートを使用してAGENTS.mdを生成
 
         Args:
             project_info: プロジェクト情報の辞書
@@ -106,62 +106,179 @@ class AgentsGenerator(BaseGenerator):
         except (FileNotFoundError, OSError):
             manual_sections = {}
 
-        lines = []
+        # コンテキストの準備
+        context = {
+            "timestamp": get_current_timestamp(),
+            "description": self._generate_project_overview_content(project_info, manual_sections),
+            "languages": self.languages,
+            "installation_steps": "\n".join(self._generate_installation_section()),
+            "llm_setup": "\n".join(self._generate_llm_setup_section()),
+            "build_commands": self._generate_build_commands_content(project_info),
+            "test_commands": self._generate_test_commands_content(project_info),
+            "coding_standards": "\n".join(self._generate_coding_standards_section(project_info)),
+            "pr_guidelines": "\n".join(self._generate_pr_section(project_info)),
+            "custom_instructions": self._generate_custom_instructions_content(),
+        }
 
-        # ヘッダー
-        lines.append("# AGENTS ドキュメント")
-        lines.append("")
-        lines.append(f"{GENERATION_TIMESTAMP_LABEL} {get_current_timestamp()}")
-        lines.append("")
-        lines.append(
-            "このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。"
-        )
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
+        # Jinja2テンプレートでレンダリング
+        return self._render_template("agents_template.md.j2", context)
 
-        # プロジェクト概要
-        lines.extend(self._generate_project_overview(project_info, manual_sections))
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
+    def _generate_project_overview_section(
+        self, project_info: ProjectInfo, manual_sections: dict[str, str]
+    ) -> str:
+        """プロジェクト概要セクションを生成"""
+        description = self._generate_project_overview_content(project_info, manual_sections)
+        languages_str = ", ".join(self.languages) if self.languages else UNKNOWN
+        return f"""## プロジェクト概要
 
-        # 開発環境のセットアップ
-        lines.extend(self._generate_setup_section(project_info))
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
+<!-- MANUAL_START:description -->
+{description}
+<!-- MANUAL_END:description -->
 
-        # ビルドおよびテスト手順
-        lines.extend(self._generate_build_test_section(project_info))
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
+**使用技術**: {languages_str}
 
-        # コーディング規約
-        lines.extend(self._generate_coding_standards_section(project_info))
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
+---
+"""
 
-        # プルリクエストの手順
-        lines.extend(self._generate_pr_section(project_info))
-        lines.append("")
-        lines.append(SECTION_SEPARATOR)
-        lines.append("")
+    def _generate_setup_section_full(self, project_info: ProjectInfo) -> str:
+        """セットアップセクション全体を生成"""
+        js_line = "\n- Node.js 18以上" if "javascript" in self.languages else ""
+        return f"""## 開発環境のセットアップ
 
-        # カスタム指示
+<!-- MANUAL_START:setup -->
+### 前提条件
+
+- Python 3.12以上{js_line}
+
+### 依存関係のインストール
+
+{self._generate_installation_steps()}
+
+### LLM環境のセットアップ
+
+{self._generate_llm_setup_content()}
+<!-- MANUAL_END:setup -->
+
+---
+"""
+
+    def _generate_build_test_section_full(self, project_info: ProjectInfo) -> str:
+        """ビルド/テストセクション全体を生成"""
+        return f"""## ビルドおよびテスト手順
+
+<!-- MANUAL_START:usage -->
+### ビルド手順
+
+{self._generate_build_commands_content(project_info)}
+
+### テスト実行
+
+{self._generate_test_commands_content(project_info)}
+<!-- MANUAL_END:usage -->
+
+---
+"""
+
+    def _generate_coding_standards_section_full(self, project_info: ProjectInfo) -> str:
+        """コーディング規約セクション全体を生成"""
+        return f"""## コーディング規約
+
+<!-- MANUAL_START:other -->
+{self._generate_coding_standards_content(project_info)}
+<!-- MANUAL_END:other -->
+
+---
+"""
+
+    def _generate_pr_section_full(self, project_info: ProjectInfo) -> str:
+        """PRセクション全体を生成"""
+        return f"""## プルリクエストの手順
+
+<!-- MANUAL_START:other -->
+{self._generate_pr_guidelines_content(project_info)}
+<!-- MANUAL_END:other -->
+
+---
+"""
+
+    def _generate_footer(self) -> str:
+        """フッター部分を生成"""
+        return f"""
+---
+
+*このAGENTS.mdは自動生成されています。最終更新: {get_current_timestamp()}*
+"""
+
+    def _generate_project_overview_content(
+        self, project_info: ProjectInfo, manual_sections: dict[str, str]
+    ) -> str:
+        """プロジェクト概要セクションの内容を生成"""
+        if "description" in manual_sections:
+            return manual_sections["description"]
+        else:
+            # デフォルトの説明を生成
+            description = self._collect_project_description()
+            if description:
+                return f"## 概要\n\n{description}"
+            else:
+                return "## 概要\n\nPlease describe this project here."
+
+    def _generate_build_commands_content(self, project_info: ProjectInfo) -> str:
+        """ビルドコマンドの内容を生成"""
+        build_commands = project_info.build_commands
+        if build_commands:
+            lines = ["```bash"]
+            formatted_commands = format_commands_with_package_manager(
+                build_commands, self.package_managers, "python"
+            )
+            lines.extend(formatted_commands)
+            lines.append("```")
+            return "\n".join(lines)
+        else:
+            return "ビルド手順は設定されていません。"
+
+    def _generate_test_commands_content(self, project_info: ProjectInfo) -> str:
+        """テストコマンドの内容を生成"""
+        test_commands = project_info.test_commands
+        if test_commands:
+            lines = []
+            llm_mode = self.agents_config.get("llm_mode", "both")
+
+            if llm_mode in ["api", "both"]:
+                lines.append("#### APIを使用する場合")
+                lines.append("")
+                lines.append("```bash")
+                formatted_commands = format_commands_with_package_manager(
+                    test_commands, self.package_managers, "python"
+                )
+                lines.extend(formatted_commands)
+                lines.append("```")
+                lines.append("")
+
+            if llm_mode in ["local", "both"]:
+                lines.append("#### ローカルLLMを使用する場合")
+                lines.append("")
+                lines.append("```bash")
+                formatted_commands = format_commands_with_package_manager(
+                    test_commands, self.package_managers, "python"
+                )
+                lines.extend(formatted_commands)
+                lines.append("```")
+                lines.append("")
+                lines.append(
+                    "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
+                )
+                lines.append("")
+            return "\n".join(lines)
+        else:
+            return "テストコマンドは設定されていません。"
+
+    def _generate_custom_instructions_content(self) -> str:
+        """カスタム指示の内容を生成"""
         custom_instructions = self.agents_config.get("custom_instructions")
         if custom_instructions:
-            lines.extend(self._generate_custom_instructions_section(custom_instructions))
-            lines.append("")
-            lines.append(SECTION_SEPARATOR)
-            lines.append("")
-
-        # フッター
-        lines.append(self._generate_footer())
-        lines.append("")
-
-        return "\n".join(lines)
+            return "\n".join(self._generate_custom_instructions_section(custom_instructions))
+        return ""
 
     def _generate_with_llm(self, project_info: ProjectInfo) -> str:
         """
