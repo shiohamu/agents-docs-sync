@@ -27,7 +27,7 @@ def should_use_outlines(config: dict[str, Any]) -> bool:
         Outlinesを使用するかどうか
     """
     # 設定でOutlinesが有効になっているかチェック
-    return config.get("use_outlines", False) and OUTLINES_AVAILABLE
+    return True
 
 
 def create_outlines_model(client, provider: str = "openai"):
@@ -41,9 +41,6 @@ def create_outlines_model(client, provider: str = "openai"):
     Returns:
         Outlinesモデルインスタンス（作成できない場合はNone）
     """
-    if not OUTLINES_AVAILABLE:
-        return None
-
     try:
         # クライアントの種類に応じてOutlinesモデルを作成
         if hasattr(client, "client") and hasattr(client.client, "api_key"):
@@ -56,16 +53,12 @@ def create_outlines_model(client, provider: str = "openai"):
             if provider == "ollama":
                 # Ollamaの場合
                 return outlines.from_ollama(client.model, client.base_url)
-            elif provider == "lmstudio":
-                # LM StudioはOpenAI互換だが、Outlinesとの互換性が不十分
-                # 従来のLLM生成を使用
-                return outlines.from_llamacpp(client.model)
             else:
                 # その他のローカルLLMはOpenAI互換APIとして扱う
                 import openai
 
                 openai_client = openai.OpenAI(
-                    base_url=client.base_url,
+                    base_url=f"{client.base_url}" if client.base_url.rstrip("/").endswith("/v1") else f"{client.base_url}/v1",
                     api_key="dummy",  # ローカルでは不要
                 )
                 return outlines.from_openai(openai_client, client.model)
@@ -88,7 +81,7 @@ def get_llm_client_with_fallback(config: dict[str, Any], agents_config: dict[str
         LLMクライアントインスタンス
     """
     llm_mode = agents_config.get("llm_mode", "api")
-    preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
+    preferred_mode = "api" if llm_mode in "api" else "local"
 
     return LLMClientFactory.create_client_with_fallback(
         agents_config, preferred_mode=preferred_mode
