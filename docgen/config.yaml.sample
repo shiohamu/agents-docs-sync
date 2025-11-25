@@ -54,21 +54,39 @@ generation:
   #   readme: schemas/readme_schema.json
 
 # 除外設定（オプション）
-# exclude:
-#   # 除外するディレクトリ
-#   directories:
-#     - .git
-#     - docgen
-#     - __pycache__
-#     - node_modules
-#     - .venv
-#     - venv
-#
-#   # 除外するファイルパターン（glob形式）
-#   patterns:
-#     - "*.pyc"
-#     - "*.pyo"
-#     - "*.log"
+exclude:
+  # 除外するディレクトリ
+  directories:
+    - .venv
+    - venv
+    - .git
+    - __pycache__
+    - node_modules
+    - htmlcov
+    - coverage
+    - .coverage
+    - site-packages
+    - dist
+    - build
+    - .next
+    - .nuxt
+    - target
+    - bin
+    - obj
+    - .gradle
+    - .idea
+    - .vscode
+    - .DS_Store
+    - .pytest_cache
+    - .mypy_cache
+    - .tox
+    - docgen
+
+  # 除外するファイルパターン（glob形式）
+  patterns:
+    - "*.pyc"
+    - "*.pyo"
+    - "*.log"
 
 # キャッシュ設定（オプション）
 cache:
