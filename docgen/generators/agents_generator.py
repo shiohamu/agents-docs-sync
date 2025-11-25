@@ -108,12 +108,9 @@ class AgentsGenerator(BaseGenerator):
             "languages": self.languages,
             "javascript": "javascript" in self.languages,
             "go": "go" in self.languages,
+            "llm_mode": self.agents_config.get("llm_mode", "llm"),
             "installation_steps": "\n".join(self._generate_installation_section()),
-            "llm_setup": "\n".join(self._generate_llm_setup_section()),
-            "build_commands": self._generate_build_commands_content(project_info),
-            "test_commands": self._generate_test_commands_content(project_info),
             "coding_standards": "\n".join(self._generate_coding_standards_section(project_info)),
-            "pr_guidelines": "\n".join(self._generate_pr_section(project_info)),
             "custom_instructions": self._generate_custom_instructions_content(),
         }
 
@@ -180,9 +177,7 @@ class AgentsGenerator(BaseGenerator):
         """コーディング規約セクション全体を生成"""
         return f"""## コーディング規約
 
-<!-- MANUAL_START:other -->
 {self._generate_coding_standards_content(project_info)}
-<!-- MANUAL_END:other -->
 
 ---
 """
@@ -191,11 +186,7 @@ class AgentsGenerator(BaseGenerator):
         """PRセクション全体を生成"""
         return f"""## プルリクエストの手順
 
-<!-- MANUAL_START:other -->
-{self._generate_pr_guidelines_content(project_info)}
-<!-- MANUAL_END:other -->
-
----
+{self._generate_pr_guidelines_content(project_info)}---
 """
 
     def _generate_footer(self) -> str:
@@ -219,56 +210,6 @@ class AgentsGenerator(BaseGenerator):
                 return f"## 概要\n\n{description}"
             else:
                 return "## 概要\n\nPlease describe this project here."
-
-    def _generate_build_commands_content(self, project_info: ProjectInfo) -> str:
-        """ビルドコマンドの内容を生成"""
-        build_commands = project_info.build_commands
-        if build_commands:
-            lines = ["```bash"]
-            formatted_commands = format_commands_with_package_manager(
-                build_commands, self.package_managers, "python"
-            )
-            lines.extend(formatted_commands)
-            lines.append("```")
-            return "\n".join(lines)
-        else:
-            return "ビルド手順は設定されていません。"
-
-    def _generate_test_commands_content(self, project_info: ProjectInfo) -> str:
-        """テストコマンドの内容を生成"""
-        test_commands = project_info.test_commands
-        if test_commands:
-            lines = []
-            llm_mode = self.agents_config.get("llm_mode", "both")
-
-            if llm_mode in ["api", "both"]:
-                lines.append("#### APIを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                formatted_commands = format_commands_with_package_manager(
-                    test_commands, self.package_managers, "python"
-                )
-                lines.extend(formatted_commands)
-                lines.append("```")
-                lines.append("")
-
-            if llm_mode in ["local", "both"]:
-                lines.append("#### ローカルLLMを使用する場合")
-                lines.append("")
-                lines.append("```bash")
-                formatted_commands = format_commands_with_package_manager(
-                    test_commands, self.package_managers, "python"
-                )
-                lines.extend(formatted_commands)
-                lines.append("```")
-                lines.append("")
-                lines.append(
-                    "**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。"
-                )
-                lines.append("")
-            return "\n".join(lines)
-        else:
-            return "テストコマンドは設定されていません。"
 
     def _generate_custom_instructions_content(self) -> str:
         """カスタム指示の内容を生成"""
@@ -466,9 +407,6 @@ class AgentsGenerator(BaseGenerator):
         lines.append(OTHER_END)
 
         return lines
-
-    def _generate_pr_section(self, project_info: ProjectInfo) -> list[str]:
-        return super()._generate_pr_section(project_info, max_test_commands=None)
 
     def _convert_structured_data_to_markdown(
         self, data: AgentsDocument, project_info: ProjectInfo

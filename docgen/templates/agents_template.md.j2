@@ -31,7 +31,32 @@
 
 ### LLM環境のセットアップ
 
-{{ llm_setup }}
+{% if llm_mode == "api" or llm_mode == "both" %}
+#### APIを使用する場合
+
+1. **APIキーの取得と設定**
+
+   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
+   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
+
+2. **API使用時の注意事項**
+   - APIレート制限に注意してください
+   - コスト管理のために使用量を監視してください
+{% endif %}
+
+{% if llm_mode == "local" or llm_mode == "both" %}
+#### ローカルLLMを使用する場合
+
+1. **ローカルLLMのインストール**
+
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
+
+2. **ローカルLLM使用時の注意事項**
+   - モデルが起動していることを確認してください
+   - ローカルリソース（メモリ、CPU）を監視してください
+{% endif %}
 <!-- MANUAL_END:setup -->
 
 ---
@@ -41,11 +66,33 @@
 <!-- MANUAL_START:usage -->
 ### ビルド手順
 
+{% if build_commands %}
 {{ build_commands }}
+{% else %}
+ビルド手順は設定されていません。
+{% endif %}
 
 ### テスト実行
 
-{{ test_commands }}
+{% if test_commands %}
+{% for cmd in test_commands %}
+#### APIを使用する場合
+
+```bash
+{{ cmd }}
+```
+
+#### ローカルLLMを使用する場合
+
+```bash
+{{ cmd }}
+```
+
+**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
+{% endfor %}
+{% else %}
+テストコマンドは設定されていません。
+{% endif %}
 <!-- MANUAL_END:usage -->
 
 ---
@@ -54,7 +101,9 @@
 
 <!-- MANUAL_START:other -->
 {% if coding_standards %}
-{{ coding_standards }}
+{% for standard in coding_standards %}
+{{ standard }}
+{% endfor %}
 {% else %}
 コーディング規約は自動検出されませんでした。プロジェクトの規約に従ってください。
 {% endif %}
@@ -65,7 +114,29 @@
 ## プルリクエストの手順
 
 <!-- MANUAL_START:other -->
-{{ pr_guidelines }}
+1. **ブランチの作成**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **変更のコミット**
+   - コミットメッセージは明確で説明的に
+   - 関連するIssue番号を含める
+
+3. **テストの実行**
+   ```bash
+   {% if test_commands %}
+   {% for cmd in test_commands %}
+   {{ cmd }}
+   {% endfor %}
+   {% else %}
+   # テストコマンドを実行
+   {% endif %}
+   ```
+
+4. **プルリクエストの作成**
+   - タイトル: `[種類] 簡潔な説明`
+   - 説明: 変更内容、テスト結果、関連Issueを記載
 <!-- MANUAL_END:other -->
 
 {% if custom_instructions %}

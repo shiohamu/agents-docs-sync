@@ -260,43 +260,6 @@ class BaseGenerator(ABC):
 
         return lines
 
-    def _generate_pr_section(
-        self, project_info: ProjectInfo, max_test_commands: int | None = 3
-    ) -> list[str]:
-        """プルリクエストセクションを生成"""
-        from ..utils.markdown_utils import OTHER_END, OTHER_START
-
-        lines = []
-        lines.append("## プルリクエストの手順")
-        lines.append("")
-        lines.append(OTHER_START)
-        lines.append("")
-        lines.append("1. **ブランチの作成**")
-        lines.append("   ```bash")
-        lines.append("   git checkout -b feature/your-feature-name")
-        lines.append("   ```")
-        lines.append("")
-        lines.append("2. **変更のコミット**")
-        lines.append("   - コミットメッセージは明確で説明的に")
-        lines.append("   - 関連するIssue番号を含める")
-        lines.append("")
-        lines.append("3. **テストの実行**")
-        lines.append("   ```bash")
-        test_commands = project_info.test_commands
-        for cmd in test_commands[:max_test_commands] if max_test_commands else test_commands:
-            lines.append(f"   {cmd}")
-        if not test_commands:
-            lines.append("   # テストコマンドを実行")
-        lines.append("   ```")
-        lines.append("")
-        lines.append("4. **プルリクエストの作成**")
-        lines.append("   - タイトル: `[種類] 簡潔な説明`")
-        lines.append("   - 説明: 変更内容、テスト結果、関連Issueを記載")
-        lines.append("")
-        lines.append(OTHER_END)
-
-        return lines
-
     def _generate_custom_instructions_section(
         self, custom_instructions: str | dict[str, Any]
     ) -> list[str]:
@@ -781,80 +744,6 @@ class BaseGenerator(ABC):
             lines.append(f"カスタム指示: {custom_instructions}")
 
         return "\n".join(lines)
-
-    def _generate_llm_setup_section(self) -> list[str]:
-        """LLM環境セットアップセクションを生成"""
-        lines = []
-        lines.append("### LLM環境のセットアップ")
-        lines.append("")
-
-        llm_mode = self.agents_config.get("llm_mode", "api")
-        api_config = self.agents_config.get("api")
-        if api_config is None:
-            api_config = {}
-        local_config = self.agents_config.get("local")
-        if local_config is None:
-            local_config = {}
-
-        if llm_mode in "api":
-            lines.append("#### APIを使用する場合")
-            lines.append("")
-
-            lines.append("1. **APIキーの取得と設定**")
-            lines.append("")
-
-            api_provider = api_config.get("provider", "openai")
-            api_key_env = api_config.get("api_key_env", "OPENAI_API_KEY")
-
-            if api_provider == "openai":
-                lines.append("   - OpenAI APIキーを取得: https://platform.openai.com/api-keys")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-            elif api_provider == "anthropic":
-                lines.append("   - Anthropic APIキーを取得: https://console.anthropic.com/")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-            else:
-                api_endpoint = api_config.get("endpoint", "")
-                lines.append(f"   - カスタムAPIエンドポイントを使用: {api_endpoint}")
-                lines.append(f"   - 環境変数に設定: `export {api_key_env}=your-api-key-here`")
-
-            lines.append("")
-            lines.append("2. **API使用時の注意事項**")
-            lines.append("   - APIレート制限に注意してください")
-            lines.append("   - コスト管理のために使用量を監視してください")
-            lines.append("")
-
-        if llm_mode in ["local", "both"]:
-            lines.append("#### ローカルLLMを使用する場合")
-            lines.append("")
-
-            lines.append("1. **ローカルLLMのインストール**")
-            lines.append("")
-
-            local_provider = local_config.get("provider", "ollama")
-            local_model = local_config.get("model", "llama3")
-            # 一般的な手順としてlocalhostを使用
-            local_base_url = "http://localhost:11434"
-
-            if local_provider == "ollama":
-                lines.append("   - Ollamaをインストール: https://ollama.ai/")
-                lines.append(f"   - モデルをダウンロード: `ollama pull {local_model}`")
-                lines.append("   - サービスを起動: `ollama serve`")
-                lines.append(f"   - ベースURL: {local_base_url}")
-            elif local_provider == "lmstudio":
-                lines.append("   - LM Studioをインストール: https://lmstudio.ai/")
-                lines.append("   - モデルをダウンロードして起動")
-                lines.append(f"   - ベースURL: {local_base_url}")
-            else:
-                lines.append("   - カスタムローカルLLMを設定")
-                lines.append(f"   - ベースURL: {local_base_url}")
-
-            lines.append("")
-            lines.append("2. **ローカルLLM使用時の注意事項**")
-            lines.append("   - モデルが起動していることを確認してください")
-            lines.append("   - ローカルリソース（メモリ、CPU）を監視してください")
-            lines.append("")
-
-        return lines
 
     def _clean_llm_output(self, text: str) -> str:
         """
