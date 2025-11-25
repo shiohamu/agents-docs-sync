@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 18:38:33
+自動生成日時: 2025-11-25 19:08:38
 
 ---
 
@@ -40,6 +40,23 @@ Read and parse JSON file.
 
 ---
 
+### read_makefile
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def read_makefile(project_root: Path) -> str | None:
+```
+
+**説明**:
+
+Read Makefile content.
+
+*定義場所: docgen/collectors/collector_utils.py:25*
+
+---
+
 ### read_package_json
 
 **型**: `method`
@@ -53,7 +70,56 @@ def read_package_json(project_root: Path) -> dict[str, Any] | None:
 
 Read package.json file.
 
-*定義場所: docgen/collectors/collector_utils.py:25*
+*定義場所: docgen/collectors/collector_utils.py:35*
+
+---
+
+### BuildCommandCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BuildCommandCollector:
+```
+
+**説明**:
+
+ビルドコマンド収集クラス
+
+*定義場所: docgen/collectors/collector_utils.py:40*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, package_managers: dict[str, str] | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/collectors/collector_utils.py:43*
+
+---
+
+### collect_build_commands
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_build_commands(self) -> list[str]:
+```
+
+**説明**:
+
+ビルドコマンドを収集
+
+*定義場所: docgen/collectors/collector_utils.py:54*
 
 ---
 
@@ -70,24 +136,7 @@ def read_pyproject_toml(project_root: Path) -> dict[str, Any] | None:
 
 Read pyproject.toml file.
 
-*定義場所: docgen/collectors/collector_utils.py:30*
-
----
-
-### read_makefile
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def read_makefile(project_root: Path) -> str | None:
-```
-
-**説明**:
-
-Read Makefile content.
-
-*定義場所: docgen/collectors/collector_utils.py:45*
+*定義場所: docgen/collectors/collector_utils.py:131*
 
 ---
 
@@ -104,7 +153,7 @@ def extract_scripts_from_package_json(package_data: dict[str, Any]) -> list[str]
 
 Extract scripts from package.json.
 
-*定義場所: docgen/collectors/collector_utils.py:55*
+*定義場所: docgen/collectors/collector_utils.py:146*
 
 ---
 
@@ -121,7 +170,7 @@ def extract_dependencies_from_package_json(package_data: dict[str, Any]) -> dict
 
 Extract dependencies from package.json.
 
-*定義場所: docgen/collectors/collector_utils.py:61*
+*定義場所: docgen/collectors/collector_utils.py:152*
 
 ---
 
@@ -138,7 +187,7 @@ def parse_makefile_targets(content: str) -> list[str]:
 
 Parse Makefile targets.
 
-*定義場所: docgen/collectors/collector_utils.py:78*
+*定義場所: docgen/collectors/collector_utils.py:169*
 
 ---
 
@@ -155,7 +204,7 @@ def detect_language_from_config(project_root: Path) -> str | None:
 
 Detect programming language from configuration files.
 
-*定義場所: docgen/collectors/collector_utils.py:90*
+*定義場所: docgen/collectors/collector_utils.py:181*
 
 ---
 
@@ -175,7 +224,9 @@ class ProjectInfoCollector:
 
 プロジェクト情報収集クラス
 
-*定義場所: docgen/collectors/project_info_collector.py:15*
+プロジェクトのビルド/テスト手順、依存関係、コーディング規約などを収集する。
+
+*定義場所: docgen/collectors/project_info_collector.py:17*
 
 ---
 
@@ -196,7 +247,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     package_managers: 言語ごとのパッケージマネージャ辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:18*
+*定義場所: docgen/collectors/project_info_collector.py:45*
 
 ---
 
@@ -216,27 +267,7 @@ def collect_all(self) -> ProjectInfo:
 Returns:
     プロジェクト情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:29*
-
----
-
-### collect_build_commands
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def collect_build_commands(self) -> list[str]:
-```
-
-**説明**:
-
-ビルドコマンドを収集
-
-Returns:
-    ビルドコマンドのリスト
-
-*定義場所: docgen/collectors/project_info_collector.py:46*
+*定義場所: docgen/collectors/project_info_collector.py:58*
 
 ---
 
@@ -256,7 +287,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:142*
+*定義場所: docgen/collectors/project_info_collector.py:75*
 
 ---
 
@@ -276,7 +307,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:236*
+*定義場所: docgen/collectors/project_info_collector.py:155*
 
 ---
 
@@ -286,7 +317,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def collect_coding_standards(self) -> dict[str, Any]:
+def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 ```
 
 **説明**:
@@ -296,7 +327,7 @@ def collect_coding_standards(self) -> dict[str, Any]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:321*
+*定義場所: docgen/collectors/project_info_collector.py:236*
 
 ---
 
@@ -306,7 +337,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def collect_ci_cd_info(self) -> dict[str, Any]:
+def collect_ci_cd_info(self) -> dict[str, list[str]]:
 ```
 
 **説明**:
@@ -316,7 +347,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:386*
+*定義場所: docgen/collectors/project_info_collector.py:314*
 
 ---
 
@@ -326,7 +357,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def collect_project_structure(self) -> dict[str, Any]:
+def collect_project_structure(self) -> dict[str, list[str]]:
 ```
 
 **説明**:
@@ -336,7 +367,7 @@ def collect_project_structure(self) -> dict[str, Any]:
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:406*
+*定義場所: docgen/collectors/project_info_collector.py:334*
 
 ---
 
@@ -356,7 +387,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:443*
+*定義場所: docgen/collectors/project_info_collector.py:366*
 
 ---
 

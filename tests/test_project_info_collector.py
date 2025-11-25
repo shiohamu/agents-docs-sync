@@ -37,7 +37,9 @@ class TestProjectInfoCollector:
         collector = ProjectInfoCollector(temp_project)
 
         with patch.object(collector, "collect_project_description", return_value="Test project"):
-            with patch.object(collector, "collect_build_commands", return_value=["make build"]):
+            with patch.object(
+                collector.build_collector, "collect_build_commands", return_value=["make build"]
+            ):
                 with patch.object(collector, "collect_test_commands", return_value=["make test"]):
                     with patch.object(
                         collector, "collect_dependencies", return_value={"python": ["pytest"]}
@@ -87,10 +89,10 @@ echo "Building project..."
 make build
 npm run build
 python setup.py build
-""")
+        """)
 
         collector = ProjectInfoCollector(temp_project)
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
 
         assert "make build" in commands
         assert "npm run build" in commands
@@ -100,19 +102,19 @@ python setup.py build
         """パッケージマネージャ考慮のビルドコマンド収集テスト"""
         # Pythonプロジェクト
         collector = ProjectInfoCollector(temp_project, {"python": "uv"})
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
         # uvプロジェクトでは特別なビルドコマンドは追加されない
 
         # JavaScriptプロジェクト
         collector = ProjectInfoCollector(temp_project, {"javascript": "pnpm"})
         package_json = temp_project / "package.json"
         package_json.write_text('{"scripts": {"build": "webpack"}}')
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
         assert "pnpm run build" in commands
 
         # Goプロジェクト
         collector = ProjectInfoCollector(temp_project, {"go": "go"})
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
         assert "go build" in commands
 
     def test_collect_build_commands_from_makefile(self, temp_project):
@@ -133,10 +135,10 @@ test:
 clean:
 \t@echo "Cleaning..."
 \trm -rf bin/
-""")
+        """)
 
         collector = ProjectInfoCollector(temp_project)
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
 
         assert "gcc main.c -o main" in commands
         assert "go build -o bin/app ." in commands
@@ -153,10 +155,10 @@ clean:
     "package": "npm pack"
   }
 }
-""")
+        """)
 
         collector = ProjectInfoCollector(temp_project)
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
 
         assert "npm run build" in commands
         assert "npm run compile" in commands
@@ -219,7 +221,7 @@ python3 -m pytest tests/
 """)
 
         collector = ProjectInfoCollector(temp_project, {"python": "uv"})
-        commands = collector.collect_build_commands()
+        commands = collector.build_collector.collect_build_commands()
 
         assert "uv run python3 setup.py build" in commands
         assert "uv run python3 -m pytest tests/" in commands
@@ -408,4 +410,4 @@ setup(
         collector = ProjectInfoCollector(temp_project)
         description = collector.collect_project_description()
 
-        assert "JavaScript package description" in description
+        assert description is not None and "JavaScript package description" in description

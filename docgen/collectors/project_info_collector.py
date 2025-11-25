@@ -10,10 +10,37 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..utils.file_utils import safe_read_file, safe_read_json
+from ..utils.logger import setup_logger
+from .collector_utils import BuildCommandCollector
 
 
 class ProjectInfoCollector:
-    """プロジェクト情報収集クラス"""
+    """プロジェクト情報収集クラス
+
+    プロジェクトのビルド/テスト手順、依存関係、コーディング規約などを収集する。
+    """
+
+    # ファイルパス定数
+    # スクリプトディレクトリ
+    SCRIPTS_DIR = "scripts"
+    RUN_PIPELINE_SCRIPT = "run_pipeline.sh"
+    RUN_TESTS_SCRIPT = "run_tests.sh"
+    MAKEFILE_NAMES = ["Makefile", "makefile"]
+    REQUIREMENTS_FILES = ["requirements.txt", "requirements-docgen.txt", "requirements-test.txt"]
+    PACKAGE_JSON = "package.json"
+    PYPROJECT_TOML = "pyproject.toml"
+    PYTEST_INI = "pytest.ini"
+    GO_MOD = "go.mod"
+    CARGO_TOML = "Cargo.toml"
+    SETUP_PY = "setup.py"
+    EDITORCONFIG = ".editorconfig"
+    PRETTIER_FILES = [".prettierrc", "prettier.config.js", ".prettierrc.json"]
+    GITHUB_WORKFLOWS_DIR = ".github/workflows"
+    MAIN_PY = "main.py"
+    INIT_PY = "__init__.py"
+    README_FILES = ["README.md", "README.rst"]
+    CHANGELOG = "CHANGELOG.md"
+    LICENSE = "LICENSE"
 
     def __init__(self, project_root: Path, package_managers: dict[str, str] | None = None):
         """
@@ -25,6 +52,8 @@ class ProjectInfoCollector:
         """
         self.project_root: Path = project_root
         self.package_managers = package_managers or {}
+        self.logger = setup_logger(__name__)
+        self.build_collector = BuildCommandCollector(project_root, package_managers)
 
     def collect_all(self) -> ProjectInfo:
         """
@@ -35,109 +64,13 @@ class ProjectInfoCollector:
         """
         return ProjectInfo(
             description=self.collect_project_description(),
-            build_commands=self.collect_build_commands(),
+            build_commands=self.build_collector.collect_build_commands(),
             test_commands=self.collect_test_commands(),
             dependencies=self.collect_dependencies(),
             coding_standards=self.collect_coding_standards(),
             ci_cd_info=self.collect_ci_cd_info(),
             project_structure=self.collect_project_structure(),
         )
-
-    def collect_build_commands(self) -> list[str]:
-        """
-        ビルドコマンドを収集
-
-        Returns:
-            ビルドコマンドのリスト
-        """
-        commands = []
-
-        # Pythonプロジェクトの場合
-        if "python" in self.package_managers:
-            pm = self.package_managers["python"]
-            if pm == "uv":
-                commands.append("uv sync")
-                commands.append("uv build")
-            elif pm == "poetry":
-                commands.append("poetry install")
-                commands.append("poetry build")
-            elif pm == "conda":
-                commands.append("conda env create -f environment.yml")
-            else:  # pip
-                commands.append("pip install -e .")
-                commands.append("python setup.py build")
-
-        # scripts/run_pipeline.sh から収集
-        pipeline_script = self.project_root / "scripts" / "run_pipeline.sh"
-        if pipeline_script.exists():
-            content = pipeline_script.read_text(encoding="utf-8")
-            # コマンド行を抽出（簡易的な実装）
-            for line in content.split("\n"):
-                if (
-                    line.strip().startswith("python")
-                    or line.strip().startswith("npm")
-                    or line.strip().startswith("make")
-                    or line.strip().startswith("go")
-                ):
-                    command = line.strip()
-                    # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                    if (
-                        "python" in self.package_managers
-                        and self.package_managers["python"] == "uv"
-                    ):
-                        if command.startswith("python"):
-                            command = f"uv run {command}"
-                    commands.append(command)
-
-        # Makefile から収集
-        makefile = self.project_root / "Makefile"
-        if makefile.exists():
-            content = makefile.read_text(encoding="utf-8")
-            # タブで始まるコマンド行を抽出
-            for line in content.split("\n"):
-                if line.startswith("\t") and line.strip():
-                    # \tを削除してコマンドを追加
-                    command = line.lstrip("\t")
-                    if command and not command.startswith("@"):
-                        # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                        if (
-                            "python" in self.package_managers
-                            and self.package_managers["python"] == "uv"
-                        ):
-                            if command.startswith("python") or command.startswith("pytest"):
-                                command = f"uv run {command}"
-                        commands.append(command)
-
-        # package.json から収集
-        package_data = safe_read_json(self.project_root / "package.json")
-        if package_data and "scripts" in package_data:
-            pm = self.package_managers.get("javascript", "npm")
-            for script_name, script_cmd in package_data["scripts"].items():
-                if pm == "pnpm":
-                    commands.append(f"pnpm run {script_name}")
-                elif pm == "yarn":
-                    commands.append(f"yarn run {script_name}")
-                else:  # npm
-                    commands.append(f"npm run {script_name}")
-
-        # Goプロジェクトの場合
-        if "go" in self.package_managers:
-            pm = self.package_managers["go"]
-            if pm == "go":
-                commands.append("go build")
-            elif pm == "dep":
-                commands.append("dep ensure")
-            elif pm == "glide":
-                commands.append("glide install")
-
-        # 重複を順序を保って排除
-        seen = set()
-        unique_commands = []
-        for c in commands:
-            if c not in seen:
-                unique_commands.append(c)
-                seen.add(c)
-        return unique_commands
 
     def collect_test_commands(self) -> list[str]:
         """
@@ -150,7 +83,7 @@ class ProjectInfoCollector:
 
         # scripts/run_tests.sh から収集
 
-        test_script = self.project_root / "scripts" / "run_tests.sh"
+        test_script = self.project_root / self.SCRIPTS_DIR / self.RUN_TESTS_SCRIPT
         content = safe_read_file(test_script)
         if content:
             for line in content.split("\n"):
@@ -158,17 +91,11 @@ class ProjectInfoCollector:
                     # コマンド行を抽出
                     command = line.strip()
                     if command:
-                        # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                        if (
-                            "python" in self.package_managers
-                            and self.package_managers["python"] == "uv"
-                        ):
-                            if command.startswith("python") or command.startswith("pytest"):
-                                command = f"uv run {command}"
-                        commands.append(command)
+                        command = self.build_collector._add_uv_run_if_needed(command)
+                    commands.append(command)
 
         # Makefile から収集
-        makefile = self.project_root / "Makefile"
+        makefile = self.project_root / self.MAKEFILE_NAMES[0]
         if makefile.exists():
             content = makefile.read_text(encoding="utf-8")
             # testターゲットのコマンド行を抽出
@@ -181,13 +108,7 @@ class ProjectInfoCollector:
                 elif in_test_target and line.startswith("\t") and line.strip():
                     command = line.lstrip("\t")
                     if command and not command.startswith("@"):
-                        # uvプロジェクトの場合はpythonコマンドにuv runをつける
-                        if (
-                            "python" in self.package_managers
-                            and self.package_managers["python"] == "uv"
-                        ):
-                            if command.startswith("python") or command.startswith("pytest"):
-                                command = f"uv run {command}"
+                        command = self.build_collector._add_uv_run_if_needed(command)
                         commands.append(command)
 
         # Pythonプロジェクトの場合
@@ -200,15 +121,13 @@ class ProjectInfoCollector:
             else:  # pip
                 commands.append("pytest tests/ -v --tb=short")
         # pytest.ini から収集（パッケージマネージャが指定されていない場合）
-        elif (self.project_root / "pytest.ini").exists():
+        elif (self.project_root / self.PYTEST_INI).exists():
             command = "pytest tests/ -v --tb=short"
-            # uvプロジェクトの場合はuv runをつける
-            if "python" in self.package_managers and self.package_managers["python"] == "uv":
-                command = f"uv run {command}"
+            command = self.build_collector._add_uv_run_if_needed(command)
             commands.append(command)
 
         # package.json から収集
-        package_data = safe_read_json(self.project_root / "package.json")
+        package_data = safe_read_json(self.project_root / self.PACKAGE_JSON)
         if package_data and "scripts" in package_data and "test" in package_data["scripts"]:
             pm = self.package_managers.get("javascript", "npm")
             if pm == "pnpm":
@@ -244,11 +163,7 @@ class ProjectInfoCollector:
 
         # Python依存関係
         python_deps = []
-        for req_file in [
-            "requirements.txt",
-            "requirements-docgen.txt",
-            "requirements-test.txt",
-        ]:
+        for req_file in self.REQUIREMENTS_FILES:
             req_path = self.project_root / req_file
             if req_path.exists():
                 with open(req_path, encoding="utf-8") as f:
@@ -262,7 +177,7 @@ class ProjectInfoCollector:
         # Node.js依存関係
         from ..utils.file_utils import safe_read_json
 
-        package_data = safe_read_json(self.project_root / "package.json")
+        package_data = safe_read_json(self.project_root / self.PACKAGE_JSON)
         if package_data and "dependencies" in package_data:
             node_deps = [
                 f"{name}@{version}" for name, version in package_data["dependencies"].items()
@@ -270,7 +185,7 @@ class ProjectInfoCollector:
             dependencies["nodejs"] = node_deps
 
         # Go依存関係
-        go_mod = self.project_root / "go.mod"
+        go_mod = self.project_root / self.GO_MOD
         if go_mod.exists():
             go_deps = []
             try:
@@ -296,8 +211,8 @@ class ProjectInfoCollector:
                                 go_deps.append(parts[1])
                 if go_deps:
                     dependencies["go"] = go_deps
-            except Exception:
-                pass
+            except Exception as e:
+                self.logger.warning(f"Failed to parse go.mod: {e}")
 
         # 重複を順序を保って排除（各依存関係リストごとに適用）
         def _dedup_preserve_order(items: list[str]) -> list[str]:
@@ -318,7 +233,7 @@ class ProjectInfoCollector:
 
         return dependencies
 
-    def collect_coding_standards(self) -> dict[str, Any]:
+    def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
         """
         コーディング規約を収集
 
@@ -328,7 +243,7 @@ class ProjectInfoCollector:
         standards = {}
 
         # pyproject.toml から収集
-        pyproject = self.project_root / "pyproject.toml"
+        pyproject = self.project_root / self.PYPROJECT_TOML
         if pyproject.exists():
             try:
                 # Python 3.11以降では標準ライブラリのtomllibを使用
@@ -361,7 +276,20 @@ class ProjectInfoCollector:
                     if "ruff" in tools:
                         standards["linter"] = "ruff"
                         standards["ruff_config"] = tools["ruff"]
-            except (ImportError, Exception):
+            except ImportError as e:
+                self.logger.warning(
+                    f"TOML library not available: {e}. Falling back to simple parsing."
+                )
+                # TOML解析が失敗した場合、簡易的な解析にフォールバック
+                content = pyproject.read_text(encoding="utf-8")
+                if "black" in content:
+                    standards["formatter"] = "black"
+                if "ruff" in content:
+                    standards["linter"] = "ruff"
+            except Exception as e:
+                self.logger.warning(
+                    f"Failed to parse pyproject.toml: {e}. Falling back to simple parsing."
+                )
                 # TOML解析が失敗した場合、簡易的な解析にフォールバック
                 content = pyproject.read_text(encoding="utf-8")
                 if "black" in content:
@@ -370,12 +298,12 @@ class ProjectInfoCollector:
                     standards["linter"] = "ruff"
 
         # .editorconfig から収集
-        editorconfig = self.project_root / ".editorconfig"
+        editorconfig = self.project_root / self.EDITORCONFIG
         if editorconfig.exists():
             standards["editorconfig"] = True
 
         # prettier.config.js または .prettierrc から収集
-        for prettier_file in [".prettierrc", "prettier.config.js", ".prettierrc.json"]:
+        for prettier_file in self.PRETTIER_FILES:
             prettier_path = self.project_root / prettier_file
             if prettier_path.exists():
                 standards["formatter"] = "prettier"
@@ -383,7 +311,7 @@ class ProjectInfoCollector:
 
         return standards
 
-    def collect_ci_cd_info(self) -> dict[str, Any]:
+    def collect_ci_cd_info(self) -> dict[str, list[str]]:
         """
         CI/CD情報を収集
 
@@ -403,7 +331,7 @@ class ProjectInfoCollector:
 
         return ci_info
 
-    def collect_project_structure(self) -> dict[str, Any]:
+    def collect_project_structure(self) -> dict[str, list[str]]:
         """
         プロジェクト構造を収集
 
@@ -417,25 +345,20 @@ class ProjectInfoCollector:
         }
 
         # 言語の検出（簡易版）
-        if (self.project_root / "requirements.txt").exists() or (
-            self.project_root / "pyproject.toml"
+        if (self.project_root / self.REQUIREMENTS_FILES[0]).exists() or (
+            self.project_root / self.PYPROJECT_TOML
         ).exists():
             structure["languages"].append("python")
-        if (self.project_root / "package.json").exists():
+        if (self.project_root / self.PACKAGE_JSON).exists():
             structure["languages"].append("javascript")
-        if (self.project_root / "go.mod").exists():
+        if (self.project_root / self.GO_MOD).exists():
             structure["languages"].append("go")
 
         # 主要ディレクトリ
         for item in self.project_root.iterdir():
             if item.is_dir() and not item.name.startswith("."):
                 structure["main_directories"].append(item.name + "/")
-            elif item.is_file() and item.name in [
-                "README.md",
-                "README.rst",
-                "CHANGELOG.md",
-                "LICENSE",
-            ]:
+            elif item.is_file() and item.name in self.README_FILES + [self.CHANGELOG, self.LICENSE]:
                 structure["important_files"].append(item.name)
 
         return structure
@@ -448,7 +371,7 @@ class ProjectInfoCollector:
             プロジェクトの説明文（見つからない場合はNone）
         """
         # 1. pyproject.tomlのdescriptionから取得（優先）
-        pyproject = self.project_root / "pyproject.toml"
+        pyproject = self.project_root / self.PYPROJECT_TOML
         if pyproject.exists():
             try:
                 import sys
@@ -471,11 +394,11 @@ class ProjectInfoCollector:
                     description = data["project"]["description"]
                     if description and len(description) > 10:
                         return description
-            except Exception:
-                pass
+            except Exception as e:
+                self.logger.warning(f"Failed to parse pyproject.toml for description: {e}")
 
         # 2. README.mdから説明を取得
-        readme_path = self.project_root / "README.md"
+        readme_path = self.project_root / self.README_FILES[0]
         if readme_path.exists():
             readme_content = readme_path.read_text(encoding="utf-8")
             # 最初の段落を抽出（# タイトルの後の最初の非空行）
@@ -493,7 +416,7 @@ class ProjectInfoCollector:
                     break
 
         # 3. setup.pyから説明を取得
-        setup_py = self.project_root / "setup.py"
+        setup_py = self.project_root / self.SETUP_PY
         if setup_py.exists():
             try:
                 content = setup_py.read_text(encoding="utf-8")
@@ -508,7 +431,7 @@ class ProjectInfoCollector:
                 pass
 
         # 4. package.jsonから説明を取得
-        package_json = self.project_root / "package.json"
+        package_json = self.project_root / self.PACKAGE_JSON
         if package_json.exists():
             try:
                 with open(package_json, encoding="utf-8") as f:
@@ -519,7 +442,7 @@ class ProjectInfoCollector:
                 pass
 
         # 5. main.pyのdocstringから取得
-        main_py = self.project_root / "main.py"
+        main_py = self.project_root / self.MAIN_PY
         if main_py.exists():
             try:
                 content = main_py.read_text(encoding="utf-8")
@@ -535,7 +458,7 @@ class ProjectInfoCollector:
                 pass
 
         # 6. __init__.pyのdocstringから取得
-        init_py = self.project_root / "__init__.py"
+        init_py = self.project_root / self.INIT_PY
         if init_py.exists():
             try:
                 content = init_py.read_text(encoding="utf-8")

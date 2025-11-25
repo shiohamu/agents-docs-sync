@@ -143,9 +143,6 @@ class AgentsGenerator(BaseGenerator):
         Returns:
             マークダウン形式の文字列
         """
-        # LLM生成の場合は手動セクションを抽出しない（LLM出力を優先）
-        manual_sections = {}
-
         # 構造化データをテンプレートコンテキストに変換
         context = {
             "timestamp": get_current_timestamp(),
@@ -163,4 +160,4 @@ class AgentsGenerator(BaseGenerator):
         }
 
         # 構造化データをマークダウンに変換（未使用）
-        return ""
+        return context
