@@ -313,27 +313,3 @@ class TestConfigManager:
             config_manager.update_config({"generation.update_readme": False})
 
             assert config_manager.config["generation"]["update_readme"] is False
-
-    def test_set_nested_value_existing(self, temp_project):
-        """既存のネストされた値設定テスト"""
-        docgen_dir = temp_project / ".docgen"
-        docgen_dir.mkdir()
-
-        config_manager = ConfigManager.__new__(ConfigManager)
-        config = {"a": {"b": "old"}}
-
-        config_manager._set_nested_value(config, ["a", "b"], "new")
-
-        assert config["a"]["b"] == "new"
-
-    def test_set_nested_value_new_structure(self, temp_project):
-        """新規ネスト構造作成テスト"""
-        docgen_dir = temp_project / ".docgen"
-        docgen_dir.mkdir()
-
-        config_manager = ConfigManager.__new__(ConfigManager)
-        config = {}
-
-        config_manager._set_nested_value(config, ["a", "b", "c"], "value")
-
-        assert config["a"]["b"]["c"] == "value"

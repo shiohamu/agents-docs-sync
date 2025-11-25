@@ -80,7 +80,7 @@ class APIGenerator:
             # 除外ディレクトリとファイルパターンを設定
             exclude_dirs = self.config.get("exclude", {}).get(
                 "directories",
-                list(DetectorPatterns.EXCLUDE_DIRS) + ["docgen", "venv"],
+                list(DetectorPatterns.EXCLUDE_DIRS) + ["venv"],
             )
 
             # キャッシュの使用設定

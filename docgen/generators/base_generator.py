@@ -317,11 +317,7 @@ class BaseGenerator(ABC):
         """
         try:
             # Outlinesを使用した構造化生成を試す
-            if self._should_use_outlines():
-                return self._generate_with_outlines(project_info)
-
-            # 従来のLLM生成にフォールバック
-            return self._generate_with_llm_legacy(project_info)
+            return self._generate_with_outlines(project_info)
 
         except Exception as e:
             self.logger.error(
@@ -393,10 +389,10 @@ class BaseGenerator(ABC):
 
         except Exception as e:
             self.logger.error(
-                f"Outlines生成中にエラーが発生しました: {e}。従来のLLM生成にフォールバックします。",
+                f"Outlines生成中にエラーが発生しました: {e}テンプレート生成にフォールバックします",
                 exc_info=True,
             )
-            return self._generate_with_llm_legacy(project_info)
+            return self._generate_template(project_info)
 
     def _create_outlines_model(self, client):
         """
@@ -412,69 +408,6 @@ class BaseGenerator(ABC):
 
         return create_outlines_model(client)
 
-    def _generate_with_llm_legacy(self, project_info: ProjectInfo) -> str:
-        """
-        従来のLLM生成（Outlinesなし）
-
-        Args:
-            project_info: プロジェクト情報の辞書
-
-        Returns:
-            マークダウンの文字列
-        """
-        try:
-            # LLMクライアントを取得
-            client = self._get_llm_client_with_fallback()
-
-            if not client:
-                self.logger.warning(
-                    "LLMクライアントの作成に失敗しました。テンプレート生成にフォールバックします。"
-                )
-                return self._generate_template(project_info)
-
-            # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info)
-
-            # システムプロンプト
-            system_prompt = f"""あなたは技術ドキュメント作成の専門家です。
-{self._get_document_type()}ドキュメントを生成してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
-
-            # LLMで生成
-            self.logger.info(f"LLMを使用して{self._get_document_type()}を生成中...")
-            generated_text = client.generate(prompt, system_prompt=system_prompt)
-
-            if generated_text:
-                # LLM出力をクリーンアップ
-                cleaned_text = self._clean_llm_output(generated_text)
-
-                # 出力を検証
-                if not self._validate_output(cleaned_text):
-                    self.logger.warning(
-                        "LLM出力の検証に失敗しました。テンプレート生成にフォールバックします。"
-                    )
-                    return self._generate_template(project_info)
-
-                # 生成されたテキストにタイムスタンプを追加
-                lines = cleaned_text.split("\n")
-                # フッターを追加（既に含まれていない場合）
-                footer_text = self._generate_footer()
-                if not any(footer_text.split("*")[1] in line for line in lines):
-                    lines.append("")
-                    lines.append(footer_text)
-                return "\n".join(lines)
-            else:
-                self.logger.warning("LLM生成が空でした。テンプレート生成にフォールバックします。")
-                return self._generate_template(project_info)
-
-        except Exception as e:
-            self.logger.error(
-                f"LLM生成中にエラーが発生しました: {e}。テンプレート生成にフォールバックします。",
-                exc_info=True,
-            )
-            return self._generate_template(project_info)
 
     def _generate_hybrid(self, project_info: ProjectInfo) -> str:
         """
@@ -492,7 +425,7 @@ class BaseGenerator(ABC):
         try:
             # LLMクライアントを取得
             llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
+            preferred_mode = "api" if llm_mode in "api" else "local"
 
             client = LLMClientFactory.create_client_with_fallback(
                 self.agents_config, preferred_mode=preferred_mode
@@ -624,7 +557,7 @@ class BaseGenerator(ABC):
         lines.append("### LLM環境のセットアップ")
         lines.append("")
 
-        llm_mode = self.agents_config.get("llm_mode", "both")
+        llm_mode = self.agents_config.get("llm_mode", "api")
         api_config = self.agents_config.get("api")
         if api_config is None:
             api_config = {}
@@ -632,7 +565,7 @@ class BaseGenerator(ABC):
         if local_config is None:
             local_config = {}
 
-        if llm_mode in ["api", "both"]:
+        if llm_mode in "api":
             lines.append("#### APIを使用する場合")
             lines.append("")
 

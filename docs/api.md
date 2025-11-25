@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-24 13:15:17
+自動生成日時: 2025-11-25 09:54:10
 
 ---
 
@@ -488,7 +488,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/config_manager.py:185*
+*定義場所: docgen/config_manager.py:179*
 
 ---
 
@@ -1069,7 +1069,7 @@ class DocGen:
 
 ドキュメント自動生成メインクラス
 
-*定義場所: docgen/docgen.py:29*
+*定義場所: docgen/docgen.py:28*
 
 ---
 
@@ -1090,7 +1090,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ（Noneの場合は現在の作業ディレクトリ）
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
 
-*定義場所: docgen/docgen.py:32*
+*定義場所: docgen/docgen.py:31*
 
 ---
 
@@ -1113,7 +1113,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/docgen.py:73*
+*定義場所: docgen/docgen.py:65*
 
 ---
 
@@ -1133,7 +1133,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/docgen.py:87*
+*定義場所: docgen/docgen.py:79*
 
 ---
 
@@ -1153,7 +1153,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/docgen.py:97*
+*定義場所: docgen/docgen.py:89*
 
 ---
 
@@ -1170,7 +1170,7 @@ class CommandLineInterface:
 
 コマンドラインインターフェースクラス
 
-*定義場所: docgen/docgen.py:120*
+*定義場所: docgen/docgen.py:108*
 
 ---
 
@@ -1185,7 +1185,7 @@ def __init__(self):
 
 *説明なし*
 
-*定義場所: docgen/docgen.py:123*
+*定義場所: docgen/docgen.py:111*
 
 ---
 
@@ -1202,7 +1202,7 @@ def run(self) -> int:
 
 メイン実行メソッド
 
-*定義場所: docgen/docgen.py:126*
+*定義場所: docgen/docgen.py:114*
 
 ---
 
@@ -1219,7 +1219,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:291*
+*定義場所: docgen/docgen.py:279*
 
 ---
 
@@ -3718,7 +3718,7 @@ def generate(self, prompt: str, system_prompt: str | None) -> str | None:
 
 **説明**:
 
-Anthropic APIを使用してテキストを生成
+OpenAI APIを使用してテキストを生成
 
 *定義場所: docgen/utils/llm_client.py:140*
 
@@ -4814,40 +4814,6 @@ def test_update_config_nested(self, temp_project):
 ネストされた設定更新テスト
 
 *定義場所: tests/test_config_manager.py:287*
-
----
-
-### test_set_nested_value_existing
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def test_set_nested_value_existing(self, temp_project):
-```
-
-**説明**:
-
-既存のネストされた値設定テスト
-
-*定義場所: tests/test_config_manager.py:317*
-
----
-
-### test_set_nested_value_new_structure
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def test_set_nested_value_new_structure(self, temp_project):
-```
-
-**説明**:
-
-新規ネスト構造作成テスト
-
-*定義場所: tests/test_config_manager.py:329*
 
 ---
 

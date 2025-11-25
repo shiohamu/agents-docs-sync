@@ -125,7 +125,7 @@ class ConfigManager:
                 "preserve_manual_sections": True,
             },
             "agents": {
-                "llm_mode": "both",
+                "llm_mode": "api",
                 "generation": {
                     "agents_mode": "template",
                     "readme_mode": "template",
@@ -147,12 +147,6 @@ class ConfigManager:
     def get_config(self) -> dict[str, Any]:
         """現在の設定を取得"""
         return self.config
-
-    def _set_nested_value(self, config: dict[str, Any], keys: list[str], value: Any):
-        """ネストされた辞書に値を設定"""
-        for key in keys[:-1]:
-            config = config.setdefault(key, {})
-        config[keys[-1]] = value
 
     def _validate_config(self) -> None:
         """

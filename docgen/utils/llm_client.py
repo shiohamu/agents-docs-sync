@@ -138,7 +138,7 @@ class OpenAIClient(BaseLLMClient):
         self.model: str = self.config.model or DEFAULT_MODELS["openai"]
 
     def generate(self, prompt: str, system_prompt: str | None = None, **kwargs) -> str | None:
-        """Anthropic APIを使用してテキストを生成"""
+        """OpenAI APIを使用してテキストを生成"""
         try:
             messages = [{"role": "user", "content": prompt}]
 
@@ -163,7 +163,7 @@ class OpenAIClient(BaseLLMClient):
                 return text_content.strip() if text_content else None
             return None
         except Exception as e:
-            logger.error(f"Anthropic API呼び出しエラー: {e}")
+            logger.error(f"OpenAI API呼び出しエラー: {e}")
             return None
 
     def _create_outlines_model_internal(self, outlines):

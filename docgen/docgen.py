@@ -11,7 +11,6 @@ import sys
 from typing import Any
 
 # プロジェクトルートのパスを取得
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 DOCGEN_DIR = Path(__file__).parent.resolve()
 
 # パッケージとしてインストールされた場合は相対インポートを使用
@@ -56,19 +55,12 @@ class DocGen:
         self.config_path = config_path or self.docgen_dir / "config.yaml"
 
         self.config_manager = ConfigManager(
-            self.project_root, self.docgen_dir, config_path, package_config_sample
+            self.project_root, self.docgen_dir, self.config_path, package_config_sample
         )
         self.config = self.config_manager.get_config()
         self.language_detector = LanguageDetector(self.project_root)
         self.detected_languages = []
         self.detected_package_managers = {}
-
-    def _load_config(self):
-        return self.config_manager._load_config()
-
-    def _validate_config(self):
-        self.config_manager._validate_config()
-        self.config = self.config_manager.config
 
     def detect_languages(self, use_parallel: bool = True) -> list[str]:
         """
@@ -101,18 +93,14 @@ class DocGen:
         Returns:
             成功したかどうか
         """
-        detected_languages = self.language_detector.get_detected_languages()
-        if not detected_languages:
-            self.detect_languages()
-            detected_languages = self.language_detector.get_detected_languages()
+        self.detect_languages()
 
-        if not detected_languages:
+        if not self.detected_languages:
             logger.warning("サポートされている言語が検出されませんでした")
             return False
 
-        detected_package_managers = self.language_detector.get_detected_package_managers()
         document_generator = DocumentGenerator(
-            self.project_root, detected_languages, self.config, detected_package_managers
+            self.project_root, self.detected_languages, self.config, self.detected_package_managers
         )
         return document_generator.generate_documents()
 
@@ -166,7 +154,7 @@ class CommandLineInterface:
             generator = CommitMessageGenerator(project_root, self.docgen.config)
             message = generator.generate()
             if message:
-                print(message)
+                logger.debug(message)
                 return 0
             else:
                 return 1

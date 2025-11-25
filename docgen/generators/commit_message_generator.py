@@ -45,7 +45,7 @@ class CommitMessageGenerator:
 
             # LLMクライアントを取得
             llm_mode = self.agents_config.get("llm_mode", "api")
-            preferred_mode = "api" if llm_mode in ["api", "both"] else "local"
+            preferred_mode = "api" if llm_mode in "api" else "local"
 
             client = LLMClientFactory.create_client_with_fallback(
                 self.agents_config, preferred_mode=preferred_mode
