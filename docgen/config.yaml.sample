@@ -109,7 +109,7 @@ agents:
     agents_mode: 'template'
 
     # README.md生成モード: 'template', 'llm', 'hybrid'
-    readme_mode: 'template'
+    readme_mode: 'hybrid'
 
     # コミットメッセージ自動生成: true/false
     enable_commit_message: true

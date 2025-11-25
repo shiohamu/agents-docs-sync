@@ -1,9 +1,55 @@
 # agents-docs-sync
 
 <!-- MANUAL_START:description -->
-<!-- MANUAL_END:description -->
-コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 
+<!-- MANUAL_END:description -->
+agents‑docs‑sync は、コミットごとに自動的にテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新するパイプラインです。  
+主な機能は以下の通りです。
+
+- **CI/CD ワークフロー**: コードが push されると GitHub Actions が起動し、テスト実行 → ドキュメント生成 (`docgen/docgen.py`) → `AGENTS.md` の差分反映という一連の処理を順次走らせます。  
+- **多言語サポート**: Python（ドキュメンテーションジェネレータ）、Shell スクリプトで構成されており、Python だけではなく `npm test` や Go のユニットテストも同時に走らせます。  
+- **依存関係管理**: `uv` を使用して Python パッケージ（pyyaml, pytest 系）とビルドツールを解決します。Go と Node.js はそれぞれの標準的なコマンドでテストが実行されます。  
+
+### 主要ファイル
+
+- **docgen/docgen.py**: ドキュメント生成ロジック（YAML を読み込み、Markdown のテンプレートへ変換）。  
+- **AGENTS.md**: 自動更新対象のドキュメントハブ。  
+- **.github/workflows/***：CI/CD 定義ファイル。
+
+### 依存関係
+
+| 言語 | パッケージ |
+|------|------------|
+| Python | `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` |
+| Node.js | 省略（テストフレームワークは npm test にて管理） |
+| Go | 標準ライブラリ＋go.modで定義 |
+
+### ビルド & テスト
+
+```bash
+# 環境セットアップ (Python)
+uv sync            # 仮想環境作成と依存パッケージインストール
+uv build           # パッケージビルド（必要に応じて）
+
+# ドキュメント生成
+uv run python3 docgen/docgen.py
+
+# テスト実行 (Python)
+uv run pytest tests/ -v --tb=short
+
+# Node.js のテスト
+npm test
+
+# Go のテスト
+go test ./...
+```
+
+### コーディング規約
+
+- Python ソースは `ruff` で linting を強制します。  
+- スタイルガイドに従い、PEP8 準拠を目指してください。
+
+このリポジトリを利用することで、コードベースとドキュメントが常に同期し、手動更新の手間を大幅に削減できます。
 ## 使用技術
 
 - Python
@@ -70,7 +116,6 @@ uv sync
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
-
 <!-- MANUAL_END:setup -->
 
 
@@ -81,6 +126,8 @@ uv sync
 ### ビルド
 
 ```bash
+uv sync
+uv build
 uv run python3 docgen/docgen.py
 ```
 
@@ -88,9 +135,9 @@ uv run python3 docgen/docgen.py
 ### テスト
 
 ```bash
-uv run pytest
-npm test
 uv run pytest tests/ -v --tb=short
+npm test
+go test ./...
 ```
 
 
@@ -99,6 +146,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-25 17:51:27*
-
-*このREADME.mdは自動生成されています。最終更新: 2025-11-25 17:52:03*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-25 18:17:17*

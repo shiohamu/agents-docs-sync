@@ -58,7 +58,9 @@ def create_outlines_model(client, provider: str = "openai"):
                 import openai
 
                 openai_client = openai.OpenAI(
-                    base_url=f"{client.base_url}" if client.base_url.rstrip("/").endswith("/v1") else f"{client.base_url}/v1",
+                    base_url=f"{client.base_url}"
+                    if client.base_url.rstrip("/").endswith("/v1")
+                    else f"{client.base_url}/v1",
                     api_key="dummy",  # ローカルでは不要
                 )
                 return outlines.from_openai(openai_client, client.model)
@@ -270,6 +272,11 @@ def clean_llm_output(text: str) -> str:
 
     # 結果を結合
     result = "\n".join(cleaned_lines)
+
+    # MANUALマーカーを削除
+    import re
+
+    result = re.sub(r"<!--\s*MANUAL_START:\w+\s*-->|<!--\s*MANUAL_END:\w+\s*-->", "", result)
 
     # 先頭と末尾の空行を削除
     result = result.strip()

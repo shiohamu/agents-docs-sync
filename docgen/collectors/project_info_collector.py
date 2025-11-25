@@ -52,6 +52,21 @@ class ProjectInfoCollector:
         """
         commands = []
 
+        # Pythonプロジェクトの場合
+        if "python" in self.package_managers:
+            pm = self.package_managers["python"]
+            if pm == "uv":
+                commands.append("uv sync")
+                commands.append("uv build")
+            elif pm == "poetry":
+                commands.append("poetry install")
+                commands.append("poetry build")
+            elif pm == "conda":
+                commands.append("conda env create -f environment.yml")
+            else:  # pip
+                commands.append("pip install -e .")
+                commands.append("python setup.py build")
+
         # scripts/run_pipeline.sh から収集
         pipeline_script = self.project_root / "scripts" / "run_pipeline.sh"
         if pipeline_script.exists():
@@ -141,9 +156,8 @@ class ProjectInfoCollector:
             for line in content.split("\n"):
                 if "pytest" in line or "test" in line.lower():
                     # コマンド行を抽出
-                    match = re.search(r"(pytest|python.*test|npm.*test|make.*test)", line)
-                    if match:
-                        command = match.group(0)
+                    command = line.strip()
+                    if command:
                         # uvプロジェクトの場合はpythonコマンドにuv runをつける
                         if (
                             "python" in self.package_managers

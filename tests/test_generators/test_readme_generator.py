@@ -275,3 +275,110 @@ pip install -r requirements.txt
             content = (temp_project / "README.md").read_text(encoding="utf-8")
             # LLM生成の場合は手動セクションをマージしないので、LLMのdescriptionが適用される
             assert "This is an LLM generated description." in content
+
+    def test_create_overview_prompt(self, temp_project):
+        """概要プロンプト作成のテスト"""
+        config = {"output": {"readme": "README.md"}}
+        generator = ReadmeGenerator(temp_project, ["python"], config)
+
+        # プロジェクト情報を作成
+        from docgen.models.project import ProjectInfo
+
+        project_info = ProjectInfo(
+            description="Test project",
+            dependencies={"python": ["pytest"]},
+            build_commands=["python setup.py build"],
+            test_commands=["pytest"],
+        )
+
+        existing_overview = "This is existing overview."
+
+        prompt = generator._create_overview_prompt(project_info, existing_overview)
+
+        assert "プロジェクト情報:" in prompt
+        assert "Test project" in prompt
+        assert "This is existing overview." in prompt
+        assert "改善されたプロジェクト概要の内容をマークダウン形式で出力してください。" in prompt
+
+    def test_generate_overview_with_llm_success(self, temp_project, monkeypatch):
+        """概要LLM生成成功のテスト"""
+        config = {"output": {"readme": "README.md"}}
+        generator = ReadmeGenerator(temp_project, ["python"], config)
+
+        # プロジェクト情報を作成
+        from docgen.models.project import ProjectInfo
+
+        project_info = ProjectInfo(description="Test project")
+
+        # LLMクライアントをモック
+        from unittest.mock import Mock
+
+        mock_client = Mock()
+        mock_client.generate.return_value = "Improved overview content."
+
+        monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: mock_client)
+        monkeypatch.setattr(generator, "_clean_llm_output", lambda x: x)
+        monkeypatch.setattr(generator, "_validate_overview_output", lambda x: True)
+
+        result = generator._generate_overview_with_llm(project_info, "existing overview")
+
+        assert result == "Improved overview content."
+        mock_client.generate.assert_called_once()
+
+    def test_generate_overview_with_llm_failure(self, temp_project, monkeypatch):
+        """概要LLM生成失敗のテスト"""
+        config = {"output": {"readme": "README.md"}}
+        generator = ReadmeGenerator(temp_project, ["python"], config)
+
+        # プロジェクト情報を作成
+        from docgen.models.project import ProjectInfo
+
+        project_info = ProjectInfo(description="Test project")
+
+        # LLMクライアントがNoneの場合
+        monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: None)
+
+        existing_overview = "existing overview"
+        result = generator._generate_overview_with_llm(project_info, existing_overview)
+
+        assert result == existing_overview
+
+    def test_validate_overview_output(self, temp_project):
+        """概要出力検証のテスト"""
+        config = {"output": {"readme": "README.md"}}
+        generator = ReadmeGenerator(temp_project, ["python"], config)
+
+        # 有効な出力
+        assert generator._validate_overview_output("Valid overview content.")
+
+        # 空の出力
+        assert not generator._validate_overview_output("")
+
+        # 長すぎる出力
+        long_content = "a" * 3000
+        assert not generator._validate_overview_output(long_content)
+
+    def test_generate_hybrid_readme(self, temp_project, monkeypatch):
+        """ハイブリッドモードのテスト"""
+        write_file(temp_project, "requirements.txt", "pytest>=7.0.0\n")
+
+        config = {
+            "output": {"readme": "README.md"},
+            "agents": {"generation": {"readme_mode": "hybrid"}},
+        }
+
+        generator = ReadmeGenerator(temp_project, ["python"], config)
+
+        # LLMで改善された概要を返すようにモック
+        def mock_generate_overview(project_info, existing_overview):
+            return "LLM improved overview content."
+
+        monkeypatch.setattr(generator, "_generate_overview_with_llm", mock_generate_overview)
+
+        result = generator.generate()
+
+        assert result is True
+        assert (temp_project / "README.md").exists()
+
+        content = (temp_project / "README.md").read_text(encoding="utf-8")
+        assert "LLM improved overview content." in content

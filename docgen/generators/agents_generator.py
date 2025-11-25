@@ -100,20 +100,14 @@ class AgentsGenerator(BaseGenerator):
             "go": "go" in self.languages,
             "llm_mode": self.agents_config.get("llm_mode", "both"),
             "package_managers": self.package_managers,
+            "build_commands": project_info.build_commands or [],
+            "test_commands": project_info.test_commands or [],
             "coding_standards": project_info.coding_standards or {},
             "custom_instructions": self._generate_custom_instructions_content(),
         }
 
         # Jinja2テンプレートでレンダリング
         return self._render_template("agents_template.md.j2", context)
-
-    def _generate_footer(self) -> str:
-        """フッター部分を生成"""
-        return f"""
----
-
-*このAGENTS.mdは自動生成されています。最終更新: {get_current_timestamp()}*
-"""
 
     def _generate_project_overview_content(
         self, project_info: ProjectInfo, manual_sections: dict[str, str]
@@ -135,6 +129,7 @@ class AgentsGenerator(BaseGenerator):
         if custom_instructions:
             return "\n".join(self._generate_custom_instructions_section(custom_instructions))
         return ""
+
     def _convert_structured_data_to_markdown(
         self, data: AgentsDocument, project_info: ProjectInfo
     ) -> str:

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-25 17:51:27
+自動生成日時: 2025-11-25 18:17:17
 
 ---
 
@@ -3003,6 +3003,91 @@ def test_generate_readme_with_llm(self, temp_project, monkeypatch):
 *説明なし*
 
 *定義場所: tests/test_generators/test_readme_generator.py:187*
+
+---
+
+### test_create_overview_prompt
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_create_overview_prompt(self, temp_project):
+```
+
+**説明**:
+
+概要プロンプト作成のテスト
+
+*定義場所: tests/test_generators/test_readme_generator.py:279*
+
+---
+
+### test_generate_overview_with_llm_success
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_generate_overview_with_llm_success(self, temp_project, monkeypatch):
+```
+
+**説明**:
+
+概要LLM生成成功のテスト
+
+*定義場所: tests/test_generators/test_readme_generator.py:303*
+
+---
+
+### test_generate_overview_with_llm_failure
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_generate_overview_with_llm_failure(self, temp_project, monkeypatch):
+```
+
+**説明**:
+
+概要LLM生成失敗のテスト
+
+*定義場所: tests/test_generators/test_readme_generator.py:328*
+
+---
+
+### test_validate_overview_output
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_validate_overview_output(self, temp_project):
+```
+
+**説明**:
+
+概要出力検証のテスト
+
+*定義場所: tests/test_generators/test_readme_generator.py:346*
+
+---
+
+### test_generate_hybrid_readme
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def test_generate_hybrid_readme(self, temp_project, monkeypatch):
+```
+
+**説明**:
+
+ハイブリッドモードのテスト
+
+*定義場所: tests/test_generators/test_readme_generator.py:361*
 
 ---
 

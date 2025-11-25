@@ -636,12 +636,9 @@ class BaseGenerator(ABC):
             manual_sections = self._extract_manual_sections_from_existing()
             merged_markdown = self._merge_manual_sections(markdown, manual_sections)
 
-            # フッターを追加
-            final_markdown = merged_markdown + "\n\n" + self._generate_footer()
-
             # ファイルに書き込み
             with open(self.output_path, "w", encoding="utf-8") as f:
-                f.write(final_markdown)
+                f.write(merged_markdown)
 
             return True
         except Exception as e:

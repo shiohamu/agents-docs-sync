@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-25 17:52:03
+自動生成日時: 2025-11-25 18:17:49
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -8,44 +8,38 @@
 
 ## プロジェクト概要
 
-<!-- MANUAL_START:description -->
-`agents-docs-sync` は、ソースコードに変更が加えられるたびに自動的にテストを実行し、最新のドキュメントと `AGENTS.md` を生成・更新するCI/CDパイプラインです。  
-主な特徴は以下の通りです。
+**agents-docs-sync** は、コミットが行われるたびに自動でテストを実行し、ドキュメント（YAML を基にした Markdown 形式）を生成して `AGENTS.md` ファイルを更新するパイプラインです。CI/CD 環境では GitHub Actions 等のワークフローからこのリポジトリがチェックアウトされ、以下の手順で実行されます。
 
-- **言語**: Python（ビルド／テスト）＋シェルスクリプト（環境構築や補助処理）
-- **自動化フロー**
-  1. コミット時に GitHub Actions が起動  
-     → `uv` を使って仮想環境をセットアップ
-  2. Python テスト (`pytest`) とコードカバレッジ測定（`pytest-cov`）実行  
-     → エラーがあればビルド失敗で通知
-  3. ドキュメント生成スクリプト `docgen/docgen.py` を実行し、YAML/Markdown ファイルを更新  
-     → 依存関係や使用例を自動的に反映
-  4. 更新された `AGENTS.md` がコミットされることでドキュメントが常に最新状態になる
+1. **依存関係インストール**  
+   ```bash
+   uv sync          # pyproject.toml への記述に基づき Python のパッケージを解決・インストール
+   ```
+2. **ビルド & ドキュメント生成**  
+   - `uv build` はプロジェクトのビルドアーティファクト（例: wheel）を作成します。  
+   - `uv run python3 docgen/docgen.py` が実行され、YAML で定義されたエージェント情報から Markdown ドキュメントを生成し、既存の `AGENTS.md` を差分反映させます。
+3. **テスト実行**  
+   - Python テスト: `uv run pytest tests/ -v --tb=short`（pytest, pytest-cov, pytest-mock が利用）  
+   - Node.js 版のテストがある場合は `npm test`、Go モジュールの場合は `go test ./...` を実行します。  
 
-- **主要コマンド**
-  - ビルド: `uv run python3 docgen/docgen.py`
-  - テスト:  
-    ```bash
-    uv run pytest          # 全テスト実行（デフォルト）
-    npm test               # Node.js 環境での追加チェック
-    uv run pytest tests/ -v --tb=short   # 詳細出力付き
-    ```
-- **依存ライブラリ**
-  ```yaml
-  pyyaml>=6.0.3
-  pytest>=7.4.0
-  pytest-cov>=4.1.0
-  pytest-mock>=3.11.1
-  ```
+> **コーディング規約**: 全ての Python コードに対して Ruff ライナーを適用し、一貫したコード品質とスタイルチェックを保証しています。
 
-- **コーディング規約**  
-  - 静的解析とリンティングは `ruff` を使用。`.pyproject.toml` に設定を記述し、CI 上で自動チェックされます。
+### 主要依存関係
+- `pyyaml>=6.0.3` – YAML パーサ  
+- `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` – テストフレームワークと補助ツール  
 
-> ⚡️ *開発者向けヒント*  
-> ビルドやテストが失敗した場合は、ログに表示されたエラー箇所から修正を行い、再度コミットしてください。`AGENTS.md` は手作業で編集する必要はありません。
+### 使い方
+```bash
+# 開発環境のセットアップ（uv がインストール済みであることが前提）
+uv sync
 
-このパイプラインにより、コードベースとドキュメントの同期性を保ちながら開発サイクルを高速化できます。
-<!-- MANUAL_END:description -->
+# ドキュメント生成・AGENTS.md の更新を手動実行したい場合
+uv run python3 docgen/docgen.py
+
+# テストのみ実行したいときは
+uv run pytest tests/ -v --tb=short
+```
+
+このプロジェクトにより、ドキュメントの整合性がコード変更ごとに保証されるため、エージェント仕様書やチーム内共有資料を常に最新状態で保つことができます。
 
 ---
 
@@ -90,7 +84,6 @@ uv sync
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
-
 <!-- MANUAL_END:setup -->
 
 ---
@@ -101,14 +94,54 @@ uv sync
 ### ビルド手順
 
 
-ビルド手順は設定されていません。
+['uv sync', 'uv build', 'uv run python3 docgen/docgen.py']
 
 
 ### テスト実行
 
 
-テストコマンドは設定されていません。
 
+#### APIを使用する場合
+
+```bash
+uv run pytest tests/ -v --tb=short
+```
+
+#### ローカルLLMを使用する場合
+
+```bash
+uv run pytest tests/ -v --tb=short
+```
+
+**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
+
+#### APIを使用する場合
+
+```bash
+npm test
+```
+
+#### ローカルLLMを使用する場合
+
+```bash
+npm test
+```
+
+**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
+
+#### APIを使用する場合
+
+```bash
+go test ./...
+```
+
+#### ローカルLLMを使用する場合
+
+```bash
+go test ./...
+```
+
+**注意**: ローカルLLMを使用する場合、テスト実行前にモデルが起動していることを確認してください。
 <!-- MANUAL_END:usage -->
 
 ---
@@ -116,9 +149,6 @@ uv sync
 ## コーディング規約
 
 <!-- MANUAL_START:other -->
-
-
-
 ### リンター
 
 - **ruff** を使用
@@ -127,17 +157,13 @@ uv sync
   ruff check .
   ruff format .
   ```
-
-
-
-
 <!-- MANUAL_END:other -->
 
 ---
 
 ## プルリクエストの手順
 
-<!-- MANUAL_START:other -->
+<!-- MANUAL_START:pr -->
 1. **ブランチの作成**
    ```bash
    git checkout -b feature/your-feature-name
@@ -150,22 +176,23 @@ uv sync
 3. **テストの実行**
    ```bash
    
-   # テストコマンドを実行
+   
+   uv run pytest tests/ -v --tb=short
+   
+   npm test
+   
+   go test ./...
+   
    
    ```
 
 4. **プルリクエストの作成**
    - タイトル: `[種類] 簡潔な説明`
    - 説明: 変更内容、テスト結果、関連Issueを記載
-<!-- MANUAL_END:other -->
+<!-- MANUAL_END:pr -->
 
 
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 17:52:03*
-
-
----
-
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 17:52:35*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-25 18:17:49*

@@ -12,9 +12,13 @@ from typing import Any
 
 # プロジェクトルートのパスを取得
 DOCGEN_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = DOCGEN_DIR.parent
+
+# sys.pathにプロジェクトルートを追加（パッケージとして実行する場合）
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # パッケージとしてインストールされた場合は相対インポートを使用
-
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator
 from .language_detector import LanguageDetector
