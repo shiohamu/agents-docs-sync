@@ -56,7 +56,7 @@ class DocgenConfig(BaseModel):
     languages: LanguagesConfig = Field(default_factory=LanguagesConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)
-    agents: "AgentsConfigSection" = Field(default_factory=lambda: AgentsConfigSection())
+    agents: AgentsConfigSection = Field(default_factory=lambda: AgentsConfigSection())
     exclude: ExcludeConfig = Field(default_factory=ExcludeConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
     debug: DebugConfig = Field(default_factory=DebugConfig)
