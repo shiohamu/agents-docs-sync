@@ -286,7 +286,7 @@ def test_generate_markdown_template_mode(temp_project):
     markdown = generator._generate_markdown(project_info)
 
     assert "# AGENTS ドキュメント" in markdown
-    assert "プロジェクト概要" in markdown
+    assert "概要" in markdown
     assert "開発環境のセットアップ" in markdown
 
 

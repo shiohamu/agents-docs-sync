@@ -1,63 +1,74 @@
 # AGENTS ドキュメント
 
-
-<!-- MANUAL_START:description -->
-
-<!-- MANUAL_END:description -->
-
-自動生成日時: 2025-11-26 06:34:02
+自動生成日時: 2025-11-26 13:30:15
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
 ---
 
-## プロジェクト概要
+
+<!-- MANUAL_START:description -->
+
+<!-- MANUAL_END:description -->
 
 
-agents-docs-sync は、コミットごとに自動でテストを実行し、ドキュメント（docgen）を生成して `AGENTS.md` を更新する CI/CD パイプラインです。  
-Python とシェルベースのツールを組み合わせて構築されており、以下のフローが走ります。
+`AGENTS.md` はプロジェクト内のすべての AI エージェントを一元管理し、エンジニアや自動化ツールが最新状態で参照できるようにするためのドキュメントです。  
+このリポジトリでは **コミットごとに**以下の処理をパイプラインで実行して `AGENTS.md` を常に同期させます。
 
-1. **ビルド** – 依存関係は `uv sync` により解決し、`uv build` でパッケージング。  
-2. **テスト実行** – Python 用に `pytest`, Node.js の npm test, Go の go test を同時に走らせます。  
-3. **ドキュメント生成** – `python3 docgen/docgen.py` が API ドキュメントを作成し、最新情報で `AGENTS.md` を更新します。
+- **テスト実行**
+  - Python: `uv run pytest tests/ -v --tb=short`
+  - JavaScript/NPM：`npm test`
+  - Go：`go test ./...`
+- **ドキュメント生成**  
+  `docgen/docgen.py` が各エージェントの YAML 設定 (`agents/*.yaml`) を読み込み、Markdown と HTML の両方を出力します。  
+  ビルド時は以下コマンドで依存関係とビルド環境を整えます。
+  ```bash
+  uv sync          # プロジェクトのPythonパッケージをインストール・同期
+  uv build         # 必要に応じてバイナリやwheel を生成（CI 用）
+  uv run python3 docgen/docgen.py   # ドキュメント作成スクリプト実行
+  ```
+- **AGENTS.md 自動更新**  
+  `docgen` が生成した Markdown ファイルを結合し、既存の `AGENTS.md` を差分だけ書き換えます。これにより手動でファイルを書き直す必要がなくなります。
 
-### 主要依存関係
+### エージェント定義
+- 各エージェントは **YAML** 形式（例：`agents/assistant.yaml`）で以下の情報を保持します。
+  - `name`: エージェント名  
+  - `description`: 機能概要  
+  - `commands`: 実行可能コマンドや API スキーマ
+- ドキュメント生成時に YAML をパースし、コードコメントと照合して矛盾がないか検証します。  
 
-- Python: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
-- コーディング規約は **ruff** を使用し、プロジェクト全体で統一されたスタイルを保ちます。
+### コーディング規約・品質保証
+- **リンター**: `ruff` が Python ソースを静的解析し PEP8 への準拠を確認します。
+- テストカバレッジは `pytest-cov >=4.1.0` を使用して測定。CI パイプラインで最低限のカバー率が確保されていることを保証します。
 
-### 実行手順
-
-```bash
-# 依存関係のインストールとビルド
-uv sync && uv build
-
-# ドキュメント生成（AGENTS.md の更新も含む）
-uv run python3 docgen/docgen.py
-
-# テスト実行 (Python)
-uv run pytest tests/ -v --tb=short
-
-# npm test で JavaScript / TypeScript 用テスト
-npm test
-
-# Go パッケージの単体テスト
-go test ./...
+### CI/CD の流れ
+```
+┌─ Commit ────────► Build │  (uv sync → uv build)
+│                 ▲      │
+│                 │      ▼
+│           Test & Lint   │  (pytest, npm test, go test, ruff)
+│                 │      │
+├────────────────────────┘
+│
+▼
+Generate Docs          ← docgen/docgen.py
+|
+Update AGENTS.md       ← merge generated Markdown into repo root
 ```
 
-### 開発者向けヒント
+この仕組みにより、エージェントに関する情報はコードベースと常に同期し、新しい機能追加や変更が即座にドキュメントへ反映されます。AI エージェントを利用・拡張する際には `AGENTS.md` を参照して最新の仕様を把握してください。
+**使用技術**: python, shell
 
-- **CI/CD**: このリポジトリは GitHub Actions 等に組み込むことで、プッシュ時・PR 時自動化できます。  
-- **ドキュメント更新頻度**: `docgen.py` は変更があった際だけ再生成するよう最適化されているため、大規模プロジェクトでも高速です。  
-- **エージェントの利用**: AGENTS.md が自動で最新情報に保たれるので、AI エージェントは常に正確なインタフェース仕様を参照できます。
+---
 
-この仕組みにより、コードベースとドキュメントが同期し続けるため、開発者や AI アシスタントの作業効率向上につながります。
 ## 開発環境のセットアップ
 
 <!-- MANUAL_START:setup -->
+
+<!-- MANUAL_END:setup -->
 ### 前提条件
 
-- Python 3.12以上
+
 
 
 
@@ -93,7 +104,7 @@ uv sync
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
-<!-- MANUAL_END:setup -->
+
 
 ---
 
@@ -125,6 +136,11 @@ go test ./...
 ## コーディング規約
 
 <!-- MANUAL_START:other -->
+
+<!-- MANUAL_END:other -->
+
+
+
 ### リンター
 
 - **ruff** を使用
@@ -133,13 +149,18 @@ go test ./...
   ruff check .
   ruff format .
   ```
-<!-- MANUAL_END:other -->
+
+
+
+
 
 ---
 
 ## プルリクエストの手順
 
 <!-- MANUAL_START:pr -->
+
+<!-- MANUAL_END:pr -->
 1. **ブランチの作成**
    ```bash
    git checkout -b feature/your-feature-name
@@ -151,24 +172,23 @@ go test ./...
 
 3. **テストの実行**
    ```bash
-
-
+   
+   
    uv run pytest tests/ -v --tb=short
-
+   
    npm test
-
+   
    go test ./...
-
-
+   
+   
    ```
 
 4. **プルリクエストの作成**
    - タイトル: `[種類] 簡潔な説明`
    - 説明: 変更内容、テスト結果、関連Issueを記載
-<!-- MANUAL_END:pr -->
 
 
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-26 06:34:02*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-26 13:30:15*

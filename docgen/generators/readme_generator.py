@@ -154,71 +154,16 @@ class ReadmeGenerator(BaseGenerator):
         return "\n".join(parts) if parts else "- Not detected"
 
     def _format_dependencies(self) -> str:
-        """依存関係をフォーマット"""
-        # 簡易的な依存関係検出
-        dependencies = {}
+        """依存関係をフォーマット（簡略化版）"""
+        parts = []
         if "python" in self.languages:
-            # pyproject.tomlから依存関係を読み取る
-            pyproject_file = self.project_root / "pyproject.toml"
-            if pyproject_file.exists():
-                try:
-                    import tomllib
-
-                    with open(pyproject_file, "rb") as f:
-                        data = tomllib.load(f)
-                        deps = []
-                        if "project" in data and "dependencies" in data["project"]:
-                            deps = data["project"]["dependencies"]
-                        elif (
-                            "tool" in data
-                            and "poetry" in data["tool"]
-                            and "dependencies" in data["tool"]["poetry"]
-                        ):
-                            deps = list(data["tool"]["poetry"]["dependencies"].keys())
-                        if deps:
-                            dependencies["Python"] = deps[:10]  # 最大10個
-                except:
-                    pass
-
-            # requirements.txtも確認
-            req_file = self.project_root / "requirements.txt"
-            if req_file.exists() and "Python" not in dependencies:
-                deps = []
-                content_lines = req_file.read_text(encoding="utf-8").split("\n")
-                for line in content_lines:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        package_name = line.split()[0] if line.split() else line
-                        if package_name:
-                            deps.append(package_name)
-                if deps:
-                    dependencies["Python"] = deps[:10]  # 最大10個
-
+            parts.append("- **Python**: `pyproject.toml` または `requirements.txt` を参照")
         if "javascript" in self.languages or "typescript" in self.languages:
-            package_file = self.project_root / "package.json"
-            if package_file.exists():
-                import json
+            parts.append("- **Node.js**: `package.json` を参照")
+        if "go" in self.languages:
+            parts.append("- **Go**: `go.mod` を参照")
 
-                try:
-                    with open(package_file, encoding="utf-8") as f:
-                        package_data = json.load(f)
-                        deps = []
-                        if "dependencies" in package_data:
-                            deps.extend(list(package_data["dependencies"].keys())[:10])
-                        if deps:
-                            dependencies["Node.js"] = deps
-                except:
-                    pass
-
-        if dependencies:
-            parts = []
-            for dep_type, deps in dependencies.items():
-                parts.append(f"### {dep_type}\n")
-                for dep in deps:
-                    parts.append(f"- {dep}\n")
-                parts.append("\n")
-            return "".join(parts).rstrip()
-        return ""
+        return "\n".join(parts) if parts else "依存関係は検出されませんでした。"
 
     def _format_commands(self, commands) -> str:
         """コマンドリストをフォーマット"""

@@ -1,38 +1,60 @@
 # agents-docs-sync
 
 <!-- MANUAL_START:description -->
+
 <!-- MANUAL_END:description -->
-`agents-docs-sync` は、コードベースに対するコミットごとに自動で以下を実行し、ドキュメントの整合性を保つパイプラインです。  
+本プロジェクトは、リポジトリにコミットがあるたびに自動で以下のタスクを実行するパイプラインです。  
+- **テスト実行**：Python（pytest）、JavaScript (npm test)、Go (`go test`) の各言語環境でユニット・統合テストを走らせます。  
+- **ドキュメント生成**：`docgen/docgen.py` を用いて YAML 形式の設定情報から Markdown ドキュメント（AGENTS.md 等）を再構築します。  
+- **自動更新**：最新のビルド成果物やテストレポートに基づき、AGENTS.md の内容が同期されます。
 
-1. **テスト実行** – Python の `pytest`（カバレッジ・モック付き）、Node.js (`npm test`) 及び Go (`go test ./...`) を順に走らせ、コード品質と機能の正確性を検証します。  
-2. **ドキュメント生成** – `docgen/docgen.py` スクリプトが YAML 設定から API/Agent の仕様書を抽出し、Markdown 形式で自動作成します。これにより最新のコードと同期した docs が常時保持されます。  
-3. **AGENTS.md 更新** – 生成されたドキュメント情報を元に `AGENTS.md` を再構築し、プロジェクト内の主要なエージェント一覧が更新されます。
+## 技術スタック
+| 言語 | 主な用途 |
+|------|----------|
+| Python | テスト実行・docgen スクリプト（`pyyaml`, `pytest`, など） |
+| Shell   | ビルドスクリプトや CI/CD のエントリポイント |
+| JavaScript (npm) | フロントエンド関連テスト |
+| Go      | バックエンドユニットテスト |
 
-### 主な技術スタック
-- **Python (≥3.11)**  
-  - `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` を使用し、テストと YAML パースを担います。  
-- **Shell** – ビルド・実行スクリプトのシェル化でクロス環境対応。  
-- **Node.js / Go** – それぞれ独自に提供されるユニット／インテグレーションテストを走らせます。
+## 主要依存関係
+- `pyyaml>=6.0.3` : YAML パーサ／生成  
+- `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` : Python テスティングフレームワーク  
 
-### 開発フロー
+## ビルド手順
 ```bash
-# 依存パッケージの同期・ビルド
-uv sync
-uv build
-
-# ドキュメント生成（Python スクリプト実行）
-uv run python3 docgen/docgen.py
-
-# テスト実行
-uv run pytest tests/ -v --tb=short   # Python
-npm test                               # Node.js
-go test ./...                          # Go
+# 依存関係の同期・ビルド
+uv sync          # uv を使用したパッケージインストールとロックファイル生成
+uv build         # プロジェクトをビルド（必要に応じてバイナリやアーカイブ作成）
+uv run python3 docgen/docgen.py  # ドキュメントの再生成
 ```
 
-### コーディング規約  
-- **リンター**: `ruff` を採用し、PEP8 への準拠と静的型チェックを自動化。  
+## テスト実行コマンド
+```bash
+# Python のテスト
+uv run pytest tests/ -v --tb=short
 
-このパイプラインにより、コミット時点でテストが通過したコードのみがドキュメントへ反映されるため、常に正確かつ最新の情報を保持できます。また、複数言語環境下でも一貫したビルド・検証プロセスが実現されています。
+# JavaScript / TypeScript のテスト (npm がインストールされている前提)
+npm test
+
+# Go のユニットテスト（全パッケージ）
+go test ./...
+```
+
+## コーディング規約
+- **リンター**: `ruff` を用いてコード品質を統一。  
+  ```bash
+  uv run ruff check .          # 静的解析とフォーマットチェック
+  uv run ruff format .         # 自動整形（必要に応じて）
+  ```
+
+## ワークフロー概要
+
+1. **コミット** → GitHub Actions / CI がトリガー  
+2. 上記ビルド・テストスクリプトが順次実行  
+3. `docgen.py` により最新の設定情報から Markdown ドキュメントを生成し、AGENTS.md を更新  
+4. すべて完了したら成果物（レポートやバイナリ）がアーティファクトとして保存
+
+これにより、コードベースとドキュメントが常に同期される自動化パイプラインが構築されています。
 
 ## 使用技術
 
@@ -41,26 +63,18 @@ go test ./...                          # Go
 
 ## 依存関係
 
-### Python
-- anthropic>=0.74.1
-- httpx>=0.28.1
-- jinja2>=3.1.0
-- openai>=2.8.1
-- outlines>=1.2.8
-- pydantic>=2.0.0
-- pytest>=9.0.1
-- pyyaml>=6.0.3
+- **Python**: `pyproject.toml` または `requirements.txt` を参照
 
 ## セットアップ
 
 
-## Prerequisites
+## 前提条件
 
 - Python 3.12以上
 
 
 
-## Installation
+## インストール
 
 
 ### Python
@@ -103,7 +117,6 @@ uv sync
 
 ## ビルドおよびテスト
 
-
 ### ビルド
 
 ```bash
@@ -111,7 +124,6 @@ uv sync
 uv build
 uv run python3 docgen/docgen.py
 ```
-
 
 ### テスト
 
@@ -123,8 +135,6 @@ go test ./...
 
 
 
-
-
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-26 07:18:52*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-26 13:29:38*

@@ -83,8 +83,8 @@ class AgentsGenerator(BaseGenerator):
         import re
 
         # "## プロジェクト概要" セクションの内容を置き換え
-        # パターン: "## プロジェクト概要" から次のセクション（## で始まる行）の前まで
-        pattern = r"(## プロジェクト概要\s*\n)(.*?)(\n## )"
+        # パターン: マーカーの後から "**使用技術**" の前まで
+        pattern = r"(<!-- MANUAL_START:description -->\s*<!-- MANUAL_END:description -->\s*)(.*?)(\n\*\*使用技術\*\*:)"
         replacement = r"\1\n" + new_overview + r"\3"
 
         updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
@@ -145,6 +145,7 @@ class AgentsGenerator(BaseGenerator):
             "package_managers": self.package_managers,
             "build_commands": self._format_commands(project_info.build_commands or []),
             "test_commands": self._format_commands(project_info.test_commands or []),
+            "raw_test_commands": project_info.test_commands or [],
             "coding_standards": project_info.coding_standards or {},
             "custom_instructions": self._generate_custom_instructions_content(),
         }

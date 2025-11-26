@@ -97,27 +97,6 @@ def safe_read_json(file_path: Path) -> Any | None:
         return None
 
 
-def load_toml_file(file_path: Path) -> dict[str, Any] | None:
-    """
-    TOMLファイルを読み込む
-
-    Args:
-        file_path: 読み込むTOMLファイルのパス
-
-    Returns:
-        読み込んだ辞書。読み込み失敗時はNone
-    """
-    if tomllib is None:
-        return None
-    try:
-        if not file_path.exists():
-            return None
-        with open(file_path, "rb") as f:
-            return tomllib.load(f)
-    except OSError:
-        return None
-
-
 def find_files_with_extensions(root_dir: Path, extensions: list[str]) -> list[Path]:
     """
     指定された拡張子のファイルを検索

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-26 07:18:52
+自動生成日時: 2025-11-26 13:29:38
 
 ---
 
@@ -3466,29 +3466,6 @@ Returns:
 
 ---
 
-### load_toml_file
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def load_toml_file(file_path: Path) -> dict[str, Any] | None:
-```
-
-**説明**:
-
-TOMLファイルを読み込む
-
-Args:
-    file_path: 読み込むTOMLファイルのパス
-
-Returns:
-    読み込んだ辞書。読み込み失敗時はNone
-
-*定義場所: docgen/utils/file_utils.py:100*
-
----
-
 ### find_files_with_extensions
 
 **型**: `function`
@@ -3509,7 +3486,7 @@ Args:
 Returns:
     見つかったファイルのリスト
 
-*定義場所: docgen/utils/file_utils.py:121*
+*定義場所: docgen/utils/file_utils.py:100*
 
 ---
 
@@ -3532,7 +3509,7 @@ Args:
 Returns:
     パースされたYAMLデータ。失敗時はNone
 
-*定義場所: docgen/utils/file_utils.py:138*
+*定義場所: docgen/utils/file_utils.py:117*
 
 ---
 
@@ -3555,80 +3532,12 @@ Args:
 Returns:
     パースされたTOMLデータ。失敗時はNone
 
-*定義場所: docgen/utils/file_utils.py:159*
+*定義場所: docgen/utils/file_utils.py:138*
 
 ---
 
 
 ## docgen/utils/llm_client.py
-
-### LLMClientFactory
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LLMClientFactory:
-```
-
-**説明**:
-
-LLMクライアントのファクトリークラス
-
-*定義場所: docgen/utils/llm_client.py:16*
-
----
-
-### create_client
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def create_client(config: dict[str, Any] | LLMClientConfig, mode: str) -> BaseLLMClient | None:
-```
-
-**説明**:
-
-LLMクライアントを作成
-
-Args:
-    config: LLM設定辞書またはLLMClientConfigオブジェクト
-    mode: 'api' または 'local'
-
-Returns:
-    LLMクライアントインスタンス（エラー時はNone）
-
-*定義場所: docgen/utils/llm_client.py:20*
-
----
-
-### create_client_with_fallback
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def create_client_with_fallback(config: dict[str, Any], preferred_mode: str) -> BaseLLMClient | None:
-```
-
-**説明**:
-
-LLMクライアントを作成（フォールバック付き）
-
-Args:
-    config: LLM設定辞書
-    preferred_mode: 優先するモード（'api' または 'local'）
-
-Returns:
-    LLMクライアントインスタンス（エラー時はNone）
-
-*定義場所: docgen/utils/llm_client.py:79*
-
----
-
-
-## docgen/utils/llm_client_utils.py
 
 ### LLMClientInitializer
 
@@ -3643,7 +3552,7 @@ class LLMClientInitializer:
 
 Common initialization patterns for LLM clients.
 
-*定義場所: docgen/utils/llm_client_utils.py:12*
+*定義場所: docgen/utils/llm_client.py:17*
 
 ---
 
@@ -3667,7 +3576,7 @@ Args:
 Returns:
     Updated configuration dictionary
 
-*定義場所: docgen/utils/llm_client_utils.py:16*
+*定義場所: docgen/utils/llm_client.py:21*
 
 ---
 
@@ -3692,7 +3601,7 @@ Args:
 Returns:
     API key string
 
-*定義場所: docgen/utils/llm_client_utils.py:33*
+*定義場所: docgen/utils/llm_client.py:38*
 
 ---
 
@@ -3723,7 +3632,7 @@ Raises:
     ImportError: If required package is not installed
     ConfigError: If initialization fails
 
-*定義場所: docgen/utils/llm_client_utils.py:50*
+*定義場所: docgen/utils/llm_client.py:55*
 
 ---
 
@@ -3747,7 +3656,7 @@ Args:
 Returns:
     Processed response content or None
 
-*定義場所: docgen/utils/llm_client_utils.py:87*
+*定義場所: docgen/utils/llm_client.py:92*
 
 ---
 
@@ -3771,7 +3680,72 @@ Args:
 Returns:
     Retry wrapper function
 
-*定義場所: docgen/utils/llm_client_utils.py:132*
+*定義場所: docgen/utils/llm_client.py:137*
+
+---
+
+### LLMClientFactory
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMClientFactory:
+```
+
+**説明**:
+
+LLMクライアントのファクトリークラス
+
+*定義場所: docgen/utils/llm_client.py:167*
+
+---
+
+### create_client
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_client(config: dict[str, Any] | LLMClientConfig, mode: str) -> BaseLLMClient | None:
+```
+
+**説明**:
+
+LLMクライアントを作成
+
+Args:
+    config: LLM設定辞書またはLLMClientConfigオブジェクト
+    mode: 'api' または 'local'
+
+Returns:
+    LLMクライアントインスタンス（エラー時はNone）
+
+*定義場所: docgen/utils/llm_client.py:171*
+
+---
+
+### create_client_with_fallback
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_client_with_fallback(config: dict[str, Any], preferred_mode: str) -> BaseLLMClient | None:
+```
+
+**説明**:
+
+LLMクライアントを作成（フォールバック付き）
+
+Args:
+    config: LLM設定辞書
+    preferred_mode: 優先するモード（'api' または 'local'）
+
+Returns:
+    LLMクライアントインスタンス（エラー時はNone）
+
+*定義場所: docgen/utils/llm_client.py:230*
 
 ---
 

@@ -6,7 +6,6 @@
 
 ---
 
-## プロジェクト概要
 
 <!-- MANUAL_START:description -->
 <!-- MANUAL_END:description -->
@@ -178,8 +177,8 @@ go mod download
 
 3. **テストの実行**
    ```bash
-   {% if test_commands %}
-   {% for cmd in test_commands %}
+   {% if raw_test_commands %}
+   {% for cmd in raw_test_commands %}
    {{ cmd }}
    {% endfor %}
    {% else %}

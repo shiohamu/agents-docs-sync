@@ -16,33 +16,35 @@
 
 {{ setup_section }}
 
-{% if usage_section %}
+{% if usage_section -%}
 ## 使用方法
 
 <!-- MANUAL_START:usage -->
 <!-- MANUAL_END:usage -->
 {{ usage_section }}
-{% endif %}
-{% if build_commands or test_commands %}
+{%- endif %}
+
+{% if build_commands or test_commands -%}
 ## ビルドおよびテスト
 
-{% if build_commands %}
+{% if build_commands -%}
 ### ビルド
 
 {{ build_commands }}
-{% endif %}
-{% if test_commands %}
+{%- endif %}
+
+{% if test_commands -%}
 ### テスト
 
 {{ test_commands }}
-{% endif %}
-{% endif %}
+{%- endif %}
+{%- endif %}
 
-{% if other_section %}
+{% if other_section -%}
 <!-- MANUAL_START:other -->
 <!-- MANUAL_END:other -->
 {{ other_section }}
-{% endif %}
+{%- endif %}
 
 ---
 

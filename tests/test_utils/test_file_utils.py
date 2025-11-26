@@ -15,7 +15,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.utils.file_utils import (
     find_files_with_extensions,
-    load_toml_file,
     safe_read_file,
     safe_read_json,
     safe_read_toml,
@@ -161,25 +160,6 @@ number = 42
         with patch("docgen.utils.file_utils.yaml", None):
             result = save_yaml_file(Path("dummy.yaml"), {})
             assert result is False
-
-    def test_load_toml_file_valid(self, temp_project):
-        """有効なTOMLファイルの読み込みテスト"""
-        test_file = temp_project / "data.toml"
-        toml_content = """
-[section]
-key = "value"
-number = 42
-"""
-        test_file.write_text(toml_content)
-
-        result = load_toml_file(test_file)
-        assert isinstance(result, dict)
-
-    def test_load_toml_file_no_tomllib(self):
-        """TOMLライブラリなしの場合のテスト"""
-        with patch("docgen.utils.file_utils.tomllib", None):
-            result = load_toml_file(Path("dummy.toml"))
-            assert result is None
 
     def test_find_files_with_extensions(self, temp_project):
         """拡張子によるファイル検索テスト"""
