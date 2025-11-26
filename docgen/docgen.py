@@ -142,10 +142,28 @@ class CommandLineInterface:
             "action", choices=["enable", "disable"], help="hooksを有効化または無効化"
         )
 
+        # init サブコマンド
+        init_parser = subparsers.add_parser(
+            "init", help="プロジェクトの初期化（必須ファイルを作成）"
+        )
+        init_parser.add_argument("--force", action="store_true", help="既存ファイルを強制上書き")
+
         args = parser.parse_args()
 
         # 実行時のカレントディレクトリをプロジェクトルートとして使用
         project_root = Path.cwd().resolve()
+
+        # init コマンド（DocGen初期化前に処理）
+        if args.command == "init":
+            return self._handle_init(args.force, project_root)
+
+        # DocGenの初期化（config.yamlが必要）
+        # 必須ファイルがない場合は自動初期化
+        if args.command not in ["init"]:
+            auto_init_result = self._check_and_auto_init(project_root)
+            if auto_init_result != 0:
+                return auto_init_result
+
         self.docgen = DocGen(project_root=project_root, config_path=args.config)
 
         # コミットメッセージ生成コマンド
@@ -278,6 +296,140 @@ class CommandLineInterface:
                 return first_line.startswith("#!")
         except FileNotFoundError:
             return False
+
+    def _handle_init(self, force: bool, project_root: Path, quiet: bool = False) -> int:
+        """プロジェクトの初期化処理
+
+        Args:
+            force: 既存ファイルを強制上書き
+            project_root: プロジェクトルート
+            quiet: 詳細メッセージを抑制（自動初期化時に使用）
+
+        Returns:
+            成功時は0、失敗時は1
+        """
+        docgen_dir = project_root / "docgen"
+        config_file = docgen_dir / "config.yaml"
+
+        # 既存ファイルチェック
+        if config_file.exists() and not force:
+            logger.warning(
+                f"設定ファイルが既に存在します: {config_file}\n"
+                "上書きする場合は --force フラグを使用してください。"
+            )
+            return 1
+
+        # docgenディレクトリの作成
+        docgen_dir.mkdir(parents=True, exist_ok=True)
+
+        # パッケージ内のソースディレクトリ（インストールされたパッケージまたは開発モード）
+        package_docgen_dir = DOCGEN_DIR
+
+        try:
+            # 1. config.yaml.sampleをconfig.yamlにコピー
+            source_config = package_docgen_dir / "config.yaml.sample"
+            if source_config.exists():
+                shutil.copy2(source_config, config_file)
+                if not quiet:
+                    logger.info(f"✓ 設定ファイルを作成しました: {config_file}")
+            else:
+                logger.error(f"ソースファイルが見つかりません: {source_config}")
+                return 1
+
+            # 2. templatesディレクトリのコピー
+            self._copy_directory_contents(
+                package_docgen_dir / "templates",
+                docgen_dir / "templates",
+                quiet=quiet,
+                description="テンプレート",
+            )
+
+            # 3. promptsディレクトリのコピー
+            self._copy_directory_contents(
+                package_docgen_dir / "prompts",
+                docgen_dir / "prompts",
+                quiet=quiet,
+                description="プロンプト",
+            )
+
+            # 4. hooksディレクトリのコピー（実行権限付与）
+            hooks_copied = self._copy_directory_contents(
+                package_docgen_dir / "hooks",
+                docgen_dir / "hooks",
+                quiet=quiet,
+                description="Git hooks",
+            )
+
+            # hooksファイルに実行権限を付与
+            if hooks_copied:
+                hooks_dir = docgen_dir / "hooks"
+                for hook_file in hooks_dir.iterdir():
+                    if hook_file.is_file():
+                        hook_file.chmod(0o755)
+
+            if not quiet:
+                logger.info("✓ プロジェクトの初期化が完了しました")
+
+            return 0
+
+        except Exception as e:
+            logger.error(f"初期化中にエラーが発生しました: {e}")
+            return 1
+
+    def _copy_directory_contents(
+        self, source_dir: Path, dest_dir: Path, quiet: bool = False, description: str = "ファイル"
+    ) -> bool:
+        """ディレクトリの内容をコピー
+
+        Args:
+            source_dir: コピー元ディレクトリ
+            dest_dir: コピー先ディレクトリ
+            quiet: 詳細メッセージを抑制
+            description: ログ用の説明文
+
+        Returns:
+            成功時はTrue、失敗時はFalse
+        """
+        if not source_dir.exists():
+            logger.warning(f"ソースディレクトリが見つかりません: {source_dir}")
+            return False
+
+        dest_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            for item in source_dir.iterdir():
+                if item.is_file():
+                    shutil.copy2(item, dest_dir / item.name)
+
+            if not quiet:
+                file_count = len(list(dest_dir.iterdir()))
+                logger.info(f"✓ {description}をコピーしました: {file_count}ファイル")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"{description}のコピー中にエラーが発生しました: {e}")
+            return False
+
+    def _check_and_auto_init(self, project_root: Path) -> int:
+        """必須ファイルがない場合に自動初期化
+
+        Args:
+            project_root: プロジェクトルート
+
+        Returns:
+            成功時は0、失敗時は1
+        """
+        config_path = project_root / "docgen" / "config.yaml"
+
+        if not config_path.exists():
+            logger.info("必須ファイルが見つかりません。初期化を実行します...")
+            result = self._handle_init(force=True, project_root=project_root, quiet=True)
+            if result == 0:
+                logger.info("✓ 初期化が完了しました")
+            return result
+
+        return 0
 
 
 def main():
