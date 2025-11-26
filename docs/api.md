@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-26 13:29:38
+自動生成日時: 2025-11-26 14:13:28
 
 ---
 
@@ -1403,7 +1403,7 @@ class AgentsGenerator:
 
 AGENTS.md生成クラス（OpenAI仕様準拠）
 
-*定義場所: docgen/generators/agents_generator.py:19*
+*定義場所: docgen/generators/agents_generator.py:20*
 
 ---
 
@@ -1426,7 +1426,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/agents_generator.py:22*
+*定義場所: docgen/generators/agents_generator.py:23*
 
 ---
 
@@ -1441,7 +1441,7 @@ def agents_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/agents_generator.py:41*
+*定義場所: docgen/generators/agents_generator.py:42*
 
 ---
 
@@ -1547,7 +1547,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:667*
+*定義場所: docgen/generators/base_generator.py:687*
 
 ---
 
@@ -1567,7 +1567,7 @@ class CommitMessageGenerator:
 
 コミットメッセージ生成クラス
 
-*定義場所: docgen/generators/commit_message_generator.py:15*
+*定義場所: docgen/generators/commit_message_generator.py:16*
 
 ---
 
@@ -1588,7 +1588,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     config: 設定辞書
 
-*定義場所: docgen/generators/commit_message_generator.py:18*
+*定義場所: docgen/generators/commit_message_generator.py:19*
 
 ---
 
@@ -1608,7 +1608,7 @@ def generate(self) -> str | None:
 Returns:
     生成されたコミットメッセージ（エラー時はNone）
 
-*定義場所: docgen/generators/commit_message_generator.py:31*
+*定義場所: docgen/generators/commit_message_generator.py:32*
 
 ---
 
@@ -2167,7 +2167,7 @@ class ReadmeGenerator:
 
 README generation class
 
-*定義場所: docgen/generators/readme_generator.py:14*
+*定義場所: docgen/generators/readme_generator.py:15*
 
 ---
 
@@ -2190,7 +2190,7 @@ Args:
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
 
-*定義場所: docgen/generators/readme_generator.py:17*
+*定義場所: docgen/generators/readme_generator.py:18*
 
 ---
 
@@ -2205,7 +2205,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:43*
+*定義場所: docgen/generators/readme_generator.py:44*
 
 ---
 
@@ -4411,6 +4411,101 @@ Returns:
     構造の行リスト
 
 *定義場所: docgen/utils/project_utils.py:8*
+
+---
+
+
+## docgen/utils/prompt_loader.py
+
+### PromptLoader
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class PromptLoader:
+```
+
+**説明**:
+
+プロンプトをYAMLファイルから読み込むクラス
+
+*定義場所: docgen/utils/prompt_loader.py:14*
+
+---
+
+### load_prompt
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_prompt(cls, file_name: str, key: str) -> str:
+```
+
+**説明**:
+
+プロンプトを読み込む
+
+Args:
+    file_name: YAMLファイル名（例: 'agents_prompts.yaml'）
+    key: プロンプトのキー（例: 'overview', 'full'）
+    **kwargs: テンプレート変数の置換用パラメータ
+
+Returns:
+    読み込んだプロンプト文字列（テンプレート変数が置換済み）
+
+Raises:
+    FileNotFoundError: ファイルが見つからない場合
+    KeyError: 指定されたキーが見つからない場合
+
+*定義場所: docgen/utils/prompt_loader.py:62*
+
+---
+
+### load_system_prompt
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_system_prompt(cls, file_name: str, key: str) -> str:
+```
+
+**説明**:
+
+システムプロンプトを読み込む
+
+Args:
+    file_name: YAMLファイル名（例: 'agents_prompts.yaml'）
+    key: システムプロンプトのキー（例: 'overview', 'generate'）
+    **kwargs: テンプレート変数の置換用パラメータ
+
+Returns:
+    読み込んだシステムプロンプト文字列（テンプレート変数が置換済み）
+
+Raises:
+    FileNotFoundError: ファイルが見つかりません場合
+    KeyError: 指定されたキーが見つからない場合
+
+*定義場所: docgen/utils/prompt_loader.py:97*
+
+---
+
+### clear_cache
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def clear_cache(cls):
+```
+
+**説明**:
+
+キャッシュをクリア（主にテスト用）
+
+*定義場所: docgen/utils/prompt_loader.py:132*
 
 ---
 

@@ -13,6 +13,7 @@ from ..models.project import ProjectInfo
 from ..utils.markdown_utils import (
     get_current_timestamp,
 )
+from ..utils.prompt_loader import PromptLoader
 from .base_generator import BaseGenerator
 
 
@@ -61,19 +62,12 @@ class AgentsGenerator(BaseGenerator):
         概要生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）
         AGENTS.md専用のプロンプトを提供
         """
-        return f"""以下のプロジェクト情報を基に、AGENTS.mdの「概要」セクションの内容を改善してください。
-既存のテンプレート生成内容を参考に、AIエージェントにとって有用な、より詳細な説明を生成してください。
-
-プロジェクト情報:
-{self._format_project_info_for_prompt(project_info)}
-
-既存のテンプレート生成内容:
-{existing_overview}
-
-改善された概要の内容をマークダウン形式で出力してください。
-ヘッダー（## 概要）は含めないでください。内容のみを出力してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-手動セクションのマーカー（<!-- MANUAL_START:... --> など）は含めないでください。内容のみを出力してください。"""
+        return PromptLoader.load_prompt(
+            "agents_prompts.yaml",
+            "overview",
+            project_info=self._format_project_info_for_prompt(project_info),
+            existing_overview=existing_overview,
+        )
 
     def _replace_overview_section(self, content: str, new_overview: str) -> str:
         """
@@ -100,22 +94,11 @@ class AgentsGenerator(BaseGenerator):
         return updated_content
 
     def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
-        prompt = f"""以下のプロジェクト情報を基に、AIコーディングエージェント向けのAGENTS.mdドキュメントを生成してください。
-
-{self._format_project_info_for_prompt(project_info)}
-
-以下のセクションを含めてください:
-1. プロジェクト概要（使用技術を含む）
-2. 開発環境のセットアップ（前提条件、依存関係のインストール、LLM環境のセットアップ）
-3. ビルドおよびテスト手順
-4. コーディング規約
-5. プルリクエストの手順
-
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
-
-        return prompt
+        return PromptLoader.load_prompt(
+            "agents_prompts.yaml",
+            "full",
+            project_info=self._format_project_info_for_prompt(project_info),
+        )
 
     def _generate_template(self, project_info: ProjectInfo) -> str:
         """
@@ -174,25 +157,7 @@ class AgentsGenerator(BaseGenerator):
             return "\n".join(self._generate_custom_instructions_section(custom_instructions))
         return ""
 
-    def _format_commands(self, commands: list[str]) -> str:
-        """
-        コマンドリストをマークダウンのコードブロックとしてフォーマット
-
-        Args:
-            commands: コマンドのリスト
-
-        Returns:
-            フォーマットされたマークダウン文字列
-        """
-        if not commands:
-            return ""
-        parts = ["```bash"]
-        for cmd in commands[:5]:  # 最大5個
-            parts.append(cmd)
-        if len(commands) > 5:
-            parts.append("# ... その他のコマンド")
-        parts.append("```")
-        return "\n".join(parts)
+    # _format_commandsはbase_generatorに移動したため削除
 
     def _convert_structured_data_to_markdown(
         self, data: AgentsDocument, project_info: ProjectInfo

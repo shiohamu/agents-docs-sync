@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-26 13:30:15
+自動生成日時: 2025-11-26 14:14:09
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,51 +12,67 @@
 <!-- MANUAL_END:description -->
 
 
-`AGENTS.md` はプロジェクト内のすべての AI エージェントを一元管理し、エンジニアや自動化ツールが最新状態で参照できるようにするためのドキュメントです。  
-このリポジトリでは **コミットごとに**以下の処理をパイプラインで実行して `AGENTS.md` を常に同期させます。
+agents-docs-sync は、コミットごとに自動でテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新する CI/CD パイプラインです。  
+主なフローは以下の通りです。
 
-- **テスト実行**
-  - Python: `uv run pytest tests/ -v --tb=short`
-  - JavaScript/NPM：`npm test`
-  - Go：`go test ./...`
-- **ドキュメント生成**  
-  `docgen/docgen.py` が各エージェントの YAML 設定 (`agents/*.yaml`) を読み込み、Markdown と HTML の両方を出力します。  
-  ビルド時は以下コマンドで依存関係とビルド環境を整えます。
-  ```bash
-  uv sync          # プロジェクトのPythonパッケージをインストール・同期
-  uv build         # 必要に応じてバイナリやwheel を生成（CI 用）
-  uv run python3 docgen/docgen.py   # ドキュメント作成スクリプト実行
-  ```
-- **AGENTS.md 自動更新**  
-  `docgen` が生成した Markdown ファイルを結合し、既存の `AGENTS.md` を差分だけ書き換えます。これにより手動でファイルを書き直す必要がなくなります。
+1. **依存関係インストール** – Python のパッケージ (`pyyaml`, `pytest`, `pytest‑cov`, `pytest-mock`) と、必要に応じて npm や Go モジュールをインストールします。  
+   ```bash
+   uv sync          # pyproject.toml から依存関係を同期
+   ```
 
-### エージェント定義
-- 各エージェントは **YAML** 形式（例：`agents/assistant.yaml`）で以下の情報を保持します。
-  - `name`: エージェント名  
-  - `description`: 機能概要  
-  - `commands`: 実行可能コマンドや API スキーマ
-- ドキュメント生成時に YAML をパースし、コードコメントと照合して矛盾がないか検証します。  
+2. **ビルド** – プロジェクトのパッケージングやバイナリ生成が必要な場合に実行されます。
+   ```bash
+   uv build         # ビルドアーティファクト作成（例: wheel）
+   ```
 
-### コーディング規約・品質保証
-- **リンター**: `ruff` が Python ソースを静的解析し PEP8 への準拠を確認します。
-- テストカバレッジは `pytest-cov >=4.1.0` を使用して測定。CI パイプラインで最低限のカバー率が確保されていることを保証します。
+3. **テスト実行**  
+   - Python：`pytest tests/ -v --tb=short`
+   - JavaScript / Node.js：`npm test`
+   - Go：`go test ./...`  
+   すべてのテストが成功しなければビルドは失敗します。
 
-### CI/CD の流れ
+4. **ドキュメント生成** – `docgen/docgen.py` がコードベースと YAML 設定から最新の API/機能説明を抽出し、Markdown ドキュメントに変換します。  
+   ```bash
+   uv run python3 docgen/docgen.py
+   ```
+
+5. **AGENTS.md 更新** – 生成されたドキュメント内のエージェント情報（名前・概要・入力/出力フォーマットなど）をパースし、`AGENTS.md` を差分反映します。これにより、コード変更と同時に文書が常に最新状態になります。
+
+6. **静的解析** – コーディング規約は `ruff` によってチェックされます。CI での lint 結果を必ず確認してください。
+   ```bash
+   ruff check .
+   ```
+
+### 開発者向けローカル実行手順
+
+```bash
+# 必要なツールがインストール済みか確認（uv, python3.11+）
+uv sync          # 依存関係を取得
+uv run pytest tests/ -v --tb=short   # Python テスト
+npm test         # Node.js のテスト (必要に応じて)
+go test ./...    # Go モジュールのテスト
+
+# ドキュメントと AGENTS.md を手動で更新したい場合は
+uv run python3 docgen/docgen.py      # Markdown 生成
 ```
-┌─ Commit ────────► Build │  (uv sync → uv build)
-│                 ▲      │
-│                 │      ▼
-│           Test & Lint   │  (pytest, npm test, go test, ruff)
-│                 │      │
-├────────────────────────┘
-│
-▼
-Generate Docs          ← docgen/docgen.py
-|
-Update AGENTS.md       ← merge generated Markdown into repo root
-```
 
-この仕組みにより、エージェントに関する情報はコードベースと常に同期し、新しい機能追加や変更が即座にドキュメントへ反映されます。AI エージェントを利用・拡張する際には `AGENTS.md` を参照して最新の仕様を把握してください。
+### パイプライントリガー
+
+- GitHub Actions / CI サーバ上では `push` または `pull_request` イベント時に自動実行されます。  
+- 成功したビルドとテストの後、コミットがマージされた際に生成されたファイルを含むプッシュが行われるよう設定されています。
+
+### 重要ポイント
+
+| 項目 | 内容 |
+|------|------|
+| **目的** | コード変更時に自動で最適化・ドキュメントの整合性確保 |
+| **主言語** | Python（docgen、テスト） + Shell スクリプト |
+| **依存関係管理** | `uv` を利用した PDM 形式 (pyproject.toml) |
+| **ビルド・実行コマンド** | uv sync → uv build → uv run python3 docgen/docgen.py |
+| **テスト環境** | pytest, npm test, go test の三言語統合 |
+| **Linting** | ruff |
+
+この構成により、エージェントの機能追加や変更が行われるたびに `AGENTS.md` を手動で更新する必要はなくなり、常に最新かつ正確な情報を開発者・利用者へ提供できます。
 **使用技術**: python, shell
 
 ---
@@ -191,4 +207,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-26 13:30:15*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-26 14:14:09*

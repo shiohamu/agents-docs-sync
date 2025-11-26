@@ -10,6 +10,7 @@ from typing import Any
 from ..utils.exceptions import ErrorMessages
 from ..utils.llm_client import LLMClientFactory
 from ..utils.logger import get_logger
+from ..utils.prompt_loader import PromptLoader
 
 
 class CommitMessageGenerator:
@@ -59,10 +60,9 @@ class CommitMessageGenerator:
             prompt = self._create_prompt(staged_changes)
 
             # システムプロンプト
-            system_prompt = """あなたはGitコミットメッセージ作成の専門家です。
-変更内容を分析して、適切なコミットメッセージを生成してください。
-Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs: ドキュメント更新）を推奨しますが、必須ではありません。
-簡潔で明確なメッセージを1行で生成してください。"""
+            system_prompt = PromptLoader.load_system_prompt(
+                "commit_message_prompts.yaml", "generate"
+            )
 
             # LLMで生成
             self.logger.info("LLMを使用してコミットメッセージを生成中...")
@@ -138,13 +138,6 @@ Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs:
         Returns:
             プロンプト文字列
         """
-        prompt = f"""以下のGitの変更内容を分析して、適切なコミットメッセージを生成してください。
-
-変更内容:
-{staged_changes}
-
-上記の変更を要約したコミットメッセージを1行で生成してください。
-Conventional Commits形式（例: feat: 機能追加、fix: バグ修正、docs: ドキュメント更新、refactor: リファクタリング）を推奨します。
-簡潔で明確なメッセージにしてください。"""
-
-        return prompt
+        return PromptLoader.load_prompt(
+            "commit_message_prompts.yaml", "generate", staged_changes=staged_changes
+        )

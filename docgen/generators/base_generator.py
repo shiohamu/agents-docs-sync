@@ -154,6 +154,26 @@ class BaseGenerator(ABC):
         lines.append("")
         return lines
 
+    def _format_commands(self, commands: list[str]) -> str:
+        """
+        コマンドリストをマークダウンのコードブロックとしてフォーマット
+
+        Args:
+            commands: コマンドのリスト
+
+        Returns:
+            フォーマットされたマークダウン文字列
+        """
+        if not commands:
+            return ""
+        parts = ["```bash"]
+        for cmd in commands[:5]:  # 最大5個
+            parts.append(cmd)
+        if len(commands) > 5:
+            parts.append("# ... その他のコマンド")
+        parts.append("```")
+        return "\n".join(parts)
+
     def _extract_manual_sections_from_existing(self) -> dict[str, str]:
         """既存ファイルから手動セクションを抽出"""
         if not self.output_path.exists():

@@ -8,6 +8,7 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..models.readme import ReadmeDocument
+from ..utils.prompt_loader import PromptLoader
 from .base_generator import BaseGenerator
 
 
@@ -78,23 +79,11 @@ class ReadmeGenerator(BaseGenerator):
 
     def _create_readme_prompt(self, project_info: ProjectInfo) -> str:
         """README生成用のLLMプロンプトを作成"""
-        prompt = f"""以下のプロジェクト情報を基に、README.mdドキュメントを生成してください。
-
-{self._format_project_info_for_prompt(project_info)}
-
-以下のセクションを含めてください:
-1. プロジェクト名と概要
-2. セットアップ手順、インストール方法
-3. 使用方法、使用例
-4. コマンドの例
-5. 技術スタック
-6. その他の情報
-
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-マークダウン形式で、構造化された明確なドキュメントを作成してください。
-手動セクション（<!-- MANUAL_START:... --> と <!-- MANUAL_END:... -->）は保持してください。"""
-
-        return prompt
+        return PromptLoader.load_prompt(
+            "readme_prompts.yaml",
+            "full",
+            project_info=self._format_project_info_for_prompt(project_info),
+        )
 
     def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
         """READMEの構造化データをマークダウン形式に変換（未使用）"""
@@ -165,17 +154,7 @@ class ReadmeGenerator(BaseGenerator):
 
         return "\n".join(parts) if parts else "依存関係は検出されませんでした。"
 
-    def _format_commands(self, commands) -> str:
-        """コマンドリストをフォーマット"""
-        if not commands:
-            return ""
-        parts = ["```bash"]
-        for cmd in commands[:5]:  # 最大5個
-            parts.append(cmd)
-        if len(commands) > 5:
-            parts.append("# ... その他のコマンド")
-        parts.append("```")
-        return "\n".join(parts)
+    # _format_commandsはbase_generatorに移動したため削除
 
     def _format_manual_sections_for_prompt(self, manual_sections: dict[str, str]) -> str:
         """
@@ -235,19 +214,12 @@ class ReadmeGenerator(BaseGenerator):
 
     def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
         """README生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）"""
-        return f"""以下のプロジェクト情報を基に、README.mdの「プロジェクト概要」セクションの内容を改善してください。
-既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
-
-プロジェクト情報:
-{self._format_project_info_for_prompt(project_info)}
-
-既存のテンプレート生成内容:
-{existing_overview}
-
-改善されたプロジェクト概要の内容をマークダウン形式で出力してください。
-ヘッダー（## プロジェクト概要）は含めないでください。内容のみを出力してください。
-重要: 最終的な出力のみを生成してください。思考過程、試行錯誤の痕跡、メタ的な説明は一切含めないでください。
-手動セクションのマーカー（<!-- MANUAL_START:... --> など）は含めないでください。内容のみを出力してください。"""
+        return PromptLoader.load_prompt(
+            "readme_prompts.yaml",
+            "overview",
+            project_info=self._format_project_info_for_prompt(project_info),
+            existing_overview=existing_overview,
+        )
 
     def _replace_overview_section(self, content: str, new_overview: str) -> str:
         """
