@@ -5,52 +5,57 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-agents-docs-sync は、リポジトリへのコミットが発生するたびに自動的にテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新します。  
-このプロジェクトは主に Python とシェルスクリプトで構成されており、CI/CD パイプライン内で以下のフローが走ります。
+The **agents-docs-sync** repository implements an automated workflow that keeps the project’s documentation in sync with its source code whenever changes are committed.  
+Key features include:
 
-1. **依存関係同期** – `uv sync` でローカル環境をセットアップ  
-2. **ビルド** – `uv build` によりパッケージ化（wheel 等）  
-3. **文書生成** – `uv run python3 docgen/docgen.py` がプロジェクトの API/CLI ドキュメントを自動で作成し、既存の `AGENTS.md` を差分更新  
+* **Automated testing** – every commit triggers a full test suite covering Python, JavaScript and Go components to guarantee backward‑compatibility across all languages.
+* **Dynamic documentation generation** – after tests pass, `docgen/docgen.py` runs against the repository’s source files (Python modules, YAML agent definitions, etc.) to rebuild API reference pages in Markdown format.  
+  The generated docs are then committed back into the repo as part of the same pipeline run.
+* **AGENTS.md maintenance** – a dedicated script scans all agent configuration files and rewrites `AGENTS.md` with an up‑to‑date table that lists each agent’s name, description, required parameters and status.  
+  This removes manual effort and eliminates stale entries in the documentation.
 
-テストは多言語対応です。Python の単体・統合テスト (`pytest`) に加え、Node.js と Go でもそれぞれのユニットテストが実行されます。
+## Development environment
 
-| コマンド | 概要 |
-|---|---|
-| `uv sync` | uv を使った依存関係インストール（pyyaml, pytest 系など） |
-| `uv build` | ビルドアーティファクトを生成 |
-| `uv run python3 docgen/docgen.py` | ドキュメント生成スクリプト実行 |
-| `uv run pytest tests/ -v --tb=short` | Python テストの高速走査 |
-| `npm test` | Node.js プロジェクトテスト（必要に応じて） |
-| `go test ./...` | Go モジュール全体を対象としたテスト |
+The project is written primarily in **Python** (≥ 3.12) with supporting shell scripts for orchestration:
 
-### 主要依存パッケージ
+```bash
+# Install dependencies via uv
+uv sync          # resolves pyproject.toml, installs pyyaml, pytest, etc.
+```
 
-- **pyyaml** ≥6.0.3 – YAML ファイルの読み書き  
-- **pytest** ≥7.4.0, **pytest-cov** ≥4.1.0, **pytest-mock** ≥3.11.1 – テストフレームワークとカバレッジ、モックサポート  
+### Build process
 
-### コーディング規約
+1. `uv build` – builds a distributable wheel of the package.  
+2. `uv run python3 docgen/docgen.py` – regenerates all Markdown documentation and updates `AGENTS.md`.
 
-- リンター: `ruff` を使用し、一貫したコード品質を保ちます。  
-  - フォーマットや静的解析は CI の段階で自動チェックされるよう設定済みです。
+The resulting artifacts are committed automatically by the CI pipeline.
+
+## Testing strategy
+
+Tests cover three language ecosystems:
+
+| Language | Test command |
+|----------|--------------|
+| Python   | `uv run pytest tests/ -v --tb=short` (with coverage & mocks) |
+| JavaScript | `npm test` – runs Jest or Mocha suites defined in the repo’s package.json |
+| Go       | `go test ./...` – executes all unit and integration tests across modules |
+
+All tests are executed sequentially on each push, ensuring that any change does not break existing functionality.
+
+## Coding standards
+
+The repository enforces a strict linting policy using **ruff**:
+
+```bash
+# Run the linter before committing changes
+uv run ruff check .
+```
+
+This guarantees consistent formatting and helps catch common Python errors early in development.
 
 ---
 
-#### 使用例（ローカル開発時）
-
-```bash
-# 環境構築・ビルド
-uv sync && uv build
-
-# ドキュメント生成と AGENTS.md 更新
-uv run python3 docgen/docgen.py
-
-# テスト実行
-uv run pytest tests/ -v --tb=short
-npm test          # Node.js が必要な場合
-go test ./...     # Go モジュールがある場合
-```
-
-このワークフローを CI の `push` や `pull request` 時に組み込むことで、常に最新のドキュメントと正確なテスト結果を保つことができます。
+By integrating testing, documentation generation and agent list maintenance into a single CI pipeline, `agents-docs-sync` eliminates manual updates, reduces human error, and ensures that both developers and end‑users always see accurate, up‑to‑date information about every available agent.
 
 ## 使用技術
 
@@ -133,4 +138,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-27 21:57:27*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-27 23:23:51*

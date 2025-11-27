@@ -50,6 +50,55 @@ class DebugConfig(BaseModel):
     enabled: bool = False
 
 
+class EmbeddingConfig(BaseModel):
+    """Embedding configuration model."""
+
+    model: str = "all-MiniLM-L6-v2"
+    device: str = "cpu"
+
+
+class IndexConfig(BaseModel):
+    """Index configuration model."""
+
+    type: str = "hnswlib"
+    ef_construction: int = 200
+    M: int = 16
+
+
+class RetrievalConfig(BaseModel):
+    """Retrieval configuration model."""
+
+    top_k: int = 6
+    score_threshold: float = 0.3
+
+
+class ChunkingConfig(BaseModel):
+    """Chunking configuration model."""
+
+    max_chunk_size: int = 512
+    overlap: int = 50
+
+
+class RagConfig(BaseModel):
+    """RAG configuration model."""
+
+    enabled: bool = True
+    auto_build_index: bool = False
+    embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
+    index: IndexConfig = Field(default_factory=IndexConfig)
+    retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
+    chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: [
+            r".*\.env$",
+            r"secrets/.*",
+            r".*_SECRET.*",
+            r".*API_KEY.*",
+        ]
+    )
+    exclude_files: list[str] = Field(default_factory=lambda: ["README.md", "AGENTS.md"])
+
+
 class DocgenConfig(BaseModel):
     """Main configuration model for docgen."""
 
@@ -60,3 +109,4 @@ class DocgenConfig(BaseModel):
     exclude: ExcludeConfig = Field(default_factory=ExcludeConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
     debug: DebugConfig = Field(default_factory=DebugConfig)
+    rag: RagConfig = Field(default_factory=RagConfig)

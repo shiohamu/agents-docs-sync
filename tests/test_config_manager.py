@@ -80,6 +80,21 @@ class TestConfigManager:
             "debug": {
                 "enabled": False,
             },
+            "rag": {
+                "enabled": True,
+                "auto_build_index": False,
+                "embedding": {"model": "all-MiniLM-L6-v2", "device": "cpu"},
+                "index": {"type": "hnswlib", "ef_construction": 200, "M": 16},
+                "retrieval": {"top_k": 6, "score_threshold": 0.3},
+                "chunking": {"max_chunk_size": 512, "overlap": 50},
+                "exclude_patterns": [
+                    r".*\.env$",
+                    r"secrets/.*",
+                    r".*_SECRET.*",
+                    r".*API_KEY.*",
+                ],
+                "exclude_files": ["README.md", "AGENTS.md"],
+            },
         }
         mock_safe_read_yaml.return_value = test_config
 
@@ -246,6 +261,21 @@ class TestConfigManager:
             },
             "debug": {
                 "enabled": False,
+            },
+            "rag": {
+                "enabled": True,
+                "auto_build_index": False,
+                "embedding": {"model": "all-MiniLM-L6-v2", "device": "cpu"},
+                "index": {"type": "hnswlib", "ef_construction": 200, "M": 16},
+                "retrieval": {"top_k": 6, "score_threshold": 0.3},
+                "chunking": {"max_chunk_size": 512, "overlap": 50},
+                "exclude_patterns": [
+                    r".*\.env$",
+                    r"secrets/.*",
+                    r".*_SECRET.*",
+                    r".*API_KEY.*",
+                ],
+                "exclude_files": ["README.md", "AGENTS.md"],
             },
         }
         with patch.object(ConfigManager, "_load_config", return_value=test_config):

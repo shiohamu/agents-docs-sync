@@ -121,6 +121,11 @@ rag:
   # CLIフラグ --use-rag でも有効化可能
   enabled: true
 
+  # APIドキュメント生成後にベクトルDBを自動生成するかどうか（デフォルト: true）
+  # trueに設定すると、agents_docs_syncコマンド実行時にapi.md生成後、
+  # 自動的にベクトルインデックスを構築します
+  auto_build_index: true
+
   # 埋め込みモデル設定
   embedding:
     # 使用する埋め込みモデル（sentence-transformersモデル名）

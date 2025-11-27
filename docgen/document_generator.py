@@ -47,11 +47,17 @@ class DocumentGenerator:
             return False
 
         success = True
+        api_doc_generated = False
         generators_to_run = []
 
         # 実行するジェネレーターを決定
         if self.config.get("generation", {}).get("generate_api_doc", True):
             generators_to_run.append(("api", "APIドキュメント"))
+            # APIドキュメント生成後にRAGインデックス構築を追加
+            rag_config = self.config.get("rag", {})
+            if rag_config.get("auto_build_index", False):
+                generators_to_run.append(("rag", "RAGインデックス"))
+
         if self.config.get("generation", {}).get("update_readme", True):
             generators_to_run.append(("readme", "README"))
         if self.config.get("generation", {}).get("generate_agents_doc", True):
@@ -60,6 +66,23 @@ class DocumentGenerator:
         # 各ジェネレーターを実行
         for gen_type, gen_name in generators_to_run:
             logger.info(f"[{gen_name}生成]")
+            if gen_type == "rag":
+                # RAGインデックス構築は特殊処理
+                try:
+                    if self._build_vector_index():
+                        logger.info("✓ RAGインデックスを構築しました")
+                    else:
+                        logger.warning("⚠ RAGインデックスの構築をスキップしました")
+                except Exception as e:
+                    logger.error(
+                        f"✗ RAGインデックスの構築中にエラーが発生しました: {e}", exc_info=True
+                    )
+                    # ベクトルDB生成の失敗は全体の失敗にはしない
+                    logger.warning(
+                        "RAGインデックスの構築に失敗しましたが、ドキュメント生成は成功しました"
+                    )
+                continue
+
             try:
                 generator = GeneratorFactory.create_generator(
                     gen_type,
@@ -78,3 +101,70 @@ class DocumentGenerator:
                 success = False
 
         return success
+
+    def _build_vector_index(self) -> bool:
+        """
+        ベクトルインデックスを構築
+
+        Returns:
+            成功したかどうか
+        """
+        try:
+            from .rag.chunker import CodeChunker
+            from .rag.embedder import Embedder
+            from .rag.indexer import VectorIndexer
+        except ImportError as e:
+            logger.warning(
+                f"RAGモジュールのインポートに失敗しました: {e}\n"
+                "RAG依存関係をインストールしてください: uv sync --extra rag"
+            )
+            return False
+
+        # RAG設定を取得
+        rag_config = self.config.get("rag", {})
+
+        # 1. コードベースをチャンク化
+        logger.info("Step 1/3: コードベースをチャンク化中...")
+        chunker = CodeChunker(rag_config)
+        chunks = chunker.chunk_codebase(self.project_root)
+
+        if not chunks:
+            logger.warning("チャンクが見つかりませんでした")
+            return False
+
+        logger.info(f"✓ {len(chunks)} 個のチャンクを作成しました")
+
+        # 2. 埋め込み生成
+        logger.info("Step 2/3: 埋め込みを生成中...")
+        embedder = Embedder(rag_config)
+
+        # チャンクのテキストを抽出
+        texts = [chunk["text"] for chunk in chunks]
+
+        # バッチ処理で埋め込み生成
+        embeddings = embedder.embed_batch(texts, batch_size=32)
+
+        logger.info(f"✓ {len(embeddings)} 個の埋め込みを生成しました")
+
+        # 3. インデックス構築
+        logger.info("Step 3/3: インデックスを構築中...")
+        index_dir = self.project_root / "docgen" / "index"
+        indexer = VectorIndexer(
+            index_dir=index_dir,
+            embedding_dim=embedder.embedding_dim,
+            config=rag_config,
+        )
+
+        # インデックス構築
+        indexer.build(embeddings, chunks)
+
+        # 保存
+        indexer.save()
+
+        logger.info(f"✓ インデックスを保存しました: {index_dir}")
+        logger.info("=" * 60)
+        logger.info(f"インデックスディレクトリ: {index_dir}")
+        logger.info(f"チャンク数: {len(chunks)}")
+        logger.info(f"埋め込み次元: {embedder.embedding_dim}")
+
+        return True
