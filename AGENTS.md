@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-27 09:52:59
+自動生成日時: 2025-11-27 09:55:30
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,59 +12,28 @@
 <!-- MANUAL_END:description -->
 
 
-This repository implements an automated pipeline that keeps the **AGENTS.md** file in sync with the rest of your project whenever you push a commit.  
-The workflow is deliberately lightweight so it can be run locally or integrated into any CI/CD system without modification.
+本プロジェクトは、AI エージェントのドキュメントを常に最新状態に保つことを目的とした CI/CD パイプラインです。  
+コミットが行われるたびに自動で以下の処理が実施されます。
 
-- **Trigger** – Each `git push` (or manual invocation) starts the sequence.
-  - The pipeline first runs unit tests across all supported languages (`python`, `nodejs`, and `go`) to guarantee that new changes do not break existing functionality.
-  - If all tests pass, it proceeds to generate fresh documentation from source files using a custom Python script located at **docgen/docgen.py**.  
-    The generated output is placed in the repository’s docs directory and merged into AGENTS.md via templated placeholders.
+1. **環境構築** – `uv sync` で Python の依存関係（pyyaml, pytest 系など）をインストールし、必要ならシェルスクリプトやその他言語用ツールもセットアップします。  
+2. **ビルドと検証** – `uv build` によってプロジェクトのビルドアーティファクトが生成され、その後に `uv run python3 docgen/docgen.py` を実行して最新のドキュメントを作成します。  
+   - ドキュメントは YAML で記述されたエージェント定義から自動抽出し、Markdown フォーマットへ変換されます。  
+3. **テスト** – `uv run pytest tests/`（Python）、`npm test`（Node.js）および `go test ./...`（Go）の各言語に対して単体・統合テストを実行し、品質保証を行います。  
+4. **AGENTS.md の更新** – 生成されたドキュメント内容が AGENTS.md に反映されるようスクリプトで差分を書き込みます。これにより手動編集の必要はなくなります。
 
-- **Key commands**
-  ```bash
-  # Resolve dependencies with uv (the modern replacement for pip/poetry)
-  uv sync
+### 主な技術スタック
+- **Python / Shell**  
+  - `pyyaml>=6.0.3`：YAML パーサー（エージェント定義読み取り用）  
+  - `pytest`, `pytest-cov`, `pytest-mock`：テスト実行・カバレッジ測定・モック作成
+- **CI ツール** – GitHub Actions 等で自動化。  
+- **Linting / コーディング規約** – `ruff` を使用し、一貫したコード品質を保ちます。
 
-  # Build any compiled artifacts required by tests or doc generation
-  uv build
+### 期待される効果
+- ドキュメントの手作業更新が不要になり、エージェント仕様変更時に即座に反映。  
+- CI パイプラインでテスト失敗やビルド不具合を早期検知し、品質低下リスクを最小化。  
+- 複数言語（Python, Node.js, Go）プロジェクトでも一元管理が可能。
 
-  # Generate documentation & update the agents manifest
-  uv run python3 docgen/docgen.py
-  ```
-
-- **Testing** – The pipeline runs three distinct test suites to cover all languages:
-  ```bash
-  uv run pytest tests/ -v --tb=short          # Python unit tests (pytest, coverage)
-  npm test                                   # JavaScript / Node.js tests
-  go test ./...                               # Go language tests
-  ```
-  All failures abort the pipeline; only when every suite passes does the documentation step execute.
-
-- **Dependencies**
-  *Python*:  
-    - `pyyaml>=6.0.3` – YAML parsing for configuration files and metadata extraction.  
-    - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` – Robust testing utilities with coverage reporting.  
-
-  *Other tooling* – The repository also contains a minimal Node.js test harness (`npm test`) and Go tests; these require the corresponding runtime environments but no external Python packages.
-
-- **Coding style**  
-  All source files are linted by `ruff`, ensuring consistent formatting, unused import detection, and other static checks. Running:
-  ```bash
-  uv run ruff check .
-  ```
-  will surface any violations before committing changes.
-
-- **Output format – AGENTS.md**  
-  The generated file follows a strict Markdown schema that AI agents can parse unambiguously: each agent section contains an `id`, `description`, and a list of supported actions. A minimal example:
-  The script guarantees that every agent documented in code is represented, and any removed agents are pruned automatically.
-
-- **Extensibility**  
-  To add support for another language or new documentation format:
-  1. Extend the `docgen/docgen.py` parser to discover entities.
-  2. Update the test suite accordingly.
-  3. Add a corresponding build/test command in the pipeline section above.
-
-By keeping AGENTS.md up‑to‑date automatically, this project removes manual bookkeeping from developers and provides AI agents with an accurate, machine‑readable knowledge base of all available capabilities at any point in time.
+このパイプラインにより、AI エージェント開発チームはコードとドキュメントの整合性を保ちながら高速なリリースサイクルを実現できます。
 **使用技術**: python, shell
 
 ---
@@ -76,7 +45,7 @@ By keeping AGENTS.md up‑to‑date automatically, this project removes manual b
 <!-- MANUAL_END:setup -->
 ### 前提条件
 
-
+- Python 3.12以上
 
 
 
@@ -199,4 +168,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-27 09:52:59*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-27 09:55:30*
