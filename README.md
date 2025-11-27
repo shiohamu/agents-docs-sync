@@ -5,57 +5,16 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-The **agents-docs-sync** repository implements an automated workflow that keeps the project’s documentation in sync with its source code whenever changes are committed.  
-Key features include:
+agents-docs-sync は、コミットごとに自動でテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新するパイプラインです。  
+Python 3 とシェルスクリプトを組み合わせて構築され、以下のような特徴があります。
 
-* **Automated testing** – every commit triggers a full test suite covering Python, JavaScript and Go components to guarantee backward‑compatibility across all languages.
-* **Dynamic documentation generation** – after tests pass, `docgen/docgen.py` runs against the repository’s source files (Python modules, YAML agent definitions, etc.) to rebuild API reference pages in Markdown format.  
-  The generated docs are then committed back into the repo as part of the same pipeline run.
-* **AGENTS.md maintenance** – a dedicated script scans all agent configuration files and rewrites `AGENTS.md` with an up‑to‑date table that lists each agent’s name, description, required parameters and status.  
-  This removes manual effort and eliminates stale entries in the documentation.
+- **ビルドフロー** – `uv sync`, `uv build`, および `uv run python3 docgen/docgen.py` により依存関係の同期・パッケージ化とドキュメント生成を実行します。  
+- **テスト環境** – Python 版は Pytest（+pytest‑cov, pytest‑mock）で、Node.js と Go のユニットテストも同時に走らせます (`npm test`, `go test ./...`)。  
+- **ドキュメント生成** – YAML ベースの定義から API ドキュメントを自動的に作成し、その結果をプロジェクトルートの `AGENTS.md` に反映します。  
+- **依存関係管理** – Python は `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` を使用し、これらは `uv.lock` で固定化されます。  
+- **コーディング規約** – コード品質を保つために Ruff ライナーが導入されています（`ruff check . --fix` が推奨）。  
 
-## Development environment
-
-The project is written primarily in **Python** (≥ 3.12) with supporting shell scripts for orchestration:
-
-```bash
-# Install dependencies via uv
-uv sync          # resolves pyproject.toml, installs pyyaml, pytest, etc.
-```
-
-### Build process
-
-1. `uv build` – builds a distributable wheel of the package.  
-2. `uv run python3 docgen/docgen.py` – regenerates all Markdown documentation and updates `AGENTS.md`.
-
-The resulting artifacts are committed automatically by the CI pipeline.
-
-## Testing strategy
-
-Tests cover three language ecosystems:
-
-| Language | Test command |
-|----------|--------------|
-| Python   | `uv run pytest tests/ -v --tb=short` (with coverage & mocks) |
-| JavaScript | `npm test` – runs Jest or Mocha suites defined in the repo’s package.json |
-| Go       | `go test ./...` – executes all unit and integration tests across modules |
-
-All tests are executed sequentially on each push, ensuring that any change does not break existing functionality.
-
-## Coding standards
-
-The repository enforces a strict linting policy using **ruff**:
-
-```bash
-# Run the linter before committing changes
-uv run ruff check .
-```
-
-This guarantees consistent formatting and helps catch common Python errors early in development.
-
----
-
-By integrating testing, documentation generation and agent list maintenance into a single CI pipeline, `agents-docs-sync` eliminates manual updates, reduces human error, and ensures that both developers and end‑users always see accurate, up‑to‑date information about every available agent.
+このセットアップにより、コードベースとドキュメントの整合性を手動で管理する負担を大幅に軽減し、一貫した品質保証プロセスを実現します。
 
 ## 使用技術
 
@@ -138,4 +97,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-27 23:23:51*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-27 23:33:57*

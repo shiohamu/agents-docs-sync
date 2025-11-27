@@ -47,7 +47,6 @@ class DocumentGenerator:
             return False
 
         success = True
-        api_doc_generated = False
         generators_to_run = []
 
         # 実行するジェネレーターを決定

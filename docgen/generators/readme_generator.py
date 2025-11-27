@@ -74,16 +74,24 @@ class ReadmeGenerator(BaseGenerator):
     def _get_structured_model(self):
         return ReadmeDocument
 
-    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
-        return self._create_readme_prompt(project_info)
+    def _create_llm_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
+        return self._create_readme_prompt(project_info, rag_context)
 
-    def _create_readme_prompt(self, project_info: ProjectInfo) -> str:
+    def _create_readme_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
         """README生成用のLLMプロンプトを作成"""
-        return PromptLoader.load_prompt(
-            "readme_prompts.yaml",
-            "full",
-            project_info=self._format_project_info_for_prompt(project_info),
-        )
+        if rag_context:
+            return PromptLoader.load_prompt(
+                "readme_prompts.yaml",
+                "full_with_rag",
+                project_info=self._format_project_info_for_prompt(project_info),
+                rag_context=rag_context,
+            )
+        else:
+            return PromptLoader.load_prompt(
+                "readme_prompts.yaml",
+                "full",
+                project_info=self._format_project_info_for_prompt(project_info),
+            )
 
     def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
         """READMEの構造化データをマークダウン形式に変換（未使用）"""
@@ -212,13 +220,16 @@ class ReadmeGenerator(BaseGenerator):
         # Jinja2テンプレートでレンダリング
         return self._render_template("readme_template.md.j2", context)
 
-    def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
+    def _create_overview_prompt(
+        self, project_info: ProjectInfo, existing_overview: str, rag_context: str = ""
+    ) -> str:
         """README生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）"""
         return PromptLoader.load_prompt(
             "readme_prompts.yaml",
             "overview",
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,
+            rag_context=rag_context,
         )
 
     def _replace_overview_section(self, content: str, new_overview: str) -> str:

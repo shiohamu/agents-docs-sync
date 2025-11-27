@@ -57,7 +57,9 @@ class AgentsGenerator(BaseGenerator):
     def _get_project_overview_section(self, content: str) -> str:
         return self._extract_description_section(content)
 
-    def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
+    def _create_overview_prompt(
+        self, project_info: ProjectInfo, existing_overview: str, rag_context: str = ""
+    ) -> str:
         """
         概要生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）
         AGENTS.md専用のプロンプトを提供
@@ -67,6 +69,7 @@ class AgentsGenerator(BaseGenerator):
             "overview",
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,
+            rag_context=rag_context,
         )
 
     def _replace_overview_section(self, content: str, new_overview: str) -> str:
@@ -93,12 +96,20 @@ class AgentsGenerator(BaseGenerator):
 
         return updated_content
 
-    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
-        return PromptLoader.load_prompt(
-            "agents_prompts.yaml",
-            "full",
-            project_info=self._format_project_info_for_prompt(project_info),
-        )
+    def _create_llm_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
+        if rag_context:
+            return PromptLoader.load_prompt(
+                "agents_prompts.yaml",
+                "full_with_rag",
+                project_info=self._format_project_info_for_prompt(project_info),
+                rag_context=rag_context,
+            )
+        else:
+            return PromptLoader.load_prompt(
+                "agents_prompts.yaml",
+                "full",
+                project_info=self._format_project_info_for_prompt(project_info),
+            )
 
     def _generate_template(self, project_info: ProjectInfo) -> str:
         """

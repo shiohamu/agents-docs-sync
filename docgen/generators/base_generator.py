@@ -124,7 +124,7 @@ class BaseGenerator(ABC):
         pass
 
     @abstractmethod
-    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
+    def _create_llm_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
         """LLM用のプロンプトを作成（サブクラスで実装）"""
         pass
 
@@ -478,8 +478,15 @@ class BaseGenerator(ABC):
                 )
                 return self._generate_template(project_info)
 
+            # RAGコンテキストを取得
+            rag_context = ""
+            if self.config.get("rag", {}).get("enabled", False):
+                # ドキュメント全体生成のためのクエリ
+                query = f"full documentation context for {self.project_root.name}"
+                rag_context = self._get_rag_context(query)
+
             # プロンプトを作成
-            prompt = self._create_llm_prompt(project_info)
+            prompt = self._create_llm_prompt(project_info, rag_context=rag_context)
 
             # 構造化出力モデルで生成
             self.logger.info("Outlinesを使用して構造化されたドキュメントを生成中...")
@@ -594,7 +601,16 @@ class BaseGenerator(ABC):
                 )
                 return None
 
-            prompt = self._create_overview_prompt(project_info, existing_overview)
+            # RAGコンテキストを取得
+            rag_context = ""
+            if self.config.get("rag", {}).get("enabled", False):
+                # 概要生成のためのクエリ
+                query = f"project overview architecture summary for {self.project_root.name}"
+                rag_context = self._get_rag_context(query)
+
+            prompt = self._create_overview_prompt(
+                project_info, existing_overview, rag_context=rag_context
+            )
 
             system_prompt = """あなたは技術ドキュメント作成の専門家です。プロジェクト概要を明確で有用な形で記述してください。
 最終的な出力のみを生成し、思考過程や試行錯誤の痕跡を含めないでください。"""
@@ -623,19 +639,26 @@ class BaseGenerator(ABC):
             )
             return None
 
-    def _create_overview_prompt(self, project_info: ProjectInfo, existing_overview: str) -> str:
+    def _create_overview_prompt(
+        self, project_info: ProjectInfo, existing_overview: str, rag_context: str = ""
+    ) -> str:
         """
         プロジェクト概要生成用のプロンプトを作成（サブクラスでオーバーライド可能）
 
         Args:
             project_info: プロジェクト情報
             existing_overview: 既存の概要（テンプレート生成結果）
+            rag_context: RAGコンテキスト（オプション）
 
         Returns:
             プロンプト文字列
         """
+        context_str = ""
+        if rag_context:
+            context_str = f"\n\n参考ソースコード情報:\n{rag_context}"
+
         return f"""以下のプロジェクト情報を基に、{self._get_document_type()}の「プロジェクト概要」セクションの内容を改善してください。
-既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。
+既存のテンプレート生成内容を参考に、より詳細で有用な説明を生成してください。{context_str}
 
 プロジェクト情報:
 {self._format_project_info_for_prompt(project_info)}
