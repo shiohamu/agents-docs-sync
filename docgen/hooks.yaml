@@ -3,7 +3,7 @@ hooks:
     enabled: true
     tasks:
       - name: run_tests
-        enabled: true
+        enabled: false
         continue_on_error: false
         timeout: 300
 

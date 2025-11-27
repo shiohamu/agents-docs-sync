@@ -76,13 +76,13 @@ test = [
 default = [
     {include-group = "docgen"},
     {include-group = "test"},
+    {include-group = "rag"},
 ]
 
 # 開発ツール用の依存関係
 dev = [
     "ruff>=0.6.0",
     {include-group = "default"},
-    {include-group = "rag"},
 ]
 
 [tool.hatch.build.targets.wheel]

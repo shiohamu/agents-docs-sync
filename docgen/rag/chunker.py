@@ -43,6 +43,9 @@ class CodeChunker:
         custom_patterns = self.config.get("exclude_patterns", [])
         self.exclude_patterns = self.DEFAULT_EXCLUDE_PATTERNS + custom_patterns
 
+        # 除外ファイル名リスト
+        self.exclude_files = self.config.get("exclude_files", ["README.md", "AGENTS.md"])
+
     def should_process_file(self, file_path: Path) -> bool:
         """
         ファイルを処理すべきかどうかを判定
@@ -59,6 +62,10 @@ class CodeChunker:
         for pattern in self.exclude_patterns:
             if re.search(pattern, str_path):
                 return False
+
+        # 除外ファイル名のチェック
+        if file_path.name in self.exclude_files:
+            return False
 
         # バイナリファイルやテストファイルは除外
         excluded_suffixes = {".pyc", ".pyo", ".so", ".dylib", ".whl", ".egg"}
@@ -103,10 +110,6 @@ class CodeChunker:
         ):
             return False
         if "tests" in path_parts:
-            return False
-
-        # 生成されたドキュメントを除外
-        if file_path.name in {"API.md", "AGENTS.md"}:
             return False
 
         return True

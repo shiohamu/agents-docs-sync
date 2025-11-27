@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-27 13:24:10
+自動生成日時: 2025-11-27 13:40:54
 
 ---
 
@@ -3446,7 +3446,7 @@ Args:
 Returns:
     処理すべき場合True
 
-*定義場所: docgen/rag/chunker.py:46*
+*定義場所: docgen/rag/chunker.py:49*
 
 ---
 
@@ -3470,7 +3470,7 @@ Args:
 Returns:
     チャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:114*
+*定義場所: docgen/rag/chunker.py:117*
 
 ---
 
@@ -3493,7 +3493,7 @@ Args:
 Returns:
     すべてのチャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:362*
+*定義場所: docgen/rag/chunker.py:365*
 
 ---
 

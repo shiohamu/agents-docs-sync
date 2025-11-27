@@ -19,10 +19,13 @@ dependencies = [
 
 [package.dev-dependencies]
 default = [
+    { name = "hnswlib" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pyyaml" },
+    { name = "sentence-transformers" },
+    { name = "torch" },
 ]
 dev = [
     { name = "hnswlib" },
@@ -62,10 +65,13 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 default = [
+    { name = "hnswlib", specifier = ">=0.7.0" },
     { name = "pytest", specifier = ">=7.4.0" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.11.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "sentence-transformers", specifier = ">=2.2.0" },
+    { name = "torch", specifier = ">=2.0.0" },
 ]
 dev = [
     { name = "hnswlib", specifier = ">=0.7.0" },
