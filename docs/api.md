@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-26 15:00:48
+自動生成日時: 2025-11-27 09:52:13
 
 ---
 
@@ -1266,7 +1266,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:435*
+*定義場所: docgen/docgen.py:534*
 
 ---
 
@@ -1547,7 +1547,7 @@ def generate(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/generators/base_generator.py:687*
+*定義場所: docgen/generators/base_generator.py:737*
 
 ---
 
@@ -2817,6 +2817,656 @@ class ReadmeDocument:
 READMEドキュメントの構造化データモデル
 
 *定義場所: docgen/models/readme.py:37*
+
+---
+
+
+## docgen/rag/chunker.py
+
+### CodeChunker
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CodeChunker:
+```
+
+**説明**:
+
+コードベースをチャンク化するクラス
+
+*定義場所: docgen/rag/chunker.py:18*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    config: RAG設定（config.yaml の rag セクション）
+
+*定義場所: docgen/rag/chunker.py:31*
+
+---
+
+### should_process_file
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def should_process_file(self, file_path: Path) -> bool:
+```
+
+**説明**:
+
+ファイルを処理すべきかどうかを判定
+
+Args:
+    file_path: ファイルパス
+
+Returns:
+    処理すべき場合True
+
+*定義場所: docgen/rag/chunker.py:46*
+
+---
+
+### chunk_file
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def chunk_file(self, file_path: Path, project_root: Path) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+ファイルをチャンク化
+
+Args:
+    file_path: ファイルパス
+    project_root: プロジェクトルート
+
+Returns:
+    チャンクのリスト
+
+*定義場所: docgen/rag/chunker.py:110*
+
+---
+
+### chunk_codebase
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def chunk_codebase(self, project_root: Path) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+プロジェクト全体をチャンク化
+
+Args:
+    project_root: プロジェクトルート
+
+Returns:
+    すべてのチャンクのリスト
+
+*定義場所: docgen/rag/chunker.py:358*
+
+---
+
+
+## docgen/rag/embedder.py
+
+### Embedder
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class Embedder:
+```
+
+**説明**:
+
+テキスト埋め込み生成クラス
+
+*定義場所: docgen/rag/embedder.py:17*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    config: RAG設定（config.yaml の rag セクション）
+
+*定義場所: docgen/rag/embedder.py:20*
+
+---
+
+### model
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def model(self):
+```
+
+**説明**:
+
+埋め込みモデルをLazy load
+
+*定義場所: docgen/rag/embedder.py:39*
+
+---
+
+### embedding_dim
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def embedding_dim(self) -> int:
+```
+
+**説明**:
+
+埋め込みベクトルの次元数
+
+*定義場所: docgen/rag/embedder.py:57*
+
+---
+
+### embed_text
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def embed_text(self, text: str) -> np.ndarray:
+```
+
+**説明**:
+
+テキストを埋め込みベクトルに変換
+
+Args:
+    text: 入力テキスト
+
+Returns:
+    埋め込みベクトル（numpy配列）
+
+*定義場所: docgen/rag/embedder.py:61*
+
+---
+
+### embed_batch
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def embed_batch(self, texts: list[str], batch_size: int) -> np.ndarray:
+```
+
+**説明**:
+
+複数のテキストをバッチ処理で埋め込み
+
+Args:
+    texts: 入力テキストのリスト
+    batch_size: バッチサイズ
+
+Returns:
+    埋め込みベクトルの配列（shape: [len(texts), embedding_dim]）
+
+*定義場所: docgen/rag/embedder.py:87*
+
+---
+
+
+## docgen/rag/indexer.py
+
+### VectorIndexer
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class VectorIndexer:
+```
+
+**説明**:
+
+ベクトルインデックス管理クラス
+
+*定義場所: docgen/rag/indexer.py:17*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, index_dir: Path, embedding_dim: int, config: dict[str, Any] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    index_dir: インデックス保存ディレクトリ
+    embedding_dim: 埋め込みベクトルの次元数
+    config: RAG設定（config.yaml の rag セクション）
+
+*定義場所: docgen/rag/indexer.py:20*
+
+---
+
+### build
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def build(self, embeddings: np.ndarray, metadata: list[dict[str, Any]]):
+```
+
+**説明**:
+
+インデックスを構築
+
+Args:
+    embeddings: 埋め込みベクトルの配列（shape: [n_samples, embedding_dim]）
+    metadata: 各埋め込みに対応するメタデータのリスト
+
+*定義場所: docgen/rag/indexer.py:48*
+
+---
+
+### save
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def save(self):
+```
+
+**説明**:
+
+インデックスとメタデータを保存
+
+*定義場所: docgen/rag/indexer.py:99*
+
+---
+
+### load
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load(self):
+```
+
+**説明**:
+
+インデックスとメタデータを読み込み
+
+*定義場所: docgen/rag/indexer.py:128*
+
+---
+
+### search
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def search(self, query_embedding: np.ndarray, k: int) -> list[tuple[dict[str, Any], float]]:
+```
+
+**説明**:
+
+類似ベクトルを検索
+
+Args:
+    query_embedding: クエリの埋め込みベクトル
+    k: 取得する件数
+
+Returns:
+    (メタデータ, スコア) のタプルのリスト
+
+*定義場所: docgen/rag/indexer.py:167*
+
+---
+
+### incremental_update
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def incremental_update(self, new_embeddings: np.ndarray, new_metadata: list[dict[str, Any]]):
+```
+
+**説明**:
+
+インデックスに新しいデータを追加（増分更新）
+
+Args:
+    new_embeddings: 新しい埋め込みベクトル
+    new_metadata: 新しいメタデータ
+
+*定義場所: docgen/rag/indexer.py:197*
+
+---
+
+
+## docgen/rag/retriever.py
+
+### DocumentRetriever
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DocumentRetriever:
+```
+
+**説明**:
+
+ドキュメント検索クラス
+
+*定義場所: docgen/rag/retriever.py:16*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any], project_root: Path | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    config: 設定辞書（config.yaml全体）
+    project_root: プロジェクトルート（指定しない場合は現在のディレクトリ）
+
+*定義場所: docgen/rag/retriever.py:19*
+
+---
+
+### embedder
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def embedder(self) -> Embedder:
+```
+
+**説明**:
+
+Embedderインスタンスを取得（Lazy loading）
+
+*定義場所: docgen/rag/retriever.py:44*
+
+---
+
+### indexer
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def indexer(self) -> VectorIndexer:
+```
+
+**説明**:
+
+VectorIndexerインスタンスを取得（Lazy loading）
+
+*定義場所: docgen/rag/retriever.py:51*
+
+---
+
+### retrieve
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def retrieve(self, query: str, top_k: int | None) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+クエリに類似するチャンクを検索
+
+Args:
+    query: 検索クエリ
+    top_k: 取得する件数（Noneの場合はデフォルト値）
+
+Returns:
+    チャンクのリスト（スコア付き）
+
+*定義場所: docgen/rag/retriever.py:76*
+
+---
+
+### format_context
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_context(self, chunks: list[dict[str, Any]]) -> str:
+```
+
+**説明**:
+
+チャンクをコンテキスト文字列にフォーマット
+
+Args:
+    chunks: チャンクのリスト
+
+Returns:
+    フォーマット済みのコンテキスト文字列
+
+*定義場所: docgen/rag/retriever.py:109*
+
+---
+
+### retrieve_with_rerank
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def retrieve_with_rerank(self, query: str, top_k: int, rerank_k: int) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+再ランキング付き検索（将来の拡張用）
+
+Args:
+    query: 検索クエリ
+    top_k: 最終的に取得する件数
+    rerank_k: 初期検索で取得する件数（再ランク対象）
+
+Returns:
+    再ランク済みのチャンクのリスト
+
+*定義場所: docgen/rag/retriever.py:141*
+
+---
+
+
+## docgen/rag/validator.py
+
+### DocumentValidator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DocumentValidator:
+```
+
+**説明**:
+
+ドキュメント検証クラス
+
+*定義場所: docgen/rag/validator.py:15*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトルート
+
+*定義場所: docgen/rag/validator.py:49*
+
+---
+
+### validate_citations
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate_citations(self, document: str, strict: bool) -> list[str]:
+```
+
+**説明**:
+
+ドキュメント内の出典を検証
+
+Args:
+    document: 検証対象のドキュメント
+    strict: 厳格モード（技術的主張に出典がない場合もエラー）
+
+Returns:
+    エラーメッセージのリスト
+
+*定義場所: docgen/rag/validator.py:58*
+
+---
+
+### detect_secrets
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_secrets(self, document: str) -> list[str]:
+```
+
+**説明**:
+
+ドキュメント内の機密情報を検出
+
+Args:
+    document: 検証対象のドキュメント
+
+Returns:
+    警告メッセージのリスト
+
+*定義場所: docgen/rag/validator.py:138*
+
+---
+
+### validate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate(self, document: str, check_citations: bool, check_secrets: bool, strict: bool) -> dict[str, Any]:
+```
+
+**説明**:
+
+ドキュメントの総合検証
+
+Args:
+    document: 検証対象のドキュメント
+    check_citations: 出典チェックを行うか
+    check_secrets: 機密情報チェックを行うか
+    strict: 厳格モード
+
+Returns:
+    検証結果の辞書
+
+*定義場所: docgen/rag/validator.py:173*
+
+---
+
+### print_report
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def print_report(self, validation_result: dict[str, Any]):
+```
+
+**説明**:
+
+検証結果をコンソールに出力
+
+*定義場所: docgen/rag/validator.py:219*
 
 ---
 

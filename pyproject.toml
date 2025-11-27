@@ -58,6 +58,13 @@ docgen = [
     # "tomli>=2.0.0; python_version<'3.11'",
 ]
 
+# RAG (Retrieval-Augmented Generation) 機能（実験的）
+rag = [
+    "sentence-transformers>=2.2.0",
+    "hnswlib>=0.7.0",
+    "torch>=2.0.0",
+]
+
 # テスト用の依存関係
 test = [
     "pytest>=7.4.0",
@@ -75,6 +82,7 @@ default = [
 dev = [
     "ruff>=0.6.0",
     {include-group = "default"},
+    {include-group = "rag"},
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -131,6 +131,10 @@ class CommandLineInterface:
         parser.add_argument("--no-api-doc", action="store_true", help="APIドキュメントを生成しない")
         parser.add_argument("--no-readme", action="store_true", help="READMEを更新しない")
 
+        # RAG関連オプション
+        parser.add_argument("--build-index", action="store_true", help="RAGインデックスをビルド")
+        parser.add_argument("--use-rag", action="store_true", help="RAGを使用してドキュメント生成")
+
         subparsers = parser.add_subparsers(dest="command", help="実行するコマンド")
 
         # commit-msg サブコマンド
@@ -156,6 +160,16 @@ class CommandLineInterface:
         # init コマンド（DocGen初期化前に処理）
         if args.command == "init":
             return self._handle_init(args.force, project_root)
+
+        # build-index コマンド（DocGen初期化後に処理）
+        if args.build_index:
+            # 必須ファイルがない場合は自動初期化
+            auto_init_result = self._check_and_auto_init(project_root)
+            if auto_init_result != 0:
+                return auto_init_result
+
+            self.docgen = DocGen(project_root=project_root, config_path=args.config)
+            return self._handle_build_index(project_root, self.docgen.config)
 
         # DocGenの初期化（config.yamlが必要）
         # 必須ファイルがない場合は自動初期化
@@ -195,6 +209,10 @@ class CommandLineInterface:
             self.docgen.config_manager.update_config({"generation.generate_api_doc": False})
         if args.no_readme:
             self.docgen.config_manager.update_config({"generation.update_readme": False})
+
+        # RAG有効化
+        if args.use_rag:
+            self.docgen.config_manager.update_config({"rag.enabled": True})
 
         if self.docgen.generate_documents():
             return 0
@@ -410,6 +428,87 @@ class CommandLineInterface:
         except Exception as e:
             logger.error(f"{description}のコピー中にエラーが発生しました: {e}")
             return False
+
+    def _handle_build_index(self, project_root: Path, config: dict) -> int:
+        """RAGインデックスを構築
+
+        Args:
+            project_root: プロジェクトルート
+            config: 設定辞書
+
+        Returns:
+            成功時は0、失敗時は1
+        """
+        try:
+            from .rag.chunker import CodeChunker
+            from .rag.embedder import Embedder
+            from .rag.indexer import VectorIndexer
+
+            logger.info("RAGインデックス構築を開始します...")
+
+            # RAG設定を取得
+            rag_config = config.get("rag", {})
+
+            # 1. コードベースをチャンク化
+            logger.info("Step 1/3: コードベースをチャンク化中...")
+            chunker = CodeChunker(rag_config)
+            chunks = chunker.chunk_codebase(project_root)
+
+            if not chunks:
+                logger.warning("チャンクが見つかりませんでした")
+                return 1
+
+            logger.info(f"✓ {len(chunks)} 個のチャンクを作成しました")
+
+            # 2. 埋め込み生成
+            logger.info("Step 2/3: 埋め込みを生成中...")
+            embedder = Embedder(rag_config)
+
+            # チャンクのテキストを抽出
+            texts = [chunk["text"] for chunk in chunks]
+
+            # バッチ処理で埋め込み生成
+            embeddings = embedder.embed_batch(texts, batch_size=32)
+
+            logger.info(f"✓ {len(embeddings)} 個の埋め込みを生成しました")
+
+            # 3. インデックス構築
+            logger.info("Step 3/3: インデックスを構築中...")
+            index_dir = project_root / "docgen" / "index"
+            indexer = VectorIndexer(
+                index_dir=index_dir,
+                embedding_dim=embedder.embedding_dim,
+                config=rag_config,
+            )
+
+            # インデックス構築
+            indexer.build(embeddings, chunks)
+
+            # 保存
+            indexer.save()
+
+            logger.info(f"✓ インデックスを保存しました: {index_dir}")
+            logger.info("=" * 60)
+            logger.info("RAGインデックス構築が完了しました！")
+            logger.info("=" * 60)
+            logger.info(f"インデックスディレクトリ: {index_dir}")
+            logger.info(f"チャンク数: {len(chunks)}")
+            logger.info(f"埋め込み次元: {embedder.embedding_dim}")
+            logger.info("")
+            logger.info("次のコマンドでRAGを使用してドキュメント生成:")
+            logger.info("  uv run python -m docgen.docgen --use-rag")
+
+            return 0
+
+        except ImportError as e:
+            logger.error(
+                f"RAGモジュールのインポートに失敗しました: {e}\n"
+                "RAG依存関係をインストールしてください: uv sync --extra rag"
+            )
+            return 1
+        except Exception as e:
+            logger.error(f"インデックス構築中にエラーが発生しました: {e}", exc_info=True)
+            return 1
 
     def _check_and_auto_init(self, project_root: Path) -> int:
         """必須ファイルがない場合に自動初期化

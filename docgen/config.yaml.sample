@@ -113,6 +113,63 @@ agents:
   #   - すべての関数にはdocstringを記述すること
   #   - テストカバレッジは80%以上を維持すること
 
+# RAG設定（実験的機能）
+# RAG (Retrieval-Augmented Generation) を使用すると、コードベースから関連情報を抽出し、
+# より正確で根拠のあるドキュメントを生成できます。
+rag:
+  # RAG機能を有効化（デフォルト: true）
+  # CLIフラグ --use-rag でも有効化可能
+  enabled: true
+
+  # 埋め込みモデル設定
+  embedding:
+    # 使用する埋め込みモデル（sentence-transformersモデル名）
+    # 推奨: 'all-MiniLM-L6-v2' (軽量・高速、384次元)
+    # その他オプション: 'all-mpnet-base-v2' (高精度、768次元)
+    model: 'all-MiniLM-L6-v2'
+
+    # 計算デバイス ('cpu' or 'cuda')
+    # CUDAが利用可能な場合はGPUを使用して高速化
+    device: 'cpu'
+
+  # ベクトルインデックス設定
+  index:
+    # インデックスタイプ ('hnswlib' or 'faiss')
+    # hnswlib: 軽量・高速、差分更新が一部制限
+    # faiss: 高機能だがやや重い
+    type: 'hnswlib'
+
+    # HNSW構築時のパラメータ（精度とメモリのトレードオフ）
+    ef_construction: 200  # 構築時の探索範囲（大きいほど精度向上、遅くなる）
+    M: 16                 # グラフの接続数（大きいほど精度向上、メモリ増加）
+
+  # 検索設定
+  retrieval:
+    # 取得する類似チャンク数
+    top_k: 6
+
+    # スコア閾値（この値以下のチャンクは除外）
+    # 0.0-1.0の範囲、低いほど厳格
+    score_threshold: 0.3
+
+  # チャンク設定
+  chunking:
+    # チャンクの最大サイズ（トークン数）
+    max_chunk_size: 512
+
+    # チャンク間のオーバーラップ（トークン数）
+    # コンテキストの連続性を保つために使用
+    overlap: 50
+
+  # 除外パターン（機密情報保護）
+  # これらのパターンに一致するファイルはRAGインデックスに含めない
+  exclude_patterns:
+    - '.*\.env$'
+    - 'secrets/.*'
+    - '.*_SECRET.*'
+    - '.*API_KEY.*'
+
+
 # カスタマイズ設定（オプション）
 # custom:
 #   # APIドキュメントのテンプレート（将来の拡張用）
