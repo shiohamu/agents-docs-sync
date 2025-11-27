@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-27 09:55:07
+自動生成日時: 2025-11-27 13:21:11
 
 ---
 
@@ -1266,7 +1266,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:534*
+*定義場所: docgen/docgen.py:623*
 
 ---
 
@@ -2210,6 +2210,573 @@ def readme_path(self):
 ---
 
 
+## docgen/hooks/config.py
+
+### TaskConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TaskConfig:
+```
+
+**説明**:
+
+タスク設定
+
+*定義場所: docgen/hooks/config.py:9*
+
+---
+
+### HookConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HookConfig:
+```
+
+**説明**:
+
+フック設定
+
+*定義場所: docgen/hooks/config.py:20*
+
+---
+
+### ConfigLoader
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ConfigLoader:
+```
+
+**説明**:
+
+フック設定ローダー
+
+*定義場所: docgen/hooks/config.py:28*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: str):
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/config.py:31*
+
+---
+
+### load_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_config(self) -> dict[str, HookConfig]:
+```
+
+**説明**:
+
+設定を読み込む
+
+*定義場所: docgen/hooks/config.py:35*
+
+---
+
+
+## docgen/hooks/orchestrator.py
+
+### HookOrchestrator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HookOrchestrator:
+```
+
+**説明**:
+
+Git hook実行のオーケストレーター
+
+*定義場所: docgen/hooks/orchestrator.py:14*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, hook_name: str, args: list[str]):
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/orchestrator.py:17*
+
+---
+
+### register_task
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def register_task(self, name: str, task_class: type):
+```
+
+**説明**:
+
+タスクを登録する
+
+*定義場所: docgen/hooks/orchestrator.py:35*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self) -> int:
+```
+
+**説明**:
+
+フックを実行する
+
+*定義場所: docgen/hooks/orchestrator.py:39*
+
+---
+
+### main
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def main():
+```
+
+**説明**:
+
+エントリーポイント
+
+*定義場所: docgen/hooks/orchestrator.py:102*
+
+---
+
+
+## docgen/hooks/tasks/base.py
+
+### TaskStatus
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TaskStatus:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/base.py:9*
+
+---
+
+### TaskResult
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/base.py:16*
+
+---
+
+### HookContext
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HookContext:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/base.py:23*
+
+---
+
+### HookTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HookTask:
+```
+
+**説明**:
+
+フックタスクの基底クラス
+
+*定義場所: docgen/hooks/tasks/base.py:29*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: TaskConfig):
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/base.py:32*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+**説明**:
+
+タスクを実行
+
+*定義場所: docgen/hooks/tasks/base.py:36*
+
+---
+
+### should_run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def should_run(self, context: HookContext) -> bool:
+```
+
+**説明**:
+
+タスクを実行すべきか判定
+
+*定義場所: docgen/hooks/tasks/base.py:40*
+
+---
+
+
+## docgen/hooks/tasks/commit_msg_generator.py
+
+### CommitMsgGeneratorTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CommitMsgGeneratorTask:
+```
+
+**説明**:
+
+コミットメッセージ生成タスク
+
+*定義場所: docgen/hooks/tasks/commit_msg_generator.py:7*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/commit_msg_generator.py:10*
+
+---
+
+
+## docgen/hooks/tasks/doc_generator.py
+
+### DocGeneratorTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DocGeneratorTask:
+```
+
+**説明**:
+
+ドキュメント生成タスク
+
+*定義場所: docgen/hooks/tasks/doc_generator.py:5*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/doc_generator.py:8*
+
+---
+
+
+## docgen/hooks/tasks/file_stager.py
+
+### FileStagerTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class FileStagerTask:
+```
+
+**説明**:
+
+ファイルステージングタスク
+
+*定義場所: docgen/hooks/tasks/file_stager.py:7*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/file_stager.py:10*
+
+---
+
+
+## docgen/hooks/tasks/rag_generator.py
+
+### RagGeneratorTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class RagGeneratorTask:
+```
+
+**説明**:
+
+RAG生成タスク
+
+*定義場所: docgen/hooks/tasks/rag_generator.py:5*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/rag_generator.py:8*
+
+---
+
+
+## docgen/hooks/tasks/test_runner.py
+
+### TestRunnerTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestRunnerTask:
+```
+
+**説明**:
+
+テスト実行タスク
+
+*定義場所: docgen/hooks/tasks/test_runner.py:7*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/test_runner.py:10*
+
+---
+
+
+## docgen/hooks/tasks/version_checker.py
+
+### VersionCheckerTask
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class VersionCheckerTask:
+```
+
+**説明**:
+
+バージョンチェック＆リリースタグ作成タスク
+
+*定義場所: docgen/hooks/tasks/version_checker.py:8*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, context: HookContext) -> TaskResult:
+```
+
+*説明なし*
+
+*定義場所: docgen/hooks/tasks/version_checker.py:11*
+
+---
+
+
+## docgen/hooks/utils.py
+
+### get_python_command
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def get_python_command() -> str:
+```
+
+**説明**:
+
+利用可能なPythonコマンドを取得する（uv優先）
+
+*定義場所: docgen/hooks/utils.py:4*
+
+---
+
+### run_command
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def run_command(command: list[str], cwd: str | None, capture_output: bool) -> tuple[int, str, str]:
+```
+
+**説明**:
+
+コマンドを実行する
+
+*定義場所: docgen/hooks/utils.py:23*
+
+---
+
+### get_changed_files
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def get_changed_files(staged: bool) -> list[str]:
+```
+
+**説明**:
+
+変更されたファイルを取得する
+
+*定義場所: docgen/hooks/utils.py:36*
+
+---
+
+### is_git_repo
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def is_git_repo(path: str) -> bool:
+```
+
+**説明**:
+
+Gitリポジトリか確認する
+
+*定義場所: docgen/hooks/utils.py:49*
+
+---
+
+
 ## docgen/language_detector.py
 
 ### LanguageDetector
@@ -2903,7 +3470,7 @@ Args:
 Returns:
     チャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:110*
+*定義場所: docgen/rag/chunker.py:114*
 
 ---
 
@@ -2926,7 +3493,7 @@ Args:
 Returns:
     すべてのチャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:358*
+*定義場所: docgen/rag/chunker.py:362*
 
 ---
 
@@ -3376,7 +3943,7 @@ def __init__(self, project_root: Path | None):
 Args:
     project_root: プロジェクトルート
 
-*定義場所: docgen/rag/validator.py:49*
+*定義場所: docgen/rag/validator.py:56*
 
 ---
 
@@ -3400,7 +3967,7 @@ Args:
 Returns:
     エラーメッセージのリスト
 
-*定義場所: docgen/rag/validator.py:58*
+*定義場所: docgen/rag/validator.py:65*
 
 ---
 
@@ -3423,7 +3990,7 @@ Args:
 Returns:
     警告メッセージのリスト
 
-*定義場所: docgen/rag/validator.py:138*
+*定義場所: docgen/rag/validator.py:145*
 
 ---
 
@@ -3449,7 +4016,7 @@ Args:
 Returns:
     検証結果の辞書
 
-*定義場所: docgen/rag/validator.py:173*
+*定義場所: docgen/rag/validator.py:180*
 
 ---
 
@@ -3466,7 +4033,7 @@ def print_report(self, validation_result: dict[str, Any]):
 
 検証結果をコンソールに出力
 
-*定義場所: docgen/rag/validator.py:219*
+*定義場所: docgen/rag/validator.py:226*
 
 ---
 
