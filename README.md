@@ -5,27 +5,52 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-agents-docs-sync は、リポジトリにコミットがあるたびに自動でテストを実行し、ドキュメント（`docs/` ディレクトリ）と `AGENTS.md` を再生成するパイプラインです。  
-主な特徴は次の通りです。
+agents-docs-sync は、リポジトリへのコミットが発生するたびに自動的にテストを実行し、最新のドキュメントを生成して `AGENTS.md` を更新します。  
+このプロジェクトは主に Python とシェルスクリプトで構成されており、CI/CD パイプライン内で以下のフローが走ります。
 
-- **言語**: Python とシェルスクリプトで構成されており、Python 3.11+ が必要
-- **依存関係**
-  - `pyyaml>=6.0.3` – YAML の読み書きに使用  
-  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` – テスト実行とカバレッジ収集
-- **ビルド手順**
-  ```bash
-  uv sync          # 依存関係をインストール/同期
-  uv build         # パッケージのビルド（必要に応じて）
-  uv run python3 docgen/docgen.py   # ドキュメント生成スクリプト実行
-  ```
-- **テストコマンド**  
-  - Python: `uv run pytest tests/ -v --tb=short`  
-  - Node.js (npm): `npm test`（必要に応じて）  
-  - Go: `go test ./...`
-- **コード品質**  
-  - Linting は `ruff` を使用。プロジェクトルートで `uv run ruff check .` によりスタイルチェックが可能
+1. **依存関係同期** – `uv sync` でローカル環境をセットアップ  
+2. **ビルド** – `uv build` によりパッケージ化（wheel 等）  
+3. **文書生成** – `uv run python3 docgen/docgen.py` がプロジェクトの API/CLI ドキュメントを自動で作成し、既存の `AGENTS.md` を差分更新  
 
-このリポジトリは、コミット時に自動化された CI/CD ワークフロー（GitHub Actions 等）を想定して設計されており、コードの変更と同時に最新のドキュメント・エージェント一覧 (`AGENTS.md`) を常に同期させることで、開発者が手作業で更新する負担を大幅に軽減します。
+テストは多言語対応です。Python の単体・統合テスト (`pytest`) に加え、Node.js と Go でもそれぞれのユニットテストが実行されます。
+
+| コマンド | 概要 |
+|---|---|
+| `uv sync` | uv を使った依存関係インストール（pyyaml, pytest 系など） |
+| `uv build` | ビルドアーティファクトを生成 |
+| `uv run python3 docgen/docgen.py` | ドキュメント生成スクリプト実行 |
+| `uv run pytest tests/ -v --tb=short` | Python テストの高速走査 |
+| `npm test` | Node.js プロジェクトテスト（必要に応じて） |
+| `go test ./...` | Go モジュール全体を対象としたテスト |
+
+### 主要依存パッケージ
+
+- **pyyaml** ≥6.0.3 – YAML ファイルの読み書き  
+- **pytest** ≥7.4.0, **pytest-cov** ≥4.1.0, **pytest-mock** ≥3.11.1 – テストフレームワークとカバレッジ、モックサポート  
+
+### コーディング規約
+
+- リンター: `ruff` を使用し、一貫したコード品質を保ちます。  
+  - フォーマットや静的解析は CI の段階で自動チェックされるよう設定済みです。
+
+---
+
+#### 使用例（ローカル開発時）
+
+```bash
+# 環境構築・ビルド
+uv sync && uv build
+
+# ドキュメント生成と AGENTS.md 更新
+uv run python3 docgen/docgen.py
+
+# テスト実行
+uv run pytest tests/ -v --tb=short
+npm test          # Node.js が必要な場合
+go test ./...     # Go モジュールがある場合
+```
+
+このワークフローを CI の `push` や `pull request` 時に組み込むことで、常に最新のドキュメントと正確なテスト結果を保つことができます。
 
 ## 使用技術
 
@@ -108,4 +133,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-27 14:11:48*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-27 21:57:27*

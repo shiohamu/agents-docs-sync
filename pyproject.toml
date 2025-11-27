@@ -43,6 +43,7 @@ dependencies = [
     "sentence-transformers>=2.2.0",
     "hnswlib>=0.7.0",
     "torch>=2.0.0",
+    "ruff>=0.6.0",
 ]
 
 [project.scripts]
@@ -76,7 +77,6 @@ default = [
 
 # 開発ツール用の依存関係
 dev = [
-    "ruff>=0.6.0",
     {include-group = "default"},
 ]
 

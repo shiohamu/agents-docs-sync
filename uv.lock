@@ -16,6 +16,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pytest" },
     { name = "pyyaml" },
+    { name = "ruff" },
     { name = "sentence-transformers" },
     { name = "torch" },
 ]
@@ -32,7 +33,6 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "pyyaml" },
-    { name = "ruff" },
 ]
 docgen = [
     { name = "pyyaml" },
@@ -54,6 +54,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=9.0.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "ruff", specifier = ">=0.6.0" },
     { name = "sentence-transformers", specifier = ">=2.2.0" },
     { name = "torch", specifier = ">=2.0.0" },
 ]
@@ -70,7 +71,6 @@ dev = [
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.11.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "ruff", specifier = ">=0.6.0" },
 ]
 docgen = [{ name = "pyyaml", specifier = ">=6.0.3" }]
 test = [
