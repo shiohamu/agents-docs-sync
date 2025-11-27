@@ -31,9 +31,10 @@ class TestCommandLineInterface:
                 {
                     "command": None,
                     "detect_only": True,
-                    "no_api_doc": False,
                     "no_readme": False,
                     "config": None,
+                    "build_index": False,
+                    "use_rag": False,
                 },
             )()
 
@@ -208,9 +209,10 @@ class TestCommandLineInterface:
                 {
                     "command": None,
                     "detect_only": True,
-                    "no_api_doc": False,
                     "no_readme": False,
                     "config": None,
+                    "build_index": False,
+                    "use_rag": False,
                 },
             )()
 
@@ -244,6 +246,8 @@ class TestCommandLineInterface:
                     "no_api_doc": False,
                     "no_readme": False,
                     "config": None,
+                    "build_index": False,
+                    "use_rag": False,
                 },
             )()
 

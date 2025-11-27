@@ -34,7 +34,7 @@ class TestCodeChunker:
     def test_chunk_python_file(self, tmp_path):
         """Pythonファイルが関数/クラス単位でチャンクされることを確認"""
         # テストファイル作成
-        test_file = tmp_path / "test.py"
+        test_file = tmp_path / "sample.py"
         test_file.write_text("""
 def foo():
     '''Foo function'''
@@ -74,7 +74,7 @@ class MyClass:
 
     def test_chunk_markdown_file(self, tmp_path):
         """Markdownファイルがヘッダ単位でチャンクされることを確認"""
-        test_file = tmp_path / "test.md"
+        test_file = tmp_path / "sample.md"
         test_file.write_text("""
 # Header 1
 Content 1
@@ -98,7 +98,7 @@ Content 3
 
     def test_chunk_yaml_file(self, tmp_path):
         """YAMLファイルがセクション単位でチャンクされることを確認"""
-        test_file = tmp_path / "test.yaml"
+        test_file = tmp_path / "sample.yaml"
         test_file.write_text("""
 section1:
   key1: value1
@@ -120,7 +120,7 @@ section2:
 
     def test_chunk_toml_file(self, tmp_path):
         """TOMLファイルがセクション単位でチャンクされることを確認"""
-        test_file = tmp_path / "test.toml"
+        test_file = tmp_path / "sample.toml"
         test_file.write_text("""
 [section1]
 key1 = "value1"

@@ -1,6 +1,5 @@
 """DocumentValidatorのテスト"""
 
-
 import pytest
 
 from docgen.rag.validator import DocumentValidator

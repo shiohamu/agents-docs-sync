@@ -1,88 +1,24 @@
 #!/bin/bash
 #
-# pre-pushフック
-# プッシュ前にバージョン番号の変更を検出し、自動的にタグを作成・プッシュするオプション
+# pre-pushフック (Orchestrated by docgen)
 #
 
-# プロジェクトルートを取得
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 if [ -z "$PROJECT_ROOT" ]; then
     exit 0
 fi
 
-# 環境変数で有効化（デフォルトは無効）
-AUTO_RELEASE_ENABLED="${AUTO_RELEASE_ENABLED:-0}"
+cd "$PROJECT_ROOT" || exit 0
 
-if [ "$AUTO_RELEASE_ENABLED" != "1" ]; then
+# Pythonコマンド検出
+if command -v uv &>/dev/null; then
+    PYTHON_CMD="uv run python3"
+elif command -v python3 &>/dev/null; then
+    PYTHON_CMD="python3"
+else
+    echo "Warning: python3 not found, skipping pre-push hook"
     exit 0
 fi
 
-cd "$PROJECT_ROOT"
-
-PYPROJECT_TOML="$PROJECT_ROOT/pyproject.toml"
-
-# pyproject.tomlが変更されているか確認
-if ! git diff --quiet HEAD@{upstream} -- "$PYPROJECT_TOML" 2>/dev/null; then
-    # リモートとローカルのバージョンを比較
-    LOCAL_VERSION=$(grep -E '^version = ' "$PYPROJECT_TOML" | sed -E 's/^version = "([^"]+)"/\1/')
-
-    # リモートのバージョンを取得（リモートブランチが存在する場合）
-    REMOTE_BRANCH=$(git rev-parse --abbrev-ref --symbolic-full-name @{upstream} 2>/dev/null || echo "")
-    if [ -n "$REMOTE_BRANCH" ]; then
-        # ブランチ名を抽出（origin/feature/my-feature -> feature/my-feature）
-        BRANCH_NAME=$(echo "$REMOTE_BRANCH" | cut -d'/' -f2-)
-        git fetch origin "$BRANCH_NAME" >/dev/null 2>&1 || true
-        # git showにはリポジトリ相対パスを使用（絶対パスではなく）
-        REMOTE_VERSION=$(git show "$REMOTE_BRANCH:pyproject.toml" 2>/dev/null | grep -E '^version = ' | sed -E 's/^version = "([^"]+)"/\1/' || echo "")
-
-        if [ -n "$REMOTE_VERSION" ] && [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
-            echo ""
-            echo "=========================================="
-            echo "バージョン番号が変更されました"
-            echo "  リモート: $REMOTE_VERSION"
-            echo "  ローカル: $LOCAL_VERSION"
-            echo "=========================================="
-            echo ""
-            read -p "自動的にリリースタグを作成してプッシュしますか？ (y/n): " -n 1 -r
-            echo
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                TAG_NAME="v$LOCAL_VERSION"
-
-                # 既存のタグをチェック
-                if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-                    echo "警告: タグ $TAG_NAME は既に存在します"
-                    read -p "上書きしますか？ (y/n): " -n 1 -r
-                    echo
-                    if [[ $REPLY =~ ^[Yy]$ ]]; then
-                        git tag -d "$TAG_NAME" 2>/dev/null || true
-                        git push origin ":refs/tags/$TAG_NAME" 2>/dev/null || true
-                    else
-                        echo "タグの作成をスキップしました"
-                        exit 0
-                    fi
-                fi
-
-                # タグを作成
-                if git tag -a "$TAG_NAME" -m "Release version $LOCAL_VERSION"; then
-                    echo "✓ タグ $TAG_NAME を作成しました"
-                else
-                    echo "エラー: タグ $TAG_NAME の作成に失敗しました"
-                    exit 1
-                fi
-
-                # タグをプッシュ
-                if git push origin "$TAG_NAME"; then
-                    echo "✓ タグ $TAG_NAME をプッシュしました"
-                    echo ""
-                    echo "GitHub Actionsが自動的にリリースを作成します"
-                else
-                    echo "エラー: タグ $TAG_NAME のプッシュに失敗しました"
-                    exit 1
-                fi
-            fi
-        fi
-    fi
-fi
-
-exit 0
-
+# オーケストレーターを実行
+exec $PYTHON_CMD -m docgen.hooks.orchestrator pre-push

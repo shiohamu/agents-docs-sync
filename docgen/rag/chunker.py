@@ -98,7 +98,11 @@ class CodeChunker:
                 return False
 
         # テストファイルを除外
-        if "test" in str_path.lower():
+        if file_path.name.lower().startswith("test_") or file_path.name.lower().endswith(
+            "_test.py"
+        ):
+            return False
+        if "tests" in path_parts:
             return False
 
         # 生成されたドキュメントを除外

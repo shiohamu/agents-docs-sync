@@ -186,7 +186,7 @@ class VectorIndexer:
 
         # 結果を整形
         results = []
-        for idx, dist in zip(labels[0], distances[0]):
+        for idx, dist in zip(labels[0], distances[0], strict=True):
             if idx < len(self._metadata):
                 # cosine距離をsimilarityスコアに変換 (1 - distance)
                 similarity = 1.0 - dist

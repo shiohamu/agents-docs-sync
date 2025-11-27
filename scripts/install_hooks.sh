@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Gitフックを手動でインストールするスクリプト
+# Gitフックを手動でインストールするスクリプト (Orchestrated version)
 #
 
 set -e
@@ -15,10 +15,16 @@ cd "$PROJECT_ROOT"
 
 GIT_HOOKS_DIR="$PROJECT_ROOT/.git/hooks"
 DOCGEN_DIR="$PROJECT_ROOT/docgen"
+HOOKS_CONFIG_SRC="$DOCGEN_DIR/hooks.yaml"
 
 if [ ! -d "$GIT_HOOKS_DIR" ]; then
     mkdir -p "$GIT_HOOKS_DIR"
 fi
+
+# hooks.yamlが存在しない場合は作成（サンプルからコピー、またはデフォルト作成）
+# ここではdocgen/hooks/hooks.yamlが既に存在することを前提とするが、
+# もしユーザーがパッケージとしてインストールしている場合は考慮が必要。
+# 開発環境ではリポジトリ内のファイルを使用するため問題ない。
 
 install_hook() {
     local hook_name=$1
@@ -30,52 +36,31 @@ install_hook() {
         return 1
     fi
 
-    # 既存のフックをバックアップ
-    if [ -f "$hook_file" ] && ! grep -q "# docgen" "$hook_file" 2>/dev/null; then
+    # 既存のフックをバックアップ（docgen管理外のもののみ）
+    if [ -f "$hook_file" ] && ! grep -q "Orchestrated by docgen" "$hook_file" 2>/dev/null; then
         BACKUP_FILE="${hook_file}.backup.$(date +%Y%m%d_%H%M%S)"
         cp "$hook_file" "$BACKUP_FILE"
         echo "既存の$hook_nameフックをバックアップしました: $BACKUP_FILE"
     fi
 
-    # フックを追加
-    if ! grep -q "# docgen" "$hook_file" 2>/dev/null; then
-        # シェバンが存在しない場合は追加
-        if [ ! -f "$hook_file" ] || ! head -1 "$hook_file" | grep -q "^#!"; then
-            echo "#!/bin/bash" > "$hook_file"
-        fi
-        {
-            echo ""
-            echo "# docgen - $hook_name hook"
-            if [ "$hook_name" = "post-commit" ]; then
-                echo "# このフックはデフォルトで無効です。有効にするには環境変数を設定してください:"
-                echo "# export DOCGEN_ENABLE_POST_COMMIT=1"
-            elif [ "$hook_name" = "pre-push" ]; then
-                echo "# このフックはデフォルトで無効です。有効にするには環境変数を設定してください:"
-                echo "# export AUTO_RELEASE_ENABLED=1"
-            fi
-            cat "$source_file"
-        } >> "$hook_file"
-        chmod +x "$hook_file"
-        echo "✓ $hook_nameフックをインストールしました"
-        return 0
-    else
-        echo "✓ $hook_nameフックは既にインストールされています"
-        return 0
-    fi
+    # フックをコピー（シンボリックリンクではなくコピーを使用）
+    cp "$source_file" "$hook_file"
+    chmod +x "$hook_file"
+    echo "✓ $hook_nameフックをインストールしました"
 }
 
 echo "Gitフックをインストール中..."
 install_hook "pre-commit"
-install_hook "post-commit"
-install_hook "pre-push"
 install_hook "commit-msg"
+install_hook "pre-push"
 
 echo ""
 echo "インストール完了！"
 echo ""
+echo "設定ファイル: docgen/hooks/hooks.yaml"
 echo "使用方法:"
-echo "  - pre-commit: 自動的に実行されます"
-echo "  - post-commit: export DOCGEN_ENABLE_POST_COMMIT=1 で有効化"
-echo "  - pre-push: export AUTO_RELEASE_ENABLED=1 で有効化"
-echo "  - commit-msg: コミットメッセージが空の場合、LLMで自動生成（config.yamlで有効/無効を設定可能）"
+echo "  - pre-commit: テスト実行 -> RAG生成 -> ドキュメント生成 -> ステージング"
+echo "  - commit-msg: コミットメッセージ自動生成（空の場合）"
+echo "  - pre-push: バージョンチェック -> リリースタグ作成（デフォルト無効）"
+
 

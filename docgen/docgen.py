@@ -142,9 +142,26 @@ class CommandLineInterface:
 
         # hooks サブコマンド
         hooks_parser = subparsers.add_parser("hooks", help="Git hooksの管理")
-        hooks_parser.add_argument(
-            "action", choices=["enable", "disable"], help="hooksを有効化または無効化"
-        )
+        hooks_subparsers = hooks_parser.add_subparsers(dest="hooks_action", help="アクション")
+
+        # hooks list
+        hooks_subparsers.add_parser("list", help="利用可能なフックを表示")
+
+        # hooks enable
+        enable_parser = hooks_subparsers.add_parser("enable", help="フックを有効化")
+        enable_parser.add_argument("hook_name", nargs="?", help="フック名（指定しない場合は全て）")
+
+        # hooks disable
+        disable_parser = hooks_subparsers.add_parser("disable", help="フックを無効化")
+        disable_parser.add_argument("hook_name", nargs="?", help="フック名（指定しない場合は全て）")
+
+        # hooks run
+        run_parser = hooks_subparsers.add_parser("run", help="フックを手動実行")
+        run_parser.add_argument("hook_name", help="実行するフック名")
+        run_parser.add_argument("hook_args", nargs="*", help="フック引数")
+
+        # hooks validate
+        hooks_subparsers.add_parser("validate", help="フック設定を検証")
 
         # init サブコマンド
         init_parser = subparsers.add_parser(
@@ -197,7 +214,7 @@ class CommandLineInterface:
 
         # hooks コマンド
         if args.command == "hooks":
-            return self._handle_hooks(args.action, project_root)
+            return self._handle_hooks(args, project_root)
 
         if args.detect_only:
             languages = self.docgen.detect_languages()
@@ -219,8 +236,37 @@ class CommandLineInterface:
         else:
             return 1
 
-    def _handle_hooks(self, action, project_root):
-        """Git hooksの有効化/無効化を処理"""
+    def _handle_hooks(self, args, project_root):
+        """Git hooksの管理アクションを処理"""
+        action = args.hooks_action
+
+        if action == "run":
+            # オーケストレーターを呼び出す
+            try:
+                from .hooks.orchestrator import HookOrchestrator
+
+                orchestrator = HookOrchestrator(args.hook_name, args.hook_args)
+
+                # タスクの登録（orchestrator.pyのmain関数と同様）
+                from .hooks.tasks.commit_msg_generator import CommitMsgGeneratorTask
+                from .hooks.tasks.doc_generator import DocGeneratorTask
+                from .hooks.tasks.file_stager import FileStagerTask
+                from .hooks.tasks.rag_generator import RagGeneratorTask
+                from .hooks.tasks.test_runner import TestRunnerTask
+                from .hooks.tasks.version_checker import VersionCheckerTask
+
+                orchestrator.register_task("run_tests", TestRunnerTask)
+                orchestrator.register_task("generate_docs", DocGeneratorTask)
+                orchestrator.register_task("generate_rag", RagGeneratorTask)
+                orchestrator.register_task("stage_changes", FileStagerTask)
+                orchestrator.register_task("generate_commit_message", CommitMsgGeneratorTask)
+                orchestrator.register_task("check_version", VersionCheckerTask)
+
+                return orchestrator.run()
+            except ImportError as e:
+                logger.error(f"フックオーケストレーターの読み込みに失敗しました: {e}")
+                return 1
+
         git_hooks_dir = project_root / ".git" / "hooks"
         docgen_hooks_dir = project_root / "docgen" / "hooks"
 
@@ -228,12 +274,55 @@ class CommandLineInterface:
             logger.error(ErrorMessages.HOOKS_DIR_NOT_FOUND)
             return 1
 
+        if action == "list":
+            print("\n利用可能なGitフック:")
+            print(f"  設定ファイル: {project_root}/docgen/hooks.yaml")
+            print("-" * 40)
+
+            # hooks.yamlを読み込んで表示
+            try:
+                import yaml
+
+                config_path = project_root / "docgen" / "hooks.yaml"
+                if config_path.exists():
+                    with open(config_path) as f:
+                        config = yaml.safe_load(f) or {}
+                        hooks = config.get("hooks", {})
+                        for name, data in hooks.items():
+                            status = "有効" if data.get("enabled", True) else "無効"
+                            print(f"  {name}: {status}")
+                            tasks = data.get("tasks", [])
+                            for task in tasks:
+                                task_status = "有効" if task.get("enabled", True) else "無効"
+                                print(f"    - {task.get('name')}: {task_status}")
+                else:
+                    print("  hooks.yamlが見つかりません")
+            except Exception as e:
+                print(f"  設定読み込みエラー: {e}")
+            print("-" * 40)
+            return 0
+
+        elif action == "validate":
+            print("フック設定を検証中...")
+            try:
+                from .hooks.config import ConfigLoader
+
+                loader = ConfigLoader(str(project_root))
+                config = loader.load_config()
+                print("✓ 設定ファイルは有効なYAMLです")
+                print(f"✓ {len(config)} 個のフック定義が見つかりました")
+                return 0
+            except Exception as e:
+                print(f"✗ 検証エラー: {e}")
+                return 1
+
         hook_names = ["pre-commit", "post-commit", "pre-push", "commit-msg"]
+        target_hooks = [args.hook_name] if args.hook_name else hook_names
 
         if action == "enable":
-            return self._enable_hooks(git_hooks_dir, docgen_hooks_dir, hook_names)
+            return self._enable_hooks(git_hooks_dir, docgen_hooks_dir, target_hooks)
         elif action == "disable":
-            return self._disable_hooks(git_hooks_dir, hook_names)
+            return self._disable_hooks(git_hooks_dir, target_hooks)
         else:
             logger.error(f"不明なアクション: {action}")
             return 1

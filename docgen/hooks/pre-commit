@@ -1,148 +1,24 @@
 #!/bin/bash
 #
-# pre-commitフック
-# コミット前にドキュメントを自動生成し、変更があればステージングに追加
+# pre-commitフック (Orchestrated by docgen)
 #
 
-# プロジェクトルートを取得（.git/hooksから実行されるため）
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
 if [ -z "$PROJECT_ROOT" ]; then
-    # Gitリポジトリでない場合はスキップ
     exit 0
-fi
-
-DOCGEN_DIR="$PROJECT_ROOT/docgen"
-DOCGEN_SCRIPT="$DOCGEN_DIR/docgen.py"
-CONFIG_FILE="$DOCGEN_DIR/config.yaml"
-
-# docgen.pyが存在しない場合はスキップ
-if [ ! -f "$DOCGEN_SCRIPT" ]; then
-    exit 0
-fi
-
-# uvまたはPythonが利用可能か確認
-if command -v uv &> /dev/null; then
-    PYTHON_CMD="uv run python3"
-elif command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-else
-    echo "警告: uvまたはpython3が見つかりません。ドキュメント生成をスキップします。"
-    exit 0
-fi
-
-# 設定ファイルからパスを取得（デフォルト値を使用）
-API_DOC_PATH="docs/api.md"
-README_PATH="README.md"
-AGENTS_PATH="AGENTS.md"
-UV_LOCK_PATH="uv.lock"
-
-if [ -f "$CONFIG_FILE" ] && command -v python3 &> /dev/null; then
-    # Pythonで設定ファイルを読み取り
-    CONFIG_PATHS=$(python3 -c "
-import yaml
-import sys
-try:
-    with open('$CONFIG_FILE', 'r') as f:
-        config = yaml.safe_load(f) or {}
-    output = config.get('output', {})
-    api_path = output.get('api_doc', 'docs/api.md')
-    agents_path = output.get('agents_doc', 'AGENTS.md')
-    print(f'{api_path}\n{agents_path}')
-except:
-    print('docs/api.md\nAGENTS.md')
-" 2>/dev/null || echo -e "docs/api.md\nAGENTS.md")
-
-    if [ -n "$CONFIG_PATHS" ]; then
-        API_DOC_PATH=$(echo "$CONFIG_PATHS" | head -1)
-        AGENTS_PATH=$(echo "$CONFIG_PATHS" | tail -1)
-    fi
 fi
 
 cd "$PROJECT_ROOT" || exit 0
 
-# テストを実行
-echo "テストを実行中..."
-./scripts/run_tests.sh 2>&1
-
-TEST_EXIT_CODE=$?
-if [ $TEST_EXIT_CODE -ne 0 ]; then
-    echo "テストが失敗しました。コミットを中止します。"
-    exit 1
-fi
-echo "テストが成功しました。"
-
-# コミット時はLLMを使わないように設定を一時的に変更
-if [ -f "$CONFIG_FILE" ]; then
-    # agents_modeをtemplateに変更してLLMを無効化
-    sed -i 's/agents_mode: .*/agents_mode: template/' "$CONFIG_FILE"
-    sed -i 's/readme_mode: .*/readme_mode: template/' "$CONFIG_FILE"
+# Pythonコマンド検出
+if command -v uv &>/dev/null; then
+    PYTHON_CMD="uv run python3"
+elif command -v python3 &>/dev/null; then
+    PYTHON_CMD="python3"
+else
+    echo "Warning: python3 not found, skipping pre-commit hook"
+    exit 0
 fi
 
-# ドキュメントを生成
-echo "ドキュメントを自動生成中..."
-$PYTHON_CMD -m docgen.docgen 2>&1
-
-# 設定を元に戻す（必要に応じて）
-# 今回は変更をコミットに含めるのでそのまま
-
-# 生成結果を確認
-EXIT_CODE=$?
-if [ $EXIT_CODE -ne 0 ]; then
-    echo "警告: ドキュメント生成中にエラーが発生しました（コード: $EXIT_CODE）"
-    # エラーが発生した場合、コミットを中止する
-    exit $EXIT_CODE
-fi
-
-# 変更があったファイルをステージングに追加
-CHANGED_FILES=()
-
-# ファイルの変更を確認してステージングに追加する関数
-# 新しく生成されたファイル（未追跡）も検出できるように改善
-add_if_changed() {
-    local file_path="$1"
-
-    if [ ! -f "$file_path" ]; then
-        return 1
-    fi
-
-    # git status --porcelainで変更を確認（最も確実な方法）
-    # 未追跡ファイル、変更されたファイル、ステージング済みの変更をすべて検出
-    if git status --porcelain "$file_path" 2>/dev/null | grep -q .; then
-        git add "$file_path" 2>/dev/null
-        return 0
-    fi
-
-    return 1
-}
-
-# APIドキュメントの変更を確認
-if add_if_changed "$API_DOC_PATH"; then
-    CHANGED_FILES+=("$API_DOC_PATH")
-fi
-
-# READMEの変更を確認
-if add_if_changed "$README_PATH"; then
-    CHANGED_FILES+=("$README_PATH")
-fi
-
-# AGENTS.mdの変更を確認（新規生成ファイルも含む）
-if add_if_changed "$AGENTS_PATH"; then
-    CHANGED_FILES+=("$AGENTS_PATH")
-fi
-
-# uv.lockの変更を確認（新規生成ファイルも含む）
-if add_if_changed "$UV_LOCK_PATH"; then
-    CHANGED_FILES+=("$UV_LOCK_PATH")
-fi
-
-# 変更があった場合は通知
-if [ "${#CHANGED_FILES[@]}" -gt 0 ]; then
-    echo "✓ 以下のファイルを更新しました:"
-    for file in "${CHANGED_FILES[@]}"; do
-        echo "  - $file"
-    done
-    echo "これらの変更はコミットに含まれます。"
-fi
-
-exit 0
-
+# オーケストレーターを実行
+exec $PYTHON_CMD -m docgen.hooks.orchestrator pre-commit
