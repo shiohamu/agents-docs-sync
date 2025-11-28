@@ -2,7 +2,7 @@
 
 import pytest
 
-from docgen.detectors.generic_detector import GenericDetector
+from docgen.detectors.unified_detector import UnifiedDetector
 
 
 def test_symlink_is_ignored_by_all_detectors(temp_project):
@@ -15,6 +15,6 @@ def test_symlink_is_ignored_by_all_detectors(temp_project):
     except OSError:
         pytest.skip("Symlinks not supported on this platform")
 
-    detector = GenericDetector(temp_project)
+    detector = UnifiedDetector(temp_project, "rust")
     assert detector.detect() is True
     assert detector.get_language() == "rust"

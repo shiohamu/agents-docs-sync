@@ -118,7 +118,7 @@ class TestOutlinesUtils:
     @patch("docgen.utils.outlines_utils.OUTLINES_AVAILABLE", True)
     def test_integration_with_llm_client_factory(self, mock_outlines, temp_project):
         """LLMClientFactoryとの統合テスト"""
-        from docgen.utils.llm_client import LLMClientFactory
+        from docgen.utils.llm import LLMClientFactory
 
         # OpenAIクライアント設定
         config = {"provider": "openai", "api_key": "test-key", "model": "gpt-4"}

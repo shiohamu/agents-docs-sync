@@ -8,7 +8,7 @@ LLMを使用したドキュメント生成、Outlines統合、
 from typing import Any
 
 from docgen.models.project import ProjectInfo
-from docgen.utils.llm_client import LLMClientFactory
+from docgen.utils.llm import LLMClientFactory
 
 
 class LLMMixin:

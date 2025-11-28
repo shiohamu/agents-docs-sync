@@ -19,7 +19,7 @@ from docgen.generators.agents_generator import AgentsGenerator
 from docgen.generators.api_generator import APIGenerator
 from docgen.generators.parsers.python_parser import PythonParser
 from docgen.generators.readme_generator import ReadmeGenerator
-from docgen.utils.llm_client import LLMClientFactory
+from docgen.utils.llm import LLMClientFactory
 
 
 class TestEdgeCases:

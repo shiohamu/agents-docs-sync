@@ -13,7 +13,7 @@ except ImportError:
 
 from typing import Any
 
-from ..utils.llm_client import LLMClientFactory
+from ..utils.llm import LLMClientFactory
 
 
 def should_use_outlines(config: dict[str, Any]) -> bool:

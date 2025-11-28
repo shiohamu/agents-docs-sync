@@ -15,7 +15,7 @@ import sys
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.utils.exceptions import ConfigError
-from docgen.utils.llm_client import (
+from docgen.utils.llm import (
     AnthropicClient,
     BaseLLMClient,
     LLMClientFactory,
@@ -204,7 +204,7 @@ class TestAnthropicClient:
 class TestLLMClientFactory:
     """LLMClientFactoryクラスのテスト"""
 
-    @patch("docgen.utils.llm_client.OpenAIClient")
+    @patch("docgen.utils.llm.factory.OpenAIClient")
     def test_create_client_openai(self, mock_openai_client):
         """OpenAIクライアント作成テスト"""
         config = {"api": {"provider": "openai", "model": "gpt-4"}}
@@ -212,7 +212,7 @@ class TestLLMClientFactory:
         mock_openai_client.assert_called_once_with({"provider": "openai", "model": "gpt-4"})
         assert result is not None
 
-    @patch("docgen.utils.llm_client.AnthropicClient")
+    @patch("docgen.utils.llm.factory.AnthropicClient")
     def test_create_client_anthropic(self, mock_anthropic_client):
         """Anthropicクライアント作成テスト"""
         config = {"api": {"provider": "anthropic", "model": "claude-3"}}
@@ -222,7 +222,7 @@ class TestLLMClientFactory:
         )
         assert result is not None
 
-    @patch("docgen.utils.llm_client.LocalLLMClient")
+    @patch("docgen.utils.llm.factory.LocalLLMClient")
     def test_create_client_local(self, mock_local_client):
         """Localクライアント作成テスト"""
         config = {"local": {"base_url": "http://localhost:11434", "model": "llama3"}}
@@ -244,7 +244,7 @@ class TestLLMClientFactory:
         result = LLMClientFactory.create_client(config, "unknown")
         assert result is None
 
-    @patch("docgen.utils.llm_client.LLMClientFactory.create_client")
+    @patch("docgen.utils.llm.factory.LLMClientFactory.create_client")
     def test_create_client_with_fallback_api_to_local(self, mock_create_client):
         """APIからLocalへのフォールバックテスト"""
         mock_create_client.side_effect = [None, MagicMock()]  # API失敗、Local成功
@@ -252,7 +252,7 @@ class TestLLMClientFactory:
         result = LLMClientFactory.create_client_with_fallback(config, "api")
         assert result is not None
 
-    @patch("docgen.utils.llm_client.LLMClientFactory.create_client")
+    @patch("docgen.utils.llm.factory.LLMClientFactory.create_client")
     def test_create_client_with_fallback_local_to_api(self, mock_create_client):
         """LocalからAPIへのフォールバックテスト"""
         mock_create_client.side_effect = [None, MagicMock()]  # Local失敗、API成功

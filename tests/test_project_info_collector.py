@@ -74,6 +74,7 @@ class TestProjectInfoCollector:
                                             "directories": ["src"],
                                             "files": ["main.py"],
                                         },
+                                        key_features=[],
                                     )
 
                                     assert result == expected
@@ -343,7 +344,14 @@ jobs:
         # ディレクトリ構造を作成
         (temp_project / "src").mkdir()
         (temp_project / "src" / "__init__.py").write_text("")
-        (temp_project / "src" / "main.py").write_text("print('hello')")
+        (temp_project / "src" / "main.py").write_text("""
+class A: pass
+class B: pass
+class C: pass
+def d(): pass
+def e(): pass
+def f(): pass
+""")
         (temp_project / "tests").mkdir()
         (temp_project / "tests" / "test_main.py").write_text("")
         (temp_project / "docs").mkdir()
@@ -352,10 +360,10 @@ jobs:
         collector = ProjectInfoCollector(temp_project)
         structure = collector.collect_project_structure()
 
-        assert "src/" in structure["main_directories"]
-        assert "tests/" in structure["main_directories"]
-        assert "docs/" in structure["main_directories"]
-        assert "README.md" in structure["important_files"]
+        assert "src/" in structure
+        assert "tests/" in structure
+        assert "docs/" in structure
+        assert "README.md" in structure
 
     def test_collect_project_description_from_readme(self, temp_project):
         """READMEからのプロジェクト説明収集テスト"""

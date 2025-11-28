@@ -49,25 +49,26 @@ class TestDocGen:
         assert docgen.config["generation"]["update_readme"] is False
         assert docgen.config["output"]["agents_doc"] == "NEW_AGENTS.md"
 
-    @patch("docgen.language_detector.PythonDetector")
-    @patch("docgen.language_detector.JavaScriptDetector")
-    @patch("docgen.language_detector.GoDetector")
-    @patch("docgen.language_detector.GenericDetector")
-    def test_detect_languages_parallel(
-        self, mock_generic, mock_go, mock_js, mock_python, temp_project
-    ):
+    @patch("docgen.detectors.unified_detector.UnifiedDetectorFactory")
+    def test_detect_languages_parallel(self, mock_factory, temp_project):
         """並列言語検出テスト"""
         # モックの設定
-        mock_python.return_value.detect.return_value = True
-        mock_python.return_value.get_language.return_value = "python"
-        mock_python.return_value.detect_package_manager.return_value = "pip"
-        mock_js.return_value.detect.return_value = False
-        mock_js.return_value.detect_package_manager.return_value = None
-        mock_go.return_value.detect.return_value = True
-        mock_go.return_value.get_language.return_value = "go"
-        mock_go.return_value.detect_package_manager.return_value = "go"
-        mock_generic.return_value.detect.return_value = False
-        mock_generic.return_value.detect_package_manager.return_value = None
+        mock_python = MagicMock()
+        mock_python.detect.return_value = True
+        mock_python.get_language.return_value = "python"
+        mock_python.detect_package_manager.return_value = "pip"
+
+        mock_js = MagicMock()
+        mock_js.detect.return_value = False
+        mock_js.detect_package_manager.return_value = None
+
+        mock_go = MagicMock()
+        mock_go.detect.return_value = True
+        mock_go.get_language.return_value = "go"
+        mock_go.detect_package_manager.return_value = "go"
+
+        # create_all_detectorsがこれらのモックを返すように設定
+        mock_factory.create_all_detectors.return_value = [mock_python, mock_js, mock_go]
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=True)
@@ -75,28 +76,30 @@ class TestDocGen:
         assert "python" in languages
         assert "go" in languages
         assert "javascript" not in languages
-        assert docgen.detected_languages == languages
+        # 順序は保証されないため、セットで比較するか、含まれていることを確認
+        assert set(docgen.detected_languages) == {"python", "go"}
         assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
-    @patch("docgen.language_detector.PythonDetector")
-    @patch("docgen.language_detector.JavaScriptDetector")
-    @patch("docgen.language_detector.GoDetector")
-    @patch("docgen.language_detector.GenericDetector")
-    def test_detect_languages_sequential(
-        self, mock_generic, mock_go, mock_js, mock_python, temp_project
-    ):
+    @patch("docgen.detectors.unified_detector.UnifiedDetectorFactory")
+    def test_detect_languages_sequential(self, mock_factory, temp_project):
         """逐次言語検出テスト"""
         # モックの設定
-        mock_python.return_value.detect.return_value = True
-        mock_python.return_value.get_language.return_value = "python"
-        mock_python.return_value.detect_package_manager.return_value = "pip"
-        mock_js.return_value.detect.return_value = False
-        mock_js.return_value.detect_package_manager.return_value = None
-        mock_go.return_value.detect.return_value = True
-        mock_go.return_value.get_language.return_value = "go"
-        mock_go.return_value.detect_package_manager.return_value = "go"
-        mock_generic.return_value.detect.return_value = False
-        mock_generic.return_value.detect_package_manager.return_value = None
+        mock_python = MagicMock()
+        mock_python.detect.return_value = True
+        mock_python.get_language.return_value = "python"
+        mock_python.detect_package_manager.return_value = "pip"
+
+        mock_js = MagicMock()
+        mock_js.detect.return_value = False
+        mock_js.detect_package_manager.return_value = None
+
+        mock_go = MagicMock()
+        mock_go.detect.return_value = True
+        mock_go.get_language.return_value = "go"
+        mock_go.detect_package_manager.return_value = "go"
+
+        # create_all_detectorsがこれらのモックを返すように設定
+        mock_factory.create_all_detectors.return_value = [mock_python, mock_js, mock_go]
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=False)
