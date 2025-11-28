@@ -6,11 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from .detectors.config_loader import ConfigLoader
-from .detectors.generic_detector import GenericDetector
-from .detectors.go_detector import GoDetector
-from .detectors.javascript_detector import JavaScriptDetector
 from .detectors.plugin_registry import PluginRegistry
-from .detectors.python_detector import PythonDetector
 from .utils.logger import get_logger
 
 logger = get_logger("language_detector")
@@ -62,13 +58,10 @@ class LanguageDetector:
         Returns:
             検出された言語のリスト
         """
-        # 既存のdetectorを使用（後方互換性のため）
-        detectors = [
-            PythonDetector(self.project_root),
-            JavaScriptDetector(self.project_root),
-            GoDetector(self.project_root),
-            GenericDetector(self.project_root),
-        ]
+        from .detectors.unified_detector import UnifiedDetectorFactory
+
+        # 統一 detector を使用
+        detectors = UnifiedDetectorFactory.create_all_detectors(self.project_root)
 
         # プラグインdetectorを追加（優先度が高い）
         if self.enable_config_system:
