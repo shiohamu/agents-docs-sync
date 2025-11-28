@@ -15,3 +15,4 @@ class ProjectInfo(BaseModel):
     coding_standards: dict[str, Any] | None = None
     ci_cd_info: dict[str, Any] | None = None
     project_structure: dict[str, Any] | None = None
+    key_features: list[str] | None = Field(default=None, description="主要機能")

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-27 23:34:28
+自動生成日時: 2025-11-28 10:13:08
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,28 +12,118 @@
 <!-- MANUAL_END:description -->
 
 
-本プロジェクトは、AI エージェントの開発・保守を円滑にするための自動化パイプラインです。  
-- **主な機能**：コミットごとにテスト実行 → ドキュメント生成（`docgen.py`）→ `AGENTS.md` の差分更新という一連作業をシームレスに実施します。  
-- **言語・ツール**：Python 3 と Bash をベースに構築され、依存関係は `pyyaml`, `pytest`, `pytest‑cov`, `pytest‑mock` に限定しています。また、リントには Ruff が採用されています。  
-- **ビルドフロー**  
-  ```bash
-  uv sync          # 依存パッケージを同期
-  uv build         # ビルドアーティファクト作成（必要に応じて）
-  uv run python3 docgen/docgen.py   # ドキュメント生成スクリプト実行
-  ```
-- **テストフロー**  
-  ```bash
-  uv run pytest tests/ -v --tb=short    # Python テスト (pytest)
-  npm test                               # JavaScript / TypeScript コンポーネントのテスト（必要に応じて）
-  go test ./...                          # Go コンポーネントのテスト（必要に応じて）
-  ```
-- **運用上のメリット**  
-  - コードベースとドキュメントが常に同期し、最新状態を保つため QA 時の不整合リスクを低減。  
-  - `AGENTS.md` の手動編集不要で、CI/CD パイプラインから自動生成されることでエージェント追加・変更時の作業負担が軽減。  
-- **拡張性**：新しい AI エージェントを追加する際は、該当ディレクトリに YAML 定義ファイルと必要なスクリプト／テストを書くだけで、自動生成対象となります。
+The **agents-docs-sync** pipeline is designed to keep the documentation of all AI agents in sync with their source code and test suite automatically whenever a commit is pushed to the repository.  
 
-このパイプラインを活用すれば、エンジニアリングチームはコード品質の維持・向上に集中できる環境が整います。
+- **Trigger & Workflow**  
+  * Every push initiates a CI job that runs three distinct phases: (1) dependency resolution (`uv sync`), (2) build artifacts creation (`uv build`), and (3) documentation generation via `python3 docgen/docgen.py`. The generated Markdown is then merged into the central **AGENTS.md** file, ensuring it reflects the latest agent definitions.  
+
+- **Core Functionality**  
+  * `docgen/docgen.py` scans the repository for Python modules, shell scripts and other language-specific files that expose an agent interface (decorators or naming conventions). It extracts metadata such as name, description, input/output schema, and example usage, then composes a Markdown section per agent.  
+
+- **Testing & Validation**  
+  * The pipeline verifies code quality through `uv run pytest` for Python tests with coverage (`pytest-cov`) and mocking support (`pytest-mock`). It also runs cross‑language checks: `npm test` validates any JavaScript/TypeScript tooling, while `go test ./...` ensures Go components compile and pass their unit tests.  
+
+- **Dependencies & Environment**  
+  * The project relies on the following Python packages (installed via UV):  
+    - `pyyaml>=6.0.3`: for parsing YAML configuration files that may contain agent metadata.  
+    - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` : comprehensive test framework and coverage reporting.  
+  * Code style enforcement is handled by the **ruff** linter, ensuring consistent formatting across all Python source files.  
+
+- **Usage Instructions for Contributors**  
+  1. Install UV (if not already installed).  
+     ```bash
+     uv venv create .venv --python=3.x   # optional virtual environment creation
+     ```
+  2. Sync dependencies: `uv sync`.  
+  3. Build the project artifacts: `uv build`.  
+  4. Generate or update documentation locally to preview changes: `uv run python3 docgen/docgen.py`.  
+  5. Run tests before committing: 
+     ```bash
+     uv run pytest tests/ -v --tb=short
+     npm test          # if the repository contains NodeJS components
+     go test ./...      # for Go modules
+     ```
+  6. Commit changes; CI will automatically re‑run the pipeline and update **AGENTS.md**.
+
+- **Key Benefits**  
+  * Guarantees that `AGENTS.md` always reflects the current state of each agent, reducing manual documentation drift.  
+  * Provides a single source of truth for both code behavior (tests) and user-facing description (docs).  
+  * Supports multi‑language projects by integrating Python, JavaScript/TypeScript, and Go testing workflows within one cohesive pipeline.
+
+This overview equips AI agents developers with the necessary context to understand how documentation stays current, what tools are involved, and how they can contribute safely without breaking the automated sync process.
 **使用技術**: python, shell
+
+
+## プロジェクト構造
+```
+agents-docs-sync/
+ ├─ docgen/
+ │  ├─ collectors/
+ │  │  ├─ collector_utils.py
+ │  │  └─ project_info_collector.py
+ │  ├─ detectors/
+ │  │  ├─ base_detector.py
+ │  │  ├─ detector_patterns.py
+ │  │  └─ javascript_detector.py
+ │  ├─ generators/
+ │  │  ├─ parsers/
+ │  │  │  ├─ base_parser.py
+ │  │  │  ├─ generic_parser.py
+ │  │  │  ├─ js_parser.py
+ │  │  │  └─ python_parser.py
+ │  │  ├─ agents_generator.py
+ │  │  ├─ api_generator.py
+ │  │  ├─ base_generator.py
+ │  │  └─ readme_generator.py
+ │  ├─ hooks/
+ │  │  ├─ tasks/
+ │  │  │  └─ base.py
+ │  │  ├─ config.py
+ │  │  └─ orchestrator.py
+ │  ├─ index/
+ │  │  └─ meta.json
+ │  ├─ models/
+ │  │  ├─ agents.py
+ │  │  └─ config.py
+ │  ├─ prompts/
+ │  │  ├─ agents_prompts.yaml
+ │  │  ├─ commit_message_prompts.yaml
+ │  │  └─ readme_prompts.yaml
+ │  ├─ rag/
+ │  │  ├─ chunker.py
+ │  │  ├─ embedder.py
+ │  │  ├─ indexer.py
+ │  │  ├─ retriever.py
+ │  │  └─ validator.py
+ │  ├─ utils/
+ │  │  ├─ cache.py
+ │  │  ├─ exceptions.py
+ │  │  ├─ file_utils.py
+ │  │  ├─ llm_client.py
+ │  │  ├─ markdown_utils.py
+ │  │  └─ prompt_loader.py
+ │  ├─ config.yaml
+ │  ├─ config_manager.py
+ │  ├─ docgen.py
+ │  └─ hooks.yaml
+ ├─ docs/
+ ├─ scripts/
+ ├─ tests/
+ ├─ AGENTS.md
+ ├─ PROJECT_MANAGEMENT_GUIDE.md
+ ├─ README.md
+ ├─ RELEASE.md
+ ├─ install.sh
+ ├─ pyproject.toml
+ ├─ requirements-docgen.txt
+ ├─ requirements-test.txt
+ └─ setup.sh
+```
+
+
+
+
+
 
 ---
 
@@ -165,6 +255,8 @@ go test ./...
 
 
 
+
+
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-27 23:34:28*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-28 10:13:08*

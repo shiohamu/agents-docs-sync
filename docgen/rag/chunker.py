@@ -28,6 +28,21 @@ class CodeChunker:
         r".*token.*\.json$",
     ]
 
+    # 無視すべきディレクトリ
+    IGNORE_DIRS = {
+        ".git",
+        ".venv",
+        "venv",
+        "__pycache__",
+        "node_modules",
+        ".idea",
+        ".vscode",
+        "dist",
+        "build",
+        "coverage",
+        "docgen/index",  # インデックスディレクトリ自体を除外
+    }
+
     def __init__(self, config: dict[str, Any] | None = None):
         """
         初期化
@@ -374,11 +389,41 @@ class CodeChunker:
         """
         all_chunks = []
 
-        # プロジェクト内のファイルを走査
-        for file_path in project_root.rglob("*"):
-            if file_path.is_file():
-                chunks = self.chunk_file(file_path, project_root)
-                all_chunks.extend(chunks)
+        # os.walkを使用してディレクトリを走査し、無視すべきディレクトリをスキップ
+        import os
+
+        for root, dirs, files in os.walk(project_root):
+            # 無視すべきディレクトリを削除（in-place変更でos.walkの探索を制御）
+            # 相対パスでチェックする必要があるため、少し工夫が必要
+            # ここでは単純なディレクトリ名チェックと、パスチェックを行う
+
+            # 1. ディレクトリ名でフィルタリング
+            dirs[:] = [d for d in dirs if d not in self.IGNORE_DIRS and not d.startswith(".")]
+
+            # 2. パスベースのフィルタリング（docgen/indexのようなネストされたパス用）
+            # os.walkのdirsはディレクトリ名のみなので、ここで削除するとその下には行かない
+            # ただし、docgen/indexのようなパスはここだけでは判定しにくい場合がある
+            # 親ディレクトリ(root)と結合してチェック
+
+            valid_dirs = []
+            for d in dirs:
+                dir_path = Path(root) / d
+                rel_path = dir_path.relative_to(project_root)
+                if str(rel_path) in self.IGNORE_DIRS:
+                    continue
+                # docgen/index のようなパスが含まれるかチェック
+                if any(
+                    str(rel_path).startswith(ignore) for ignore in self.IGNORE_DIRS if "/" in ignore
+                ):
+                    continue
+                valid_dirs.append(d)
+            dirs[:] = valid_dirs
+
+            for file_name in files:
+                file_path = Path(root) / file_name
+                if self.should_process_file(file_path):
+                    chunks = self.chunk_file(file_path, project_root)
+                    all_chunks.extend(chunks)
 
         logger.info(f"Created {len(all_chunks)} chunks from codebase")
         return all_chunks

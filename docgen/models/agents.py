@@ -79,6 +79,10 @@ class AgentsConfig(BaseModel):
     build_test_instructions: BuildTestInstructions
     coding_standards: CodingStandards | None = None
     pr_guidelines: PRGuidelines | None = None
+    project_structure: str | None = Field(default=None, description="プロジェクト構造")
+    key_features: list[str] | None = Field(default=None, description="主要機能")
+    architecture: str | None = Field(default=None, description="アーキテクチャ")
+    troubleshooting: str | None = Field(default=None, description="トラブルシューティング")
     auto_generated_note: str | None = Field(default=None, description="自動生成に関する注意書き")
 
 
@@ -113,4 +117,8 @@ class AgentsDocument(BaseModel):
     build_test_instructions: BuildTestInstructions
     coding_standards: CodingStandards | None = None
     pr_guidelines: PRGuidelines | None = None
+    project_structure: str | None = Field(default=None, description="プロジェクト構造")
+    key_features: list[str] | None = Field(default=None, description="主要機能")
+    architecture: str | None = Field(default=None, description="アーキテクチャ")
+    troubleshooting: str | None = Field(default=None, description="トラブルシューティング")
     auto_generated_note: str = Field(description="自動生成に関する注意書き")

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-27 23:32:46
+自動生成日時: 2025-11-28 10:12:24
 
 ---
 
@@ -271,6 +271,46 @@ Returns:
 
 ---
 
+### collect_project_structure
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_project_structure(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+プロジェクト構造を収集
+
+Returns:
+    プロジェクト構造の辞書
+
+*定義場所: docgen/collectors/project_info_collector.py:82*
+
+---
+
+### collect_key_features
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_key_features(self) -> list[str]:
+```
+
+**説明**:
+
+主要機能を収集（プレースホルダー）
+
+Returns:
+    主要機能のリスト
+
+*定義場所: docgen/collectors/project_info_collector.py:130*
+
+---
+
 ### collect_test_commands
 
 **型**: `method`
@@ -287,7 +327,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:75*
+*定義場所: docgen/collectors/project_info_collector.py:141*
 
 ---
 
@@ -307,7 +347,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:155*
+*定義場所: docgen/collectors/project_info_collector.py:221*
 
 ---
 
@@ -327,7 +367,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:236*
+*定義場所: docgen/collectors/project_info_collector.py:302*
 
 ---
 
@@ -347,7 +387,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:314*
+*定義場所: docgen/collectors/project_info_collector.py:380*
 
 ---
 
@@ -357,17 +397,37 @@ Returns:
 
 **シグネチャ**:
 ```
-def collect_project_structure(self) -> dict[str, list[str]]:
+def collect_project_structure(self) -> dict[str, Any]:
 ```
 
 **説明**:
 
-プロジェクト構造を収集
+プロジェクト構造を収集（ファイルとディレクトリのみ）
 
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:334*
+*定義場所: docgen/collectors/project_info_collector.py:399*
+
+---
+
+### collect_key_features
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_key_features(self) -> list[str]:
+```
+
+**説明**:
+
+主要機能を収集（プレースホルダー）
+
+Returns:
+    主要機能のリスト
+
+*定義場所: docgen/collectors/project_info_collector.py:538*
 
 ---
 
@@ -387,7 +447,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:366*
+*定義場所: docgen/collectors/project_info_collector.py:549*
 
 ---
 
@@ -2167,7 +2227,7 @@ class ReadmeGenerator:
 
 README generation class
 
-*定義場所: docgen/generators/readme_generator.py:15*
+*定義場所: docgen/generators/readme_generator.py:16*
 
 ---
 
@@ -2190,7 +2250,7 @@ Args:
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
 
-*定義場所: docgen/generators/readme_generator.py:18*
+*定義場所: docgen/generators/readme_generator.py:19*
 
 ---
 
@@ -2205,7 +2265,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:44*
+*定義場所: docgen/generators/readme_generator.py:45*
 
 ---
 
@@ -3025,7 +3085,7 @@ class AgentsGenerationConfig:
 
 Agents generation configuration model.
 
-*定義場所: docgen/models/agents.py:85*
+*定義場所: docgen/models/agents.py:89*
 
 ---
 
@@ -3042,7 +3102,7 @@ class AgentsConfigSection:
 
 Agents configuration section model.
 
-*定義場所: docgen/models/agents.py:93*
+*定義場所: docgen/models/agents.py:97*
 
 ---
 
@@ -3059,7 +3119,7 @@ class AgentsDocument:
 
 AGENTS.mdドキュメントの構造化データモデル
 
-*定義場所: docgen/models/agents.py:106*
+*定義場所: docgen/models/agents.py:110*
 
 ---
 
@@ -3468,7 +3528,7 @@ class ReadmeDocument:
 
 READMEドキュメントの構造化データモデル
 
-*定義場所: docgen/models/readme.py:37*
+*定義場所: docgen/models/readme.py:40*
 
 ---
 
@@ -3508,7 +3568,7 @@ def __init__(self, config: dict[str, Any] | None):
 Args:
     config: RAG設定（config.yaml の rag セクション）
 
-*定義場所: docgen/rag/chunker.py:31*
+*定義場所: docgen/rag/chunker.py:46*
 
 ---
 
@@ -3531,7 +3591,7 @@ Args:
 Returns:
     処理すべき場合True
 
-*定義場所: docgen/rag/chunker.py:49*
+*定義場所: docgen/rag/chunker.py:64*
 
 ---
 
@@ -3555,7 +3615,7 @@ Args:
 Returns:
     チャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:117*
+*定義場所: docgen/rag/chunker.py:132*
 
 ---
 
@@ -3578,7 +3638,7 @@ Args:
 Returns:
     すべてのチャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:365*
+*定義場所: docgen/rag/chunker.py:380*
 
 ---
 

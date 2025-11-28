@@ -38,6 +38,13 @@ generation:
   # AGENTS.mdを生成するかどうか
   generate_agents_doc: true
 
+  # 生成モード (template, llm, hybrid)
+  # template: テンプレートのみ使用（新しいセクションはLLM生成しない）
+  # llm: LLMのみ使用
+  # hybrid: テンプレートをベースにLLMで不足部分を補完（推奨）
+  agents_mode: hybrid
+  readme_mode: hybrid
+
   # 既存READMEの手動セクションを保持するかどうか
   # <!-- MANUAL_START:section_name --> と <!-- MANUAL_END:section_name --> で
   # 囲まれたセクションは保持されます
@@ -225,7 +232,6 @@ exclude:
     - test
     - __tests__
     - __test__
-    - docs
 
   # 除外するファイルパターン（glob形式）
   patterns:

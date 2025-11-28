@@ -62,6 +62,12 @@ class ProjectInfoCollector:
         Returns:
             プロジェクト情報の辞書
         """
+        # プロジェクト構造の収集
+        project_structure = self.collect_project_structure()
+
+        # 主要機能の収集
+        key_features = self.collect_key_features()
+
         return ProjectInfo(
             description=self.collect_project_description(),
             build_commands=self.build_collector.collect_build_commands(),
@@ -69,8 +75,68 @@ class ProjectInfoCollector:
             dependencies=self.collect_dependencies(),
             coding_standards=self.collect_coding_standards(),
             ci_cd_info=self.collect_ci_cd_info(),
-            project_structure=self.collect_project_structure(),
+            project_structure=project_structure,
+            key_features=key_features,
         )
+
+    def collect_project_structure(self) -> dict[str, Any]:
+        """
+        プロジェクト構造を収集
+
+        Returns:
+            プロジェクト構造の辞書
+        """
+        structure = {}
+        ignore_dirs = {
+            ".git",
+            ".venv",
+            "venv",
+            "__pycache__",
+            "node_modules",
+            ".idea",
+            ".vscode",
+            "dist",
+            "build",
+            "coverage",
+        }
+
+        try:
+            for item in self.project_root.iterdir():
+                if item.name in ignore_dirs or item.name.startswith("."):
+                    continue
+
+                if item.is_dir():
+                    # ディレクトリの場合、主要なファイルのみを含めるか、サブディレクトリを再帰的に探索
+                    # ここでは1階層のみ探索し、重要なファイルのみリストアップ
+                    children = []
+                    try:
+                        for child in item.iterdir():
+                            if child.name in ignore_dirs or child.name.startswith("."):
+                                continue
+                            if child.is_file():
+                                children.append(child.name)
+                            elif child.is_dir():
+                                children.append(f"{child.name}/")
+                    except Exception:
+                        pass
+                    structure[item.name] = sorted(children)
+                else:
+                    structure[item.name] = "file"
+        except Exception as e:
+            self.logger.warning(f"Failed to collect project structure: {e}")
+
+        return structure
+
+    def collect_key_features(self) -> list[str]:
+        """
+        主要機能を収集（プレースホルダー）
+
+        Returns:
+            主要機能のリスト
+        """
+        # READMEから抽出するロジックなどを実装可能
+        # 現時点では空リストを返す
+        return []
 
     def collect_test_commands(self) -> list[str]:
         """
@@ -326,42 +392,159 @@ class ProjectInfoCollector:
             workflows = []
             for workflow_file in workflows_dir.glob("*.yml"):
                 workflows.append(workflow_file.name)
-            if workflows:
                 ci_info["github_actions"] = workflows
 
         return ci_info
 
-    def collect_project_structure(self) -> dict[str, list[str]]:
+    def collect_project_structure(self) -> dict[str, Any]:
         """
-        プロジェクト構造を収集
+        プロジェクト構造を収集（ファイルとディレクトリのみ）
 
         Returns:
             プロジェクト構造の辞書
         """
-        structure = {
-            "languages": [],
-            "main_directories": [],
-            "important_files": [],
+        import ast
+
+        structure = {}
+        ignore_dirs = {
+            ".git",
+            ".venv",
+            "venv",
+            "__pycache__",
+            "node_modules",
+            ".idea",
+            ".vscode",
+            "dist",
+            "build",
+            "coverage",
+            "htmlcov",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".tox",
         }
 
-        # 言語の検出（簡易版）
-        if (self.project_root / self.REQUIREMENTS_FILES[0]).exists() or (
-            self.project_root / self.PYPROJECT_TOML
-        ).exists():
-            structure["languages"].append("python")
-        if (self.project_root / self.PACKAGE_JSON).exists():
-            structure["languages"].append("javascript")
-        if (self.project_root / self.GO_MOD).exists():
-            structure["languages"].append("go")
+        # ネストしないディレクトリ（中身を展開しない）
+        no_nest_dirs = {
+            "docs",
+            "tests",
+            "test",
+            "__tests__",
+            "scripts",
+            "examples",
+            "fixtures",
+            "migrations",
+        }
 
-        # 主要ディレクトリ
-        for item in self.project_root.iterdir():
-            if item.is_dir() and not item.name.startswith("."):
-                structure["main_directories"].append(item.name + "/")
-            elif item.is_file() and item.name in self.README_FILES + [self.CHANGELOG, self.LICENSE]:
-                structure["important_files"].append(item.name)
+        def count_symbols_in_file(file_path: Path) -> int:
+            """Pythonファイルのシンボル数をカウント"""
+            try:
+                content = file_path.read_text(encoding="utf-8")
+                tree = ast.parse(content)
+                return len(
+                    [
+                        node
+                        for node in ast.walk(tree)
+                        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+                    ]
+                )
+            except Exception:
+                return 0
+
+        def collect_directory_structure(
+            directory: Path, max_depth: int = 3, current_depth: int = 0
+        ) -> dict[str, Any]:
+            """ディレクトリ構造を再帰的に収集"""
+            if current_depth >= max_depth:
+                return {}
+
+            # ネストしないディレクトリの場合は中身を展開しない
+            if directory.name in no_nest_dirs:
+                return "directory"
+
+            result = {}
+
+            try:
+                items = sorted(directory.iterdir(), key=lambda x: (not x.is_dir(), x.name))
+
+                for item in items:
+                    if item.name in ignore_dirs or item.name.startswith("."):
+                        continue
+
+                    if item.is_dir():
+                        # ネストしないディレクトリかチェック
+                        if item.name in no_nest_dirs:
+                            result[f"{item.name}/"] = "directory"
+                        else:
+                            # ディレクトリの場合は再帰的に処理
+                            subdir_structure = collect_directory_structure(
+                                item, max_depth, current_depth + 1
+                            )
+                            if subdir_structure:
+                                result[f"{item.name}/"] = subdir_structure
+                    elif item.is_file():
+                        # ファイルの場合
+                        if item.suffix == ".py":
+                            # Pythonファイルはシンボル数をチェック
+                            symbol_count = count_symbols_in_file(item)
+                            if symbol_count > 5:  # 重要なファイルのみ
+                                result[item.name] = "file"
+                        elif item.suffix in [
+                            ".md",
+                            ".yaml",
+                            ".yml",
+                            ".toml",
+                            ".json",
+                            ".txt",
+                            ".sh",
+                        ]:
+                            # 設定・ドキュメントファイル
+                            result[item.name] = "file"
+
+            except Exception as e:
+                self.logger.debug(f"Failed to collect directory structure for {directory}: {e}")
+
+            return result
+
+        # プロジェクトルートを走査
+        try:
+            for item in sorted(self.project_root.iterdir(), key=lambda x: (not x.is_dir(), x.name)):
+                if item.name in ignore_dirs or item.name.startswith("."):
+                    continue
+
+                if item.is_dir():
+                    # ネストしないディレクトリかチェック
+                    if item.name in no_nest_dirs:
+                        structure[f"{item.name}/"] = "directory"
+                    else:
+                        # ディレクトリの場合
+                        dir_structure = collect_directory_structure(item, max_depth=3)
+                        if dir_structure:
+                            structure[f"{item.name}/"] = dir_structure
+
+                elif item.is_file():
+                    # ルートのファイル
+                    if item.suffix == ".py":
+                        symbol_count = count_symbols_in_file(item)
+                        if symbol_count > 5:
+                            structure[item.name] = "file"
+                    elif item.suffix in [".md", ".yaml", ".yml", ".toml", ".json", ".txt", ".sh"]:
+                        structure[item.name] = "file"
+
+        except Exception as e:
+            self.logger.warning(f"Failed to collect project structure: {e}")
 
         return structure
+
+    def collect_key_features(self) -> list[str]:
+        """
+        主要機能を収集（プレースホルダー）
+
+        Returns:
+            主要機能のリスト
+        """
+        # READMEから抽出するロジックなどを実装可能
+        # 現時点では空リストを返す
+        return []
 
     def collect_project_description(self) -> str | None:
         """

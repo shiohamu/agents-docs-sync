@@ -142,6 +142,11 @@ class AgentsGenerator(BaseGenerator):
             "raw_test_commands": project_info.test_commands or [],
             "coding_standards": project_info.coding_standards or {},
             "custom_instructions": self._generate_custom_instructions_content(),
+            "project_structure": self._format_project_structure(project_info.project_structure),
+            # テンプレートモードではLLMを使用せず、データから取得した値のみ使用
+            "key_features": project_info.key_features or [],
+            "architecture": "",
+            "troubleshooting": "",
         }
 
         # Jinja2テンプレートでレンダリング
@@ -196,8 +201,121 @@ class AgentsGenerator(BaseGenerator):
             "test_commands": self._format_structured_test_commands(data.build_test_instructions),
             "coding_standards": self._format_structured_coding_standards(data.coding_standards),
             "pr_guidelines": self._format_structured_pr_guidelines(data.pr_guidelines),
+            "project_structure": data.project_structure
+            or self._format_project_structure(project_info.project_structure),
+            "key_features": data.key_features or self._generate_key_features(project_info),
+            "architecture": data.architecture or self._generate_architecture(project_info),
+            "troubleshooting": data.troubleshooting or self._generate_troubleshooting(project_info),
             "custom_instructions": "",
         }
+        print(f"DEBUG: project_structure raw: {project_info.project_structure}")
+        print(f"DEBUG: project_structure formatted: {context['project_structure']}")
+        print(f"DEBUG: key_features: {context['key_features']}")
 
         # 構造化データをマークダウンに変換（未使用）
         return context
+
+    def _format_project_structure(self, structure: dict[str, Any] | None) -> str:
+        """プロジェクト構造をツリー形式で整形"""
+        if not structure:
+            return ""
+
+        def format_node(data, prefix="", is_last=True):
+            """ノードを再帰的にツリー形式でフォーマット"""
+            lines = []
+
+            if isinstance(data, dict):
+                items = list(data.items())
+                for i, (key, value) in enumerate(items):
+                    is_last_item = i == len(items) - 1
+                    connector = "└─ " if is_last_item else "├─ "
+
+                    if value == "file" or value == "directory":
+                        lines.append(f"{prefix}{connector}{key}")
+                    elif isinstance(value, dict):
+                        lines.append(f"{prefix}{connector}{key}")
+                        # 再帰的に子要素を処理
+                        extension = "   " if is_last_item else "│  "
+                        child_lines = format_node(value, prefix + extension, is_last_item)
+                        lines.extend(child_lines)
+                    else:
+                        lines.append(f"{prefix}{connector}{key}")
+
+            return lines
+
+        # プロジェクト名をルートとして表示
+        project_name = self.project_root.name
+        all_lines = [f"{project_name}/"]
+        all_lines.extend(format_node(structure, " ", True))
+
+        return "\n".join(all_lines)
+
+    def _generate_key_features(self, project_info: ProjectInfo) -> list[str]:
+        """主要機能を生成"""
+        # LLMが利用可能かチェック
+        if not self._should_use_llm():
+            return []
+
+        try:
+            client = self._get_llm_client_with_fallback()
+            if not client:
+                return []
+
+            prompt = PromptLoader.load_prompt(
+                "agents_prompts.yaml", "key_features", project_info=str(project_info)
+            )
+            response = client.generate(prompt)
+            # シンプルなパース処理（箇条書きをリストに変換）
+            features = []
+            for line in response.split("\n"):
+                line = line.strip()
+                if line.startswith("- ") or line.startswith("* "):
+                    features.append(line[2:])
+            return features
+        except Exception as e:
+            self.logger.debug(f"Failed to generate key features: {e}")
+            return []
+
+    def _generate_architecture(self, project_info: ProjectInfo) -> str:
+        """アーキテクチャを生成"""
+        # LLMが利用可能かチェック
+        if not self._should_use_llm():
+            return ""
+
+        try:
+            client = self._get_llm_client_with_fallback()
+            if not client:
+                return ""
+
+            prompt = PromptLoader.load_prompt(
+                "agents_prompts.yaml", "architecture", project_info=str(project_info)
+            )
+            return client.generate(prompt)
+        except Exception as e:
+            self.logger.debug(f"Failed to generate architecture: {e}")
+            return ""
+
+    def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
+        """トラブルシューティングを生成"""
+        # LLMが利用可能かチェック
+        if not self._should_use_llm():
+            return ""
+
+        try:
+            client = self._get_llm_client_with_fallback()
+            if not client:
+                return ""
+
+            prompt = PromptLoader.load_prompt(
+                "agents_prompts.yaml", "troubleshooting", project_info=str(project_info)
+            )
+            return client.generate(prompt)
+        except Exception as e:
+            self.logger.debug(f"Failed to generate troubleshooting: {e}")
+            return ""
+
+    def _should_use_llm(self) -> bool:
+        """LLMを使用すべきかどうかを判定"""
+        # BaseGeneratorにはこのメソッドがない可能性があるため、ここで実装
+        # またはconfigを確認
+        return self.agents_config.get("generation", {}).get("agents_mode") in ["llm", "hybrid"]

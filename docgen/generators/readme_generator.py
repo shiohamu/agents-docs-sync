@@ -8,6 +8,7 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..models.readme import ReadmeDocument
+from ..utils.markdown_utils import get_current_timestamp
 from ..utils.prompt_loader import PromptLoader
 from .base_generator import BaseGenerator
 
@@ -46,6 +47,189 @@ class ReadmeGenerator(BaseGenerator):
 
     def _get_mode_key(self) -> str:
         return "readme_mode"
+
+    def _convert_structured_data_to_markdown(
+        self, data: ReadmeDocument, project_info: ProjectInfo
+    ) -> str:
+        """
+        構造化データをマークダウン形式に変換（テンプレート使用）
+
+        Args:
+            data: 構造化されたREADMEドキュメントデータ
+            project_info: プロジェクト情報
+
+        Returns:
+            マークダウン形式の文字列
+        """
+        # 構造化データをテンプレートコンテキストに変換
+        context = {
+            "project_name": data.title,
+            "description_section": data.description,
+            "technologies": self._format_technologies(data.technologies),
+            "dependencies_section": self._format_dependencies(data.dependencies),
+            "setup_section": self._format_setup_instructions(data.setup_instructions),
+            "usage_section": "",  # 使用方法は手動セクションまたは別途生成
+            "build_commands": self._format_commands(data.build_commands),
+            "test_commands": self._format_commands(data.test_commands),
+            "other_section": "",
+            "footer": f"*このREADME.mdは自動生成されています。最終更新: {get_current_timestamp()}*",
+            "project_structure": data.project_structure
+            or self._format_project_structure(project_info.project_structure),
+            "key_features": data.key_features or self._generate_key_features(project_info),
+            "architecture": data.architecture or self._generate_architecture(project_info),
+            "troubleshooting": data.troubleshooting or self._generate_troubleshooting(project_info),
+        }
+
+        # 手動セクションの統合
+        if data.manual_sections:
+            if "usage" in data.manual_sections:
+                context["usage_section"] = data.manual_sections["usage"]
+            if "other" in data.manual_sections:
+                context["other_section"] = data.manual_sections["other"]
+
+        return context
+
+    def _format_technologies(self, technologies: list[str]) -> str:
+        """使用技術リストを整形"""
+        if not technologies:
+            return ""
+        return "\n".join([f"- {tech}" for tech in technologies])
+
+    def _format_dependencies(self, dependencies: Any) -> str:
+        """依存関係を整形"""
+        if not dependencies:
+            return ""
+
+        lines = []
+        if dependencies.python:
+            lines.append("### Python")
+            lines.extend([f"- {dep}" for dep in dependencies.python])
+        if dependencies.nodejs:
+            lines.append("### Node.js")
+            lines.extend([f"- {dep}" for dep in dependencies.nodejs])
+        if dependencies.other:
+            lines.append("### Other")
+            lines.extend([f"- {dep}" for dep in dependencies.other])
+
+        return "\n".join(lines)
+
+    def _format_setup_instructions(self, setup: Any) -> str:
+        """セットアップ手順を整形"""
+        if not setup:
+            return ""
+
+        lines = []
+        if setup.prerequisites:
+            lines.append("### 前提条件")
+            lines.extend([f"- {req}" for req in setup.prerequisites])
+
+        if setup.installation_steps:
+            lines.append("### インストール")
+            for step in setup.installation_steps:
+                lines.append(f"1. {step}")
+
+        return "\n".join(lines)
+
+    def _format_commands(self, commands: list[str] | None) -> str:
+        """コマンドリストを整形"""
+        if not commands:
+            return ""
+        return "\n".join([f"```bash\n{cmd}\n```" for cmd in commands])
+
+    def _format_project_structure(self, structure: dict[str, Any] | None) -> str:
+        """プロジェクト構造をツリー形式で整形"""
+        if not structure:
+            return ""
+
+        def format_node(data, prefix="", is_last=True):
+            """ノードを再帰的にツリー形式でフォーマット"""
+            lines = []
+
+            if isinstance(data, dict):
+                items = list(data.items())
+                for i, (key, value) in enumerate(items):
+                    is_last_item = i == len(items) - 1
+                    connector = "└─ " if is_last_item else "├─ "
+
+                    if value == "file" or value == "directory":
+                        lines.append(f"{prefix}{connector}{key}")
+                    elif isinstance(value, dict):
+                        lines.append(f"{prefix}{connector}{key}")
+                        # 再帰的に子要素を処理
+                        extension = "   " if is_last_item else "│  "
+                        child_lines = format_node(value, prefix + extension, is_last_item)
+                        lines.extend(child_lines)
+                    else:
+                        lines.append(f"{prefix}{connector}{key}")
+
+            return lines
+
+        # プロジェクト名をルートとして表示
+        project_name = self.project_root.name
+        all_lines = [f"{project_name}/"]
+        all_lines.extend(format_node(structure, " ", True))
+
+        return "\n".join(all_lines)
+
+    def _generate_key_features(self, project_info: ProjectInfo) -> list[str]:
+        """主要機能を生成"""
+        if not self._should_use_llm():
+            return []
+
+        try:
+            client = self._get_llm_client_with_fallback()
+            if not client:
+                return []
+
+            prompt = PromptLoader.load_prompt(
+                "readme_prompts.yaml", "key_features", project_info=str(project_info)
+            )
+            response = client.generate(prompt)
+            features = []
+            for line in response.split("\n"):
+                line = line.strip()
+                if line.startswith("- ") or line.startswith("* "):
+                    features.append(line[2:])
+            return features
+        except Exception as e:
+            self.logger.debug(f"Failed to generate key features: {e}")
+            return []
+
+    def _generate_architecture(self, project_info: ProjectInfo) -> str:
+        """アーキテクチャを生成"""
+        if not self._should_use_llm():
+            return ""
+
+        try:
+            client = self._get_llm_client_with_fallback()
+            if not client:
+                return ""
+
+            prompt = PromptLoader.load_prompt(
+                "readme_prompts.yaml", "architecture", project_info=str(project_info)
+            )
+            return client.generate(prompt)
+        except Exception as e:
+            self.logger.debug(f"Failed to generate architecture: {e}")
+            return ""
+
+    def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
+        """トラブルシューティングを生成"""
+        if not self._should_use_llm():
+            return ""
+
+        try:
+            client = self._get_llm_client_with_fallback()
+            if not client:
+                return ""
+
+            prompt = PromptLoader.load_prompt(
+                "readme_prompts.yaml", "troubleshooting", project_info=str(project_info)
+            )
+            return client.generate(prompt)
+        except Exception as e:
+            self.logger.debug(f"Failed to generate troubleshooting: {e}")
+            return ""
 
     def _generate_markdown(self, project_info: ProjectInfo) -> str:
         """
@@ -215,6 +399,11 @@ class ReadmeGenerator(BaseGenerator):
             "test_commands": self._format_commands(project_info.test_commands),
             "other_section": manual_sections.get("other", ""),
             "footer": self._generate_footer(),
+            "project_structure": self._format_project_structure(project_info.project_structure),
+            # テンプレートモードではLLMを使用せず、データから取得した値のみ使用
+            "key_features": project_info.key_features or [],
+            "architecture": "",
+            "troubleshooting": "",
         }
 
         # Jinja2テンプレートでレンダリング

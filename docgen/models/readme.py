@@ -27,6 +27,9 @@ class ReadmeConfig(BaseModel):
     dependencies: Dependencies | None = Field(description="言語ごとの依存関係")
     setup_instructions: ReadmeSetupInstructions | None = None
     project_structure: list[str] | None = Field(default=None, description="プロジェクト構造の説明")
+    key_features: list[str] | None = Field(default=None, description="主要機能")
+    architecture: str | None = Field(default=None, description="アーキテクチャ")
+    troubleshooting: str | None = Field(default=None, description="トラブルシューティング")
     build_commands: list[str] | None = Field(default=None, description="ビルドコマンド")
     test_commands: list[str] | None = Field(default=None, description="テストコマンド")
     manual_sections: dict[str, str] | None = Field(
@@ -43,6 +46,9 @@ class ReadmeDocument(BaseModel):
     dependencies: Dependencies | None = Field(description="言語ごとの依存関係")
     setup_instructions: ReadmeSetupInstructions | None = None
     project_structure: list[str] | None = Field(default=None, description="プロジェクト構造の説明")
+    key_features: list[str] | None = Field(default=None, description="主要機能")
+    architecture: str | None = Field(default=None, description="アーキテクチャ")
+    troubleshooting: str | None = Field(default=None, description="トラブルシューティング")
     build_commands: list[str] | None = Field(default=None, description="ビルドコマンド")
     test_commands: list[str] | None = Field(default=None, description="テストコマンド")
     manual_sections: dict[str, str] | None = Field(

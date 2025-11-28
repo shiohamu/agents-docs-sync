@@ -13,6 +13,27 @@
 
 **使用技術**: {{ languages|join(', ') }}
 
+{% if project_structure %}
+## プロジェクト構造
+```
+{{ project_structure }}
+```
+{% endif %}
+
+{% if key_features %}
+## 主要機能
+
+{% for feature in key_features %}
+- {{ feature }}
+{% endfor %}
+{% endif %}
+
+{% if architecture %}
+## アーキテクチャ
+
+{{ architecture }}
+{% endif %}
+
 ---
 
 ## 開発環境のセットアップ
@@ -189,6 +210,14 @@ go mod download
 4. **プルリクエストの作成**
    - タイトル: `[種類] 簡潔な説明`
    - 説明: 変更内容、テスト結果、関連Issueを記載
+
+{% if troubleshooting %}
+---
+
+## トラブルシューティング
+
+{{ troubleshooting }}
+{% endif %}
 
 {% if custom_instructions %}
 ---
