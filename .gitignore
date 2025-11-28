@@ -193,6 +193,23 @@ docs/implementation/.notes/
 docs/implementation/temp/
 docs/implementation/drafts/
 
+# RAG関連の一時ファイル
+docgen/index/
+docgen/.vectorstore/
+docgen/.cache/
+docgen/.rag/
+
+# レビュー関連の一時ファイル
+docgen/review/
+docgen/review/*.bak
+docgen/review/*.backup
+docgen/review/*.tmp
+docgen/review/*.draft.md
+docgen/review/*.old
+docgen/review/.notes/
+docgen/review/temp/
+docgen/review/drafts/
+
 # ============================================
 # テスト関連
 # ============================================

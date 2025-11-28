@@ -180,6 +180,7 @@ rag:
     - 'secrets/.*'
     - '.*_SECRET.*'
     - '.*API_KEY.*'
+    - '.*\.old$'
 
   # 除外ファイル名リスト
   # これらのファイル名に一致するファイルはRAGインデックスに含めない
@@ -232,6 +233,7 @@ exclude:
     - test
     - __tests__
     - __test__
+    - .old
 
   # 除外するファイルパターン（glob形式）
   patterns:
