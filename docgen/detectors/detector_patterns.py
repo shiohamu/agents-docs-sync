@@ -104,6 +104,11 @@ class DetectorPatterns:
         "kotlin": [".kt"],
         "scala": [".scala"],
         "dart": [".dart"],
+        "r": [".r", ".R"],
+        "lua": [".lua"],
+        "perl": [".pl", ".pm"],
+        "shell": [".sh", ".bash", ".zsh"],
+        "powershell": [".ps1"],
     }
 
     # Common directories to exclude

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-28 16:19:39
+自動生成日時: 2025-11-28 16:41:12
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,38 +12,66 @@
 <!-- MANUAL_END:description -->
 
 
-This project implements an automated CI/CD pipeline that keeps the repository’s documentation in sync with its codebase.  
-Every time you push or commit, the following steps are executed:
+`agents‑docs‑sync` は、プロジェクトにコミットが入るたびに以下の処理を自動で実行するパイプラインです。  
+- **テスト**（Python・Node.js・Go）を並列に走らせてコード品質を保証します。  
+- コードベースから最新ドキュメント（YAML/Markdown など）を生成し、`AGENTS.md` を自動的に更新します。  
 
-1. **Run tests** – A comprehensive test suite is run using `pytest` (with coverage and mock support) for Python modules, while also invoking any JavaScript (`npm`) and Go (`go test ./...`) tests that may exist in sub‑projects.
-2. **Generate documentation** – The script located at `docgen/docgen.py` collects information from the codebase, converts it into Markdown/HTML format, and outputs up-to-date docs.
-3. **Update AGENTS.md automatically** – After doc generation finishes, a small helper updates the central `AGENTS.md`, ensuring that agents’ descriptions stay current with the latest changes.
+この仕組みにより、手作業での文書管理が不要になり、常にリポジトリ内に正確なエージェント仕様が保持されます。
 
-### Build & Test Commands
-```bash
-# Install dependencies
-uv sync
+## 実行フロー
 
-# Create distribution artifacts (if needed)
-uv build
+1. **コミット検知**  
+   GitHub Actions 等を利用して `push` イベントを監視。  
 
-# Run documentation generator
-uv run python3 docgen/docgen.py
-```
-Testing is performed via:
-```bash
-uv run pytest tests/ -v --tb=short          # Python unit tests with coverage and mocks
-npm test                                    # JavaScript tests
-go test ./...                                # Go package tests
-```
+2. **ビルド環境のセットアップ** (`uv sync`)  
+   - 依存パッケージ（pyyaml, pytest 系）と Python 環境が自動でインストールされます。  
+   - `uv build` によりプロジェクトをビルドし、配布可能なアーティファクトへ変換します。
 
-### Dependencies
-- **Python**: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
-- **Linting**: Code style and quality are enforced with the `ruff` linter.
+3. **文書生成** (`uv run python3 docgen/docgen.py`)  
+   - ソースコードとメタデータから Markdown／YAML を作成。  
+   - 生成された内容は `AGENTS.md` に差分として反映されます。
 
-### Why This Matters for AI Agents
-By automating test execution, documentation generation, and agent description updates on every commit, agents built from this repository can reliably consume accurate metadata without manual intervention. The pipeline ensures that any change in functionality is reflected both in tests (catching regressions) and in the human‑readable docs used by other tools or developers interacting with the AI system.
-**使用技術**: python, shell
+4. **テスト実行**  
+   ```bash
+   uv run pytest tests/ -v --tb=short      # Python テスト
+   npm test                                 # Node.js テスト（必要に応じて）
+   go test ./...                            # Go テスト（モノレポ内のパッケージ全体）
+   ```
+   失敗した場合はビルドを中断し、コミットが拒否されます。
+
+5. **CI/CD の完了**  
+   - 成功時に `AGENTS.md` が更新された状態でプッシュ。  
+   - 必要なら PR コメントや Slack 通知等のアクションも併せて実行可能です。
+
+## 主要ファイル
+
+- `docgen/docgen.py`: ドキュメント生成ロジック（Python スクリプト）。  
+- `.github/workflows/ci.yml` (想定): 上記ステップを GitHub Actions に設定。  
+- `tests/*`: 各言語のテストケース。  
+
+## 開発者向け手順
+
+1. **uv のインストール**（公式サイトまたは `pipx install uv`）。  
+2. ビルド環境構築: ```bash
+   uv sync && uv build
+   ```
+3. ドキュメント生成をローカルで確認:
+   ```bash
+   uv run python3 docgen/docgen.py
+   ```
+4. テスト実行（すべての言語）:
+   ```bash
+   uv run pytest tests/ -v --tb=short && npm test && go test ./...
+   ```
+
+## 重要ポイント
+
+- **自動化**: コミット時にテスト・ドキュメント生成が連携して走るため、手作業での更新漏れを防止。  
+- **多言語対応**: Python のみならず Node.js と Go のテストも同一パイプライン内で実行。  
+- **コード品質**: `ruff` をリントツールとして使用し、一貫したスタイルチェックが組み込まれています。
+
+これにより、エージェントのドキュメントと実装を常に同期させつつ、高い信頼性で CI/CD パイプラインを運用できます。
+**使用技術**: python
 
 
 ## プロジェクト構造
@@ -62,8 +90,8 @@ agents-docs-sync/
  │  │  ├─ base_detector.py
  │  │  ├─ config_loader.py
  │  │  ├─ detector_patterns.py
- │  │  ├─ javascript_detector.py
- │  │  └─ plugin_registry.py
+ │  │  ├─ plugin_registry.py
+ │  │  └─ unified_detector.py
  │  ├─ generators/
  │  │  ├─ parsers/
  │  │  │  ├─ base_parser.py
@@ -258,4 +286,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-28 16:19:39*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-28 16:41:12*

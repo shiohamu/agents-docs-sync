@@ -128,7 +128,4 @@ class UnifiedDetectorFactory:
         Returns:
             UnifiedDetector インスタンスのリスト
         """
-        return [
-            cls.create_detector(project_root, lang)
-            for lang in cls.get_all_languages()
-        ]
+        return [cls.create_detector(project_root, lang) for lang in cls.get_all_languages()]

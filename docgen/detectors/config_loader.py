@@ -3,16 +3,7 @@
 """
 
 from pathlib import Path
-import sys
-
-# Python 3.11+ uses tomllib, earlier versions use tomli
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    try:
-        import tomli as tomllib
-    except ImportError:
-        tomllib = None
+import tomllib
 
 from ..utils.logger import get_logger
 from .detector_config import LanguageConfig, PackageManagerRule

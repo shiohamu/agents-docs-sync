@@ -215,107 +215,26 @@ class AgentsGenerator(BaseGenerator):
         # 構造化データをマークダウンに変換（未使用）
         return context
 
-    def _format_project_structure(self, structure: dict[str, Any] | None) -> str:
-        """プロジェクト構造をツリー形式で整形"""
-        if not structure:
-            return ""
-
-        def format_node(data, prefix="", is_last=True):
-            """ノードを再帰的にツリー形式でフォーマット"""
-            lines = []
-
-            if isinstance(data, dict):
-                items = list(data.items())
-                for i, (key, value) in enumerate(items):
-                    is_last_item = i == len(items) - 1
-                    connector = "└─ " if is_last_item else "├─ "
-
-                    if value == "file" or value == "directory":
-                        lines.append(f"{prefix}{connector}{key}")
-                    elif isinstance(value, dict):
-                        lines.append(f"{prefix}{connector}{key}")
-                        # 再帰的に子要素を処理
-                        extension = "   " if is_last_item else "│  "
-                        child_lines = format_node(value, prefix + extension, is_last_item)
-                        lines.extend(child_lines)
-                    else:
-                        lines.append(f"{prefix}{connector}{key}")
-
-            return lines
-
-        # プロジェクト名をルートとして表示
-        project_name = self.project_root.name
-        all_lines = [f"{project_name}/"]
-        all_lines.extend(format_node(structure, " ", True))
-
-        return "\n".join(all_lines)
-
     def _generate_key_features(self, project_info: ProjectInfo) -> list[str]:
         """主要機能を生成"""
-        # LLMが利用可能かチェック
         if not self._should_use_llm():
             return []
-
-        try:
-            client = self._get_llm_client_with_fallback()
-            if not client:
-                return []
-
-            prompt = PromptLoader.load_prompt(
-                "agents_prompts.yaml", "key_features", project_info=str(project_info)
-            )
-            response = client.generate(prompt)
-            # シンプルなパース処理（箇条書きをリストに変換）
-            features = []
-            for line in response.split("\n"):
-                line = line.strip()
-                if line.startswith("- ") or line.startswith("* "):
-                    features.append(line[2:])
-            return features
-        except Exception as e:
-            self.logger.debug(f"Failed to generate key features: {e}")
-            return []
+        return self._generate_content_with_llm("agents_prompts.yaml", "key_features", project_info)
 
     def _generate_architecture(self, project_info: ProjectInfo) -> str:
         """アーキテクチャを生成"""
-        # LLMが利用可能かチェック
         if not self._should_use_llm():
             return ""
-
-        try:
-            client = self._get_llm_client_with_fallback()
-            if not client:
-                return ""
-
-            prompt = PromptLoader.load_prompt(
-                "agents_prompts.yaml", "architecture", project_info=str(project_info)
-            )
-            return client.generate(prompt)
-        except Exception as e:
-            self.logger.debug(f"Failed to generate architecture: {e}")
-            return ""
+        return self._generate_content_with_llm("agents_prompts.yaml", "architecture", project_info)
 
     def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
         """トラブルシューティングを生成"""
-        # LLMが利用可能かチェック
         if not self._should_use_llm():
             return ""
-
-        try:
-            client = self._get_llm_client_with_fallback()
-            if not client:
-                return ""
-
-            prompt = PromptLoader.load_prompt(
-                "agents_prompts.yaml", "troubleshooting", project_info=str(project_info)
-            )
-            return client.generate(prompt)
-        except Exception as e:
-            self.logger.debug(f"Failed to generate troubleshooting: {e}")
-            return ""
+        return self._generate_content_with_llm(
+            "agents_prompts.yaml", "troubleshooting", project_info
+        )
 
     def _should_use_llm(self) -> bool:
         """LLMを使用すべきかどうかを判定"""
-        # BaseGeneratorにはこのメソッドがない可能性があるため、ここで実装
-        # またはconfigを確認
         return self.agents_config.get("generation", {}).get("agents_mode") in ["llm", "hybrid"]

@@ -4,8 +4,6 @@
 すべての言語検出テストをこのファイルに統合します。
 """
 
-import pytest
-
 try:
     from test_utils.common import write_file
 except Exception:

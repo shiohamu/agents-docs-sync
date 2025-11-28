@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-28 16:18:53
+自動生成日時: 2025-11-28 16:40:35
 
 ---
 
@@ -271,26 +271,6 @@ Returns:
 
 ---
 
-### collect_project_structure
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def collect_project_structure(self) -> dict[str, Any]:
-```
-
-**説明**:
-
-プロジェクト構造を収集
-
-Returns:
-    プロジェクト構造の辞書
-
-*定義場所: docgen/collectors/project_info_collector.py:82*
-
----
-
 ### collect_key_features
 
 **型**: `method`
@@ -307,7 +287,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:130*
+*定義場所: docgen/collectors/project_info_collector.py:82*
 
 ---
 
@@ -327,7 +307,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:141*
+*定義場所: docgen/collectors/project_info_collector.py:93*
 
 ---
 
@@ -347,7 +327,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:221*
+*定義場所: docgen/collectors/project_info_collector.py:173*
 
 ---
 
@@ -367,7 +347,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:302*
+*定義場所: docgen/collectors/project_info_collector.py:254*
 
 ---
 
@@ -387,7 +367,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:380*
+*定義場所: docgen/collectors/project_info_collector.py:332*
 
 ---
 
@@ -402,12 +382,14 @@ def collect_project_structure(self) -> dict[str, Any]:
 
 **説明**:
 
-プロジェクト構造を収集（ファイルとディレクトリのみ）
+プロジェクト構造を収集
+
+StructureAnalyzerに委譲して詳細な構造分析を実行
 
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:399*
+*定義場所: docgen/collectors/project_info_collector.py:351*
 
 ---
 
@@ -427,7 +409,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:538*
+*定義場所: docgen/collectors/project_info_collector.py:365*
 
 ---
 
@@ -447,7 +429,118 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:549*
+*定義場所: docgen/collectors/project_info_collector.py:376*
+
+---
+
+
+## docgen/collectors/structure_analyzer.py
+
+### StructureAnalyzer
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class StructureAnalyzer:
+```
+
+**説明**:
+
+プロジェクト構造分析クラス
+
+*定義場所: docgen/collectors/structure_analyzer.py:17*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+
+*定義場所: docgen/collectors/structure_analyzer.py:53*
+
+---
+
+### count_symbols_in_file
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def count_symbols_in_file(self, file_path: Path) -> int:
+```
+
+**説明**:
+
+Pythonファイルのシンボル数をカウント
+
+Args:
+    file_path: Pythonファイルのパス
+
+Returns:
+    シンボル数（クラス、関数、非同期関数の合計）
+
+*定義場所: docgen/collectors/structure_analyzer.py:62*
+
+---
+
+### collect_directory_structure
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_directory_structure(self, directory: Path, max_depth: int, current_depth: int) -> dict[str, Any] | str:
+```
+
+**説明**:
+
+ディレクトリ構造を再帰的に収集
+
+Args:
+    directory: 対象ディレクトリ
+    max_depth: 最大探索深度
+    current_depth: 現在の深度
+
+Returns:
+    ディレクトリ構造の辞書、またはネストしないディレクトリの場合は "directory"
+
+*定義場所: docgen/collectors/structure_analyzer.py:85*
+
+---
+
+### analyze
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def analyze(self, max_depth: int) -> dict[str, Any]:
+```
+
+**説明**:
+
+プロジェクト構造を分析
+
+Args:
+    max_depth: ディレクトリの最大探索深度
+
+Returns:
+    プロジェクト構造の辞書
+
+*定義場所: docgen/collectors/structure_analyzer.py:142*
 
 ---
 
@@ -1021,261 +1114,6 @@ Detect Python package manager with special handling for pyproject.toml.
 ---
 
 
-## docgen/detectors/generic_detector.py
-
-### GenericDetector
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class GenericDetector:
-```
-
-**説明**:
-
-汎用言語検出クラス
-
-*定義場所: docgen/detectors/generic_detector.py:10*
-
----
-
-### detect
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def detect(self) -> bool:
-```
-
-**説明**:
-
-サポートされている汎用言語が使用されているか検出
-
-Returns:
-    サポート言語が検出された場合True
-
-*定義場所: docgen/detectors/generic_detector.py:13*
-
----
-
-### get_language
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_language(self) -> str:
-```
-
-**説明**:
-
-検出された言語名を返す
-複数検出された場合は最初に見つかったものを返す
-
-Returns:
-    言語名
-
-*定義場所: docgen/detectors/generic_detector.py:25*
-
----
-
-### get_all_detected_languages
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_all_detected_languages(self) -> list:
-```
-
-**説明**:
-
-検出されたすべての言語を返す
-
-Returns:
-    検出された言語のリスト
-
-*定義場所: docgen/detectors/generic_detector.py:38*
-
----
-
-### detect_package_manager
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def detect_package_manager(self) -> str | None:
-```
-
-**説明**:
-
-汎用言語プロジェクトで使用されているパッケージマネージャを検出
-
-Returns:
-    パッケージマネージャ名またはNone
-
-*定義場所: docgen/detectors/generic_detector.py:51*
-
----
-
-
-## docgen/detectors/go_detector.py
-
-### GoDetector
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class GoDetector:
-```
-
-**説明**:
-
-Goプロジェクト検出クラス
-
-*定義場所: docgen/detectors/go_detector.py:9*
-
----
-
-### detect
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def detect(self) -> bool:
-```
-
-**説明**:
-
-Goプロジェクトかどうかを検出
-
-Returns:
-    Goプロジェクトの場合True
-
-*定義場所: docgen/detectors/go_detector.py:12*
-
----
-
-### get_language
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_language(self) -> str:
-```
-
-**説明**:
-
-言語名を返す
-
-*定義場所: docgen/detectors/go_detector.py:29*
-
----
-
-### detect_package_manager
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def detect_package_manager(self) -> str | None:
-```
-
-**説明**:
-
-Goプロジェクトで使用されているパッケージマネージャを検出
-
-Returns:
-    パッケージマネージャ名またはNone
-
-*定義場所: docgen/detectors/go_detector.py:33*
-
----
-
-
-## docgen/detectors/javascript_detector.py
-
-### JavaScriptDetector
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class JavaScriptDetector:
-```
-
-**説明**:
-
-JavaScript/TypeScriptプロジェクト検出クラス
-
-*定義場所: docgen/detectors/javascript_detector.py:9*
-
----
-
-### detect
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def detect(self) -> bool:
-```
-
-**説明**:
-
-JavaScript/TypeScriptプロジェクトかどうかを検出
-
-Returns:
-    JavaScript/TypeScriptプロジェクトの場合True
-
-*定義場所: docgen/detectors/javascript_detector.py:12*
-
----
-
-### get_language
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_language(self) -> str:
-```
-
-**説明**:
-
-言語名を返す
-
-*定義場所: docgen/detectors/javascript_detector.py:46*
-
----
-
-### detect_package_manager
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def detect_package_manager(self) -> str | None:
-```
-
-**説明**:
-
-JavaScript/TypeScriptプロジェクトで使用されているパッケージマネージャを検出
-
-Returns:
-    パッケージマネージャ名またはNone
-
-*定義場所: docgen/detectors/javascript_detector.py:60*
-
----
-
-
 ## docgen/detectors/plugin_registry.py
 
 ### PluginRegistry
@@ -1397,22 +1235,45 @@ Returns:
 ---
 
 
-## docgen/detectors/python_detector.py
+## docgen/detectors/unified_detector.py
 
-### PythonDetector
+### UnifiedDetector
 
 **型**: `class`
 
 **シグネチャ**:
 ```
-class PythonDetector:
+class UnifiedDetector:
 ```
 
 **説明**:
 
-Pythonプロジェクト検出クラス
+パターンベースの統一言語検出クラス
 
-*定義場所: docgen/detectors/python_detector.py:9*
+DetectorPatterns で定義されたすべての言語を検出します。
+
+*定義場所: docgen/detectors/unified_detector.py:14*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, language: str):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    language: 検出対象の言語名
+
+*定義場所: docgen/detectors/unified_detector.py:20*
 
 ---
 
@@ -1427,12 +1288,12 @@ def detect(self) -> bool:
 
 **説明**:
 
-Pythonプロジェクトかどうかを検出
+指定された言語が使用されているか検出
 
 Returns:
-    Pythonプロジェクトの場合True
+    検出された場合True
 
-*定義場所: docgen/detectors/python_detector.py:12*
+*定義場所: docgen/detectors/unified_detector.py:32*
 
 ---
 
@@ -1447,9 +1308,12 @@ def get_language(self) -> str:
 
 **説明**:
 
-言語名を返す
+検出された言語名を返す
 
-*定義場所: docgen/detectors/python_detector.py:29*
+Returns:
+    言語名（例: 'python', 'javascript'）
+
+*定義場所: docgen/detectors/unified_detector.py:55*
 
 ---
 
@@ -1464,12 +1328,98 @@ def detect_package_manager(self) -> str | None:
 
 **説明**:
 
-Pythonプロジェクトで使用されているパッケージマネージャを検出
+使用されているパッケージマネージャを検出
 
 Returns:
-    パッケージマネージャ名またはNone
+    パッケージマネージャ名（例: 'pip', 'npm', 'yarn'）またはNone
 
-*定義場所: docgen/detectors/python_detector.py:33*
+*定義場所: docgen/detectors/unified_detector.py:64*
+
+---
+
+### UnifiedDetectorFactory
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class UnifiedDetectorFactory:
+```
+
+**説明**:
+
+UnifiedDetector のファクトリークラス
+
+サポートされているすべての言語の detector を生成します。
+
+*定義場所: docgen/detectors/unified_detector.py:87*
+
+---
+
+### get_all_languages
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_all_languages(cls) -> list[str]:
+```
+
+**説明**:
+
+サポートされているすべての言語を取得
+
+Returns:
+    言語名のリスト
+
+*定義場所: docgen/detectors/unified_detector.py:94*
+
+---
+
+### create_detector
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_detector(cls, project_root: Path, language: str) -> UnifiedDetector:
+```
+
+**説明**:
+
+指定された言語の detector を作成
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    language: 言語名
+
+Returns:
+    UnifiedDetector インスタンス
+
+*定義場所: docgen/detectors/unified_detector.py:107*
+
+---
+
+### create_all_detectors
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_all_detectors(cls, project_root: Path) -> list[UnifiedDetector]:
+```
+
+**説明**:
+
+すべての言語の detector を作成
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+
+Returns:
+    UnifiedDetector インスタンスのリスト
+
+*定義場所: docgen/detectors/unified_detector.py:121*
 
 ---
 
@@ -3165,7 +3115,7 @@ class LanguageDetector:
 
 言語検出クラス
 
-*定義場所: docgen/language_detector.py:19*
+*定義場所: docgen/language_detector.py:15*
 
 ---
 
@@ -3186,7 +3136,7 @@ Args:
     project_root: プロジェクトルートパス
     enable_config_system: 新しい設定システムを有効にするか（デフォルト: True）
 
-*定義場所: docgen/language_detector.py:22*
+*定義場所: docgen/language_detector.py:18*
 
 ---
 
@@ -3209,7 +3159,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/language_detector.py:55*
+*定義場所: docgen/language_detector.py:51*
 
 ---
 
@@ -3226,7 +3176,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語を取得
 
-*定義場所: docgen/language_detector.py:135*
+*定義場所: docgen/language_detector.py:128*
 
 ---
 
@@ -3243,7 +3193,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:139*
+*定義場所: docgen/language_detector.py:132*
 
 ---
 
