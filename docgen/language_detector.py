@@ -5,9 +5,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from .detectors.config_loader import ConfigLoader
 from .detectors.generic_detector import GenericDetector
 from .detectors.go_detector import GoDetector
 from .detectors.javascript_detector import JavaScriptDetector
+from .detectors.plugin_registry import PluginRegistry
 from .detectors.python_detector import PythonDetector
 from .utils.logger import get_logger
 
@@ -17,16 +19,38 @@ logger = get_logger("language_detector")
 class LanguageDetector:
     """言語検出クラス"""
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, enable_config_system: bool = True):
         """
         初期化
 
         Args:
             project_root: プロジェクトルートパス
+            enable_config_system: 新しい設定システムを有効にするか（デフォルト: True）
         """
         self.project_root = project_root
         self.detected_languages = []
         self.detected_package_managers = {}
+        self.enable_config_system = enable_config_system
+
+        # 新しい設定システムの初期化
+        if enable_config_system:
+            self.config_loader = ConfigLoader(project_root)
+            self.plugin_registry = PluginRegistry()
+
+            # 設定の読み込み
+            self.configs = self.config_loader.load_defaults()
+            user_configs = self.config_loader.load_user_overrides()
+            self.configs = self.config_loader.merge_configs(self.configs, user_configs)
+
+            # プラグインの発見
+            self.plugin_registry.discover_plugins(project_root)
+
+            logger.debug(
+                f"Config system enabled: {len(self.configs)} configs, "
+                f"{len(self.plugin_registry.get_all_languages())} plugins"
+            )
+        else:
+            logger.debug("Config system disabled, using legacy detectors only")
 
     def detect_languages(self, use_parallel: bool = True) -> list[str]:
         """
@@ -38,12 +62,20 @@ class LanguageDetector:
         Returns:
             検出された言語のリスト
         """
+        # 既存のdetectorを使用（後方互換性のため）
         detectors = [
             PythonDetector(self.project_root),
             JavaScriptDetector(self.project_root),
             GoDetector(self.project_root),
             GenericDetector(self.project_root),
         ]
+
+        # プラグインdetectorを追加（優先度が高い）
+        if self.enable_config_system:
+            for lang in self.plugin_registry.get_all_languages():
+                plugin_detector = self.plugin_registry.get_detector(lang, self.project_root)
+                if plugin_detector:
+                    detectors.insert(0, plugin_detector)
 
         detected = []
 

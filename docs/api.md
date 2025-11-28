@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-28 10:12:24
+自動生成日時: 2025-11-28 16:18:53
 
 ---
 
@@ -632,6 +632,198 @@ Returns:
 ---
 
 
+## docgen/detectors/config_loader.py
+
+### ConfigLoader
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ConfigLoader:
+```
+
+**説明**:
+
+検出設定ローダー
+
+*定義場所: docgen/detectors/config_loader.py:23*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+
+*定義場所: docgen/detectors/config_loader.py:26*
+
+---
+
+### load_defaults
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_defaults(self) -> dict[str, LanguageConfig]:
+```
+
+**説明**:
+
+デフォルト設定を読み込み
+
+Returns:
+    言語名をキーとした設定の辞書
+
+*定義場所: docgen/detectors/config_loader.py:36*
+
+---
+
+### load_user_overrides
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_user_overrides(self) -> dict[str, LanguageConfig]:
+```
+
+**説明**:
+
+ユーザー設定のオーバーライドを読み込み
+
+Returns:
+    言語名をキーとした設定の辞書
+
+*定義場所: docgen/detectors/config_loader.py:63*
+
+---
+
+### merge_configs
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def merge_configs(self, defaults: dict[str, LanguageConfig], overrides: dict[str, LanguageConfig]) -> dict[str, LanguageConfig]:
+```
+
+**説明**:
+
+デフォルト設定とユーザー設定をマージ
+
+Args:
+    defaults: デフォルト設定
+    overrides: ユーザー設定
+
+Returns:
+    マージされた設定
+
+*定義場所: docgen/detectors/config_loader.py:84*
+
+---
+
+
+## docgen/detectors/detector_config.py
+
+### PackageManagerRule
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class PackageManagerRule:
+```
+
+**説明**:
+
+パッケージマネージャ検出ルール
+
+*定義場所: docgen/detectors/detector_config.py:11*
+
+---
+
+### __post_init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __post_init__(self):
+```
+
+**説明**:
+
+バリデーション
+
+*定義場所: docgen/detectors/detector_config.py:19*
+
+---
+
+### LanguageConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LanguageConfig:
+```
+
+**説明**:
+
+言語検出設定
+
+*定義場所: docgen/detectors/detector_config.py:30*
+
+---
+
+### __post_init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __post_init__(self):
+```
+
+**説明**:
+
+バリデーション
+
+*定義場所: docgen/detectors/detector_config.py:44*
+
+---
+
+### get_sorted_package_manager_rules
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_sorted_package_manager_rules(self) -> list[PackageManagerRule]:
+```
+
+**説明**:
+
+優先度順にソートされたパッケージマネージャルールを返す
+
+*定義場所: docgen/detectors/detector_config.py:49*
+
+---
+
+
 ## docgen/detectors/detector_patterns.py
 
 ### DetectorPatterns
@@ -1080,6 +1272,127 @@ Returns:
     パッケージマネージャ名またはNone
 
 *定義場所: docgen/detectors/javascript_detector.py:60*
+
+---
+
+
+## docgen/detectors/plugin_registry.py
+
+### PluginRegistry
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class PluginRegistry:
+```
+
+**説明**:
+
+カスタムdetectorプラグインのレジストリ
+
+*定義場所: docgen/detectors/plugin_registry.py:15*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self):
+```
+
+**説明**:
+
+初期化
+
+*定義場所: docgen/detectors/plugin_registry.py:18*
+
+---
+
+### discover_plugins
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def discover_plugins(self, project_root: Path):
+```
+
+**説明**:
+
+プロジェクトのプラグインディレクトリからdetectorを発見
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+
+*定義場所: docgen/detectors/plugin_registry.py:22*
+
+---
+
+### register
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def register(self, detector_class: type[BaseDetector]):
+```
+
+**説明**:
+
+Detectorクラスを登録
+
+Args:
+    detector_class: BaseDetectorを継承したクラス
+
+*定義場所: docgen/detectors/plugin_registry.py:44*
+
+---
+
+### get_detector
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_detector(self, language: str, project_root: Path) -> BaseDetector | None:
+```
+
+**説明**:
+
+指定された言語のdetectorインスタンスを取得
+
+Args:
+    language: 言語名
+    project_root: プロジェクトルート
+
+Returns:
+    Detectorインスタンスまたは None
+
+*定義場所: docgen/detectors/plugin_registry.py:60*
+
+---
+
+### get_all_languages
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_all_languages(self) -> list[str]:
+```
+
+**説明**:
+
+登録されている全ての言語名を取得
+
+Returns:
+    言語名のリスト
+
+*定義場所: docgen/detectors/plugin_registry.py:76*
 
 ---
 
@@ -2852,7 +3165,7 @@ class LanguageDetector:
 
 言語検出クラス
 
-*定義場所: docgen/language_detector.py:17*
+*定義場所: docgen/language_detector.py:19*
 
 ---
 
@@ -2862,7 +3175,7 @@ class LanguageDetector:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path):
+def __init__(self, project_root: Path, enable_config_system: bool):
 ```
 
 **説明**:
@@ -2871,8 +3184,9 @@ def __init__(self, project_root: Path):
 
 Args:
     project_root: プロジェクトルートパス
+    enable_config_system: 新しい設定システムを有効にするか（デフォルト: True）
 
-*定義場所: docgen/language_detector.py:20*
+*定義場所: docgen/language_detector.py:22*
 
 ---
 
@@ -2895,7 +3209,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/language_detector.py:31*
+*定義場所: docgen/language_detector.py:55*
 
 ---
 
@@ -2912,7 +3226,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語を取得
 
-*定義場所: docgen/language_detector.py:103*
+*定義場所: docgen/language_detector.py:135*
 
 ---
 
@@ -2929,7 +3243,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:107*
+*定義場所: docgen/language_detector.py:139*
 
 ---
 
