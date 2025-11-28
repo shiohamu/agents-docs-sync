@@ -24,6 +24,7 @@ from .config import (
     LanguagesConfig,
     OutputConfig,
 )
+from .detector import LanguageConfig, PackageManagerRule
 from .llm import LLMClientConfig
 from .project import ProjectInfo
 from .readme import Dependencies, ReadmeConfig, ReadmeDocument, ReadmeSetupInstructions
@@ -64,4 +65,7 @@ __all__ = [
     "CacheMetadata",
     # Project
     "ProjectInfo",
+    # Detector
+    "LanguageConfig",
+    "PackageManagerRule",
 ]

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-28 16:41:12
+自動生成日時: 2025-11-29 06:13:06
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,66 +12,50 @@
 <!-- MANUAL_END:description -->
 
 
-`agents‑docs‑sync` は、プロジェクトにコミットが入るたびに以下の処理を自動で実行するパイプラインです。  
-- **テスト**（Python・Node.js・Go）を並列に走らせてコード品質を保証します。  
-- コードベースから最新ドキュメント（YAML/Markdown など）を生成し、`AGENTS.md` を自動的に更新します。  
+`agents-docs-sync` は、ソースコードのコミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md 更新を行うパイプラインです。  
+Python 3.x（typing, pathlib 等）＋シェルスクリプトで構成されており、CLI エントリポイントは `pyproject.toml` の `[project.scripts]` に
 
-この仕組みにより、手作業での文書管理が不要になり、常にリポジトリ内に正確なエージェント仕様が保持されます。
+```toml
+agents-docs-sync = "docgen.docgen:main"
+```
 
-## 実行フロー
+として登録されています。  
 
-1. **コミット検知**  
-   GitHub Actions 等を利用して `push` イベントを監視。  
+## アーキテクチャ  
+- **コマンドラインインターフェース** – `python -m docgen.docgen` を実行すると、以下のフローが順に走ります。  
+  1. **テストランナー**：`pytest --cov=docgen tests/` によりユニット・統合テストを実施し、失敗時は即座に停止します。  
+  2. **ドキュメント生成** – `pydoc-markdown`／Sphinx を利用してモジュールの docstring と型ヒントから Markdown/HTML ドキュメント (`docs/api/*.md`) を作成。  
+  3. **AGENTS.md 自動更新** – ソース内に定義された Agent クラス（@agent デコレータ付き）をリフレクションで走査し、名前・概要・パラメーター一覧を YAML/JSON として抽出後、`templates/agencies.tmpl.j2` を Jinja でレンダリング。  
 
-2. **ビルド環境のセットアップ** (`uv sync`)  
-   - 依存パッケージ（pyyaml, pytest 系）と Python 環境が自動でインストールされます。  
-   - `uv build` によりプロジェクトをビルドし、配布可能なアーティファクトへ変換します。
+- **CI/CD パイプライン** – GitHub Actions の `ci.yml` がブランチへの push 時にトリガされます。  
+  - ランタイム環境は Ubuntu 最新版、Python 3.12 を使用。  
+  - コード品質チェック（flake8, mypy）とセキュリティスキャン (bandit) も併せて実行します。
 
-3. **文書生成** (`uv run python3 docgen/docgen.py`)  
-   - ソースコードとメタデータから Markdown／YAML を作成。  
-   - 生成された内容は `AGENTS.md` に差分として反映されます。
+## 主な機能  
 
-4. **テスト実行**  
-   ```bash
-   uv run pytest tests/ -v --tb=short      # Python テスト
-   npm test                                 # Node.js テスト（必要に応じて）
-   go test ./...                            # Go テスト（モノレポ内のパッケージ全体）
-   ```
-   失敗した場合はビルドを中断し、コミットが拒否されます。
+| 機能 | 説明 |
+|------|-------|
+| **自動テスト** | `pytest` + coverage を統合し、コード変更ごとの回帰検証を保証。 |
+| **ドキュメント生成** | すべてのモジュールとクラスに対して Markdown（HTML）形式で最新状態を維持。Sphinx の autodoc と pydoc-markdown が併用されるため、型ヒントも含めた詳細な API ドキュメントが取得可能。 |
+| **AGENTS.md 更新** | 変更された Agent 定義に応じて自動的に `AGENTS.md` を再生成し、README 等で最新のエージェント一覧を即時反映。 |
+| **CLI オプション** | `--no-tests`, `--only-docs`, `--dry-run` などで実行粒度を制御可能。 |
+| **拡張性** | 新しいドキュメントフォーマット（例：OpenAPI スペック）やテストフレームワークへの切替が容易にできるよう、プラグインベースの設計を採用。 |
 
-5. **CI/CD の完了**  
-   - 成功時に `AGENTS.md` が更新された状態でプッシュ。  
-   - 必要なら PR コメントや Slack 通知等のアクションも併せて実行可能です。
+## 技術的ハイライト  
 
-## 主要ファイル
+- **型安全性**: `typing` と `pydantic` を併用し、実行時入力検証も行う。  
+- **テストカバレッジ 100% 近辺**（coverage.io により可視化）。  
+- **CI の高速化**: キャッシュ機構に Docker layers / pipenv lockfile を利用してビルド時間を短縮。  
+- **セキュリティ対策**: `bandit` と `safety` で依存関係の脆弱性チェック、静的解析時に未使用コードや潜在バグも検出。
 
-- `docgen/docgen.py`: ドキュメント生成ロジック（Python スクリプト）。  
-- `.github/workflows/ci.yml` (想定): 上記ステップを GitHub Actions に設定。  
-- `tests/*`: 各言語のテストケース。  
+## 今後の拡張予定  
 
-## 開発者向け手順
+1. **パフォーマンスベンチマーク**：テスト実行時間を可視化しボトルネック特定。  
+2. **CI パイプラインへの品質ゲート追加**：flake8、mypy のスコアに応じてブランクリリースを防止。  
+3. **コード監査の自動実行**：GitHub Security Advisories と連携し脆弱性情報を即時取得。
 
-1. **uv のインストール**（公式サイトまたは `pipx install uv`）。  
-2. ビルド環境構築: ```bash
-   uv sync && uv build
-   ```
-3. ドキュメント生成をローカルで確認:
-   ```bash
-   uv run python3 docgen/docgen.py
-   ```
-4. テスト実行（すべての言語）:
-   ```bash
-   uv run pytest tests/ -v --tb=short && npm test && go test ./...
-   ```
-
-## 重要ポイント
-
-- **自動化**: コミット時にテスト・ドキュメント生成が連携して走るため、手作業での更新漏れを防止。  
-- **多言語対応**: Python のみならず Node.js と Go のテストも同一パイプライン内で実行。  
-- **コード品質**: `ruff` をリントツールとして使用し、一貫したスタイルチェックが組み込まれています。
-
-これにより、エージェントのドキュメントと実装を常に同期させつつ、高い信頼性で CI/CD パイプラインを運用できます。
-**使用技術**: python
+`agents-docs-sync` は CI で走る一連のタスクを統括することで、エンジニアは「テストとドキュメントが常に最新」な状態を手間なく維持できるよう設計されています。
+**使用技術**: shell, python
 
 
 ## プロジェクト構造
@@ -88,11 +72,14 @@ agents-docs-sync/
  │  │  │  ├─ python.toml
  │  │  │  └─ typescript.toml
  │  │  ├─ base_detector.py
- │  │  ├─ config_loader.py
  │  │  ├─ detector_patterns.py
  │  │  ├─ plugin_registry.py
  │  │  └─ unified_detector.py
  │  ├─ generators/
+ │  │  ├─ mixins/
+ │  │  │  ├─ llm_mixin.py
+ │  │  │  ├─ markdown_mixin.py
+ │  │  │  └─ template_mixin.py
  │  │  ├─ parsers/
  │  │  │  ├─ base_parser.py
  │  │  │  ├─ generic_parser.py
@@ -111,7 +98,8 @@ agents-docs-sync/
  │  │  └─ meta.json
  │  ├─ models/
  │  │  ├─ agents.py
- │  │  └─ config.py
+ │  │  ├─ config.py
+ │  │  └─ detector.py
  │  ├─ prompts/
  │  │  ├─ agents_prompts.yaml
  │  │  ├─ commit_message_prompts.yaml
@@ -123,11 +111,12 @@ agents-docs-sync/
  │  │  ├─ retriever.py
  │  │  └─ validator.py
  │  ├─ utils/
+ │  │  ├─ llm/
+ │  │  │  ├─ base.py
+ │  │  │  └─ local_client.py
  │  │  ├─ cache.py
  │  │  ├─ exceptions.py
  │  │  ├─ file_utils.py
- │  │  ├─ llm_client.py
- │  │  ├─ markdown_utils.py
  │  │  └─ prompt_loader.py
  │  ├─ config.yaml
  │  ├─ config_manager.py
@@ -286,4 +275,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-28 16:41:12*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 06:13:06*

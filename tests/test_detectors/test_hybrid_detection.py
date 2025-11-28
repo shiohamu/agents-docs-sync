@@ -11,8 +11,8 @@ from docgen.language_detector import LanguageDetector
 class TestHybridDetection:
     """ハイブリッド検出システムの統合テスト"""
 
-    def test_default_detection_with_config_system(self):
-        """デフォルト設定での検出テスト（新システム有効）"""
+    def test_default_detection(self):
+        """デフォルト設定での検出テスト"""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
 
@@ -20,21 +20,7 @@ class TestHybridDetection:
             (tmppath / "requirements.txt").write_text("pytest>=7.0.0")
             (tmppath / "main.py").write_text("print('hello')")
 
-            detector = LanguageDetector(tmppath, enable_config_system=True)
-            languages = detector.detect_languages(use_parallel=False)
-
-            assert "python" in languages
-
-    def test_default_detection_without_config_system(self):
-        """デフォルト設定での検出テスト（新システム無効・後方互換性）"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = Path(tmpdir)
-
-            # Pythonプロジェクトを作成
-            (tmppath / "requirements.txt").write_text("pytest>=7.0.0")
-            (tmppath / "main.py").write_text("print('hello')")
-
-            detector = LanguageDetector(tmppath, enable_config_system=False)
+            detector = LanguageDetector(tmppath)
             languages = detector.detect_languages(use_parallel=False)
 
             assert "python" in languages
@@ -67,7 +53,7 @@ priority = 10
             lib_dir.mkdir(parents=True, exist_ok=True)
             (lib_dir / "app.ex").write_text("defmodule App do\nend")
 
-            detector = LanguageDetector(tmppath, enable_config_system=True)
+            detector = LanguageDetector(tmppath)
 
             # ユーザ設定が読み込まれていることを確認
             assert "elixir" in detector.configs
@@ -105,7 +91,7 @@ class CustomDetector(BaseDetector):
             (tmppath / "CUSTOM.txt").write_text("custom file")
             (tmppath / "custom.lock").write_text("lock file")
 
-            detector = LanguageDetector(tmppath, enable_config_system=True)
+            detector = LanguageDetector(tmppath)
             languages = detector.detect_languages(use_parallel=False)
 
             assert "custom_lang" in languages
@@ -150,45 +136,10 @@ class TestDetector(BaseDetector):
             )
             (tmppath / "TEST.md").write_text("test")
 
-            detector = LanguageDetector(tmppath, enable_config_system=True)
+            detector = LanguageDetector(tmppath)
             languages = detector.detect_languages(use_parallel=False)
 
             # 全ての言語が検出される
             assert "python" in languages
             assert "javascript" in languages
             assert "test_lang" in languages
-
-    def test_config_system_disabled_ignores_plugins(self):
-        """設定システム無効時はプラグインが無視されることを確認"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = Path(tmpdir)
-
-            # プラグインを作成
-            plugin_dir = tmppath / ".agent" / "detectors"
-            plugin_dir.mkdir(parents=True)
-            plugin_file = plugin_dir / "test_detector.py"
-            plugin_file.write_text(
-                """
-from docgen.detectors.base_detector import BaseDetector
-
-class TestDetector(BaseDetector):
-    language = "test_lang"
-
-    def detect(self):
-        return self._file_exists("TEST.txt")
-
-    def get_language(self):
-        return "test_lang"
-
-    def detect_package_manager(self):
-        return None
-"""
-            )
-            (tmppath / "TEST.txt").write_text("test")
-
-            # 設定システム無効化
-            detector = LanguageDetector(tmppath, enable_config_system=False)
-            languages = detector.detect_languages(use_parallel=False)
-
-            # プラグイン言語は検出されない
-            assert "test_lang" not in languages

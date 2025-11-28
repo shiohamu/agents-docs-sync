@@ -196,3 +196,175 @@ class ConfigManager:
         # 更新後に再検証
         self._validate_config()
         logger.info(f"設定を更新しました: {updates}")
+
+    # -------------------------------------------------------------------------
+    # Detector Configuration Loading (Merged from ConfigLoader)
+    # -------------------------------------------------------------------------
+
+    def load_detector_defaults(self) -> dict[str, Any]:
+        """
+        Detectorのデフォルト設定を読み込み
+
+        Returns:
+            言語名をキーとした設定の辞書
+        """
+        from .detectors.detector_patterns import DetectorPatterns
+        from .models.detector import LanguageConfig, PackageManagerRule
+
+        configs = {}
+        for lang, extensions in DetectorPatterns.SOURCE_EXTENSIONS.items():
+            pm_rules = []
+            # パターンからルールを生成
+            if lang in DetectorPatterns.PACKAGE_MANAGER_PATTERNS:
+                for patterns, manager in DetectorPatterns.PACKAGE_MANAGER_PATTERNS[lang]:
+                    files = patterns if isinstance(patterns, tuple) else (patterns,)
+                    pm_rules.append(PackageManagerRule(files=files, manager=manager))
+
+            configs[lang] = LanguageConfig(
+                name=lang,
+                extensions=tuple(extensions),
+                package_files=tuple(DetectorPatterns.get_package_files(lang)),
+                package_manager_rules=tuple(pm_rules),
+            )
+        return configs
+
+    def load_detector_user_overrides(self) -> dict[str, Any]:
+        """
+        Detectorのユーザー設定オーバーライドを読み込み
+
+        Returns:
+            言語名をキーとした設定の辞書
+        """
+        try:
+            import tomllib
+        except ImportError:
+            return {}
+
+        user_config_path = self.project_root / ".agent" / "detectors.toml"
+        if not user_config_path.exists():
+            logger.debug("No user detector config found")
+            return {}
+
+        try:
+            return self._load_user_detector_config(user_config_path)
+        except Exception as e:
+            logger.warning(f"Failed to load user detector config: {e}")
+            return {}
+
+    def merge_detector_configs(
+        self, defaults: dict[str, Any], overrides: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Detectorのデフォルト設定とユーザー設定をマージ
+
+        Args:
+            defaults: デフォルト設定
+            overrides: ユーザー設定
+
+        Returns:
+            マージされた設定
+        """
+        merged = dict(defaults)
+
+        for lang_name, override_config in overrides.items():
+            if lang_name in merged:
+                # 既存の言語設定をマージ
+                default_config = merged[lang_name]
+                merged[lang_name] = self._merge_language_config(default_config, override_config)
+            else:
+                # 新しい言語設定を追加
+                merged[lang_name] = override_config
+                logger.info(f"Added new language config: {lang_name}")
+
+        return merged
+
+    def _merge_language_config(self, default: Any, override: Any) -> Any:
+        """
+        2つの言語設定をマージ
+        """
+        from .models.detector import LanguageConfig
+
+        # 拡張子とパッケージファイルは配列を結合
+        merged_extensions = tuple(set(default.extensions + override.extensions))
+        merged_package_files = tuple(set(default.package_files + override.package_files))
+
+        # パッケージマネージャルールは優先度順にマージ
+        merged_rules = tuple(default.package_manager_rules + override.package_manager_rules)
+
+        return LanguageConfig(
+            name=default.name,
+            extensions=merged_extensions,
+            package_files=merged_package_files,
+            package_manager_rules=merged_rules,
+            custom_detector=override.custom_detector or default.custom_detector,
+            custom_package_manager_detector=override.custom_package_manager_detector
+            or default.custom_package_manager_detector,
+        )
+
+    def _load_toml_config(self, path: Path) -> Any:
+        """TOMLファイルから設定を読み込み"""
+        import tomllib
+
+        from .models.detector import LanguageConfig, PackageManagerRule
+
+        with open(path, "rb") as f:
+            data = tomllib.load(f)
+
+        configs = {}
+        if "languages" in data:
+            for name, lang_data in data["languages"].items():
+                # パッケージマネージャルールの構築
+                pm_rules = []
+                if "package_managers" in lang_data:
+                    for rule in lang_data["package_managers"]:
+                        pm_rules.append(
+                            PackageManagerRule(
+                                files=tuple(rule["files"]),
+                                manager=rule["manager"],
+                                priority=rule.get("priority", 5),
+                                needs_content_check=rule.get("needs_content_check", False),
+                            )
+                        )
+
+                configs[name] = LanguageConfig(
+                    name=name,
+                    extensions=tuple(lang_data.get("extensions", [])),
+                    package_files=tuple(lang_data.get("package_files", [])),
+                    package_manager_rules=tuple(pm_rules),
+                )
+
+        return configs
+
+    def _load_user_detector_config(self, path: Path) -> dict[str, Any]:
+        """ユーザー設定ファイルを読み込み"""
+        import tomllib
+
+        from .models.detector import LanguageConfig, PackageManagerRule
+
+        with open(path, "rb") as f:
+            data = tomllib.load(f)
+
+        configs = {}
+        if "languages" in data:
+            for name, lang_data in data["languages"].items():
+                # パッケージマネージャルールの構築
+                pm_rules = []
+                if "package_managers" in lang_data:
+                    for rule in lang_data["package_managers"]:
+                        pm_rules.append(
+                            PackageManagerRule(
+                                files=tuple(rule["files"]),
+                                manager=rule["manager"],
+                                priority=rule.get("priority", 5),
+                                needs_content_check=rule.get("needs_content_check", False),
+                            )
+                        )
+
+                configs[name] = LanguageConfig(
+                    name=name,
+                    extensions=tuple(lang_data.get("extensions", [])),
+                    package_files=tuple(lang_data.get("package_files", [])),
+                    package_manager_rules=tuple(pm_rules),
+                )
+
+        return configs

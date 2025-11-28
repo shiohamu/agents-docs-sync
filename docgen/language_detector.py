@@ -5,7 +5,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from .detectors.config_loader import ConfigLoader
 from .detectors.plugin_registry import PluginRegistry
 from .utils.logger import get_logger
 
@@ -15,38 +14,42 @@ logger = get_logger("language_detector")
 class LanguageDetector:
     """言語検出クラス"""
 
-    def __init__(self, project_root: Path, enable_config_system: bool = True):
+    def __init__(self, project_root: Path, config_manager=None):
         """
         初期化
 
         Args:
             project_root: プロジェクトルートパス
-            enable_config_system: 新しい設定システムを有効にするか（デフォルト: True）
+            config_manager: 設定マネージャー（Noneの場合は新規作成）
         """
         self.project_root = project_root
         self.detected_languages = []
         self.detected_package_managers = {}
-        self.enable_config_system = enable_config_system
 
-        # 新しい設定システムの初期化
-        if enable_config_system:
-            self.config_loader = ConfigLoader(project_root)
-            self.plugin_registry = PluginRegistry()
-
-            # 設定の読み込み
-            self.configs = self.config_loader.load_defaults()
-            user_configs = self.config_loader.load_user_overrides()
-            self.configs = self.config_loader.merge_configs(self.configs, user_configs)
-
-            # プラグインの発見
-            self.plugin_registry.discover_plugins(project_root)
-
-            logger.debug(
-                f"Config system enabled: {len(self.configs)} configs, "
-                f"{len(self.plugin_registry.get_all_languages())} plugins"
-            )
+        # 設定マネージャーの初期化
+        if config_manager:
+            self.config_manager = config_manager
         else:
-            logger.debug("Config system disabled, using legacy detectors only")
+            from .config_manager import ConfigManager
+
+            # docgenディレクトリはプロジェクトルート内のdocgenディレクトリと仮定
+            docgen_dir = project_root / "docgen"
+            self.config_manager = ConfigManager(project_root, docgen_dir)
+
+        self.plugin_registry = PluginRegistry()
+
+        # 設定の読み込み
+        self.configs = self.config_manager.load_detector_defaults()
+        user_configs = self.config_manager.load_detector_user_overrides()
+        self.configs = self.config_manager.merge_detector_configs(self.configs, user_configs)
+
+        # プラグインの発見
+        self.plugin_registry.discover_plugins(project_root)
+
+        logger.debug(
+            f"Config system enabled: {len(self.configs)} configs, "
+            f"{len(self.plugin_registry.get_all_languages())} plugins"
+        )
 
     def detect_languages(self, use_parallel: bool = True) -> list[str]:
         """
@@ -64,11 +67,10 @@ class LanguageDetector:
         detectors = UnifiedDetectorFactory.create_all_detectors(self.project_root)
 
         # プラグインdetectorを追加（優先度が高い）
-        if self.enable_config_system:
-            for lang in self.plugin_registry.get_all_languages():
-                plugin_detector = self.plugin_registry.get_detector(lang, self.project_root)
-                if plugin_detector:
-                    detectors.insert(0, plugin_detector)
+        for lang in self.plugin_registry.get_all_languages():
+            plugin_detector = self.plugin_registry.get_detector(lang, self.project_root)
+            if plugin_detector:
+                detectors.insert(0, plugin_detector)
 
         detected = []
 

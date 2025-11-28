@@ -1,5 +1,5 @@
 """
-ConfigLoaderのテスト
+ConfigManager (Detector Config) のテスト
 """
 
 from pathlib import Path
@@ -7,17 +7,18 @@ import tempfile
 
 import pytest
 
-from docgen.detectors.config_loader import ConfigLoader
-from docgen.detectors.detector_config import LanguageConfig, PackageManagerRule
+from docgen.config_manager import ConfigManager
+from docgen.models.detector import LanguageConfig, PackageManagerRule
 
 
-class TestConfigLoader:
-    """ConfigLoaderクラスのテスト"""
+class TestConfigManagerDetectors:
+    """ConfigManagerクラス（Detector関連）のテスト"""
 
-    def test_load_defaults(self):
+    def test_load_detector_defaults(self):
         """デフォルト設定の読み込みテスト"""
-        loader = ConfigLoader(Path.cwd())
-        configs = loader.load_defaults()
+        # docgen_dirはダミーでOK
+        manager = ConfigManager(Path.cwd(), Path.cwd() / "docgen")
+        configs = manager.load_detector_defaults()
 
         # 少なくとも主要な言語が含まれていること
         assert "python" in configs
@@ -31,14 +32,15 @@ class TestConfigLoader:
         assert "requirements.txt" in python_config.package_files
         assert len(python_config.package_manager_rules) > 0
 
-    def test_load_user_overrides_nonexistent(self):
+    def test_load_detector_user_overrides_nonexistent(self):
         """存在しないユーザー設定の読み込みテスト"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            loader = ConfigLoader(Path(tmpdir))
-            configs = loader.load_user_overrides()
+            tmppath = Path(tmpdir)
+            manager = ConfigManager(tmppath, tmppath / "docgen")
+            configs = manager.load_detector_user_overrides()
             assert configs == {}
 
-    def test_load_user_overrides(self):
+    def test_load_detector_user_overrides(self):
         """ユーザー設定の読み込みテスト"""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmppath = Path(tmpdir)
@@ -60,8 +62,8 @@ priority = 10
 """
             )
 
-            loader = ConfigLoader(tmppath)
-            configs = loader.load_user_overrides()
+            manager = ConfigManager(tmppath, tmppath / "docgen")
+            configs = manager.load_detector_user_overrides()
 
             assert "elixir" in configs
             elixir_config = configs["elixir"]
@@ -69,9 +71,9 @@ priority = 10
             assert ".ex" in elixir_config.extensions
             assert "mix.exs" in elixir_config.package_files
 
-    def test_merge_configs_new_language(self):
+    def test_merge_detector_configs_new_language(self):
         """新しい言語の追加マージテスト"""
-        loader = ConfigLoader(Path.cwd())
+        manager = ConfigManager(Path.cwd(), Path.cwd() / "docgen")
 
         defaults = {
             "python": LanguageConfig(
@@ -83,14 +85,14 @@ priority = 10
             "elixir": LanguageConfig(name="elixir", extensions=(".ex",), package_files=("mix.exs",))
         }
 
-        merged = loader.merge_configs(defaults, overrides)
+        merged = manager.merge_detector_configs(defaults, overrides)
 
         assert "python" in merged
         assert "elixir" in merged
 
-    def test_merge_configs_existing_language(self):
+    def test_merge_detector_configs_existing_language(self):
         """既存言語の設定マージテスト"""
-        loader = ConfigLoader(Path.cwd())
+        manager = ConfigManager(Path.cwd(), Path.cwd() / "docgen")
 
         defaults = {
             "python": LanguageConfig(
@@ -114,7 +116,7 @@ priority = 10
             )
         }
 
-        merged = loader.merge_configs(defaults, overrides)
+        merged = manager.merge_detector_configs(defaults, overrides)
 
         python_config = merged["python"]
         # 拡張子がマージされている

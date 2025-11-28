@@ -62,7 +62,7 @@ class DocGen:
             self.project_root, self.docgen_dir, self.config_path, package_config_sample
         )
         self.config = self.config_manager.get_config()
-        self.language_detector = LanguageDetector(self.project_root)
+        self.language_detector = LanguageDetector(self.project_root, self.config_manager)
         self.detected_languages = []
         self.detected_package_managers = {}
 

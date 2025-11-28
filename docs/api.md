@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-28 16:40:35
+自動生成日時: 2025-11-29 06:12:09
 
 ---
 
@@ -393,26 +393,6 @@ Returns:
 
 ---
 
-### collect_key_features
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def collect_key_features(self) -> list[str]:
-```
-
-**説明**:
-
-主要機能を収集（プレースホルダー）
-
-Returns:
-    主要機能のリスト
-
-*定義場所: docgen/collectors/project_info_collector.py:365*
-
----
-
 ### collect_project_description
 
 **型**: `method`
@@ -429,7 +409,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:376*
+*定義場所: docgen/collectors/project_info_collector.py:365*
 
 ---
 
@@ -624,6 +604,70 @@ Args:
 
 ---
 
+### load_detector_defaults
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_detector_defaults(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+Detectorのデフォルト設定を読み込み
+
+Returns:
+    言語名をキーとした設定の辞書
+
+*定義場所: docgen/config_manager.py:204*
+
+---
+
+### load_detector_user_overrides
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_detector_user_overrides(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+Detectorのユーザー設定オーバーライドを読み込み
+
+Returns:
+    言語名をキーとした設定の辞書
+
+*定義場所: docgen/config_manager.py:231*
+
+---
+
+### merge_detector_configs
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def merge_detector_configs(self, defaults: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+```
+
+**説明**:
+
+Detectorのデフォルト設定とユーザー設定をマージ
+
+Args:
+    defaults: デフォルト設定
+    overrides: ユーザー設定
+
+Returns:
+    マージされた設定
+
+*定義場所: docgen/config_manager.py:254*
+
+---
+
 
 ## docgen/detectors/base_detector.py
 
@@ -725,198 +769,6 @@ Returns:
 ---
 
 
-## docgen/detectors/config_loader.py
-
-### ConfigLoader
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ConfigLoader:
-```
-
-**説明**:
-
-検出設定ローダー
-
-*定義場所: docgen/detectors/config_loader.py:23*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, project_root: Path):
-```
-
-**説明**:
-
-初期化
-
-Args:
-    project_root: プロジェクトのルートディレクトリ
-
-*定義場所: docgen/detectors/config_loader.py:26*
-
----
-
-### load_defaults
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def load_defaults(self) -> dict[str, LanguageConfig]:
-```
-
-**説明**:
-
-デフォルト設定を読み込み
-
-Returns:
-    言語名をキーとした設定の辞書
-
-*定義場所: docgen/detectors/config_loader.py:36*
-
----
-
-### load_user_overrides
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def load_user_overrides(self) -> dict[str, LanguageConfig]:
-```
-
-**説明**:
-
-ユーザー設定のオーバーライドを読み込み
-
-Returns:
-    言語名をキーとした設定の辞書
-
-*定義場所: docgen/detectors/config_loader.py:63*
-
----
-
-### merge_configs
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def merge_configs(self, defaults: dict[str, LanguageConfig], overrides: dict[str, LanguageConfig]) -> dict[str, LanguageConfig]:
-```
-
-**説明**:
-
-デフォルト設定とユーザー設定をマージ
-
-Args:
-    defaults: デフォルト設定
-    overrides: ユーザー設定
-
-Returns:
-    マージされた設定
-
-*定義場所: docgen/detectors/config_loader.py:84*
-
----
-
-
-## docgen/detectors/detector_config.py
-
-### PackageManagerRule
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class PackageManagerRule:
-```
-
-**説明**:
-
-パッケージマネージャ検出ルール
-
-*定義場所: docgen/detectors/detector_config.py:11*
-
----
-
-### __post_init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __post_init__(self):
-```
-
-**説明**:
-
-バリデーション
-
-*定義場所: docgen/detectors/detector_config.py:19*
-
----
-
-### LanguageConfig
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LanguageConfig:
-```
-
-**説明**:
-
-言語検出設定
-
-*定義場所: docgen/detectors/detector_config.py:30*
-
----
-
-### __post_init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __post_init__(self):
-```
-
-**説明**:
-
-バリデーション
-
-*定義場所: docgen/detectors/detector_config.py:44*
-
----
-
-### get_sorted_package_manager_rules
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_sorted_package_manager_rules(self) -> list[PackageManagerRule]:
-```
-
-**説明**:
-
-優先度順にソートされたパッケージマネージャルールを返す
-
-*定義場所: docgen/detectors/detector_config.py:49*
-
----
-
-
 ## docgen/detectors/detector_patterns.py
 
 ### DetectorPatterns
@@ -949,7 +801,7 @@ def get_package_files(cls, language: str) -> list[str]:
 
 Get package manager files for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:180*
+*定義場所: docgen/detectors/detector_patterns.py:185*
 
 ---
 
@@ -966,7 +818,7 @@ def get_source_extensions(cls, language: str) -> list[str]:
 
 Get source file extensions for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:185*
+*定義場所: docgen/detectors/detector_patterns.py:190*
 
 ---
 
@@ -983,7 +835,7 @@ def detect_by_package_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for package manager files.
 
-*定義場所: docgen/detectors/detector_patterns.py:190*
+*定義場所: docgen/detectors/detector_patterns.py:195*
 
 ---
 
@@ -1000,7 +852,7 @@ def detect_by_source_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for source files.
 
-*定義場所: docgen/detectors/detector_patterns.py:196*
+*定義場所: docgen/detectors/detector_patterns.py:201*
 
 ---
 
@@ -1017,7 +869,7 @@ def detect_by_source_files_with_exclusions(cls, project_root: Path, language: st
 
 Detect language by checking for source files, excluding common directories.
 
-*定義場所: docgen/detectors/detector_patterns.py:208*
+*定義場所: docgen/detectors/detector_patterns.py:213*
 
 ---
 
@@ -1034,7 +886,7 @@ def detect_by_extensions_with_exclusions(cls, project_root: Path, extensions: li
 
 Detect files by extensions, excluding common directories.
 
-*定義場所: docgen/detectors/detector_patterns.py:222*
+*定義場所: docgen/detectors/detector_patterns.py:227*
 
 ---
 
@@ -1051,7 +903,7 @@ def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
 
 Check if a path should be excluded from detection.
 
-*定義場所: docgen/detectors/detector_patterns.py:237*
+*定義場所: docgen/detectors/detector_patterns.py:242*
 
 ---
 
@@ -1075,7 +927,7 @@ Args:
 Returns:
     Package manager name or None
 
-*定義場所: docgen/detectors/detector_patterns.py:247*
+*定義場所: docgen/detectors/detector_patterns.py:252*
 
 ---
 
@@ -1092,7 +944,7 @@ def is_js_config_or_test(cls, file_path: Path) -> bool:
 
 Check if a file is likely a JavaScript config or test file.
 
-*定義場所: docgen/detectors/detector_patterns.py:268*
+*定義場所: docgen/detectors/detector_patterns.py:273*
 
 ---
 
@@ -1109,7 +961,7 @@ def detect_python_package_manager(cls, project_root: Path) -> str | None:
 
 Detect Python package manager with special handling for pyproject.toml.
 
-*定義場所: docgen/detectors/detector_patterns.py:274*
+*定義場所: docgen/detectors/detector_patterns.py:279*
 
 ---
 
@@ -1827,7 +1679,7 @@ class BaseGenerator:
 
 ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）
 
-*定義場所: docgen/generators/base_generator.py:16*
+*定義場所: docgen/generators/base_generator.py:19*
 
 ---
 
@@ -1850,7 +1702,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/base_generator.py:19*
+*定義場所: docgen/generators/base_generator.py:29*
 
 ---
 
@@ -1868,9 +1720,9 @@ def generate(self) -> bool:
 ドキュメントを生成
 
 Returns:
-    成功したかどうか
+    生成に成功した場合True
 
-*定義場所: docgen/generators/base_generator.py:760*
+*定義場所: docgen/generators/base_generator.py:149*
 
 ---
 
@@ -1932,6 +1784,106 @@ Returns:
     生成されたコミットメッセージ（エラー時はNone）
 
 *定義場所: docgen/generators/commit_message_generator.py:32*
+
+---
+
+
+## docgen/generators/mixins/llm_mixin.py
+
+### LLMMixin
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMMixin:
+```
+
+**説明**:
+
+LLM生成機能を提供する Mixin
+
+*定義場所: docgen/generators/mixins/llm_mixin.py:14*
+
+---
+
+
+## docgen/generators/mixins/manual_section_mixin.py
+
+### ManualSectionMixin
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ManualSectionMixin:
+```
+
+**説明**:
+
+手動セクション管理機能を提供する Mixin
+
+*定義場所: docgen/generators/mixins/manual_section_mixin.py:11*
+
+---
+
+
+## docgen/generators/mixins/markdown_mixin.py
+
+### MarkdownMixin
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class MarkdownMixin:
+```
+
+**説明**:
+
+マークダウン処理機能を提供する Mixin
+
+*定義場所: docgen/generators/mixins/markdown_mixin.py:14*
+
+---
+
+
+## docgen/generators/mixins/rag_mixin.py
+
+### RAGMixin
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class RAGMixin:
+```
+
+**説明**:
+
+RAG機能を提供する Mixin
+
+*定義場所: docgen/generators/mixins/rag_mixin.py:9*
+
+---
+
+
+## docgen/generators/mixins/template_mixin.py
+
+### TemplateMixin
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TemplateMixin:
+```
+
+**説明**:
+
+テンプレート処理機能を提供する Mixin
+
+*定義場所: docgen/generators/mixins/template_mixin.py:10*
 
 ---
 
@@ -3115,7 +3067,7 @@ class LanguageDetector:
 
 言語検出クラス
 
-*定義場所: docgen/language_detector.py:15*
+*定義場所: docgen/language_detector.py:14*
 
 ---
 
@@ -3125,7 +3077,7 @@ class LanguageDetector:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, enable_config_system: bool):
+def __init__(self, project_root: Path, config_manager):
 ```
 
 **説明**:
@@ -3134,9 +3086,9 @@ def __init__(self, project_root: Path, enable_config_system: bool):
 
 Args:
     project_root: プロジェクトルートパス
-    enable_config_system: 新しい設定システムを有効にするか（デフォルト: True）
+    config_manager: 設定マネージャー（Noneの場合は新規作成）
 
-*定義場所: docgen/language_detector.py:18*
+*定義場所: docgen/language_detector.py:17*
 
 ---
 
@@ -3159,7 +3111,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/language_detector.py:51*
+*定義場所: docgen/language_detector.py:54*
 
 ---
 
@@ -3176,7 +3128,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語を取得
 
-*定義場所: docgen/language_detector.py:128*
+*定義場所: docgen/language_detector.py:130*
 
 ---
 
@@ -3193,7 +3145,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:132*
+*定義場所: docgen/language_detector.py:134*
 
 ---
 
@@ -3665,6 +3617,105 @@ class DocgenConfig:
 Main configuration model for docgen.
 
 *定義場所: docgen/models/config.py:102*
+
+---
+
+
+## docgen/models/detector.py
+
+### PackageManagerRule
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class PackageManagerRule:
+```
+
+**説明**:
+
+Package manager detection rule.
+
+*定義場所: docgen/models/detector.py:9*
+
+---
+
+### validate_files
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate_files(cls, v: tuple[str, ...]) -> tuple[str, ...]:
+```
+
+*説明なし*
+
+*定義場所: docgen/models/detector.py:21*
+
+---
+
+### validate_manager
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate_manager(cls, v: str) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/models/detector.py:28*
+
+---
+
+### LanguageConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LanguageConfig:
+```
+
+**説明**:
+
+Language detection configuration.
+
+*定義場所: docgen/models/detector.py:34*
+
+---
+
+### validate_name
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate_name(cls, v: str) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/models/detector.py:54*
+
+---
+
+### get_sorted_package_manager_rules
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_sorted_package_manager_rules(self) -> list[PackageManagerRule]:
+```
+
+**説明**:
+
+Return package manager rules sorted by priority.
+
+*定義場所: docgen/models/detector.py:59*
 
 ---
 
@@ -5163,7 +5214,59 @@ Returns:
 ---
 
 
-## docgen/utils/llm_client.py
+## docgen/utils/llm/anthropic_client.py
+
+### AnthropicClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class AnthropicClient:
+```
+
+**説明**:
+
+Anthropic APIクライアント
+
+*定義場所: docgen/utils/llm/anthropic_client.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/llm/anthropic_client.py:16*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+Anthropic APIを使用してテキストを生成
+
+*定義場所: docgen/utils/llm/anthropic_client.py:35*
+
+---
+
+
+## docgen/utils/llm/base.py
 
 ### LLMClientInitializer
 
@@ -5178,7 +5281,7 @@ class LLMClientInitializer:
 
 Common initialization patterns for LLM clients.
 
-*定義場所: docgen/utils/llm_client.py:26*
+*定義場所: docgen/utils/llm/base.py:25*
 
 ---
 
@@ -5202,7 +5305,7 @@ Args:
 Returns:
     Updated configuration dictionary
 
-*定義場所: docgen/utils/llm_client.py:30*
+*定義場所: docgen/utils/llm/base.py:29*
 
 ---
 
@@ -5227,7 +5330,7 @@ Args:
 Returns:
     API key string
 
-*定義場所: docgen/utils/llm_client.py:47*
+*定義場所: docgen/utils/llm/base.py:46*
 
 ---
 
@@ -5258,7 +5361,7 @@ Raises:
     ImportError: If required package is not installed
     ConfigError: If initialization fails
 
-*定義場所: docgen/utils/llm_client.py:64*
+*定義場所: docgen/utils/llm/base.py:63*
 
 ---
 
@@ -5275,7 +5378,7 @@ class BaseLLMClient:
 
 LLMクライアントの抽象基底クラス
 
-*定義場所: docgen/utils/llm_client.py:101*
+*定義場所: docgen/utils/llm/base.py:100*
 
 ---
 
@@ -5295,7 +5398,7 @@ def __init__(self, config: dict[str, Any] | LLMConfig):
 Args:
     config: LLM設定辞書またはLLMConfigオブジェクト
 
-*定義場所: docgen/utils/llm_client.py:104*
+*定義場所: docgen/utils/llm/base.py:103*
 
 ---
 
@@ -5320,7 +5423,7 @@ Args:
 Returns:
     生成されたテキスト（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:121*
+*定義場所: docgen/utils/llm/base.py:120*
 
 ---
 
@@ -5340,156 +5443,12 @@ Outlinesモデルを作成
 Returns:
     Outlinesモデルインスタンス（Outlinesが利用できない場合はNone）
 
-*定義場所: docgen/utils/llm_client.py:135*
+*定義場所: docgen/utils/llm/base.py:134*
 
 ---
 
-### OpenAIClient
 
-**型**: `class`
-
-**シグネチャ**:
-```
-class OpenAIClient:
-```
-
-**説明**:
-
-OpenAI APIクライアント
-
-*定義場所: docgen/utils/llm_client.py:198*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any]):
-```
-
-*説明なし*
-
-*定義場所: docgen/utils/llm_client.py:201*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-OpenAI APIを使用してテキストを生成
-
-*定義場所: docgen/utils/llm_client.py:221*
-
----
-
-### AnthropicClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class AnthropicClient:
-```
-
-**説明**:
-
-Anthropic APIクライアント
-
-*定義場所: docgen/utils/llm_client.py:250*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any]):
-```
-
-*説明なし*
-
-*定義場所: docgen/utils/llm_client.py:253*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-Anthropic APIを使用してテキストを生成
-
-*定義場所: docgen/utils/llm_client.py:272*
-
----
-
-### LocalLLMClient
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LocalLLMClient:
-```
-
-**説明**:
-
-ローカルLLMクライアント（Ollama、LM Studio対応）
-
-*定義場所: docgen/utils/llm_client.py:308*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, config: dict[str, Any]):
-```
-
-*説明なし*
-
-*定義場所: docgen/utils/llm_client.py:311*
-
----
-
-### generate
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def generate(self, prompt: str, system_prompt: str | None) -> str | None:
-```
-
-**説明**:
-
-ローカルLLMを使用してテキストを生成
-
-*定義場所: docgen/utils/llm_client.py:337*
-
----
+## docgen/utils/llm/factory.py
 
 ### LLMClientFactory
 
@@ -5504,7 +5463,7 @@ class LLMClientFactory:
 
 LLMクライアントのファクトリークラス
 
-*定義場所: docgen/utils/llm_client.py:431*
+*定義場所: docgen/utils/llm/factory.py:18*
 
 ---
 
@@ -5528,7 +5487,7 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:435*
+*定義場所: docgen/utils/llm/factory.py:22*
 
 ---
 
@@ -5552,7 +5511,111 @@ Args:
 Returns:
     LLMクライアントインスタンス（エラー時はNone）
 
-*定義場所: docgen/utils/llm_client.py:494*
+*定義場所: docgen/utils/llm/factory.py:81*
+
+---
+
+
+## docgen/utils/llm/local_client.py
+
+### LocalLLMClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LocalLLMClient:
+```
+
+**説明**:
+
+ローカルLLMクライアント（Ollama、LM Studio対応）
+
+*定義場所: docgen/utils/llm/local_client.py:14*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/llm/local_client.py:17*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+ローカルLLMを使用してテキストを生成
+
+*定義場所: docgen/utils/llm/local_client.py:43*
+
+---
+
+
+## docgen/utils/llm/openai_client.py
+
+### OpenAIClient
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class OpenAIClient:
+```
+
+**説明**:
+
+OpenAI APIクライアント
+
+*定義場所: docgen/utils/llm/openai_client.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/llm/openai_client.py:16*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str, system_prompt: str | None) -> str | None:
+```
+
+**説明**:
+
+OpenAI APIを使用してテキストを生成
+
+*定義場所: docgen/utils/llm/openai_client.py:36*
 
 ---
 
@@ -5653,97 +5716,6 @@ Returns:
 
 ---
 
-### format_commands_with_package_manager
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def format_commands_with_package_manager(commands: list[str], package_managers: dict[str, str], language: str, max_commands: int) -> list[str]:
-```
-
-**説明**:
-
-Format build/test commands with package manager awareness.
-
-Args:
-    commands: List of commands to format
-    package_managers: Dict of language -> package manager
-    language: Programming language
-    max_commands: Maximum number of commands to display
-
-Returns:
-    Formatted command lines
-
-*定義場所: docgen/utils/markdown_utils.py:79*
-
----
-
-### MarkdownSectionBuilder
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class MarkdownSectionBuilder:
-```
-
-**説明**:
-
-Utility class for building markdown sections.
-
-*定義場所: docgen/utils/markdown_utils.py:114*
-
----
-
-### build_section
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def build_section(header: str, content_lines: list[str]) -> list[str]:
-```
-
-**説明**:
-
-Build a markdown section with header and content.
-
-Args:
-    header: Section header (without ##)
-    content_lines: Content lines
-
-Returns:
-    Formatted markdown lines
-
-*定義場所: docgen/utils/markdown_utils.py:118*
-
----
-
-### build_code_block
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def build_code_block(commands: list[str], language: str) -> list[str]:
-```
-
-**説明**:
-
-Build a code block with commands.
-
-Args:
-    commands: List of commands
-    language: Code block language
-
-Returns:
-    Formatted code block lines
-
-*定義場所: docgen/utils/markdown_utils.py:135*
-
----
-
 ### clean_llm_output_advanced
 
 **型**: `function`
@@ -5763,7 +5735,7 @@ Args:
 Returns:
     Cleaned text with thinking processes removed
 
-*定義場所: docgen/utils/markdown_utils.py:155*
+*定義場所: docgen/utils/markdown_utils.py:79*
 
 ---
 
