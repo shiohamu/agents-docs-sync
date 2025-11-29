@@ -40,36 +40,26 @@ class TestConfigManagerDetectors:
             configs = manager.load_detector_user_overrides()
             assert configs == {}
 
-    def test_load_detector_user_overrides(self):
-        """ユーザー設定の読み込みテスト"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = Path(tmpdir)
-            agent_dir = tmppath / ".agent"
-            agent_dir.mkdir()
-
-            # ユーザー設定を作成
-            user_config = agent_dir / "detectors.toml"
-            user_config.write_text(
-                """
-[languages.elixir]
+    def test_load_detector_user_overrides(self, tmp_path):
+        """Test loading user overrides from config.toml"""
+        # Create config.toml with detector overrides
+        user_config = tmp_path / "config.toml"
+        user_config.write_text(
+            """
+[detectors.elixir]
 extensions = [".ex", ".exs"]
-package_files = ["mix.exs", "mix.lock"]
-
-[[languages.elixir.package_managers]]
-files = ["mix.lock"]
-manager = "mix"
-priority = 10
 """
-            )
+        )
 
-            manager = ConfigManager(tmppath, tmppath / "docgen")
-            configs = manager.load_detector_user_overrides()
+        docgen_dir = tmp_path / ".docgen"
+        docgen_dir.mkdir()
 
-            assert "elixir" in configs
-            elixir_config = configs["elixir"]
-            assert elixir_config.name == "elixir"
-            assert ".ex" in elixir_config.extensions
-            assert "mix.exs" in elixir_config.package_files
+        manager = ConfigManager(tmp_path, docgen_dir)
+        overrides = manager.load_detector_user_overrides()
+
+        # Should have elixir detector configuration
+        assert "elixir" in overrides
+        assert overrides["elixir"]["extensions"] == [".ex", ".exs"]
 
     def test_merge_detector_configs_new_language(self):
         """新しい言語の追加マージテスト"""

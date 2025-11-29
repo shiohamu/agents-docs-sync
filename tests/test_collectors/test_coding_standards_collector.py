@@ -2,7 +2,6 @@
 Tests for CodingStandardsCollector
 """
 
-
 import pytest
 
 from docgen.collectors.coding_standards_collector import CodingStandardsCollector

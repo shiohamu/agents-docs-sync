@@ -2,7 +2,6 @@
 Tests for DependencyCollector
 """
 
-
 import pytest
 
 from docgen.collectors.dependency_collector import DependencyCollector

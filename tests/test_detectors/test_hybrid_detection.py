@@ -25,38 +25,27 @@ class TestHybridDetection:
 
             assert "python" in languages
 
-    def test_user_config_override(self):
-        """ユーザー設定オーバーライドのテスト"""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmppath = Path(tmpdir)
-            agent_dir = tmppath / ".agent"
-            agent_dir.mkdir()
-
-            # カスタム言語設定を作成
-            user_config = agent_dir / "detectors.toml"
-            user_config.write_text(
-                """
-[languages.elixir]
+    def test_user_config_override(self, tmp_path):
+        """Test user config override detection"""
+        # Create config.toml with custom language config
+        user_config = tmp_path / "config.toml"
+        user_config.write_text(
+            """
+[detectors.elixir]
 extensions = [".ex", ".exs"]
-package_files = ["mix.exs", "mix.lock"]
-
-[[languages.elixir.package_managers]]
-files = ["mix.lock"]
-manager = "mix"
-priority = 10
 """
-            )
+        )
 
-            # Elixirファイルを作成
-            (tmppath / "mix.exs").write_text("# mix config")
-            lib_dir = tmppath / "lib"
-            lib_dir.mkdir(parents=True, exist_ok=True)
-            (lib_dir / "app.ex").write_text("defmodule App do\nend")
+        # Elixirファイルを作成
+        (tmp_path / "mix.exs").write_text("# mix config")
+        lib_dir = tmp_path / "lib"
+        lib_dir.mkdir(parents=True, exist_ok=True)
+        (lib_dir / "app.ex").write_text("defmodule App do\\nend")
 
-            detector = LanguageDetector(tmppath)
+        detector = LanguageDetector(tmp_path)
 
-            # ユーザ設定が読み込まれていることを確認
-            assert "elixir" in detector.configs
+        # ユーザ設定が読み込まれていることを確認
+        assert "elixir" in detector.configs
 
     def test_plugin_detection(self):
         """プラグインdetectorの検出テスト"""

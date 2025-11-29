@@ -2,7 +2,6 @@
 Tests for TestCommandCollector
 """
 
-
 import pytest
 
 from docgen.collectors.test_command_collector import TestCommandCollector

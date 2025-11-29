@@ -230,25 +230,30 @@ class ConfigManager:
 
     def load_detector_user_overrides(self) -> dict[str, Any]:
         """
-        Detectorのユーザー設定オーバーライドを読み込み
+        Load detector configuration from config.toml.
 
         Returns:
-            言語名をキーとした設定の辞書
+            Detector configuration dictionary.
         """
-        try:
-            import tomllib
-        except ImportError:
-            return {}
-
-        user_config_path = self.project_root / ".agent" / "detectors.toml"
-        if not user_config_path.exists():
-            logger.debug("No user detector config found")
+        config_path = self.project_root / "config.toml"
+        if not config_path.exists():
             return {}
 
         try:
-            return self._load_user_detector_config(user_config_path)
-        except Exception as e:
-            logger.warning(f"Failed to load user detector config: {e}")
+            import importlib.util
+
+            if importlib.util.find_spec("tomllib") is not None:
+                import tomllib
+
+                with open(config_path, "rb") as f:
+                    config = tomllib.load(f)
+            else:
+                import tomli
+
+                with open(config_path, "rb") as f:
+                    config = tomli.load(f)
+            return config.get("detectors", {})
+        except Exception:
             return {}
 
     def merge_detector_configs(

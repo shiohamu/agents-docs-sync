@@ -23,17 +23,6 @@ class TestLLMClientFactoryCoverage:
         client = LLMClientFactory.create_client(config, mode="api")
         assert isinstance(client, AnthropicClient)
 
-    def test_create_client_llm_config_invalid_provider(self):
-        # Manually construct config with invalid provider
-        config = LLMClientConfig(
-            openai=LLMConfig(provider="invalid", api_key="test", model="gpt-4")
-        )
-        # We need to trick the factory logic which checks provider from config
-        # But LLMConfig validation might prevent "invalid" provider if enum is strict.
-        # Let's assume strict validation, so maybe we can't test this path easily with LLMConfig
-        # unless we mock it.
-        pass
-
     def test_create_client_dict_custom(self):
         config = {
             "api": {"provider": "custom", "api_key": "test", "base_url": "http://localhost:1234"}
@@ -48,7 +37,7 @@ class TestLLMClientFactoryCoverage:
 
     def test_create_client_local(self):
         config = {"local": {"model_path": "/tmp/model"}}
-        with patch("docgen.utils.llm.factory.LocalLLMClient") as MockLocal:
+        with patch("docgen.utils.llm.factory.LocalLLMClient"):
             client = LLMClientFactory.create_client(config, mode="local")
             assert client is not None
 
