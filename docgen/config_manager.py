@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from .models import DocgenConfig
 from .utils.exceptions import ErrorMessages
-from .utils.file_utils import safe_read_yaml
+from .utils.file_utils import safe_read_yaml, safe_read_toml
 from .utils.logger import get_logger
 
 logger = get_logger("config_manager")
@@ -70,7 +70,10 @@ class ConfigManager:
         logger.info(f"Loading config from: {self.config_path}")
         if self.config_path.exists():
             logger.info("Config file exists, reading...")
-            config = safe_read_yaml(self.config_path)
+            if self.config_path.suffix == ".toml":
+                config = safe_read_toml(self.config_path)
+            else:
+                config = safe_read_yaml(self.config_path)
             if config is not None:
                 logger.info("Config loaded successfully")
                 # デバッグ設定に基づいてログレベルを設定

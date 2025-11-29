@@ -78,6 +78,16 @@ class ChunkingConfig(BaseModel):
     max_chunk_size: int = 512
     overlap: int = 50
 
+class RagExcludeConfig(BaseModel):
+    patterns: list[str] = Field(
+        default_factory=lambda: [
+            r".*\.env$",
+            r"secrets/.*",
+            r".*_SECRET.*",
+            r".*API_KEY.*",
+        ]
+    )
+    files: list[str] = Field(default_factory=lambda: ["README.md", "AGENTS.md"])
 
 class RagConfig(BaseModel):
     """RAG configuration model."""
@@ -88,15 +98,7 @@ class RagConfig(BaseModel):
     index: IndexConfig = Field(default_factory=IndexConfig)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
-    exclude_patterns: list[str] = Field(
-        default_factory=lambda: [
-            r".*\.env$",
-            r"secrets/.*",
-            r".*_SECRET.*",
-            r".*API_KEY.*",
-        ]
-    )
-    exclude_files: list[str] = Field(default_factory=lambda: ["README.md", "AGENTS.md"])
+    exclude: RagExcludeConfig = Field(default_factory=RagExcludeConfig)
 
 
 class DocgenConfig(BaseModel):

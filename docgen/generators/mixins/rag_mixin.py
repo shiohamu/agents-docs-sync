@@ -9,13 +9,13 @@ RAGシステムから取得する機能を提供します。
 class RAGMixin:
     """RAG機能を提供する Mixin"""
 
-    def _get_rag_context(self, query: str, top_k: int = 6) -> str:
+    def _get_rag_context(self, query: str, top_k: int | None = None) -> str:
         """
         RAGコンテキストを取得してフォーマット
 
         Args:
             query: 検索クエリ
-            top_k: 取得するチャンク数
+            top_k: 取得するチャンク数（Noneの場合は設定ファイルから読み取る）
 
         Returns:
             フォーマット済みのコンテキスト文字列（RAG無効時は空文字列）
@@ -28,6 +28,10 @@ class RAGMixin:
             from docgen.rag.retriever import DocumentRetriever
 
             self.logger.info(f"Retrieving RAG context for query: {query[:50]}...")
+
+            # top_kが指定されていない場合は設定から取得
+            if top_k is None:
+                top_k = self.config.get("rag", {}).get("retrieval", {}).get("top_k", 6)
 
             # Retrieverを使用してコンテキストを取得
             retriever = DocumentRetriever(self.config, self.project_root)

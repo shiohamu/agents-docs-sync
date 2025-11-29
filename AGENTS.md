@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-29 12:01:42
+自動生成日時: 2025-11-29 19:11:36
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,7 +12,29 @@
 <!-- MANUAL_END:description -->
 
 
-**使用技術**: shell, python
+agents-docs-sync は、エージェントに関するドキュメントを宣言的な設定ファイルから自動生成し、複数リポジトリやブランチ間で同期できる CLI ツールです。Python 3 とシンプルな Shell スクリプトの組み合わせで構築されており、`agents-docs-sync --help` のようにコマンドラインから直感的に操作できます。
+
+### アーキテクチャ概要
+- **CLI エントリポイント**： `pyproject.toml` に記載されたスクリプトエイリアン（`agents-docs-sync`, `agents_docs_sync`）は、`docgen.docgen:main` を呼び出します。  
+- **設定モデル化**： `docgen/models/agents.py` で Pydantic ベースのクラス (`AgentsConfig`, `AgentsGenerationConfig`, `AgentsDocument`) が定義されており、YAML／JSON の構成ファイルを検証・パースして内部データ構造へ変換します。  
+- **ドキュメント生成**： パーサが作ったモデルオブジェクトから Markdown（主に AGENTS.md） をテンプレートエンジンで組み立て、指定ディレクトリへ出力します。  
+- **同期機能**： 生成したファイルを対象リポジトリの特定パスへコピー／コミットし、必要なら GitHub Actions 等に連携できるよう Shell スクリプトが用意されています。
+
+### 主な機能
+| 機能 | 内容 |
+|------|------|
+| **宣言的ドキュメント生成** | 設定ファイル一式でエージェントの概要・パラメータ・実装例を記述し、AGENTS.md を自動構築。 |
+| **多リポジトリ同期** | 1 本の設定から複数プロジェクトへ同時にドキュメントを書き込むことが可能（Git コミット/プッシュは Shell スクリプトで実装）。 |
+| **拡張性** | `docgen` パッケージ内のモジュールを追加・置換するだけで、独自フォーマットや出力先へ対応。 |
+| **CI/CD 連携** | GitHub Actions 用 YAML が同梱されており、PR 時にドキュメントが最新になるよう設定できる。 |
+
+### 技術スタック
+- Python: `typing`, `dataclasses` (Pydantic), `click`（CLI）  
+- Shell: Bash スクリプトで Git 操作・ファイルコピーを実行  
+- パッケージ管理： Poetry による依存関係とビルド設定  
+
+これらの要素が組み合わさり、エンジニアはコードを書き換えるだけでなく、機能追加や既存ドキュメント更新も高速に行えます。プロジェクト管理ガイド（`PROJECT_MANAGEMENT_GUIDE.md`）と設定ガイド (`CONFIG_GUIDE.md`) が揃っているため、新規導入時のハードルが低くなっています。
+**使用技術**: python, shell
 
 
 ## プロジェクト構造
@@ -76,7 +98,6 @@ agents-docs-sync/
  │  │  ├─ file_utils.py
  │  │  └─ prompt_loader.py
  │  ├─ config.toml
- │  ├─ config.yaml
  │  ├─ config_manager.py
  │  ├─ docgen.py
  │  └─ hooks.toml
@@ -129,18 +150,19 @@ uv sync
 ### LLM環境のセットアップ
 
 
-#### APIを使用する場合
-
-1. **APIキーの取得と設定**
-
-   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
-   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
-
-2. **API使用時の注意事項**
-   - APIレート制限に注意してください
-   - コスト管理のために使用量を監視してください
 
 
+#### ローカルLLMを使用する場合
+
+1. **ローカルLLMのインストール**
+
+   - Ollamaをインストール: https://ollama.ai/
+   - モデルをダウンロード: `ollama pull llama3`
+   - サービスを起動: `ollama serve`
+
+2. **ローカルLLM使用時の注意事項**
+   - モデルが起動していることを確認してください
+   - ローカルリソース（メモリ、CPU）を監視してください
 
 
 ---
@@ -230,4 +252,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 12:01:42*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 19:11:36*
