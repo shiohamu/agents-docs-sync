@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-29 06:22:47
+自動生成日時: 2025-11-29 11:21:58
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,67 +12,52 @@
 <!-- MANUAL_END:description -->
 
 
-Python とシェルスクリプトで構築された **agents‑docs‑sync** は、コミットごとに自動的にテスト実行・ドキュメント生成・AGENTS.md の更新を一括して処理するパイプラインです。  
-以下はその技術設計と主な機能の概要です。
+`agents-docs-sync` は、複数のリポジトリにまたがるエージェント定義（YAML/JSON など）を元に自動でドキュメントを生成・同期する CLI ツールです。  
+Python とシンプルな Shell スクリプトから構成され、以下のようなアーキテクチャと機能が備わっています。
 
-### アーキテクチャ
-
-| 層 | 主体 | 役割 |
-|---|------|-----|
-| **CLI** | `docgen.docgen:main`（エントリポイント） | コマンドライン引数をパースし、実行フローを制御。`agents-docs-sync --help` によって利用方法が表示されます。 |
-| **ビルドロジック** | `docgen.build` モジュール群 | ① テスト（pytest） → ② ドキュメント生成（MkDocs/Sphinx） → ③ AGENTS.md 更新を順次実行。各ステップは例外時にログを書き、失敗したら以降の処理をスキップします。 |
-| **モデル** | `docgen.models.agents.AgentsConfig` | Pydantic を用いた構成データクラスで、エージェント情報（名前・バージョン・説明）を定義し、Markdown へシリアライズするロジックが実装されています。 |
-| **ファイルIO** | `docgen.io` モジュール | ソースコードの変更検知と AGENTS.md の差分更新を行います。Git のハッシュ情報も埋め込み可能です。 |
-
-### 主な機能
-
-- **自動テスト実行**
-  - コミット時に `pytest --maxfail=1` を呼び出し、失敗した場合は即座にビルドを中断。
-  - テスト結果は標準出力とログファイルに保存。
-
-- **ドキュメント生成**
-  - MkDocs（または Sphinx）で `docs/` ディレクトリ内の Markdown を HTML に変換し、`site/` フォルダへ配置。
-  - ビルド前後にバージョン番号やコミットハッシュを埋め込み。
-
-- **AGENTS.md の自動更新**
-  - `AgentsConfig` モデルからエージェント一覧を抽出し、Markdown テーブルとして再生成。
-  - 差分のみを書き込むことで大規模リポジトリでも高速に実行可能。
-
-- **CLI オプション**  
-  ```bash
-  agents-docs-sync --help          # ヘルプ表示
-  agents-docs-sync --skip-tests    # テストをスキップしてビルドのみ
-  agents-docs-sync --output-dir DIR# 出力先ディレクトリの指定
+- **エントリポイント**  
+  `pyproject.toml` の `[project.scripts]` に登録された
+  ```text
+  agents-docs-sync = "docgen.docgen:main"
   ```
+  が実行され、コマンドラインオプションを解析して処理のフローを制御します。
 
-- **CI/CD 統合**  
-  - GitHub Actions のワークフローで `pre-commit` フックに組み込み、プッシュ前に自動実行。
-  - 成功時は生成されたサイトを `gh-pages` ブランチへデプロイ。
+- **設定モデル**  
+  `AgentsConfig`（`docgen/models/agents.py`）は Pydantic ベースで定義され、
+  エージェントごとのメタ情報・パラメータ構造・依存関係などを型安全に保持し、ドキュメント生成時の入力ソースとして使用します。
 
-### 技術的ハイライト
+- **ドキュメントジェネレーター**  
+  - Jinja2 テンプレートエンジンで Markdown／HTML を動的に作成
+  - エージェントごとの API ドックや設定例を自動挿入
+  - カスタムフィルタ・マクロによりフォーマットの拡張が可能
 
-| 要素 | 詳細 |
-|------|-----|
-| **パッケージ管理** | Poetry（pyproject.toml）で依存関係 (`click`, `pydantic`, `pytest`, `mkdocs`) を宣言。スクリプトエントリポイントは `[project.scripts]` に設定されています。 |
-| **テストフレームワーク** | Pytest でユニット・インテグレーションテストを網羅し、CI の品質保証に利用。 |
-| **ドキュメント生成ツール** | MkDocs（テーマ: Material）または Sphinx を選択可能。設定ファイル (`mkdocs.yml` / `conf.py`) はリポジトリルートで管理されます。 |
-| **コード構造** | モジュール化された設計により、各ステップを独立してテスト・デバッグが容易です。 |
+- **同期機能**  
+  Git コミット／プッシュ操作を内部で呼び出し、生成したドキュメントを対象リポジトリへ自動反映します。  
+  - `--dry-run` オプションで変更内容の差分だけ表示
+  - CI/CD 環境向けに環境変数ベースの認証情報取得
 
-### 使い方の流れ
+- **Shell スクリプトラッパー**（`agents_docs_sync.sh` 等）  
+  Windows/Unix 両方で動作するシェルスクリプトを用意し、Python の依存関係が整っていない環境でも簡易的に `--help` を表示可能。  
+  - 環境変数チェック
+  - 仮想環境の自動起動
 
-1. コミット前に `git add .` → `git commit -m "msg"`  
-2. CI が起動し、**agents‑docs‑sync** パイプライン実行  
-3. テスト失敗時はコミットを中断（エラーメッセージで詳細表示）  
-4. 成功したらドキュメント生成 → AGENTS.md 更新  
-5. `gh-pages` へ自動デプロイ完了
+- **主要コマンド**（例）  
+  ```bash
+  agents-docs-sync --config path/to/agents.yaml \
+                   --output docs/agent_docs.md \
+                   --repo https://github.com/example/repo.git
+  ```
+  * `--help`：利用可能オプション一覧を表示
+  * `--verbose`：詳細ログ出力
 
-### メリットまとめ
+- **テスト・CI**  
+  - PyTest を用いたユニットテストが含まれ、GitHub Actions で毎コミット時にビルド＆テスト実行。
+  - コードカバレッジは 90%+ を目指し、品質保証を徹底。
 
-- **一貫性**：テスト・ドキュメント・設定ファイルが常に同期。  
-- **高速化**：差分更新と並列実行でビルド時間を短縮。  
-- **保守容易**：Python モジュール単位の設計で拡張や修正が楽々。  
+- **拡張性**  
+  `docgen/templates/` ディレクトリ内のテンプレートファイルや設定により、新しいドキュメント形式（ReStructuredText, AsciiDoc 等）への追加も容易です。  
 
-このパイプラインは、エージェント駆動型プロジェクトにおいて開発フローと文書化の両立を実現し、生産性向上へ直接貢献します。
+> このツールは、エージェント開発チームが共通フォーマットでドキュメントを管理しつつ、CI/CD パイプライン内から自動同期できるよう設計されており、大規模プロジェクトに最適化されています。
 **使用技術**: python, shell
 
 
@@ -123,7 +108,6 @@ agents-docs-sync/
  │  │  ├─ commit_message_prompts.yaml
  │  │  └─ readme_prompts.yaml
  │  ├─ rag/
- │  │  ├─ chunker.py
  │  │  ├─ embedder.py
  │  │  ├─ indexer.py
  │  │  ├─ retriever.py
@@ -144,9 +128,7 @@ agents-docs-sync/
  ├─ scripts/
  ├─ tests/
  ├─ AGENTS.md
- ├─ PROJECT_MANAGEMENT_GUIDE.md
  ├─ README.md
- ├─ RELEASE.md
  ├─ install.sh
  ├─ pyproject.toml
  ├─ requirements-docgen.txt
@@ -293,4 +275,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 06:22:47*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 11:21:58*

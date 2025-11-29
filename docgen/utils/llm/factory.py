@@ -4,7 +4,7 @@ LLMクライアントのファクトリークラス
 
 from typing import Any
 
-from ...models.llm import LLMConfig
+from ...models.llm import LLMClientConfig
 from ...utils.exceptions import ErrorMessages
 from ...utils.logger import get_logger
 from .anthropic_client import AnthropicClient
@@ -20,7 +20,7 @@ class LLMClientFactory:
 
     @staticmethod
     def create_client(
-        config: dict[str, Any] | LLMConfig, mode: str = "api"
+        config: dict[str, Any] | LLMClientConfig, mode: str = "api"
     ) -> BaseLLMClient | None:
         """
         LLMクライアントを作成
@@ -34,7 +34,7 @@ class LLMClientFactory:
         """
         try:
             if mode == "api":
-                if isinstance(config, LLMConfig):
+                if isinstance(config, LLMClientConfig):
                     client_config = config.openai or config.anthropic
                     if not client_config:
                         logger.error(ErrorMessages.API_CONFIG_NOT_FOUND)

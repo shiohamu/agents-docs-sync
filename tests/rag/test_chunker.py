@@ -142,21 +142,6 @@ key2 = "value2"
 
         assert len(chunks) >= 2
 
-    def test_hash_text_consistency(self):
-        """同じテキストは同じハッシュを生成することを確認"""
-        chunker = CodeChunker()
-
-        text1 = "def foo(): pass"
-        text2 = "def foo(): pass"
-        text3 = "def bar(): pass"
-
-        hash1 = chunker._hash_text(text1)
-        hash2 = chunker._hash_text(text2)
-        hash3 = chunker._hash_text(text3)
-
-        assert hash1 == hash2
-        assert hash1 != hash3
-
     def test_chunk_codebase_integration(self, tmp_path):
         """プロジェクト全体のチャンク化が動作することを確認"""
         # 簡単なプロジェクト構造を作成

@@ -5,78 +5,64 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-`agents-docs-sync` は、リポジトリへのコミットごとに以下の３つを自動で実行する CLI パイプラインです。  
-- **テスト**：pytest などのユニット／インテグレーションテストを実行し、ビルド失敗時はすぐ通知します。  
-- **ドキュメント生成**：`docgen/` 内にある Python コードから API ドキュメント（Sphinx / MkDocs 用）と `AGENTS.md` を自動作成します。コードコメントや型ヒントを解析し、最新の仕様書が常に反映されます。  
-- **AGENTS.md の更新**：`docgen/models/agents.py` に定義された `AgentsConfig` クラスからエージェント構成情報（名前・説明・パラメータ）を抽出し、Markdown 形式でまとめ直します。
+Python とシェルで構築された CLI ツール **agents‑docs‑sync** は、複数のリポジトリに散在するエージェント関連ドキュメントを一元管理・同期させるためのユーティリティです。  
+主な機能と技術的設計は以下の通りです。
 
----
+- **CLI エントリポイント**  
+  - `agents-docs-sync` / `agents_docs_sync`: pyproject.toml の `[project.scripts]` に定義され、実行時に `docgen.docgen:main` を呼び出します。  
+  - ヘルプ表示は `--help` オプションで確認でき（例：`agents-docs-sync --help`）、コマンドライン引数を通じて同期対象やオプション設定が指定可能です。
 
-### アーキテクチャ
+- **構成モデル** (`AgentsConfig`)  
+  - `docgen/models/agents.py` に実装され、JSON/YAML 等で読み込むことによりリポジトリ URL、ブランチ名、ドキュメントパスなどを管理します。  
+  - このクラスはデータ検証（pydantic ベース）と既定値設定が行われており、CLI の `--config` オプションで読み込むことができます。
 
-```
-┌───────────────────────┐
-│ git commit / CI trigger │
-├─────────────▲───────────┤
-│             │           │
-│    agents-docs-sync CLI (Python) ──> ① run_tests()
-│                                   │          ↓
-│                                   │   pytest/flake8 等
-│                                   │          ↑
-│                                   │
-│                       ② generate_docs() → Sphinx/MkDocs build
-│                                   │          ↓
-│                         docgen/docgen.py (Jinja2 templates)
-│                                   │
-├─────────────▼──────────────────┤
-│   ③ update_AGENTS.md           │
-│        ← parse_agents_config() │
-│            from AgentsConfig    │
-└───────────────────────▲───────┘
-                     │
-               (git add & commit)
-```
+- **アーキテクチャ**  
+  ```
+  ├─ docgen/
+  │   ├─ __init__.py
+  │   ├─ models/agents.py      ← AgentsConfig 定義
+  │   └─ docgen.py             ← main() が CLI を解析し、同期ロジックを実行
+  ├─ scripts/                 ← 必要に応じてシェルスクリプトでラップ
+  └─ pyproject.toml           ← ビルド・依存関係定義（scripts セクション含む）
+  ```
+  - `main()` は argparse を用いてオプション解析 → 設定読み込み → ドキュメント生成/同期処理を順次実行します。  
+  - 実際の同期ロジックは GitPython 等でリポジトリクローン／更新し、対象ファイル（Markdown, YAML）を取得・比較して差分があれば書き込みます。
 
-- **CLI**：`typer` を使用し、`agents-docs-sync --help` でヘルプが表示されます。  
-- **Python スクリプト**（`docgen.docgen:main`）：テスト実行は `subprocess.run()` によりシェルコマンドを呼び出し、ドキュメント生成は Jinja2 テンプレートと型情報から Markdown を作成します。  
-- **エントリポイント**：pyproject.toml で `"agents-docs-sync"` と `"agents_docs_sync"` が `docgen.docgen:main` にマッピングされており、pip install 後はどちらの名前でも実行可能です。
+- **主要モジュールと機能**  
+  | モジュール | 主な役割 |
+  |------------|----------|
+  | `docgen.docgen` | CLI エントリポイント、引数解析、同期処理のコーディネータ |
+  | `docgen.models.agents.AgentsConfig` | 設定ファイル（JSON/YAML）をパースし検証するデータモデル |
+  | シェルスクリプト (`scripts/`) | CI/CD パイプラインやローカル開発環境での簡易呼び出し用ラッパー |
 
----
+- **使用例**  
+  ```bash
+  # 設定ファイルを指定して同期実行
+  agents-docs-sync --config path/to/config.yaml
 
-### 主な機能
+  # ヘルプ表示
+  agents-docs-sync --help
+  ```
 
-| 機能 | 内容 |
-|------|------|
-| **自動テスト** | コミット時に全テストを走らせ、失敗した場合はビルドステータスで即座に通知。CI との連携が容易です。 |
-| **API ドキュメント生成** | `docgen/models` 内の型定義と docstring を元に Sphinx の `.rst` ファイルを自動作成し、静的サイトへビルドします。 |
-| **AGENTS.md 自動更新** | エージェント構成（クラス名・説明・パラメータ）を `AgentsConfig` から抽出して Markdown 表に変換。手入力のミスや古い情報が残るリスクを排除。 |
-| **CLI オプション** | `--skip-tests`, `--dry-run`, `-v/--verbose` 等で実行内容を細かく制御可能です。また、環境変数でデバッグログレベル調整もサポートします。 |
-| **拡張性** | テンプレートは Jinja2 で記述されているため、新しいドキュメント形式や出力先（GitHub Pages, ReadTheDocs 等）へ簡単に移植できます。 |
+- **開発・ビルド手順（pyproject.toml）**  
+  ```toml
+  [build-system]
+  requires = ["setuptools>=42", "wheel"]
+  build-backend = "setuptools.build_meta"
 
----
+  [tool.setuptools.packages.find]
+  where = ["src"]
 
-### 使用例
+  [project.scripts]
+  agents-docs-sync = "docgen.docgen:main"
+  agents_docs_sync = "docgen.docgen:main"
+  ```
 
-```bash
-# インストール後、リポジトリルートから実行
-$ agents-docs-sync          # すべての処理を走らせる
-$ agents-docs-sync --skip-tests   # テストはスキップしてドキュメントだけ生成する
+- **拡張性**  
+  - 設定モデルを継承して新しいドキュメントタイプ（API Docs, README 等）に対応可能。  
+  - シェルスクリプトで GitHub Actions と連携し、PR 作成時の自動同期も容易。
 
-# ヘルプ確認
-$ agents-docs-sync --help
-```
-
-コミット時に自動で実行したい場合は、CI のジョブや Git フック（pre‑commit）に `agents-docs-sync` を組み込むと一連のドキュメント管理が完結します。  
-
----
-
-### まとめ
-
-- **コード品質**：テスト失敗時に即通知し、不具合を早期発見。  
-- **ドキュメント整備**：手動更新不要で常に最新情報を保持。  
-- **開発フロー統合**：Python/シェルベースの軽量ツールが、既存 CI/CD パイプラインへ簡単組み込み可能。  
-
-`agents-docs-sync` を導入すれば、リポジトリ内でエージェント関連ドキュメントを自動同期しつつ、高い品質と整合性を維持できます。
+この構造により **agents‑docs‑sync** は軽量かつ再利用性が高く、多数のエージェントプロジェクト間でドキュメント整合性を保ちやすいツールとなっています。
 
 
 
@@ -173,4 +159,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-29 06:21:41*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-29 11:20:48*

@@ -1,8 +1,68 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-29 06:21:32
+自動生成日時: 2025-11-29 11:20:41
 
 ---
+
+## docgen/collectors/coding_standards_collector.py
+
+### CodingStandardsCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CodingStandardsCollector:
+```
+
+**説明**:
+
+Coding standards collector class
+
+*定義場所: docgen/collectors/coding_standards_collector.py:12*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+**説明**:
+
+Initialize
+
+Args:
+    project_root: Project root directory
+
+*定義場所: docgen/collectors/coding_standards_collector.py:19*
+
+---
+
+### collect_coding_standards
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
+```
+
+**説明**:
+
+Collect coding standards
+
+Returns:
+    Dictionary of coding standards
+
+*定義場所: docgen/collectors/coding_standards_collector.py:29*
+
+---
+
 
 ## docgen/collectors/collector_utils.py
 
@@ -209,6 +269,66 @@ Detect programming language from configuration files.
 ---
 
 
+## docgen/collectors/dependency_collector.py
+
+### DependencyCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DependencyCollector:
+```
+
+**説明**:
+
+Dependency collector class
+
+*定義場所: docgen/collectors/dependency_collector.py:12*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+**説明**:
+
+Initialize
+
+Args:
+    project_root: Project root directory
+
+*定義場所: docgen/collectors/dependency_collector.py:19*
+
+---
+
+### collect_dependencies
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_dependencies(self) -> dict[str, list[str]]:
+```
+
+**説明**:
+
+Collect dependencies
+
+Returns:
+    Dictionary of dependencies per language
+
+*定義場所: docgen/collectors/dependency_collector.py:29*
+
+---
+
+
 ## docgen/collectors/project_info_collector.py
 
 ### ProjectInfoCollector
@@ -226,7 +346,7 @@ class ProjectInfoCollector:
 
 プロジェクトのビルド/テスト手順、依存関係、コーディング規約などを収集する。
 
-*定義場所: docgen/collectors/project_info_collector.py:17*
+*定義場所: docgen/collectors/project_info_collector.py:16*
 
 ---
 
@@ -247,7 +367,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     package_managers: 言語ごとのパッケージマネージャ辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:45*
+*定義場所: docgen/collectors/project_info_collector.py:44*
 
 ---
 
@@ -267,7 +387,7 @@ def collect_all(self) -> ProjectInfo:
 Returns:
     プロジェクト情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:58*
+*定義場所: docgen/collectors/project_info_collector.py:68*
 
 ---
 
@@ -287,7 +407,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:82*
+*定義場所: docgen/collectors/project_info_collector.py:98*
 
 ---
 
@@ -307,7 +427,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:93*
+*定義場所: docgen/collectors/project_info_collector.py:108*
 
 ---
 
@@ -327,7 +447,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:173*
+*定義場所: docgen/collectors/project_info_collector.py:117*
 
 ---
 
@@ -347,7 +467,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:254*
+*定義場所: docgen/collectors/project_info_collector.py:126*
 
 ---
 
@@ -357,7 +477,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def collect_ci_cd_info(self) -> dict[str, list[str]]:
+def collect_ci_cd_info(self) -> dict[str, Any]:
 ```
 
 **説明**:
@@ -367,7 +487,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:332*
+*定義場所: docgen/collectors/project_info_collector.py:135*
 
 ---
 
@@ -389,7 +509,7 @@ StructureAnalyzerに委譲して詳細な構造分析を実行
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:351*
+*定義場所: docgen/collectors/project_info_collector.py:156*
 
 ---
 
@@ -409,7 +529,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:365*
+*定義場所: docgen/collectors/project_info_collector.py:167*
 
 ---
 
@@ -521,6 +641,67 @@ Returns:
     プロジェクト構造の辞書
 
 *定義場所: docgen/collectors/structure_analyzer.py:142*
+
+---
+
+
+## docgen/collectors/test_command_collector.py
+
+### TestCommandCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestCommandCollector:
+```
+
+**説明**:
+
+Test command collector class
+
+*定義場所: docgen/collectors/test_command_collector.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, package_managers: dict[str, str] | None):
+```
+
+**説明**:
+
+Initialize
+
+Args:
+    project_root: Project root directory
+    package_managers: Dictionary of detected package managers
+
+*定義場所: docgen/collectors/test_command_collector.py:22*
+
+---
+
+### collect_test_commands
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_test_commands(self) -> list[str]:
+```
+
+**説明**:
+
+Collect test commands
+
+Returns:
+    List of test commands
+
+*定義場所: docgen/collectors/test_command_collector.py:35*
 
 ---
 
@@ -3863,7 +4044,7 @@ class CodeChunker:
 
 コードベースをチャンク化するクラス
 
-*定義場所: docgen/rag/chunker.py:18*
+*定義場所: docgen/rag/chunker.py:16*
 
 ---
 
@@ -3883,7 +4064,7 @@ def __init__(self, config: dict[str, Any] | None):
 Args:
     config: RAG設定（config.yaml の rag セクション）
 
-*定義場所: docgen/rag/chunker.py:46*
+*定義場所: docgen/rag/chunker.py:44*
 
 ---
 
@@ -3906,7 +4087,7 @@ Args:
 Returns:
     処理すべき場合True
 
-*定義場所: docgen/rag/chunker.py:64*
+*定義場所: docgen/rag/chunker.py:62*
 
 ---
 
@@ -3930,7 +4111,7 @@ Args:
 Returns:
     チャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:132*
+*定義場所: docgen/rag/chunker.py:130*
 
 ---
 
@@ -3953,7 +4134,7 @@ Args:
 Returns:
     すべてのチャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:380*
+*定義場所: docgen/rag/chunker.py:165*
 
 ---
 
@@ -4364,6 +4545,176 @@ Returns:
     再ランク済みのチャンクのリスト
 
 *定義場所: docgen/rag/retriever.py:141*
+
+---
+
+
+## docgen/rag/strategies/base_strategy.py
+
+### BaseChunkStrategy
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BaseChunkStrategy:
+```
+
+**説明**:
+
+Base class for chunking strategies.
+
+*定義場所: docgen/rag/strategies/base_strategy.py:10*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+*説明なし*
+
+*定義場所: docgen/rag/strategies/base_strategy.py:13*
+
+---
+
+### chunk
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def chunk(self, content: str, file_path: Path) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+Chunk the content.
+
+Args:
+    content: File content
+    file_path: Path to the file
+
+Returns:
+    List of chunks
+
+*定義場所: docgen/rag/strategies/base_strategy.py:17*
+
+---
+
+
+## docgen/rag/strategies/code_strategy.py
+
+### CodeChunkStrategy
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CodeChunkStrategy:
+```
+
+**説明**:
+
+Strategy for chunking code files (Python, YAML, TOML).
+
+*定義場所: docgen/rag/strategies/code_strategy.py:15*
+
+---
+
+### chunk
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def chunk(self, content: str, file_path: Path) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+Chunk code content based on file extension.
+
+*定義場所: docgen/rag/strategies/code_strategy.py:18*
+
+---
+
+
+## docgen/rag/strategies/markdown_strategy.py
+
+### MarkdownChunkStrategy
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class MarkdownChunkStrategy:
+```
+
+**説明**:
+
+Strategy for chunking Markdown files.
+
+*定義場所: docgen/rag/strategies/markdown_strategy.py:11*
+
+---
+
+### chunk
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def chunk(self, content: str, file_path: Path) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+Chunk Markdown files by headers.
+
+*定義場所: docgen/rag/strategies/markdown_strategy.py:14*
+
+---
+
+
+## docgen/rag/strategies/text_strategy.py
+
+### TextChunkStrategy
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TextChunkStrategy:
+```
+
+**説明**:
+
+Strategy for chunking generic text files.
+
+*定義場所: docgen/rag/strategies/text_strategy.py:11*
+
+---
+
+### chunk
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def chunk(self, content: str, file_path: Path) -> list[dict[str, Any]]:
+```
+
+**説明**:
+
+Chunk generic files as a single chunk.
+
+*定義場所: docgen/rag/strategies/text_strategy.py:14*
 
 ---
 
@@ -5473,7 +5824,7 @@ LLMクライアントのファクトリークラス
 
 **シグネチャ**:
 ```
-def create_client(config: dict[str, Any] | LLMConfig, mode: str) -> BaseLLMClient | None:
+def create_client(config: dict[str, Any] | LLMClientConfig, mode: str) -> BaseLLMClient | None:
 ```
 
 **説明**:
