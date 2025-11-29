@@ -61,6 +61,8 @@ class DocumentGenerator:
             generators_to_run.append(("readme", "README"))
         if self.config.get("generation", {}).get("generate_agents_doc", True):
             generators_to_run.append(("agents", "AGENTS.md"))
+        if self.config.get("generation", {}).get("generate_contributing_doc", False):
+            generators_to_run.append(("contributing", "CONTRIBUTING.md"))
 
         # 各ジェネレーターを実行
         for gen_type, gen_name in generators_to_run:

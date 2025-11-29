@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-29 11:21:58
+自動生成日時: 2025-11-29 11:36:31
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,53 +12,67 @@
 <!-- MANUAL_END:description -->
 
 
-`agents-docs-sync` は、複数のリポジトリにまたがるエージェント定義（YAML/JSON など）を元に自動でドキュメントを生成・同期する CLI ツールです。  
-Python とシンプルな Shell スクリプトから構成され、以下のようなアーキテクチャと機能が備わっています。
+agents‑docs‑sync は、エージェントの設定ファイル（YAML/JSON）から自動的に Markdown 形式のドキュメントを生成し、それらを指定したリポジトリへ同期する CLI ツールです。  
+Python とシェルスクリプトで構成されており、以下のようなアーキテクチャと機能が特徴です。
 
-- **エントリポイント**  
-  `pyproject.toml` の `[project.scripts]` に登録された
-  ```text
-  agents-docs-sync = "docgen.docgen:main"
-  ```
-  が実行され、コマンドラインオプションを解析して処理のフローを制御します。
+### アーキテクチャ
 
-- **設定モデル**  
-  `AgentsConfig`（`docgen/models/agents.py`）は Pydantic ベースで定義され、
-  エージェントごとのメタ情報・パラメータ構造・依存関係などを型安全に保持し、ドキュメント生成時の入力ソースとして使用します。
+```
+┌───────────────────────┐
+│   システムレベル       │  (ユーザー・CI/CD パイプライン)
+├────────────┬──────────┤
+│ CLI（agents‑docs-sync） │  ← pyproject.toml の `scripts` によりエントリポイントを登録
+│ └─ main() → docgen.docgen:main   │
+├───────────────────────┤
+│ Python ランタイム     │
+│ ├─ docgen/          │  ドキュメント生成ロジック（Markdown・HTML）
+│ │ ├─ models.py      │  Pydantic ベースの `AgentsConfig` モデルで設定を検証
+│ │ └─ generator.py   │  設定からテンプレートへ変換し、ファイルを書き出す
+│ └─ utils/           │  ファイル操作・Git 操作（シェルラッパー）  
+├───────────────────────┤
+│ システムツール       │ (git, rsync 等)
+└───────────────────────┘
+```
 
-- **ドキュメントジェネレーター**  
-  - Jinja2 テンプレートエンジンで Markdown／HTML を動的に作成
-  - エージェントごとの API ドックや設定例を自動挿入
-  - カスタムフィルタ・マクロによりフォーマットの拡張が可能
+- **CLI**: `agents-docs-sync --help` でオプション一覧を確認でき、ドキュメント生成・同期のフローをスクリプト化。
+- **Python モジュール**:
+  - `docgen.models.agents.AgentsConfig`: エージェント設定ファイル（例: agents.yaml）を読み込み検証。  
+  - `docgen.generator.generate_docs()`: 設定から Markdown を生成し、`docs/agents/` に出力。
+- **同期**:
+  - Git リポジトリへのコミット・プッシュはシェルコマンド（git, rsync）を呼び出すことで実現。  
+  - `--dry-run` オプションで変更点のみ表示し、事前確認が可能。
 
-- **同期機能**  
-  Git コミット／プッシュ操作を内部で呼び出し、生成したドキュメントを対象リポジトリへ自動反映します。  
-  - `--dry-run` オプションで変更内容の差分だけ表示
-  - CI/CD 環境向けに環境変数ベースの認証情報取得
+### 主な機能
 
-- **Shell スクリプトラッパー**（`agents_docs_sync.sh` 等）  
-  Windows/Unix 両方で動作するシェルスクリプトを用意し、Python の依存関係が整っていない環境でも簡易的に `--help` を表示可能。  
-  - 環境変数チェック
-  - 仮想環境の自動起動
+- **設定から自動生成**: エージェントごとの説明・パラメータ一覧をテンプレート化して Markdown に変換。
+- **差分同期**: 既存のドキュメントと比較し変更箇所のみ更新。CI/CD パイプラインで `--no-push` を指定すればローカルだけに残せる。
+- **汎用性の高いエントリポイント**:
+  - 複数名前（`agents-docs-sync`, `agents_docs_sync`）を登録し、スクリプトから直接呼び出せます。  
+  - シェルラッパー (`scripts/`) を追加すれば、Windows のバッチファイルや Unix のシェルで簡単に利用可能。
+- **拡張性**: `docgen.generator` はテンプレートエンジン（Jinja2）を使用しているため、新しいドキュメントフォーマットへの対応も容易。
 
-- **主要コマンド**（例）  
-  ```bash
-  agents-docs-sync --config path/to/agents.yaml \
-                   --output docs/agent_docs.md \
-                   --repo https://github.com/example/repo.git
-  ```
-  * `--help`：利用可能オプション一覧を表示
-  * `--verbose`：詳細ログ出力
+### 利用例
 
-- **テスト・CI**  
-  - PyTest を用いたユニットテストが含まれ、GitHub Actions で毎コミット時にビルド＆テスト実行。
-  - コードカバレッジは 90%+ を目指し、品質保証を徹底。
+```bash
+# ドキュメント生成と同期 (デフォルト)
+agents-docs-sync --config agents.yaml --target docs/agents/
 
-- **拡張性**  
-  `docgen/templates/` ディレクトリ内のテンプレートファイルや設定により、新しいドキュメント形式（ReStructuredText, AsciiDoc 等）への追加も容易です。  
+# 変更点だけ表示（プッシュはしない）
+agents-docs-sync --dry-run
 
-> このツールは、エージェント開発チームが共通フォーマットでドキュメントを管理しつつ、CI/CD パイプライン内から自動同期できるよう設計されており、大規模プロジェクトに最適化されています。
-**使用技術**: python, shell
+# CI 用の簡易スクリプト
+export AGENTS_CONFIG=ci/config.yml
+agents-docs-sync -c $AGENTS_CONFIG -t /tmp/docs/
+```
+
+### 開発・テスト環境
+
+- **Python 3.10+**  
+- `pip install .` でインストール可能。pyproject.toml の `[tool.poetry.dependencies]`（または PEP 621）に必要ライブラリが列挙されています。
+- テストケース (`tests/`) は PyTest を利用し、生成結果と Git 操作のモックを行います。
+
+agents‑docs‑sync はエージェントドキュメント管理を自動化することで、手入力ミスや更新漏れを防ぎます。プロジェクト内で共通設定を一元化したい場合はもちろん、複数リポジトリに同じフォーマットのドキュメントを保管したいケースにも最適です。
+**使用技術**: shell, python
 
 
 ## プロジェクト構造
@@ -91,6 +105,7 @@ agents-docs-sync/
  │  │  ├─ agents_generator.py
  │  │  ├─ api_generator.py
  │  │  ├─ base_generator.py
+ │  │  ├─ contributing_generator.py
  │  │  └─ readme_generator.py
  │  ├─ hooks/
  │  │  ├─ tasks/
@@ -275,4 +290,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 11:21:58*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 11:36:31*

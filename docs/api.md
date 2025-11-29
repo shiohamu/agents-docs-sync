@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-29 11:20:41
+自動生成日時: 2025-11-29 11:35:01
 
 ---
 
@@ -816,10 +816,10 @@ def load_detector_user_overrides(self) -> dict[str, Any]:
 
 **説明**:
 
-Detectorのユーザー設定オーバーライドを読み込み
+Load detector configuration from config.toml.
 
 Returns:
-    言語名をキーとした設定の辞書
+    Detector configuration dictionary.
 
 *定義場所: docgen/config_manager.py:231*
 
@@ -845,7 +845,7 @@ Args:
 Returns:
     マージされた設定
 
-*定義場所: docgen/config_manager.py:254*
+*定義場所: docgen/config_manager.py:259*
 
 ---
 
@@ -1722,7 +1722,7 @@ def create_generator(cls, generator_type: str, project_root: Path, detected_lang
 
 指定されたタイプのジェネレーターを作成
 
-*定義場所: docgen/generator_factory.py:23*
+*定義場所: docgen/generator_factory.py:24*
 
 ---
 
@@ -1739,7 +1739,7 @@ def get_available_generators(cls) -> list[str]:
 
 利用可能なジェネレーターのリストを取得
 
-*定義場所: docgen/generator_factory.py:49*
+*定義場所: docgen/generator_factory.py:52*
 
 ---
 
@@ -1965,6 +1965,26 @@ Returns:
     生成されたコミットメッセージ（エラー時はNone）
 
 *定義場所: docgen/generators/commit_message_generator.py:32*
+
+---
+
+
+## docgen/generators/contributing_generator.py
+
+### ContributingGenerator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ContributingGenerator:
+```
+
+**説明**:
+
+CONTRIBUTING.md generation class
+
+*定義場所: docgen/generators/contributing_generator.py:12*
 
 ---
 

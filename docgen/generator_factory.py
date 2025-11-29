@@ -17,6 +17,7 @@ class GeneratorFactory:
         "api": "APIGenerator",
         "readme": "ReadmeGenerator",
         "agents": "AgentsGenerator",
+        "contributing": "ContributingGenerator",
     }
 
     @classmethod
@@ -40,6 +41,8 @@ class GeneratorFactory:
             from .generators.readme_generator import ReadmeGenerator as GeneratorClass
         elif generator_type == "agents":
             from .generators.agents_generator import AgentsGenerator as GeneratorClass
+        elif generator_type == "contributing":
+            from .generators.contributing_generator import ContributingGenerator as GeneratorClass
         else:
             raise ValueError(f"Unknown generator type: {generator_type}")
 

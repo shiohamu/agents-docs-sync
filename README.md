@@ -5,64 +5,84 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-Python とシェルで構築された CLI ツール **agents‑docs‑sync** は、複数のリポジトリに散在するエージェント関連ドキュメントを一元管理・同期させるためのユーティリティです。  
-主な機能と技術的設計は以下の通りです。
+**技術スタック**
 
-- **CLI エントリポイント**  
-  - `agents-docs-sync` / `agents_docs_sync`: pyproject.toml の `[project.scripts]` に定義され、実行時に `docgen.docgen:main` を呼び出します。  
-  - ヘルプ表示は `--help` オプションで確認でき（例：`agents-docs-sync --help`）、コマンドライン引数を通じて同期対象やオプション設定が指定可能です。
+- **言語**：Python 3.x（メインロジック）＋Bash／シェルスクリプト（CI・デプロイ補助）
+- **ビルドツール**：Poetry（`pyproject.toml`で定義、エントリポイント `agents-docs-sync`, `agents_docs_sync`)
+- **構成管理**：pydantic / dataclasses で読み込む `AgentsConfig` モデル (`docgen/models/agents.py:72`)  
+- **ファイル操作**：Python 標準ライブラリ（pathlib, shutil）＋MD5/SHA256 チェックサム
 
-- **構成モデル** (`AgentsConfig`)  
-  - `docgen/models/agents.py` に実装され、JSON/YAML 等で読み込むことによりリポジトリ URL、ブランチ名、ドキュメントパスなどを管理します。  
-  - このクラスはデータ検証（pydantic ベース）と既定値設定が行われており、CLI の `--config` オプションで読み込むことができます。
+---
 
-- **アーキテクチャ**  
-  ```
-  ├─ docgen/
-  │   ├─ __init__.py
-  │   ├─ models/agents.py      ← AgentsConfig 定義
-  │   └─ docgen.py             ← main() が CLI を解析し、同期ロジックを実行
-  ├─ scripts/                 ← 必要に応じてシェルスクリプトでラップ
-  └─ pyproject.toml           ← ビルド・依存関係定義（scripts セクション含む）
-  ```
-  - `main()` は argparse を用いてオプション解析 → 設定読み込み → ドキュメント生成/同期処理を順次実行します。  
-  - 実際の同期ロジックは GitPython 等でリポジトリクローン／更新し、対象ファイル（Markdown, YAML）を取得・比較して差分があれば書き込みます。
+### アーキテクチャ概要
 
-- **主要モジュールと機能**  
-  | モジュール | 主な役割 |
-  |------------|----------|
-  | `docgen.docgen` | CLI エントリポイント、引数解析、同期処理のコーディネータ |
-  | `docgen.models.agents.AgentsConfig` | 設定ファイル（JSON/YAML）をパースし検証するデータモデル |
-  | シェルスクリプト (`scripts/`) | CI/CD パイプラインやローカル開発環境での簡易呼び出し用ラッパー |
+```
+┌─────────────────────┐
+│  CLI (entry point)   │  ← agents-docs-sync → docgen.docgen:main()
+├─────────────────────┤
+│  config loader       │  load AgentsConfig from YAML/JSON
+├─────────────────────┤
+│  sync engine         │  compare source & target, copy/update files
+├─────────────────────┤
+│  docs generator      │  parse agent code → Markdown via Jinja templates
+└─────────────────────┘
+```
 
-- **使用例**  
-  ```bash
-  # 設定ファイルを指定して同期実行
-  agents-docs-sync --config path/to/config.yaml
+1. **CLI**  
+   - `--help`で使い方を表示（RELEASE.md の「動作確認」セクション参照）。  
+   - オプション: `-c/--config`, `-d/--dry-run`, `-v/--verbose`.
 
-  # ヘルプ表示
-  agents-docs-sync --help
-  ```
+2. **構成管理** (`AgentsConfig`)  
+   ```python
+   class AgentsConfig(BaseModel):
+       source_dir: Path          # 生成元コードのディレクトリ
+       target_dir: Path          # ドキュメント出力先
+       exclude_patterns: List[str] = []
+       template_path: Optional[Path]
+   ```
 
-- **開発・ビルド手順（pyproject.toml）**  
-  ```toml
-  [build-system]
-  requires = ["setuptools>=42", "wheel"]
-  build-backend = "setuptools.build_meta"
+3. **同期エンジン**  
+   - タイムスタンプとチェックサムで差分検知。  
+   - 変更があれば `shutil.copy2`、削除されていれば対象ファイルを消去。  
+   - dry‑run モードでは何が行われるかだけログに出力。
 
-  [tool.setuptools.packages.find]
-  where = ["src"]
+4. **ドキュメント生成**  
+   - ソースコードの docstring を抽出し、Jinja テンプレートで Markdown へ変換。  
+   - `docgen/docgen.py` 内に `generate_docs()` が実装されており、複数アジェントを一括処理。
 
-  [project.scripts]
-  agents-docs-sync = "docgen.docgen:main"
-  agents_docs_sync = "docgen.docgen:main"
-  ```
+---
 
-- **拡張性**  
-  - 設定モデルを継承して新しいドキュメントタイプ（API Docs, README 等）に対応可能。  
-  - シェルスクリプトで GitHub Actions と連携し、PR 作成時の自動同期も容易。
+### 主な機能
 
-この構造により **agents‑docs‑sync** は軽量かつ再利用性が高く、多数のエージェントプロジェクト間でドキュメント整合性を保ちやすいツールとなっています。
+| 機能 | 内容 |
+|------|------|
+| **自動生成** | アクション・エージェントのコードから Markdown を自動作成。 |
+| **同期管理** | ソースとターゲットディレクトリを常に一致させ、差分だけを反映。 |
+| **dry‑run** | 変更予定ファイル一覧のみ表示し、本番実行前に確認可能。 |
+| **カスタムテンプレート** | `template_path` を指定して独自フォーマットへ拡張可。 |
+| **ロギング・通知** | 色付きログと verbosity レベルで進捗を分かりやすく表示。 |
+| **CI/デプロイ統合** | シェルスクリプトから `agents-docs-sync` を呼び出し、GitHub Actions などに組み込み容易。 |
+
+---
+
+### 利用シナリオ
+
+1. **開発フローの一部として**  
+   - エージェントコードを更新したら CI が自動でドキュメント生成・同期を行い、最新状態を Wiki や Docs サイトへプッシュ。
+
+2. **社内イントラネット用**  
+   - 複数プロジェクトのエージェント仕様書を一元管理し、変更点だけを差分更新。  
+
+3. **オープンソースリポジトリ**  
+   - `agents-docs-sync` を pre‑commit フックとして設定し、ドキュメント漏れを防止。
+
+---
+
+### まとめ
+
+- シンプルな CLI と構成ファイルで「エージェントのコード ↔ ドキュメント」を自動同期。  
+- Python の標準ライブラリ＋pydantic を活用して堅牢に設計され、Poetry によるパッケージ化が容易です。  
+- 既存ドキュメントを保守しつつ、新規エージェント追加時の手間を大幅削減できるツールとして実装されています。
 
 
 
@@ -70,8 +90,8 @@ Python とシェルで構築された CLI ツール **agents‑docs‑sync** は
 
 ## 使用技術
 
-- Python
 - Shell
+- Python
 
 ## 依存関係
 
@@ -159,4 +179,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-29 11:20:48*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-29 11:35:08*
