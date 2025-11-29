@@ -53,10 +53,10 @@ class DocGen:
         # docgenディレクトリはプロジェクトルート内のdocgenディレクトリ
         self.docgen_dir = self.project_root / "docgen"
 
-        # パッケージ内のconfig.yaml.sampleを参照するためのパス
-        package_config_sample = DOCGEN_DIR / "config.yaml.sample"
+        # パッケージ内のconfig.toml.sampleを参照するためのパス
+        package_config_sample = DOCGEN_DIR / "config.toml.sample"
 
-        self.config_path = config_path or self.docgen_dir / "config.yaml"
+        self.config_path = config_path or self.docgen_dir / "config.toml"
 
         self.config_manager = ConfigManager(
             self.project_root, self.docgen_dir, self.config_path, package_config_sample
@@ -188,7 +188,7 @@ class CommandLineInterface:
             self.docgen = DocGen(project_root=project_root, config_path=args.config)
             return self._handle_build_index(project_root, self.docgen.config)
 
-        # DocGenの初期化（config.yamlが必要）
+        # DocGenの初期化（config.tomlが必要）
         # 必須ファイルがない場合は自動初期化
         if args.command not in ["init"]:
             auto_init_result = self._check_and_auto_init(project_root)
@@ -276,27 +276,21 @@ class CommandLineInterface:
 
         if action == "list":
             print("\n利用可能なGitフック:")
-            print(f"  設定ファイル: {project_root}/docgen/hooks.yaml")
+            print(f"  設定ファイル: {project_root}/docgen/hooks.toml")
             print("-" * 40)
 
-            # hooks.yamlを読み込んで表示
+            # hooks.tomlを読み込んで表示
             try:
-                import yaml
+                from .hooks.config import ConfigLoader
 
-                config_path = project_root / "docgen" / "hooks.yaml"
-                if config_path.exists():
-                    with open(config_path) as f:
-                        config = yaml.safe_load(f) or {}
-                        hooks = config.get("hooks", {})
-                        for name, data in hooks.items():
-                            status = "有効" if data.get("enabled", True) else "無効"
-                            print(f"  {name}: {status}")
-                            tasks = data.get("tasks", [])
-                            for task in tasks:
-                                task_status = "有効" if task.get("enabled", True) else "無効"
-                                print(f"    - {task.get('name')}: {task_status}")
-                else:
-                    print("  hooks.yamlが見つかりません")
+                loader = ConfigLoader(str(project_root))
+                hooks = loader.load_config()
+                for name, hook_config in hooks.items():
+                    status = "有効" if hook_config.enabled else "無効"
+                    print(f"  {name}: {status}")
+                    for task in hook_config.tasks:
+                        task_status = "有効" if task.enabled else "無効"
+                        print(f"    - {task.name}: {task_status}")
             except Exception as e:
                 print(f"  設定読み込みエラー: {e}")
             print("-" * 40)
@@ -309,7 +303,7 @@ class CommandLineInterface:
 
                 loader = ConfigLoader(str(project_root))
                 config = loader.load_config()
-                print("✓ 設定ファイルは有効なYAMLです")
+                print("✓ 設定ファイルは有効なTOMLです")
                 print(f"✓ {len(config)} 個のフック定義が見つかりました")
                 return 0
             except Exception as e:
@@ -416,7 +410,7 @@ class CommandLineInterface:
             成功時は0、失敗時は1
         """
         docgen_dir = project_root / "docgen"
-        config_file = docgen_dir / "config.yaml"
+        config_file = docgen_dir / "config.toml"
 
         # 既存ファイルチェック
         if config_file.exists() and not force:
@@ -433,8 +427,8 @@ class CommandLineInterface:
         package_docgen_dir = DOCGEN_DIR
 
         try:
-            # 1. config.yaml.sampleをconfig.yamlにコピー
-            source_config = package_docgen_dir / "config.yaml.sample"
+            # 1. config.toml.sampleをconfig.tomlにコピー
+            source_config = package_docgen_dir / "config.toml.sample"
             if source_config.exists():
                 shutil.copy2(source_config, config_file)
                 if not quiet:
@@ -608,7 +602,7 @@ class CommandLineInterface:
         Returns:
             成功時は0、失敗時は1
         """
-        config_path = project_root / "docgen" / "config.yaml"
+        config_path = project_root / "docgen" / "config.toml"
 
         if not config_path.exists():
             logger.info("必須ファイルが見つかりません。初期化を実行します...")

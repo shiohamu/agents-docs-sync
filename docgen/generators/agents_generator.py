@@ -65,7 +65,7 @@ class AgentsGenerator(BaseGenerator):
         AGENTS.md専用のプロンプトを提供
         """
         return PromptLoader.load_prompt(
-            "agents_prompts.yaml",
+            "agents_prompts.toml",
             "overview",
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,
@@ -99,14 +99,14 @@ class AgentsGenerator(BaseGenerator):
     def _create_llm_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
         if rag_context:
             return PromptLoader.load_prompt(
-                "agents_prompts.yaml",
+                "agents_prompts.toml",
                 "full_with_rag",
                 project_info=self._format_project_info_for_prompt(project_info),
                 rag_context=rag_context,
             )
         else:
             return PromptLoader.load_prompt(
-                "agents_prompts.yaml",
+                "agents_prompts.toml",
                 "full",
                 project_info=self._format_project_info_for_prompt(project_info),
             )
@@ -219,20 +219,20 @@ class AgentsGenerator(BaseGenerator):
         """主要機能を生成"""
         if not self._should_use_llm():
             return []
-        return self._generate_content_with_llm("agents_prompts.yaml", "key_features", project_info)
+        return self._generate_content_with_llm("agents_prompts.toml", "key_features", project_info)
 
     def _generate_architecture(self, project_info: ProjectInfo) -> str:
         """アーキテクチャを生成"""
         if not self._should_use_llm():
             return ""
-        return self._generate_content_with_llm("agents_prompts.yaml", "architecture", project_info)
+        return self._generate_content_with_llm("agents_prompts.toml", "architecture", project_info)
 
     def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
         """トラブルシューティングを生成"""
         if not self._should_use_llm():
             return ""
         return self._generate_content_with_llm(
-            "agents_prompts.yaml", "troubleshooting", project_info
+            "agents_prompts.toml", "troubleshooting", project_info
         )
 
     def _should_use_llm(self) -> bool:

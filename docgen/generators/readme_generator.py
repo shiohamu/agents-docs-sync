@@ -140,20 +140,20 @@ class ReadmeGenerator(BaseGenerator):
         """主要機能を生成"""
         if not self._should_use_llm():
             return []
-        return self._generate_content_with_llm("readme_prompts.yaml", "key_features", project_info)
+        return self._generate_content_with_llm("readme_prompts.toml", "key_features", project_info)
 
     def _generate_architecture(self, project_info: ProjectInfo) -> str:
         """アーキテクチャを生成"""
         if not self._should_use_llm():
             return ""
-        return self._generate_content_with_llm("readme_prompts.yaml", "architecture", project_info)
+        return self._generate_content_with_llm("readme_prompts.toml", "architecture", project_info)
 
     def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
         """トラブルシューティングを生成"""
         if not self._should_use_llm():
             return ""
         return self._generate_content_with_llm(
-            "readme_prompts.yaml", "troubleshooting", project_info
+            "readme_prompts.toml", "troubleshooting", project_info
         )
 
     def _generate_markdown(self, project_info: ProjectInfo) -> str:
@@ -190,14 +190,14 @@ class ReadmeGenerator(BaseGenerator):
         """README生成用のLLMプロンプトを作成"""
         if rag_context:
             return PromptLoader.load_prompt(
-                "readme_prompts.yaml",
+                "readme_prompts.toml",
                 "full_with_rag",
                 project_info=self._format_project_info_for_prompt(project_info),
                 rag_context=rag_context,
             )
         else:
             return PromptLoader.load_prompt(
-                "readme_prompts.yaml",
+                "readme_prompts.toml",
                 "full",
                 project_info=self._format_project_info_for_prompt(project_info),
             )
@@ -339,7 +339,7 @@ class ReadmeGenerator(BaseGenerator):
     ) -> str:
         """README生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）"""
         return PromptLoader.load_prompt(
-            "readme_prompts.yaml",
+            "readme_prompts.toml",
             "overview",
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,

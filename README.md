@@ -5,84 +5,85 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-**技術スタック**
+> **IMPORTANT!!**
+>
+> まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 
-- **言語**：Python 3.x（メインロジック）＋Bash／シェルスクリプト（CI・デプロイ補助）
-- **ビルドツール**：Poetry（`pyproject.toml`で定義、エントリポイント `agents-docs-sync`, `agents_docs_sync`)
-- **構成管理**：pydantic / dataclasses で読み込む `AgentsConfig` モデル (`docgen/models/agents.py:72`)  
-- **ファイル操作**：Python 標準ライブラリ（pathlib, shutil）＋MD5/SHA256 チェックサム
+## プロジェクト構造
 
----
-
-### アーキテクチャ概要
-
-```
-┌─────────────────────┐
-│  CLI (entry point)   │  ← agents-docs-sync → docgen.docgen:main()
-├─────────────────────┤
-│  config loader       │  load AgentsConfig from YAML/JSON
-├─────────────────────┤
-│  sync engine         │  compare source & target, copy/update files
-├─────────────────────┤
-│  docs generator      │  parse agent code → Markdown via Jinja templates
-└─────────────────────┘
-```
-
-1. **CLI**  
-   - `--help`で使い方を表示（RELEASE.md の「動作確認」セクション参照）。  
-   - オプション: `-c/--config`, `-d/--dry-run`, `-v/--verbose`.
-
-2. **構成管理** (`AgentsConfig`)  
-   ```python
-   class AgentsConfig(BaseModel):
-       source_dir: Path          # 生成元コードのディレクトリ
-       target_dir: Path          # ドキュメント出力先
-       exclude_patterns: List[str] = []
-       template_path: Optional[Path]
-   ```
-
-3. **同期エンジン**  
-   - タイムスタンプとチェックサムで差分検知。  
-   - 変更があれば `shutil.copy2`、削除されていれば対象ファイルを消去。  
-   - dry‑run モードでは何が行われるかだけログに出力。
-
-4. **ドキュメント生成**  
-   - ソースコードの docstring を抽出し、Jinja テンプレートで Markdown へ変換。  
-   - `docgen/docgen.py` 内に `generate_docs()` が実装されており、複数アジェントを一括処理。
-
----
-
-### 主な機能
-
-| 機能 | 内容 |
-|------|------|
-| **自動生成** | アクション・エージェントのコードから Markdown を自動作成。 |
-| **同期管理** | ソースとターゲットディレクトリを常に一致させ、差分だけを反映。 |
-| **dry‑run** | 変更予定ファイル一覧のみ表示し、本番実行前に確認可能。 |
-| **カスタムテンプレート** | `template_path` を指定して独自フォーマットへ拡張可。 |
-| **ロギング・通知** | 色付きログと verbosity レベルで進捗を分かりやすく表示。 |
-| **CI/デプロイ統合** | シェルスクリプトから `agents-docs-sync` を呼び出し、GitHub Actions などに組み込み容易。 |
-
----
-
-### 利用シナリオ
-
-1. **開発フローの一部として**  
-   - エージェントコードを更新したら CI が自動でドキュメント生成・同期を行い、最新状態を Wiki や Docs サイトへプッシュ。
-
-2. **社内イントラネット用**  
-   - 複数プロジェクトのエージェント仕様書を一元管理し、変更点だけを差分更新。  
-
-3. **オープンソースリポジトリ**  
-   - `agents-docs-sync` を pre‑commit フックとして設定し、ドキュメント漏れを防止。
-
----
-
-### まとめ
-
-- シンプルな CLI と構成ファイルで「エージェントのコード ↔ ドキュメント」を自動同期。  
-- Python の標準ライブラリ＋pydantic を活用して堅牢に設計され、Poetry によるパッケージ化が容易です。  
-- 既存ドキュメントを保守しつつ、新規エージェント追加時の手間を大幅削減できるツールとして実装されています。
+agents-docs-sync/
+ ├─ docgen/
+ │  ├─ collectors/
+ │  │  ├─ collector_utils.py
+ │  │  └─ project_info_collector.py
+ │  ├─ detectors/
+ │  │  ├─ configs/
+ │  │  │  ├─ go.toml
+ │  │  │  ├─ javascript.toml
+ │  │  │  ├─ python.toml
+ │  │  │  └─ typescript.toml
+ │  │  ├─ base_detector.py
+ │  │  ├─ detector_patterns.py
+ │  │  ├─ plugin_registry.py
+ │  │  └─ unified_detector.py
+ │  ├─ generators/
+ │  │  ├─ mixins/
+ │  │  │  ├─ llm_mixin.py
+ │  │  │  ├─ markdown_mixin.py
+ │  │  │  └─ template_mixin.py
+ │  │  ├─ parsers/
+ │  │  │  ├─ base_parser.py
+ │  │  │  ├─ generic_parser.py
+ │  │  │  ├─ js_parser.py
+ │  │  │  └─ python_parser.py
+ │  │  ├─ agents_generator.py
+ │  │  ├─ api_generator.py
+ │  │  ├─ base_generator.py
+ │  │  ├─ contributing_generator.py
+ │  │  └─ readme_generator.py
+ │  ├─ hooks/
+ │  │  ├─ tasks/
+ │  │  │  └─ base.py
+ │  │  ├─ config.py
+ │  │  └─ orchestrator.py
+ │  ├─ index/
+ │  │  └─ meta.json
+ │  ├─ models/
+ │  │  ├─ agents.py
+ │  │  ├─ config.py
+ │  │  └─ detector.py
+ │  ├─ prompts/
+ │  │  ├─ agents_prompts.toml
+ │  │  ├─ commit_message_prompts.toml
+ │  │  └─ readme_prompts.toml
+ │  ├─ rag/
+ │  │  ├─ embedder.py
+ │  │  ├─ indexer.py
+ │  │  ├─ retriever.py
+ │  │  └─ validator.py
+ │  ├─ utils/
+ │  │  ├─ llm/
+ │  │  │  ├─ base.py
+ │  │  │  └─ local_client.py
+ │  │  ├─ cache.py
+ │  │  ├─ exceptions.py
+ │  │  ├─ file_utils.py
+ │  │  └─ prompt_loader.py
+ │  ├─ config.toml
+ │  ├─ config.yaml
+ │  ├─ config_manager.py
+ │  ├─ docgen.py
+ │  └─ hooks.toml
+ ├─ docs/
+ ├─ scripts/
+ ├─ tests/
+ ├─ AGENTS.md
+ ├─ README.md
+ ├─ install.sh
+ ├─ pyproject.toml
+ ├─ requirements-docgen.txt
+ ├─ requirements-test.txt
+ └─ setup.sh
 
 
 
@@ -179,4 +180,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-29 11:35:08*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-29 12:01:41*

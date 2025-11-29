@@ -58,6 +58,25 @@ def save_yaml_file(file_path: Path, data: dict[str, Any]) -> bool:
         return False
 
 
+def save_toml_file(file_path: Path, content: str) -> bool:
+    """
+    TOMLファイルを保存
+
+    Args:
+        file_path: 保存先ファイルパス
+        content: TOML形式の文字列
+
+    Returns:
+        成功した場合はTrue
+    """
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content, encoding="utf-8")
+        return True
+    except OSError:
+        return False
+
+
 def safe_write_file(file_path: Path, content: str, encoding: str = "utf-8") -> bool:
     """
     ファイルを安全に書き込む
