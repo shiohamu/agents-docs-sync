@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from .models import DocgenConfig
 from .utils.exceptions import ErrorMessages
-from .utils.file_utils import safe_read_yaml, safe_read_toml
+from .utils.file_utils import safe_read_toml, safe_read_yaml
 from .utils.logger import get_logger
 
 logger = get_logger("config_manager")
@@ -60,7 +60,7 @@ class ConfigManager:
         """
         self.project_root = project_root
         self.docgen_dir = docgen_dir
-        self.config_path = config_path or self.docgen_dir / "config.yaml"
+        self.config_path = config_path or self.docgen_dir / "config.toml"
         self._package_config_sample = package_config_sample
         self.config = self._load_config()
         self._validate_config()
@@ -91,10 +91,10 @@ class ConfigManager:
 
     def _create_default_config(self) -> dict[str, Any]:
         """デフォルト設定を作成して返す"""
-        sample_path = self.docgen_dir / "config.yaml.sample"
+        sample_path = self.docgen_dir / "config.toml.sample"
         if sample_path.exists():
             if self._copy_sample_config(sample_path):
-                config = safe_read_yaml(self.config_path)
+                config = safe_read_toml(self.config_path)
                 return config if config is not None else self._get_default_config()
 
         logger.warning(ErrorMessages.CONFIG_NOT_FOUND.format(path=self.config_path))

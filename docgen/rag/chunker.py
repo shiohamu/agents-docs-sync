@@ -46,7 +46,7 @@ class CodeChunker:
         初期化
 
         Args:
-            config: RAG設定（config.yaml の rag セクション）
+            config: RAG設定（config.toml の rag セクション）
         """
         self.config = config or {}
         self.max_chunk_size = self.config.get("chunking", {}).get("max_chunk_size", 512)

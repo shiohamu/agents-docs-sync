@@ -28,7 +28,7 @@ class TestCodeChunker:
         chunker = CodeChunker()
 
         assert chunker.should_process_file(Path("src/main.py"))
-        assert chunker.should_process_file(Path("config.yaml"))
+        assert chunker.should_process_file(Path("config.toml"))
 
     def test_should_process_file_excludes_configured_files(self):
         """設定で除外されたファイルが除外されることを確認"""
@@ -147,9 +147,9 @@ key2 = "value2"
         # 簡単なプロジェクト構造を作成
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "main.py").write_text("def main(): pass")
-        (tmp_path / "config.yaml").write_text(
+        (tmp_path / "config.toml").write_text(
             "key: value"
-        )  # README.mdは除外されるのでconfig.yamlを使用
+        )  # README.mdは除外されるのでconfig.tomlを使用
 
         chunker = CodeChunker()
         chunks = chunker.chunk_codebase(tmp_path)

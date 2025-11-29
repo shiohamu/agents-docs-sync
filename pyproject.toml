@@ -83,7 +83,7 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["docgen"]
 include = [
-  "docgen/config.yaml.sample",
+  "docgen/config.toml.sample",
   "docgen/templates/**",
   "docgen/hooks/**",
   "docgen/prompts/**",
@@ -91,7 +91,7 @@ include = [
 
 [tool.setuptools.package-data]
 "docgen" = [
-    "config.yaml.sample",
+    "config.toml.sample",
     "templates/**/*",
     "hooks/*",
 ]

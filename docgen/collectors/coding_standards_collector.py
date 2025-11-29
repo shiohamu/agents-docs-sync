@@ -6,7 +6,7 @@ Collects coding standards from various configuration files.
 from pathlib import Path
 from typing import Any
 
-from ..utils.logger import setup_logger
+from ..utils.logger import get_logger
 
 
 class CodingStandardsCollector:
@@ -16,15 +16,16 @@ class CodingStandardsCollector:
     EDITORCONFIG = ".editorconfig"
     PRETTIER_FILES = [".prettierrc", "prettier.config.js", ".prettierrc.json"]
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, logger: Any | None = None):
         """
         Initialize
 
         Args:
             project_root: Project root directory
+            logger: Logger instance
         """
         self.project_root = project_root
-        self.logger = setup_logger(__name__)
+        self.logger = logger or get_logger(__name__)
 
     def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
         """

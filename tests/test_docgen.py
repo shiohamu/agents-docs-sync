@@ -24,7 +24,7 @@ class TestDocGen:
 
         assert docgen.project_root == temp_project
         assert docgen.docgen_dir == temp_project / "docgen"
-        assert docgen.config_manager.config_path == temp_project / "docgen" / "config.yaml"
+        assert docgen.config_manager.config_path == temp_project / "docgen" / "config.toml"
         assert isinstance(docgen.config, dict)
         assert docgen.detected_languages == []
 

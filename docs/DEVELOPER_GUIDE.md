@@ -41,7 +41,7 @@ agents-docs-sync/
 │   │   ├── pre-commit
 │   │   └── post-commit
 │   ├── templates/              # Jinja2テンプレート（AGENTS.md, README.md生成用）
-│   ├── config.yaml.sample      # 設定ファイルのサンプル
+│   ├── config.toml.sample      # 設定ファイルのサンプル
 │   └── docgen.py               # メインエントリーポイント
 ├── tests/                      # テストファイル
 │   ├── conftest.py             # pytest設定
@@ -111,7 +111,7 @@ pip install -r requirements-test.txt
 4. **設定ファイルの作成**
 
 ```bash
-cp docgen/config.yaml.sample docgen/config.yaml
+cp docgen/config.toml.sample docgen/config.toml
 # 必要に応じて設定を編集
 ```
 
@@ -393,7 +393,7 @@ GitHubでプルリクエストを作成し、以下を含めてください：
 **問題**: `docs/api.md`や`README.md`が更新されない
 
 **解決策**:
-- `docgen/config.yaml`が存在し、正しく設定されているか確認
+- `docgen/config.toml`が存在し、正しく設定されているか確認
 - ログを確認: `python3 docgen/docgen.py --verbose`
 - プロジェクトの言語が正しく検出されているか確認: `python3 docgen/docgen.py --detect-only`
 

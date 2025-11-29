@@ -4,9 +4,10 @@ Collects test commands from various configuration files.
 """
 
 from pathlib import Path
+from typing import Any
 
 from ..utils.file_utils import safe_read_file, safe_read_json
-from ..utils.logger import setup_logger
+from ..utils.logger import get_logger
 from .collector_utils import BuildCommandCollector
 
 
@@ -19,17 +20,23 @@ class TestCommandCollector:
     PYTEST_INI = "pytest.ini"
     PACKAGE_JSON = "package.json"
 
-    def __init__(self, project_root: Path, package_managers: dict[str, str] | None = None):
+    def __init__(
+        self,
+        project_root: Path,
+        package_managers: dict[str, str] | None = None,
+        logger: Any | None = None,
+    ):
         """
         Initialize
 
         Args:
             project_root: Project root directory
             package_managers: Dictionary of detected package managers
+            logger: Logger instance
         """
         self.project_root = project_root
         self.package_managers = package_managers or {}
-        self.logger = setup_logger(__name__)
+        self.logger = logger or get_logger(__name__)
         self.build_collector = BuildCommandCollector(project_root, package_managers)
 
     def collect_test_commands(self) -> list[str]:

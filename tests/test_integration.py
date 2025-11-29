@@ -61,13 +61,14 @@ class Calculator:
 
         # 設定ファイルを作成
         (temp_project / "docgen").mkdir(exist_ok=True)
-        (temp_project / "docgen" / "config.yaml").write_text("""
-output:
-  api_doc: "docs/api.md"
-  readme: "README.md"
-  agents_doc: "AGENTS.md"
-generation:
-  preserve_manual_sections: true
+        (temp_project / "docgen" / "config.toml").write_text("""
+[output]
+api_doc = "docs/api.md"
+readme = "README.md"
+agents_doc = "AGENTS.md"
+
+[generation]
+preserve_manual_sections = true
 """)
 
         # DocGenを実行
@@ -130,11 +131,11 @@ class Calculator {
 
         # 設定ファイルを作成
         (temp_project / "docgen").mkdir(exist_ok=True)
-        (temp_project / "docgen" / "config.yaml").write_text("""
-output:
-  api_doc: "docs/api.md"
-  readme: "README.md"
-  agents_doc: "AGENTS.md"
+        (temp_project / "docgen" / "config.toml").write_text("""
+[output]
+api_doc = "docs/api.md"
+readme = "README.md"
+agents_doc = "AGENTS.md"
 """)
 
         # DocGenを実行
@@ -183,11 +184,11 @@ output:
         # 設定ファイルを作成
         config_dir = temp_project / "docgen"
         config_dir.mkdir(exist_ok=True)
-        (config_dir / "config.yaml").write_text("""
-output:
-  api_doc: "custom_api.md"
-  readme: "custom_readme.md"
-  agents_doc: "custom_agents.md"
+        (config_dir / "config.toml").write_text("""
+[output]
+api_doc = "custom_api.md"
+readme = "custom_readme.md"
+agents_doc = "custom_agents.md"
 """)
 
         # 簡単なPythonファイルを作成
@@ -208,11 +209,11 @@ output:
         # 無効なPythonファイルを作成
         config_dir = temp_project / "docgen"
         config_dir.mkdir(exist_ok=True)
-        (config_dir / "config.yaml").write_text("""
-output:
-  api_doc: "docs/api.md"
-  readme: "README.md"
-  agents_doc: "AGENTS.md"
+        (config_dir / "config.toml").write_text("""
+[output]
+api_doc = "docs/api.md"
+readme = "README.md"
+agents_doc = "AGENTS.md"
 """)
 
         (temp_project / "invalid.py").write_text("def invalid_function(\n    # incomplete syntax")

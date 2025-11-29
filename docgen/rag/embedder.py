@@ -4,6 +4,7 @@ sentence-transformersを使用してテキストの埋め込みベクトルを�
 """
 
 import hashlib
+from logging import Logger
 from pathlib import Path
 from typing import Any
 
@@ -11,24 +12,24 @@ import numpy as np
 
 from ..utils.logger import get_logger
 
-logger = get_logger(__name__)
-
 
 class Embedder:
     """テキスト埋め込み生成クラス"""
 
-    def __init__(self, config: dict[str, Any] | None = None):
+    def __init__(self, config: dict[str, Any] | None = None, logger: Logger | None = None):
         """
         初期化
 
         Args:
-            config: RAG設定（config.yaml の rag セクション）
+            config: RAG設定（config.toml の rag セクション）
+            logger: ロガーインスタンス（Noneの場合は新規作成）
         """
         self.config = config or {}
         embedding_config = self.config.get("embedding", {})
 
         self.model_name = embedding_config.get("model", "all-MiniLM-L6-v2")
         self.device = embedding_config.get("device", "cpu")
+        self.logger = logger or get_logger(__name__)
 
         self._model = None  # Lazy loading
 
@@ -42,9 +43,9 @@ class Embedder:
             try:
                 from sentence_transformers import SentenceTransformer
 
-                logger.info(f"Loading embedding model: {self.model_name}")
+                self.logger.info(f"Loading embedding model: {self.model_name}")
                 self._model = SentenceTransformer(self.model_name, device=self.device)
-                logger.info(f"Model loaded successfully (dimension: {self.embedding_dim})")
+                self.logger.info(f"Model loaded successfully (dimension: {self.embedding_dim})")
             except ImportError as e:
                 raise ImportError(
                     "sentence-transformers is not installed. "
@@ -95,7 +96,7 @@ class Embedder:
         Returns:
             埋め込みベクトルの配列（shape: [len(texts), embedding_dim]）
         """
-        logger.info(f"Embedding {len(texts)} texts with batch size {batch_size}")
+        self.logger.info(f"Embedding {len(texts)} texts with batch size {batch_size}")
 
         embeddings = self.model.encode(
             texts,
@@ -118,7 +119,7 @@ class Embedder:
             if cache_path.exists():
                 return np.load(cache_path)
         except Exception as e:
-            logger.debug(f"Cache read failed: {e}")
+            self.logger.debug(f"Cache read failed: {e}")
 
         return None
 
@@ -129,4 +130,4 @@ class Embedder:
             cache_path = self.cache_dir / f"{cache_key}.npy"
             np.save(cache_path, embedding)
         except Exception as e:
-            logger.debug(f"Cache write failed: {e}")
+            self.logger.debug(f"Cache write failed: {e}")

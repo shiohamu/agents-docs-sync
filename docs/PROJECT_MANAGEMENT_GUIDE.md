@@ -48,7 +48,7 @@ uv add --dev ruff
 #### 4. 設定ファイルの準備
 ```bash
 # 設定ファイルのコピー
-cp docgen/config.yaml.sample docgen/config.yaml
+cp docgen/config.toml.sample docgen/config.toml
 
 # 必要に応じて設定を編集
 vim docgen/config.yaml
@@ -415,7 +415,7 @@ logging.basicConfig(level=logging.DEBUG)
 #### 設定ファイルの検証
 ```bash
 # YAML構文チェック
-python -c "import yaml; yaml.safe_load(open('docgen/config.yaml'))"
+python -c "import yaml; yaml.safe_load(open('docgen/config.toml'))"
 ```
 
 #### 依存関係の確認

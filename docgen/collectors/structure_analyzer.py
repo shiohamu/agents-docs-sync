@@ -9,9 +9,7 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from ..utils.logger import setup_logger
-
-logger = setup_logger(__name__)
+from ..utils.logger import get_logger
 
 
 class StructureAnalyzer:
@@ -50,14 +48,16 @@ class StructureAnalyzer:
     # 構造に含める設定ファイルの拡張子
     CONFIG_EXTENSIONS = {".md", ".yaml", ".yml", ".toml", ".json", ".txt", ".sh"}
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, logger: Any | None = None):
         """
         初期化
 
         Args:
             project_root: プロジェクトのルートディレクトリ
+            logger: ロガーインスタンス
         """
         self.project_root = project_root
+        self.logger = logger or get_logger(__name__)
 
     def count_symbols_in_file(self, file_path: Path) -> int:
         """
@@ -135,7 +135,7 @@ class StructureAnalyzer:
                         result[item.name] = "file"
 
         except Exception as e:
-            logger.debug(f"Failed to collect directory structure for {directory}: {e}")
+            self.logger.debug(f"Failed to collect directory structure for {directory}: {e}")
 
         return result
 
@@ -178,6 +178,6 @@ class StructureAnalyzer:
                         structure[item.name] = "file"
 
         except Exception as e:
-            logger.warning(f"Failed to collect project structure: {e}")
+            self.logger.warning(f"Failed to collect project structure: {e}")
 
         return structure

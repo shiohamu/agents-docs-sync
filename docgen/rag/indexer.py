@@ -4,14 +4,13 @@ hnswlibを使用してベクトルインデックスの構築、保存、読み�
 """
 
 import json
+from logging import Logger
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from ..utils.logger import get_logger
-
-logger = get_logger(__name__)
 
 
 class VectorIndexer:
@@ -22,6 +21,7 @@ class VectorIndexer:
         index_dir: Path,
         embedding_dim: int = 384,
         config: dict[str, Any] | None = None,
+        logger: Logger | None = None,
     ):
         """
         初期化
@@ -29,13 +29,15 @@ class VectorIndexer:
         Args:
             index_dir: インデックス保存ディレクトリ
             embedding_dim: 埋め込みベクトルの次元数
-            config: RAG設定（config.yaml の rag セクション）
+            config: RAG設定（config.toml の rag セクション）
+            logger: ロガーインスタンス（Noneの場合は新規作成）
         """
         self.index_dir = Path(index_dir)
         self.index_dir.mkdir(parents=True, exist_ok=True)
 
         self.embedding_dim = embedding_dim
         self.config = config or {}
+        self.logger = logger or get_logger(__name__)
 
         index_config = self.config.get("index", {})
         self.index_type = index_config.get("type", "hnswlib")
@@ -61,7 +63,7 @@ class VectorIndexer:
                 f"Expected embedding dimension {self.embedding_dim}, got {embeddings.shape[1]}"
             )
 
-        logger.info(f"Building {self.index_type} index with {len(embeddings)} vectors")
+        self.logger.info(f"Building {self.index_type} index with {len(embeddings)} vectors")
 
         if self.index_type == "hnswlib":
             self._build_hnswlib(embeddings)
@@ -69,7 +71,7 @@ class VectorIndexer:
             raise ValueError(f"Unsupported index type: {self.index_type}")
 
         self._metadata = metadata
-        logger.info("Index built successfully")
+        self.logger.info("Index built successfully")
 
     def _build_hnswlib(self, embeddings: np.ndarray):
         """hnswlibインデックスを構築"""
@@ -101,7 +103,7 @@ class VectorIndexer:
         if self._index is None:
             raise ValueError("Index has not been built yet")
 
-        logger.info(f"Saving index to {self.index_dir}")
+        self.logger.info(f"Saving index to {self.index_dir}")
 
         # インデックスを保存
         index_path = self.index_dir / f"{self.index_type}.idx"
@@ -123,11 +125,11 @@ class VectorIndexer:
                 ensure_ascii=False,
             )
 
-        logger.info(f"Saved index with {len(self._metadata)} chunks")
+        self.logger.info(f"Saved index with {len(self._metadata)} chunks")
 
     def load(self):
         """インデックスとメタデータを読み込み"""
-        logger.info(f"Loading index from {self.index_dir}")
+        self.logger.info(f"Loading index from {self.index_dir}")
 
         # メタデータを読み込み
         meta_path = self.index_dir / "meta.json"
@@ -149,7 +151,7 @@ class VectorIndexer:
         if self.index_type == "hnswlib":
             self._load_hnswlib(index_path, meta["chunk_count"])
 
-        logger.info(f"Loaded index with {len(self._metadata)} chunks")
+        self.logger.info(f"Loaded index with {len(self._metadata)} chunks")
 
     def _load_hnswlib(self, index_path: Path, max_elements: int):
         """hnswlibインデックスを読み込み"""
@@ -208,7 +210,7 @@ class VectorIndexer:
         if len(new_embeddings) != len(new_metadata):
             raise ValueError("new_embeddings and new_metadata must have the same length")
 
-        logger.info(f"Adding {len(new_embeddings)} new vectors to index")
+        self.logger.info(f"Adding {len(new_embeddings)} new vectors to index")
 
         # 既存のチャンク数
         current_count = len(self._metadata)
@@ -224,4 +226,4 @@ class VectorIndexer:
         # メタデータを追加
         self._metadata.extend(new_metadata)
 
-        logger.info(f"Index now contains {len(self._metadata)} chunks")
+        self.logger.info(f"Index now contains {len(self._metadata)} chunks")

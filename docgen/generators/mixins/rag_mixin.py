@@ -34,7 +34,7 @@ class RAGMixin:
                 top_k = self.config.get("rag", {}).get("retrieval", {}).get("top_k", 6)
 
             # Retrieverを使用してコンテキストを取得
-            retriever = DocumentRetriever(self.config, self.project_root)
+            retriever = DocumentRetriever(self.config, self.project_root, logger=self.logger)
             chunks = retriever.retrieve(query, top_k=top_k)
 
             if not chunks:

@@ -13,26 +13,28 @@ def temp_project():
     temp_dir = Path(tempfile.mkdtemp())
 
     (temp_dir / "docgen").mkdir()
-    (temp_dir / "docgen" / "config.yaml").write_text("""
-output:
-  agents_doc: AGENTS.md
-  api_doc: api.md
-  readme: README.md
+    (temp_dir / "docgen" / "config.toml").write_text("""
+[output]
+agents_doc = "AGENTS.md"
+api_doc = "api.md"
+readme = "README.md"
 
-agents:
-  llm_mode: both
-  api:
-    provider: openai
-    api_key_env: OPENAI_API_KEY
-  local:
-    provider: ollama
-    model: llama3
-    base_url: http://localhost:11434
+[agents]
+llm_mode = "both"
 
-project:
-  name: test-project
-  description: Test project for agents-docs-sync
-  languages: [python]
+[agents.api]
+provider = "openai"
+api_key_env = "OPENAI_API_KEY"
+
+[agents.local]
+provider = "ollama"
+model = "llama3"
+base_url = "http://localhost:11434"
+
+[project]
+name = "test-project"
+description = "Test project for agents-docs-sync"
+languages = ["python"]
 """)
     yield temp_dir
 

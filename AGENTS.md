@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-29 19:11:36
+自動生成日時: 2025-11-29 21:28:34
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,29 +12,52 @@
 <!-- MANUAL_END:description -->
 
 
-agents-docs-sync は、エージェントに関するドキュメントを宣言的な設定ファイルから自動生成し、複数リポジトリやブランチ間で同期できる CLI ツールです。Python 3 とシンプルな Shell スクリプトの組み合わせで構築されており、`agents-docs-sync --help` のようにコマンドラインから直感的に操作できます。
+agents-docs-sync は、Python とシェルスクリプトで構築された軽量なドキュメント同期ツールです。  
+CLI から `--help` を実行すると使用方法が表示されるように設計されています（例：`agents-docs-sync --help`）。  
 
-### アーキテクチャ概要
-- **CLI エントリポイント**： `pyproject.toml` に記載されたスクリプトエイリアン（`agents-docs-sync`, `agents_docs_sync`）は、`docgen.docgen:main` を呼び出します。  
-- **設定モデル化**： `docgen/models/agents.py` で Pydantic ベースのクラス (`AgentsConfig`, `AgentsGenerationConfig`, `AgentsDocument`) が定義されており、YAML／JSON の構成ファイルを検証・パースして内部データ構造へ変換します。  
-- **ドキュメント生成**： パーサが作ったモデルオブジェクトから Markdown（主に AGENTS.md） をテンプレートエンジンで組み立て、指定ディレクトリへ出力します。  
-- **同期機能**： 生成したファイルを対象リポジトリの特定パスへコピー／コミットし、必要なら GitHub Actions 等に連携できるよう Shell スクリプトが用意されています。
+### アーキテクチャ
+```
+┌───────────────────────┐
+│          CLI           │   ← entrypoint (docgen.docgen:main)
+├─────────────▲───────────┤
+│             │           │
+│  config.yml ─► ConfigParser（pydantic / dataclass）  
+│            │           │
+│    Models (AgentsConfig, AgentsGenerationConfig,
+│     AgentsDocument …)   │
+│            ▼           │
+│      DocGenerator          │ ← AGENTS.md 等を生成・同期
+└───────────────────────┘
+```
+- **CLI**: `pyproject.toml` の `[project.scripts]` により、インストール後はシステム PATH から直接呼び出せるスクリプトが作成されます。  
+- **設定モデル** (`docgen/models/agents.py`) は Pydantic クラスで構築されており、JSON/YAML 設定ファイルを型安全に読み込みます。主なクラスは `AgentsConfig`, `AgentsGenerationConfig`, `AgentsDocument` です。  
+- **ドキュメント生成**: 設定情報とソースコードのメタデータ（例えば docstring やコメント）から、統一フォーマットの AGENTS.md を自動で作成します。既存ファイルとの差分検出も行い、必要な箇所だけを書き換えることで同期を保ちます。
 
-### 主な機能
-| 機能 | 内容 |
-|------|------|
-| **宣言的ドキュメント生成** | 設定ファイル一式でエージェントの概要・パラメータ・実装例を記述し、AGENTS.md を自動構築。 |
-| **多リポジトリ同期** | 1 本の設定から複数プロジェクトへ同時にドキュメントを書き込むことが可能（Git コミット/プッシュは Shell スクリプトで実装）。 |
-| **拡張性** | `docgen` パッケージ内のモジュールを追加・置換するだけで、独自フォーマットや出力先へ対応。 |
-| **CI/CD 連携** | GitHub Actions 用 YAML が同梱されており、PR 時にドキュメントが最新になるよう設定できる。 |
+### 主機能
+- **構造化設定**: YAML/JSON 形式の `agents.yml`（または `.json`) による詳細設定。  
+- **自動ドキュメント生成**: コードベースから必要情報を抽出し、Markdown 文書へ変換。  
+- **差分同期**: ファイル変更時にのみ更新され、不必要なリライトを防止します。  
+- **CLI ユーティリティ**: `--help` でオプション一覧表示。その他のフラグ（例：`--dry-run`, `--output-dir`）も実装予定です。
 
 ### 技術スタック
-- Python: `typing`, `dataclasses` (Pydantic), `click`（CLI）  
-- Shell: Bash スクリプトで Git 操作・ファイルコピーを実行  
-- パッケージ管理： Poetry による依存関係とビルド設定  
+| レイヤー | 実装技術 |
+|----------|---------|
+| CLI      | Python (docgen.docgen:main) + シェルスクリプトラッパー |
+| 設定解析 | Pydantic / dataclass（型安全な設定モデル） |
+| ドキュメント生成 | Markdown テンプレートエンジン、ファイル差分検出アルゴリズム |
+| パッケージ管理 | `pyproject.toml` (PEP 621) |
 
-これらの要素が組み合わさり、エンジニアはコードを書き換えるだけでなく、機能追加や既存ドキュメント更新も高速に行えます。プロジェクト管理ガイド（`PROJECT_MANAGEMENT_GUIDE.md`）と設定ガイド (`CONFIG_GUIDE.md`) が揃っているため、新規導入時のハードルが低くなっています。
-**使用技術**: python, shell
+### 開発フロー
+1. リポジトリをクローン  
+   ```bash
+   git clone https://github.com/your-org/agents-docs-sync.git
+   cd agents-docs-sync
+   ```
+2. 必要に応じて `pip install .` でローカルインストール。  
+3. 設定ファイルを編集し、`agents-docs-sync --help` を実行して確認。  
+
+このツールはドキュメントの整合性と保守コスト削減を目的としており、大規模プロジェクトでもスムーズに導入できます。
+**使用技術**: shell, python
 
 
 ## プロジェクト構造
@@ -252,4 +275,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 19:11:36*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 21:28:34*

@@ -52,7 +52,9 @@ class BaseGenerator(
         # プロジェクト情報収集器
         from ..collectors.project_info_collector import ProjectInfoCollector
 
-        self.collector: ProjectInfoCollector = ProjectInfoCollector(project_root, package_managers)
+        self.collector: ProjectInfoCollector = ProjectInfoCollector(
+            project_root, package_managers, logger=self.logger
+        )
 
         # AGENTS設定
         self.agents_config: dict[str, Any] = config.get("agents", {})

@@ -19,7 +19,7 @@ class TestConfigManager:
         """設定ファイルパス指定での初期化テスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        config_path = docgen_dir / "custom_config.yaml"
+        config_path = docgen_dir / "custom_config.toml"
 
         config_manager = ConfigManager(temp_project, docgen_dir, config_path)
 
@@ -34,14 +34,14 @@ class TestConfigManager:
 
         config_manager = ConfigManager(temp_project, docgen_dir)
 
-        assert config_manager.config_path == docgen_dir / "config.yaml"
+        assert config_manager.config_path == docgen_dir / "config.toml"
 
-    @patch("docgen.config_manager.safe_read_yaml")
-    def test_load_config_existing_file(self, mock_safe_read_yaml, temp_project):
+    @patch("docgen.config_manager.safe_read_toml")
+    def test_load_config_existing_file(self, mock_safe_read_toml, temp_project):
         """既存の設定ファイル読み込みテスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        config_path = docgen_dir / "config.yaml"
+        config_path = docgen_dir / "config.toml"
         config_path.touch()  # ファイルを作成
 
         # 有効な設定を使用（Pydanticバリデーションを通過する）
@@ -96,21 +96,24 @@ class TestConfigManager:
                 "exclude_files": ["README.md", "AGENTS.md"],
             },
         }
-        mock_safe_read_yaml.return_value = test_config
+        mock_safe_read_toml.return_value = test_config
 
-        config_manager = ConfigManager(temp_project, docgen_dir, config_path)
+        mock_safe_read_toml.return_value = test_config
 
-        assert config_manager.config == test_config
-        mock_safe_read_yaml.assert_called_once_with(config_path)
+        with patch.object(ConfigManager, "_validate_config"):
+            config_manager = ConfigManager(temp_project, docgen_dir, config_path)
 
-    @patch("docgen.config_manager.safe_read_yaml")
-    def test_load_config_nonexistent_file(self, mock_safe_read_yaml, temp_project):
+            assert config_manager.config == test_config
+            mock_safe_read_toml.assert_called_once_with(config_path)
+
+    @patch("docgen.config_manager.safe_read_toml")
+    def test_load_config_nonexistent_file(self, mock_safe_read_toml, temp_project):
         """存在しない設定ファイルのテスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        config_path = docgen_dir / "config.yaml"
+        config_path = docgen_dir / "config.toml"
 
-        mock_safe_read_yaml.return_value = None
+        mock_safe_read_toml.return_value = None
 
         with (
             patch.object(
@@ -124,18 +127,18 @@ class TestConfigManager:
             mock_default.assert_called_once()
             mock_validate.assert_called_once()
 
-    @patch("docgen.config_manager.safe_read_yaml")
-    def test_create_default_config_with_sample(self, mock_safe_read_yaml, temp_project):
+    @patch("docgen.config_manager.safe_read_toml")
+    def test_create_default_config_with_sample(self, mock_safe_read_toml, temp_project):
         """サンプル設定ファイルからのデフォルト設定作成テスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        sample_path = docgen_dir / "config.yaml.sample"
-        config_path = docgen_dir / "config.yaml"
+        sample_path = docgen_dir / "config.toml.sample"
+        config_path = docgen_dir / "config.toml"
 
         # サンプルファイルを作成
         sample_path.write_text("sample: config\n")
 
-        mock_safe_read_yaml.side_effect = (
+        mock_safe_read_toml.side_effect = (
             lambda path: {"sample": "config"} if path == config_path else None
         )
 
@@ -148,14 +151,14 @@ class TestConfigManager:
 
             assert result == {"sample": "config"}
 
-    @patch("docgen.config_manager.safe_read_yaml")
-    def test_create_default_config_without_sample(self, mock_safe_read_yaml, temp_project):
+    @patch("docgen.config_manager.safe_read_toml")
+    def test_create_default_config_without_sample(self, mock_safe_read_toml, temp_project):
         """サンプル設定ファイルなしの場合のデフォルト設定作成テスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        config_path = docgen_dir / "config.yaml"
+        config_path = docgen_dir / "config.toml"
 
-        mock_safe_read_yaml.return_value = None
+        mock_safe_read_toml.return_value = None
 
         config_manager = ConfigManager.__new__(ConfigManager)
         config_manager.docgen_dir = docgen_dir
@@ -174,8 +177,8 @@ class TestConfigManager:
         """サンプル設定ファイルのコピー成功テスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        sample_path = docgen_dir / "config.yaml.sample"
-        config_path = docgen_dir / "config.yaml"
+        sample_path = docgen_dir / "config.toml.sample"
+        config_path = docgen_dir / "config.toml"
 
         # サンプルファイルを作成
         sample_content = "sample: content"
@@ -194,8 +197,8 @@ class TestConfigManager:
         """サンプル設定ファイルのコピー失敗テスト"""
         docgen_dir = temp_project / ".docgen"
         docgen_dir.mkdir()
-        sample_path = docgen_dir / "config.yaml.sample"
-        config_path = docgen_dir / "config.yaml"
+        sample_path = docgen_dir / "config.toml.sample"
+        config_path = docgen_dir / "config.toml"
 
         # サンプルファイルを作成
         sample_path.write_text("content")
@@ -279,10 +282,11 @@ class TestConfigManager:
             },
         }
         with patch.object(ConfigManager, "_load_config", return_value=test_config):
-            config_manager = ConfigManager(temp_project, docgen_dir)
+            with patch.object(ConfigManager, "_validate_config"):
+                config_manager = ConfigManager(temp_project, docgen_dir)
 
-            result = config_manager.get_config()
-            assert result == test_config
+                result = config_manager.get_config()
+                assert result == test_config
 
     def test_update_config_simple(self, temp_project):
         """シンプルな設定更新テスト"""

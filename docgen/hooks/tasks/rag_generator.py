@@ -8,7 +8,7 @@ class RagGeneratorTask(HookTask):
     def run(self, context: HookContext) -> TaskResult:
         print("Updating RAG vector database...")
 
-        # RAG機能が有効か確認（config.yamlなどをチェックすべきだが、
+        # RAG機能が有効か確認（config.tomlなどをチェックすべきだが、
         # ここではタスクが有効化されている＝実行すべきと判断）
 
         python_cmd = get_python_command()

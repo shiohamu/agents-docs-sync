@@ -59,7 +59,7 @@ class TestCommandLineInterface:
             with patch("pathlib.Path.cwd", return_value=tmp_path):
                 result = cli.run()
                 assert result == 0
-                assert (tmp_path / "docgen" / "config.yaml").exists()
+                assert (tmp_path / "docgen" / "config.toml").exists()
 
     def test_init_command_creates_all_directories(self, tmp_path):
         """initコマンドがすべてのディレクトリを作成することを確認"""
@@ -101,8 +101,8 @@ class TestCommandLineInterface:
                 result = cli.run()
                 assert result == 0
 
-                # config.yamlが作成されている
-                assert (tmp_path / "docgen" / "config.yaml").exists()
+                # config.tomlが作成されている
+                assert (tmp_path / "docgen" / "config.toml").exists()
 
                 # templatesディレクトリにファイルが存在
                 templates_dir = tmp_path / "docgen" / "templates"
@@ -148,7 +148,7 @@ class TestCommandLineInterface:
         # 既存の設定ファイルを作成
         docgen_dir = tmp_path / "docgen"
         docgen_dir.mkdir()
-        config_file = docgen_dir / "config.yaml"
+        config_file = docgen_dir / "config.toml"
         config_file.write_text("existing config")
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
@@ -175,7 +175,7 @@ class TestCommandLineInterface:
         # 既存の設定ファイルを作成
         docgen_dir = tmp_path / "docgen"
         docgen_dir.mkdir()
-        config_file = docgen_dir / "config.yaml"
+        config_file = docgen_dir / "config.toml"
         config_file.write_text("existing config")
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
@@ -196,7 +196,7 @@ class TestCommandLineInterface:
 
     @patch("docgen.docgen.DocGen")
     def test_auto_init_when_config_missing(self, mock_docgen_class, tmp_path):
-        """config.yamlがない場合に自動初期化されることを確認"""
+        """config.tomlがない場合に自動初期化されることを確認"""
         mock_docgen = mock_docgen_class.return_value
         mock_docgen.detect_languages.return_value = ["python"]
 
@@ -219,16 +219,16 @@ class TestCommandLineInterface:
             with patch("pathlib.Path.cwd", return_value=tmp_path):
                 result = cli.run()
                 assert result == 0
-                # 自動的にconfig.yamlが作成されている
-                assert (tmp_path / "docgen" / "config.yaml").exists()
+                # 自動的にconfig.tomlが作成されている
+                assert (tmp_path / "docgen" / "config.toml").exists()
 
     @patch("docgen.docgen.DocGen")
     def test_no_auto_init_when_config_exists(self, mock_docgen_class, tmp_path):
-        """config.yamlがある場合は自動初期化しないことを確認"""
+        """config.tomlがある場合は自動初期化しないことを確認"""
         # 既存の設定ファイルを作成
         docgen_dir = tmp_path / "docgen"
         docgen_dir.mkdir()
-        config_file = docgen_dir / "config.yaml"
+        config_file = docgen_dir / "config.toml"
         config_file.write_text("existing config")
 
         mock_docgen = mock_docgen_class.return_value

@@ -4,9 +4,10 @@ Collects project dependencies from various configuration files.
 """
 
 from pathlib import Path
+from typing import Any
 
 from ..utils.file_utils import safe_read_json
-from ..utils.logger import setup_logger
+from ..utils.logger import get_logger
 
 
 class DependencyCollector:
@@ -16,15 +17,16 @@ class DependencyCollector:
     PACKAGE_JSON = "package.json"
     GO_MOD = "go.mod"
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, logger: Any | None = None):
         """
         Initialize
 
         Args:
             project_root: Project root directory
+            logger: Logger instance
         """
         self.project_root = project_root
-        self.logger = setup_logger(__name__)
+        self.logger = logger or get_logger(__name__)
 
     def collect_dependencies(self) -> dict[str, list[str]]:
         """

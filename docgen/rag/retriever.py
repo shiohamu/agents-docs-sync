@@ -3,6 +3,7 @@
 ベクトルインデックスから類似チャンクを検索・取得します。
 """
 
+from logging import Logger
 from pathlib import Path
 from typing import Any
 
@@ -10,23 +11,28 @@ from ..utils.logger import get_logger
 from .embedder import Embedder
 from .indexer import VectorIndexer
 
-logger = get_logger(__name__)
-
 
 class DocumentRetriever:
     """ドキュメント検索クラス"""
 
-    def __init__(self, config: dict[str, Any], project_root: Path | None = None):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        project_root: Path | None = None,
+        logger: Logger | None = None,
+    ):
         """
         初期化
 
         Args:
-            config: 設定辞書（config.yaml全体）
+            config: 設定辞書（config.toml全体）
             project_root: プロジェクトルート（指定しない場合は現在のディレクトリ）
+            logger: ロガーインスタンス（Noneの場合は新規作成）
         """
         self.config = config
         self.rag_config = config.get("rag", {})
         self.project_root = project_root or Path.cwd()
+        self.logger = logger or get_logger(__name__)
 
         # 検索設定
         retrieval_config = self.rag_config.get("retrieval", {})
@@ -44,7 +50,7 @@ class DocumentRetriever:
     def embedder(self) -> Embedder:
         """Embedderインスタンスを取得（Lazy loading）"""
         if self._embedder is None:
-            self._embedder = Embedder(self.rag_config)
+            self._embedder = Embedder(self.rag_config, logger=self.logger)
         return self._embedder
 
     @property
@@ -58,13 +64,14 @@ class DocumentRetriever:
                 index_dir=self.index_dir,
                 embedding_dim=embedding_dim,
                 config=self.rag_config,
+                logger=self.logger,
             )
 
             # インデックスを読み込み
             try:
                 self._indexer.load()
             except FileNotFoundError:
-                logger.warning(
+                self.logger.warning(
                     f"Index not found at {self.index_dir}. "
                     "Please build the index first with: "
                     "uv run python -m docgen.docgen --build-index"
@@ -86,7 +93,7 @@ class DocumentRetriever:
         """
         k = top_k if top_k is not None else self.default_top_k
 
-        logger.info(f"Retrieving top-{k} chunks for query: {query[:50]}...")
+        self.logger.info(f"Retrieving top-{k} chunks for query: {query[:50]}...")
 
         # クエリを埋め込み
         query_embedding = self.embedder.embed_text(query)
@@ -102,7 +109,9 @@ class DocumentRetriever:
             if i < len(filtered_results):
                 filtered_results[i]["similarity_score"] = score
 
-        logger.info(f"Retrieved {len(filtered_results)} chunks (threshold: {self.score_threshold})")
+        self.logger.info(
+            f"Retrieved {len(filtered_results)} chunks (threshold: {self.score_threshold})"
+        )
 
         return filtered_results
 
@@ -153,5 +162,5 @@ class DocumentRetriever:
             再ランク済みのチャンクのリスト
         """
         # 現時点では通常の検索と同じ（cross-encoderは将来実装）
-        logger.info("Reranking is not yet implemented, using standard retrieval")
+        self.logger.info("Reranking is not yet implemented, using standard retrieval")
         return self.retrieve(query, top_k=top_k)

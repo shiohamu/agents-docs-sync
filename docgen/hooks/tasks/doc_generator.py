@@ -12,7 +12,7 @@ class DocGeneratorTask(HookTask):
         cmd = python_cmd.split() + ["-m", "docgen.docgen"]
 
         # 設定ファイルパス
-        # config_path = os.path.join(context.project_root, "docgen", "config.yaml")
+        # config_path = os.path.join(context.project_root, "docgen", "config.toml")
 
         # 一時的にLLMモードをtemplateに変更するための環境変数を設定することも考えられるが、
         # 現在のdocgen.pyは環境変数でのオーバーライドを完全にはサポートしていない可能性がある。

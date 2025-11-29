@@ -9,7 +9,7 @@ import re
 from typing import Any
 
 from ..models.project import ProjectInfo
-from ..utils.logger import setup_logger
+from ..utils.logger import get_logger
 from .collector_utils import BuildCommandCollector
 
 
@@ -41,17 +41,23 @@ class ProjectInfoCollector:
     CHANGELOG = "CHANGELOG.md"
     LICENSE = "LICENSE"
 
-    def __init__(self, project_root: Path, package_managers: dict[str, str] | None = None):
+    def __init__(
+        self,
+        project_root: Path,
+        package_managers: dict[str, str] | None = None,
+        logger: Any | None = None,
+    ):
         """
         初期化
 
         Args:
             project_root: プロジェクトのルートディレクトリ
             package_managers: 言語ごとのパッケージマネージャ辞書
+            logger: ロガーインスタンス
         """
         self.project_root: Path = project_root
         self.package_managers = package_managers or {}
-        self.logger = setup_logger(__name__)
+        self.logger = logger or get_logger(__name__)
 
         # Initialize sub-collectors
         from .coding_standards_collector import CodingStandardsCollector
@@ -60,10 +66,12 @@ class ProjectInfoCollector:
         from .test_command_collector import TestCommandCollector
 
         self.build_collector = BuildCommandCollector(project_root, package_managers)
-        self.dependency_collector = DependencyCollector(project_root)
-        self.test_command_collector = TestCommandCollector(project_root, package_managers)
-        self.coding_standards_collector = CodingStandardsCollector(project_root)
-        self.structure_analyzer = StructureAnalyzer(project_root)
+        self.dependency_collector = DependencyCollector(project_root, logger=self.logger)
+        self.test_command_collector = TestCommandCollector(
+            project_root, package_managers, logger=self.logger
+        )
+        self.coding_standards_collector = CodingStandardsCollector(project_root, logger=self.logger)
+        self.structure_analyzer = StructureAnalyzer(project_root, logger=self.logger)
 
     def collect_all(self) -> ProjectInfo:
         """

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-29 19:10:24
+自動生成日時: 2025-11-29 21:27:07
 
 ---
 
@@ -29,7 +29,7 @@ Coding standards collector class
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path):
+def __init__(self, project_root: Path, logger: Any | None):
 ```
 
 **説明**:
@@ -38,6 +38,7 @@ Initialize
 
 Args:
     project_root: Project root directory
+    logger: Logger instance
 
 *定義場所: docgen/collectors/coding_standards_collector.py:19*
 
@@ -59,7 +60,7 @@ Collect coding standards
 Returns:
     Dictionary of coding standards
 
-*定義場所: docgen/collectors/coding_standards_collector.py:29*
+*定義場所: docgen/collectors/coding_standards_collector.py:30*
 
 ---
 
@@ -284,7 +285,7 @@ class DependencyCollector:
 
 Dependency collector class
 
-*定義場所: docgen/collectors/dependency_collector.py:12*
+*定義場所: docgen/collectors/dependency_collector.py:13*
 
 ---
 
@@ -294,7 +295,7 @@ Dependency collector class
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path):
+def __init__(self, project_root: Path, logger: Any | None):
 ```
 
 **説明**:
@@ -303,8 +304,9 @@ Initialize
 
 Args:
     project_root: Project root directory
+    logger: Logger instance
 
-*定義場所: docgen/collectors/dependency_collector.py:19*
+*定義場所: docgen/collectors/dependency_collector.py:20*
 
 ---
 
@@ -324,7 +326,7 @@ Collect dependencies
 Returns:
     Dictionary of dependencies per language
 
-*定義場所: docgen/collectors/dependency_collector.py:29*
+*定義場所: docgen/collectors/dependency_collector.py:31*
 
 ---
 
@@ -356,7 +358,7 @@ class ProjectInfoCollector:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, package_managers: dict[str, str] | None):
+def __init__(self, project_root: Path, package_managers: dict[str, str] | None, logger: Any | None):
 ```
 
 **説明**:
@@ -366,6 +368,7 @@ def __init__(self, project_root: Path, package_managers: dict[str, str] | None):
 Args:
     project_root: プロジェクトのルートディレクトリ
     package_managers: 言語ごとのパッケージマネージャ辞書
+    logger: ロガーインスタンス
 
 *定義場所: docgen/collectors/project_info_collector.py:44*
 
@@ -387,7 +390,7 @@ def collect_all(self) -> ProjectInfo:
 Returns:
     プロジェクト情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:68*
+*定義場所: docgen/collectors/project_info_collector.py:76*
 
 ---
 
@@ -407,7 +410,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:98*
+*定義場所: docgen/collectors/project_info_collector.py:106*
 
 ---
 
@@ -427,7 +430,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:108*
+*定義場所: docgen/collectors/project_info_collector.py:116*
 
 ---
 
@@ -447,7 +450,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:117*
+*定義場所: docgen/collectors/project_info_collector.py:125*
 
 ---
 
@@ -467,7 +470,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:126*
+*定義場所: docgen/collectors/project_info_collector.py:134*
 
 ---
 
@@ -487,7 +490,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:135*
+*定義場所: docgen/collectors/project_info_collector.py:143*
 
 ---
 
@@ -509,7 +512,7 @@ StructureAnalyzerに委譲して詳細な構造分析を実行
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:156*
+*定義場所: docgen/collectors/project_info_collector.py:164*
 
 ---
 
@@ -529,7 +532,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:167*
+*定義場所: docgen/collectors/project_info_collector.py:175*
 
 ---
 
@@ -549,7 +552,7 @@ class StructureAnalyzer:
 
 プロジェクト構造分析クラス
 
-*定義場所: docgen/collectors/structure_analyzer.py:17*
+*定義場所: docgen/collectors/structure_analyzer.py:15*
 
 ---
 
@@ -559,7 +562,7 @@ class StructureAnalyzer:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path):
+def __init__(self, project_root: Path, logger: Any | None):
 ```
 
 **説明**:
@@ -568,8 +571,9 @@ def __init__(self, project_root: Path):
 
 Args:
     project_root: プロジェクトのルートディレクトリ
+    logger: ロガーインスタンス
 
-*定義場所: docgen/collectors/structure_analyzer.py:53*
+*定義場所: docgen/collectors/structure_analyzer.py:51*
 
 ---
 
@@ -660,7 +664,7 @@ class TestCommandCollector:
 
 Test command collector class
 
-*定義場所: docgen/collectors/test_command_collector.py:13*
+*定義場所: docgen/collectors/test_command_collector.py:14*
 
 ---
 
@@ -670,7 +674,7 @@ Test command collector class
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, package_managers: dict[str, str] | None):
+def __init__(self, project_root: Path, package_managers: dict[str, str] | None, logger: Any | None):
 ```
 
 **説明**:
@@ -680,8 +684,9 @@ Initialize
 Args:
     project_root: Project root directory
     package_managers: Dictionary of detected package managers
+    logger: Logger instance
 
-*定義場所: docgen/collectors/test_command_collector.py:22*
+*定義場所: docgen/collectors/test_command_collector.py:23*
 
 ---
 
@@ -701,7 +706,7 @@ Collect test commands
 Returns:
     List of test commands
 
-*定義場所: docgen/collectors/test_command_collector.py:35*
+*定義場所: docgen/collectors/test_command_collector.py:42*
 
 ---
 
@@ -1903,7 +1908,7 @@ def generate(self) -> bool:
 Returns:
     生成に成功した場合True
 
-*定義場所: docgen/generators/base_generator.py:149*
+*定義場所: docgen/generators/base_generator.py:151*
 
 ---
 
@@ -3798,7 +3803,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:81*
+*定義場所: docgen/models/config.py:82*
 
 ---
 
@@ -3815,7 +3820,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:92*
+*定義場所: docgen/models/config.py:94*
 
 ---
 
@@ -3832,7 +3837,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:104*
+*定義場所: docgen/models/config.py:106*
 
 ---
 
@@ -4097,7 +4102,7 @@ def __init__(self, config: dict[str, Any] | None):
 初期化
 
 Args:
-    config: RAG設定（config.yaml の rag セクション）
+    config: RAG設定（config.toml の rag セクション）
 
 *定義場所: docgen/rag/chunker.py:44*
 
@@ -4189,7 +4194,7 @@ class Embedder:
 
 テキスト埋め込み生成クラス
 
-*定義場所: docgen/rag/embedder.py:17*
+*定義場所: docgen/rag/embedder.py:16*
 
 ---
 
@@ -4199,7 +4204,7 @@ class Embedder:
 
 **シグネチャ**:
 ```
-def __init__(self, config: dict[str, Any] | None):
+def __init__(self, config: dict[str, Any] | None, logger: Logger | None):
 ```
 
 **説明**:
@@ -4207,9 +4212,10 @@ def __init__(self, config: dict[str, Any] | None):
 初期化
 
 Args:
-    config: RAG設定（config.yaml の rag セクション）
+    config: RAG設定（config.toml の rag セクション）
+    logger: ロガーインスタンス（Noneの場合は新規作成）
 
-*定義場所: docgen/rag/embedder.py:20*
+*定義場所: docgen/rag/embedder.py:19*
 
 ---
 
@@ -4226,7 +4232,7 @@ def model(self):
 
 埋め込みモデルをLazy load
 
-*定義場所: docgen/rag/embedder.py:39*
+*定義場所: docgen/rag/embedder.py:40*
 
 ---
 
@@ -4243,7 +4249,7 @@ def embedding_dim(self) -> int:
 
 埋め込みベクトルの次元数
 
-*定義場所: docgen/rag/embedder.py:57*
+*定義場所: docgen/rag/embedder.py:58*
 
 ---
 
@@ -4266,7 +4272,7 @@ Args:
 Returns:
     埋め込みベクトル（numpy配列）
 
-*定義場所: docgen/rag/embedder.py:61*
+*定義場所: docgen/rag/embedder.py:62*
 
 ---
 
@@ -4290,7 +4296,7 @@ Args:
 Returns:
     埋め込みベクトルの配列（shape: [len(texts), embedding_dim]）
 
-*定義場所: docgen/rag/embedder.py:87*
+*定義場所: docgen/rag/embedder.py:88*
 
 ---
 
@@ -4310,7 +4316,7 @@ class VectorIndexer:
 
 ベクトルインデックス管理クラス
 
-*定義場所: docgen/rag/indexer.py:17*
+*定義場所: docgen/rag/indexer.py:16*
 
 ---
 
@@ -4320,7 +4326,7 @@ class VectorIndexer:
 
 **シグネチャ**:
 ```
-def __init__(self, index_dir: Path, embedding_dim: int, config: dict[str, Any] | None):
+def __init__(self, index_dir: Path, embedding_dim: int, config: dict[str, Any] | None, logger: Logger | None):
 ```
 
 **説明**:
@@ -4330,9 +4336,10 @@ def __init__(self, index_dir: Path, embedding_dim: int, config: dict[str, Any] |
 Args:
     index_dir: インデックス保存ディレクトリ
     embedding_dim: 埋め込みベクトルの次元数
-    config: RAG設定（config.yaml の rag セクション）
+    config: RAG設定（config.toml の rag セクション）
+    logger: ロガーインスタンス（Noneの場合は新規作成）
 
-*定義場所: docgen/rag/indexer.py:20*
+*定義場所: docgen/rag/indexer.py:19*
 
 ---
 
@@ -4353,7 +4360,7 @@ Args:
     embeddings: 埋め込みベクトルの配列（shape: [n_samples, embedding_dim]）
     metadata: 各埋め込みに対応するメタデータのリスト
 
-*定義場所: docgen/rag/indexer.py:48*
+*定義場所: docgen/rag/indexer.py:50*
 
 ---
 
@@ -4370,7 +4377,7 @@ def save(self):
 
 インデックスとメタデータを保存
 
-*定義場所: docgen/rag/indexer.py:99*
+*定義場所: docgen/rag/indexer.py:101*
 
 ---
 
@@ -4387,7 +4394,7 @@ def load(self):
 
 インデックスとメタデータを読み込み
 
-*定義場所: docgen/rag/indexer.py:128*
+*定義場所: docgen/rag/indexer.py:130*
 
 ---
 
@@ -4411,7 +4418,7 @@ Args:
 Returns:
     (メタデータ, スコア) のタプルのリスト
 
-*定義場所: docgen/rag/indexer.py:167*
+*定義場所: docgen/rag/indexer.py:169*
 
 ---
 
@@ -4432,7 +4439,7 @@ Args:
     new_embeddings: 新しい埋め込みベクトル
     new_metadata: 新しいメタデータ
 
-*定義場所: docgen/rag/indexer.py:197*
+*定義場所: docgen/rag/indexer.py:199*
 
 ---
 
@@ -4452,7 +4459,7 @@ class DocumentRetriever:
 
 ドキュメント検索クラス
 
-*定義場所: docgen/rag/retriever.py:16*
+*定義場所: docgen/rag/retriever.py:15*
 
 ---
 
@@ -4462,7 +4469,7 @@ class DocumentRetriever:
 
 **シグネチャ**:
 ```
-def __init__(self, config: dict[str, Any], project_root: Path | None):
+def __init__(self, config: dict[str, Any], project_root: Path | None, logger: Logger | None):
 ```
 
 **説明**:
@@ -4470,10 +4477,11 @@ def __init__(self, config: dict[str, Any], project_root: Path | None):
 初期化
 
 Args:
-    config: 設定辞書（config.yaml全体）
+    config: 設定辞書（config.toml全体）
     project_root: プロジェクトルート（指定しない場合は現在のディレクトリ）
+    logger: ロガーインスタンス（Noneの場合は新規作成）
 
-*定義場所: docgen/rag/retriever.py:19*
+*定義場所: docgen/rag/retriever.py:18*
 
 ---
 
@@ -4490,7 +4498,7 @@ def embedder(self) -> Embedder:
 
 Embedderインスタンスを取得（Lazy loading）
 
-*定義場所: docgen/rag/retriever.py:44*
+*定義場所: docgen/rag/retriever.py:50*
 
 ---
 
@@ -4507,7 +4515,7 @@ def indexer(self) -> VectorIndexer:
 
 VectorIndexerインスタンスを取得（Lazy loading）
 
-*定義場所: docgen/rag/retriever.py:51*
+*定義場所: docgen/rag/retriever.py:57*
 
 ---
 
@@ -4531,7 +4539,7 @@ Args:
 Returns:
     チャンクのリスト（スコア付き）
 
-*定義場所: docgen/rag/retriever.py:76*
+*定義場所: docgen/rag/retriever.py:83*
 
 ---
 
@@ -4554,7 +4562,7 @@ Args:
 Returns:
     フォーマット済みのコンテキスト文字列
 
-*定義場所: docgen/rag/retriever.py:109*
+*定義場所: docgen/rag/retriever.py:118*
 
 ---
 
@@ -4579,7 +4587,7 @@ Args:
 Returns:
     再ランク済みのチャンクのリスト
 
-*定義場所: docgen/rag/retriever.py:141*
+*定義場所: docgen/rag/retriever.py:150*
 
 ---
 

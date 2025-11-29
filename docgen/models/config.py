@@ -78,6 +78,7 @@ class ChunkingConfig(BaseModel):
     max_chunk_size: int = 512
     overlap: int = 50
 
+
 class RagExcludeConfig(BaseModel):
     patterns: list[str] = Field(
         default_factory=lambda: [
@@ -88,6 +89,7 @@ class RagExcludeConfig(BaseModel):
         ]
     )
     files: list[str] = Field(default_factory=lambda: ["README.md", "AGENTS.md"])
+
 
 class RagConfig(BaseModel):
     """RAG configuration model."""
