@@ -21,7 +21,7 @@ class DocGeneratorTask(HookTask):
         # ここでは既存のフックと同様に、設定ファイルを一時的に書き換えるのはリスクがあるため、
         # そのまま実行するか、将来的にdocgen.pyにフラグを追加することを想定する。
 
-        # 既存のpre-commitフックではsedでconfig.yamlを書き換えていたが、
+        # 既存のpre-commitフックではsedでconfig.tomlを書き換えていたが、
         # それはあまり行儀が良くない。
         # 今回はそのまま実行する（docgen側で適切に処理されることを期待、または後でdocgenを改修）
 

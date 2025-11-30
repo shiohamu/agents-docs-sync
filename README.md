@@ -5,88 +5,48 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-agents-docs-sync は、プロジェクトのエージェントに関するドキュメントを自動生成・同期させる CLI ツールです。  
-Python で実装されており、`pyproject.toml` の `scripts` セクションから
+**agents-docs-sync は、プロジェクト内のエージェント設定を自動的に解析し、整形された Markdown ドキュメント（`AGENTS.md` など）へ同期する CLI ツールです。**
 
-```
-$ agents-docs-sync
-```  
+### 主な機能
+- **構成ファイルからデータ抽出**  
+  `docgen/models/agents.py` に定義されている Pydantic モデル (`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`) を用いて、YAML／JSON 等の設定を正確にパースします。  
+- **ドキュメント自動生成**  
+  抽出した構造化データから Markdown を生成し、既存ドキュメントと差分がある場合のみ更新することで無駄な書き換えを防ぎます。  
+- **CLI インターフェース**  
+  `agents-docs-sync --help` により使用方法・オプション一覧を即座に確認でき、スクリプトや CI パイプラインから簡単呼び出し可能です（例：`.github/workflows/docs.yml`）。  
+- **シンプルな統合**  
+  `pyproject.toml` の `[project.scripts]` に登録されているエントリポイント (`docgen.docgen:main`) を利用することで、Python 環境を持つ任意のマシンで即座に実行できます。  
 
-というコマンドが直接呼び出せます（同時に `agents_docs_sync` エイリアスも用意）。
-
-## 技術スタック  
-- **Python 3.10+**：メインロジック、データモデル。  
-- **Shell スクリプト**：CLI のエントリポイントと環境設定を簡易化。  
-- **pydantic / dataclasses（推定）**：構成ファイルのバリデーション。  
-- **Jinja2 テンプレート**（想定）：Markdown 出力テンプレートとして使用。
-
-## アーキテクチャ概要  
-
+### アーキテクチャ
 ```
 ┌───────────────────────┐
-│  CLI (agents-docs-sync) │   ← pyproject.toml のスクリプトエントリポイント  
+│  CLI (agents-docs-sync) │   ← pyproject.toml entry point  
 ├─────────────┬───────────┤
-│ config-loader │ generator │   ← docgen/docgen.py 内の main() が実行  
-├───────▼──────┴──────▲────┤
-│  AgentsConfig (ProjectOverview, AgentsGenerationConfig, …)   │   
-└─────────────────────────────┘
+│ parser      │ generator │   ← docgen/docgen.py 内で実装  
+│             └───────────┘   
+│                                                    
+│   data models  (Pydantic) – docgen/models/agents.py    
+│                                                    
+└───────────────────────┘
 ```
+- **Parser**：設定ファイルを読み込み、`AgentsConfigSection`, `AgentsGenerationConfig` 等のモデルへ変換。  
+- **Generator**：各モデルから Markdown テンプレート（Jinja2 など）に埋め込んでドキュメント生成。差分検出は `git diff --name-only` を利用し、必要なファイルのみを書き込みます。
 
-1. **CLI**：`argparse / click` によりオプション解析。 `--help`, `-v`, `--config <path>` 等をサポート。  
-2. **構成読み込み**：指定された YAML/JSON ファイルから `AgentsConfig` を生成し、各セクション（ProjectOverview, AgentsGenerationConfig など）へマッピング。  
-3. **ドキュメント生成**：テンプレートエンジンで `AGENTS.md` 等の Markdown を構築。  
-4. **出力**：指定ディレクトリに書き込み、差分があれば上書き／ログを残す。
+### 開発・運用
+- **テスト**：pytest + coverage によりモデルと生成ロジックを網羅的に検証。  
+- **CI/CD 連携**：GitHub Actions の `agents-docs-sync` スクリプトで自動同期が可能です（設定ファイル変更時のみ実行）。  
 
-## 主な機能  
-
-- **自動同期**：コードベースとドキュメントを常時一致させるためのワンライナー。  
-- **構成ファイルでカスタマイズ可能**：プロジェクト概要、エージェント設定セクション、生成オプションなどを YAML 形式で記述できる。  
-- **テンプレートベース出力**：Jinja2 テンプレートにより Markdown のフォーマット自由度が高い。  
-- **CLI オプション**：`--dry-run`, `--verbose`, `--output <dir>` 等、開発フローをサポートする便利オプション群。  
-- **テストとCI統合**：Release ドキュメント (`docs/RELEASE.md`) で示されるように `agents-docs-sync --help` が常時動作し、GitHub Actions 等の CI に組み込み可能。
-
-## 実装ポイント  
-
-| コンポーネント | 主な役割 |
-|-----------------|----------|
-| **docgen/models/agents.py** | データモデル (`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument`) を定義し、構成ファイルのバリデーションを担当。 |
-| **docgen/docgen.py** | CLI から呼び出されるエントリポイントで、ロード・検証・生成まで一連のフローを実行する。 |
-| **templates/** | Markdown テンプレート群（例：`agents.md.j2`）。テンプレートによりセクションごとのレイアウトが決定。 |
-
-## 使い方サンプル  
-
+### 使用例
 ```bash
-# リポジトリの取得と初期化
-git clone https://github.com/your-org/agents-docs-sync.git
-cd agents-docs-sync
+# インストール後の基本コマンド
+$ agents-docs-sync --config path/to/agents.yaml
 
-# 必要な依存をインストール（例: pipenv, poetry）
-pip install -e .
-
-# 設定ファイルを書き換えて実行
-cat <<EOF > config.yaml
-project_overview:
-  name: "My Agent Suite"
-  description: |
-    エージェントの概要と利用方法。
-agents_generation_config:
-  output_dir: docs/
-...
-EOF
-
-agents-docs-sync --config config.yaml
+# ドキュメント確認用ヘルプ表示
+$ agents-docs-sync --help
 ```
 
-## 今後の拡張予定  
-
-- **プラグインシステム**：外部エージェント情報を取得する API プロバイダー統合。  
-- **多言語対応**：テンプレートに i18n を導入し、複数言語でドキュメント生成可能に。  
-- **Web UI**：設定ファイルのビジュアル編集とプレビュー機能を提供。
-
----
-
-agents-docs-sync は、コード変更時に自動的に最新状態のエージェントドキュメントを作成し、開発者が手間なく情報共有できるよう設計されたツールです。  
-技術的な詳細は `docgen` パッケージ内で完結しており、Python とシンプルな Shell スクリプトだけで導入・運用できます。
+**まとめ**  
+`agents-docs-sync` は、エージェント関連設定をコードベースとドキュメントの両方で一貫性を保つために設計された軽量ツールです。Python の標準的なパッケージング・スクリプト機能と Pydantic モデルによる型安全さが組み合わされ、プロジェクト全体のドキュメント品質向上へ直接寄与します。
 
 
 
@@ -94,8 +54,8 @@ agents-docs-sync は、コード変更時に自動的に最新状態のエージ
 
 ## 使用技術
 
-- Shell
 - Python
+- Shell
 
 ## 依存関係
 
@@ -183,4 +143,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-29 21:27:14*
+*このREADME.mdは自動生成されています。最終更新: 2025-11-30 15:47:14*

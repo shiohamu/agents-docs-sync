@@ -3,7 +3,7 @@ include README.md
 include LICENSE
 
 # Include package data
-recursive-include docgen *.yaml.sample
+recursive-include docgen *.toml.sample
 recursive-include docgen templates *
 recursive-include docgen hooks *
 

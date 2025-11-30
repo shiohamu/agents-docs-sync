@@ -51,7 +51,7 @@ uv add --dev ruff
 cp docgen/config.toml.sample docgen/config.toml
 
 # 必要に応じて設定を編集
-vim docgen/config.yaml
+vim docgen/config.toml
 ```
 
 #### 5. LLM環境のセットアップ（オプション）

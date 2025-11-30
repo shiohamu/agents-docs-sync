@@ -42,6 +42,6 @@ htmlcov/
 # 設定ファイルのバックアップ
 *.bak
 *.backup
-config.yaml.bak
+
 config.toml.bak
 

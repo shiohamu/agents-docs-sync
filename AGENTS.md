@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-29 21:28:34
+自動生成日時: 2025-11-30 15:48:10
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,52 +12,52 @@
 <!-- MANUAL_END:description -->
 
 
-agents-docs-sync は、Python とシェルスクリプトで構築された軽量なドキュメント同期ツールです。  
-CLI から `--help` を実行すると使用方法が表示されるように設計されています（例：`agents-docs-sync --help`）。  
-
-### アーキテクチャ
-```
-┌───────────────────────┐
-│          CLI           │   ← entrypoint (docgen.docgen:main)
-├─────────────▲───────────┤
-│             │           │
-│  config.yml ─► ConfigParser（pydantic / dataclass）  
-│            │           │
-│    Models (AgentsConfig, AgentsGenerationConfig,
-│     AgentsDocument …)   │
-│            ▼           │
-│      DocGenerator          │ ← AGENTS.md 等を生成・同期
-└───────────────────────┘
-```
-- **CLI**: `pyproject.toml` の `[project.scripts]` により、インストール後はシステム PATH から直接呼び出せるスクリプトが作成されます。  
-- **設定モデル** (`docgen/models/agents.py`) は Pydantic クラスで構築されており、JSON/YAML 設定ファイルを型安全に読み込みます。主なクラスは `AgentsConfig`, `AgentsGenerationConfig`, `AgentsDocument` です。  
-- **ドキュメント生成**: 設定情報とソースコードのメタデータ（例えば docstring やコメント）から、統一フォーマットの AGENTS.md を自動で作成します。既存ファイルとの差分検出も行い、必要な箇所だけを書き換えることで同期を保ちます。
-
-### 主機能
-- **構造化設定**: YAML/JSON 形式の `agents.yml`（または `.json`) による詳細設定。  
-- **自動ドキュメント生成**: コードベースから必要情報を抽出し、Markdown 文書へ変換。  
-- **差分同期**: ファイル変更時にのみ更新され、不必要なリライトを防止します。  
-- **CLI ユーティリティ**: `--help` でオプション一覧表示。その他のフラグ（例：`--dry-run`, `--output-dir`）も実装予定です。
+Python とシェルスクリプトで構築された **agents‑docs‑sync** は、エージェントの仕様書をコードベースから自動生成し、ドキュメントリポジトリへ同期するためのCLIツールです。  
+実行入口は `pyproject.toml` で定義されているスクリプト **agents-docs-sync**（同名シェルエイリアス）にあり、内部では `docgen.docgen:main()` が呼び出されています。
 
 ### 技術スタック
-| レイヤー | 実装技術 |
-|----------|---------|
-| CLI      | Python (docgen.docgen:main) + シェルスクリプトラッパー |
-| 設定解析 | Pydantic / dataclass（型安全な設定モデル） |
-| ドキュメント生成 | Markdown テンプレートエンジン、ファイル差分検出アルゴリズム |
-| パッケージ管理 | `pyproject.toml` (PEP 621) |
+| 層 | 主な技術 |
+|----|----------|
+| CLI  | argparse / click (Python) |
+| 設定管理 | YAML/TOML + Pydantic（`docgen/models/agents.py` の `ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument` 等） |
+| テンプレートエンジン | Jinja2 で Markdown を生成 |
+| ビルド・CI | Bash スクリプト (例：`.github/workflows`) と GitHub Actions 用のヘルパー |
+| 実行環境 | Python3.8+、依存ライブラリは `poetry`/`pipenv` で管理 |
 
-### 開発フロー
-1. リポジトリをクローン  
-   ```bash
-   git clone https://github.com/your-org/agents-docs-sync.git
-   cd agents-docs-sync
-   ```
-2. 必要に応じて `pip install .` でローカルインストール。  
-3. 設定ファイルを編集し、`agents-docs-sync --help` を実行して確認。  
+### アーキテクチャ
+1. **設定読み込み**  
+   - CLI が受け取ったオプション（例：`--config path/to/config.yaml`, `--output docs/`) を解析し、Pydantic モデルへマッピング。  
+2. **バリデーション & 変換**  
+   - Pydantic により構造が正しいか検証され、不備は即座にエラーとして報告。`AgentsConfigSection` 等で各セクションの型安全性を保証。  
+3. **ドキュメント生成**  
+   - テンプレート（`.jinja2`）へモデルデータを渡し、Markdown 文字列を作成。 `AGENTS.md`, 各エージェント別ファイルなどが出力される。  
+4. **同期処理**  
+   - 出力先ディレクトリに既存ファイルと差分比較（`git diff --quiet` 等）し、変更のみコミット／プッシュするオプションを備えている。  
 
-このツールはドキュメントの整合性と保守コスト削減を目的としており、大規模プロジェクトでもスムーズに導入できます。
-**使用技術**: shell, python
+### 主な機能
+| 機能 | 詳細 |
+|------|-----|
+| **自動ドキュメント生成** | 設定ファイルから `AGENTS.md` を含む全Markdownを一括生成し、フォーマットの統一性と再利用性を確保。 |
+| **設定バリデーション** | Pydantic により構造体を厳格に検証；不正なキーや型ミスは即時フィードバックで開発者へ通知。 |
+| **差分ベースの同期** | 既存ドキュメントと比較し、変更があった場合のみファイルを書き換え／コミットすることで無駄な更新を抑制。 |
+| **CLI オプション拡張性** | `--config`, `--output`, `--dry-run` 等のオプションで柔軟に動作モード切替が可能。 |
+| **CI/CD 連携** | シェルスクリプトや GitHub Actions のワークフローから呼び出し、PR 時自動生成・レビューを実現できる設計。 |
+
+### 実行例
+```bash
+# ヘルプ表示（RAG コンテキストに示された標準的な `--help`）
+agents-docs-sync --help
+
+# ドキュメントの同期 (設定ファイルはデフォルトで agents.yaml)
+agents-docs-sync -c config/agents.yml -o docs/
+```
+
+### まとめ
+- **Python** とシェルスクリプトを組み合わせた軽量 CLI。  
+- Pydantic モデルによる堅牢な設定管理とバリデーションでミスの早期検出。  
+- Jinja2 テンプレートにより Markdown を自動生成し、差分ベース同期で無駄を削減。  
+- CI/CD への統合が容易で、プロジェクト内ドキュメント管理の一元化と品質向上を実現します。
+**使用技術**: python, shell
 
 
 ## プロジェクト構造
@@ -129,11 +129,9 @@ agents-docs-sync/
  ├─ tests/
  ├─ AGENTS.md
  ├─ README.md
- ├─ install.sh
  ├─ pyproject.toml
  ├─ requirements-docgen.txt
- ├─ requirements-test.txt
- └─ setup.sh
+ └─ requirements-test.txt
 ```
 
 
@@ -275,4 +273,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-29 21:28:34*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-11-30 15:48:10*
