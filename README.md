@@ -1,76 +1,57 @@
 # agents-docs-sync
 
 <!-- MANUAL_START:notice -->
-> **IMPORTANT!!**
->
-> まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:notice -->
 
 
 <!-- MANUAL_START:description -->
-
 <!-- MANUAL_END:description -->
-Python とシェルスクリプトで構成された **agents‑docs-sync** は、リポジトリへコミットが行われるたびに自動的に以下を実施する CI パイプラインです。  
-- **テストの走査（pytest）**：コード品質と機能保証を高速かつ継続的に検証します。  
-- **ドキュメント生成**：`jinja2` テンプレートエンジンで `docgen/models/agents.py` に定義された Pydantic モデル（`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument` など）を用い、プロジェクト全体の構造と設定情報から整形済み Markdown を作成。  
-- **AGENTS.md の自動更新**：生成したメタデータを `agents-docs-sync --help` によって確認できる CLI エントリーポイント（`pyproject.toml` で定義）により、最新の状態へ書き換えます。
+コミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md 更新を行うパイプラインです。  
+Python とシェルスクリプトの組み合わせで構成され、CLI エントリポイント `agents_docs_sync`（pyproject.toml の `[project.scripts]` から提供）により以下の処理が実装されています。
 
----
+- **テストとカバレッジ**  
+  - `pytest`, `pytest-cov` を使用し単体・統合テストを走らせ、結果は CI で利用できる形式（JUnit XML 等）へ出力。  
 
-### アーキテクチャ概要
+- **ドキュメント生成**  
+  - Jinja2 テンプレートと Outline の組み合わせにより Markdown ドキュメントを構造化して作成。  
+  - `docgen/models/agents.py` に定義された Pydantic モデル（`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument` 等）から設定情報とメタデータを取得し、テンプレートへ注入します。  
 
-| コンポーネント | 機能 | 主な依存 |
-|-----------------|------|----------|
-| `docgen.docgen:main`（CLI） | コマンドラインからパイプラインを起動、設定ファイル読み込み・バリデーション。 | pydantic, httpx, ruff |
-| ドキュメント生成エンジン | Jinja2 テンプレートで Markdown を構築し `AGENTS.md` へ出力。 | jinja2, yaml (pyyaml) |
-| 自動アーキテクチャ図作成（LLM 非使用） | プロジェクトディレクトリを解析して YAML/Graphviz の形に変換、図として保存。 | hnswlib, sentence-transformers, torch |
-| テスト実行サブシステム | `pytest`, `pytest-cov` でテスト走査・カバレッジ計算。 | pytest, pytest-mock |
+- **AGENTS.md 自動更新**  
+  - コードベースに埋め込まれたエージェント定義（関数・クラスの docstring や `AgentsConfig` による宣言）を解析し、構造化データとしてまとめます。  
+  - この情報は Jinja2 テンプレートで整形され、AGENTS.md が最新版へ差分更新されます。
 
----
+- **アーキテクチャ図自動生成**（LLM 不使用）  
+  - プロジェクト構造とエージェント間の依存関係を静的解析し、Mermaid / PlantUML 用に描画指令を書き出します。  
+  - `docgen` 内で実装された分析モジュールが `hnswlib`, `sentence-transformers`, `torch` を活用してクラス・メソッド間の類似性を判定し、視覚化可能な図にまとめます。
 
-### 主な機能
+- **CLI とフック**  
+  ```bash
+  # ヘルプ表示
+  agents_docs_sync --help
 
-- **CI トリガー**：GitHub Actions / GitLab CI 等の Webhook によりコミット時に自動起動。
-- **設定管理**  
-  - `CONFIG_GUIDE.md` と `docs/api.md` を参照して、YAML/JSON の構成を定義。  
-  - `agents_docs_sync hook install` コマンドで必要なフック（pre‑commit, post‑push 等）をインストール可能。
-- **ドキュメント統合**  
-  - 各モジュールの docstring を抽出し、構造化モデルへ変換。  
-  - `AGENTS.md` は単一ソースで管理されるため、手動更新不要。
-- **品質保証**  
-  - コードスタイルチェック（ruff）と型安全性確認（pydantic バリデーション）。  
-  - カバレッジが一定値を下回った場合はビルド失敗に設定可能。
+  # Git フックスクリプトをインストール（pre‑commit 等）
+  agents_docs_sync hook install
+  ```
+  - `hook install` はリポジトリ内にシェルスクリプトを書き込み、コミット前または push 時点で自動実行されるよう設定します。  
 
----
+- **依存ライブラリ**  
+  - anthropic, openai（必要時 LLM 呼び出し）、httpx（API 通信）  
+  - jinja2 (テンプレート)、outlines (ドキュメント生成ロジック)  
+  - pydantic、pyyaml（設定ファイル解析）  
+  - ruff（静的コードチェック）  
 
-### 技術的ハイライト
+- **CI / GitHub Actions**  
+  - `agents_docs_sync` をジョブの一部として組み込み、プッシュ時に自動実行。テスト失敗やドキュメント差分がある場合はビルドを失敗させることで品質保証します。
 
-- **Pythonic モデル設計**：Pydantic を用いた `ProjectOverview` 等のクラスで構成情報と文書化データを一元管理。  
-- **LLM フリー アーキテクチャ図生成**：プロジェクトファイルパターンから自動的に矢印付き UML 風 Diagram（Graphviz）へ変換し、CI のビルド出力として添付。  
-- **CLI スクリプト統合**：`pyproject.toml` に `agents_docs_sync = "docgen.docgen:main"` と記述して、システム全体を簡潔に呼び出せるよう設計。
+- **設定ファイル構造**  
+  - `agents.yaml`（または `.yml`) に全体のプロジェクト情報と各エージェント固有設定 (`AgentsConfigSection`, `AgentsGenerationConfig`) を記述。  
+  - YAML は Pydantic モデルでバリデートされ、型安全な構成管理が可能です。
 
----
-
-### 使い方の流れ（例）
-
-```bash
-# クローン & 初期セットアップ
-git clone https://github.com/your-org/agents-docs-sync.git
-cd agents-docs-sync
-
-# フックインストール (pre‑commit 等)
-agents_docs_sync hook install
-
-# コミット時に自動でテスト・ドキュメント生成＆AGENTS.md更新が実行される
-git commit -m "Add new feature"
-```
-
-これらの機能を組み合わせることで、**コード変更と文書化を同一リポジトリー内でシームレスに同期させる開発フロー** を提供します。
+このパイプラインにより、コード変更ごとのドキュメント整合性を保証しつつ、人手による更新作業の負担を大幅に削減します。
 
 
 
 <!-- MANUAL_START:architecture -->
-
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -202,24 +183,7 @@ uv sync
    - ローカルリソース（メモリ、CPU）を監視してください
 
 
-## 使用方法
 
-<!-- MANUAL_START:usage -->
-```bash
-# ドキュメントの生成
-uv run agents-docs-sync generate
-
-# Gitフックのインストール（コミット時に自動更新）
-uv run agents-docs-sync hook install
-```
-<!-- MANUAL_END:usage -->
-```bash
-# ドキュメントの生成
-uv run agents-docs-sync generate
-
-# Gitフックのインストール（コミット時に自動更新）
-uv run agents-docs-sync hook install
-```
 
 ## ビルドおよびテスト
 
@@ -292,4 +256,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-02 19:00:09*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-02 19:07:04*
