@@ -261,10 +261,90 @@ uv run python3 docgen/docgen.py
 uv run pytest tests/ -v --tb=short
 ```
 
+## コマンド
+
+プロジェクトで利用可能なスクリプト:
+
+| コマンド | 説明 |
+| --- | --- |
+
+| `agents-docs-sync` | 汎用ドキュメント自動生成システム |
+
+| `agents_docs_sync` | 汎用ドキュメント自動生成システム |
+
+
+
+
+### `agents-docs-sync` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+
+| `--config` | 設定ファイルのパス |
+
+| `--detect-only` | 言語検出のみ実行 |
+
+| `--no-api-doc` | APIドキュメントを生成しない |
+
+| `--no-readme` | READMEを更新しない |
+
+| `--build-index` | RAGインデックスをビルド |
+
+| `--use-rag` | RAGを使用してドキュメント生成 |
+
+| `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
+
+| `hook_name` | フック名（指定しない場合は全て） |
+
+| `hook_name` | フック名（指定しない場合は全て） |
+
+| `hook_name` | 実行するフック名 |
+
+| `hook_args` | フック引数 |
+
+| `--force` | 既存ファイルを強制上書き |
+
+
+
+
+
+### `agents_docs_sync` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+
+| `--config` | 設定ファイルのパス |
+
+| `--detect-only` | 言語検出のみ実行 |
+
+| `--no-api-doc` | APIドキュメントを生成しない |
+
+| `--no-readme` | READMEを更新しない |
+
+| `--build-index` | RAGインデックスをビルド |
+
+| `--use-rag` | RAGを使用してドキュメント生成 |
+
+| `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
+
+| `hook_name` | フック名（指定しない場合は全て） |
+
+| `hook_name` | フック名（指定しない場合は全て） |
+
+| `hook_name` | 実行するフック名 |
+
+| `hook_args` | フック引数 |
+
+| `--force` | 既存ファイルを強制上書き |
+
+
+
+
+
 
 
 
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-02 17:08:30*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-02 17:57:32*

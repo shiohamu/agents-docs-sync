@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-02 17:08:21
+自動生成日時: 2025-12-02 17:57:23
 
 ---
 
@@ -623,6 +623,74 @@ Detect programming language from configuration files.
 ---
 
 
+## docgen/collectors/command_help_extractor.py
+
+### CommandHelpExtractor
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CommandHelpExtractor:
+```
+
+**説明**:
+
+Extract help text from Python CLI entry points
+
+*定義場所: docgen/collectors/command_help_extractor.py:16*
+
+---
+
+### extract_from_entry_point
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_from_entry_point(entry_point: str, project_root: Path | None) -> str:
+```
+
+**説明**:
+
+Extract description from a Python entry point
+
+Args:
+    entry_point: Entry point string in format "module.path:function"
+    project_root: Project root directory to add to sys.path
+
+Returns:
+    Description string, or empty string if extraction fails
+
+*定義場所: docgen/collectors/command_help_extractor.py:20*
+
+---
+
+### extract_options_from_entry_point
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_options_from_entry_point(entry_point: str, project_root: Path | None) -> list[dict[str, str]]:
+```
+
+**説明**:
+
+Extract command options from a Python entry point
+
+Args:
+    entry_point: Entry point string in format "module.path:function"
+    project_root: Project root directory to add to sys.path
+
+Returns:
+    List of option dicts with 'name' and 'help' keys
+
+*定義場所: docgen/collectors/command_help_extractor.py:111*
+
+---
+
+
 ## docgen/collectors/dependency_collector.py
 
 ### DependencyCollector
@@ -747,6 +815,26 @@ Returns:
 
 ---
 
+### collect_scripts
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_scripts(self) -> dict[str, dict[str, str]]:
+```
+
+**説明**:
+
+実行可能なスクリプトを収集
+
+Returns:
+    スクリプト名と詳細情報の辞書 {name: {command: str, description: str}}
+
+*定義場所: docgen/collectors/project_info_collector.py:107*
+
+---
+
 ### collect_key_features
 
 **型**: `method`
@@ -763,7 +851,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:106*
+*定義場所: docgen/collectors/project_info_collector.py:206*
 
 ---
 
@@ -783,7 +871,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:116*
+*定義場所: docgen/collectors/project_info_collector.py:216*
 
 ---
 
@@ -803,7 +891,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:125*
+*定義場所: docgen/collectors/project_info_collector.py:225*
 
 ---
 
@@ -823,7 +911,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:134*
+*定義場所: docgen/collectors/project_info_collector.py:234*
 
 ---
 
@@ -843,7 +931,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:143*
+*定義場所: docgen/collectors/project_info_collector.py:243*
 
 ---
 
@@ -865,7 +953,7 @@ StructureAnalyzerに委譲して詳細な構造分析を実行
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:164*
+*定義場所: docgen/collectors/project_info_collector.py:264*
 
 ---
 
@@ -885,7 +973,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:175*
+*定義場所: docgen/collectors/project_info_collector.py:275*
 
 ---
 
@@ -6750,24 +6838,6 @@ def clear_cache(cls):
 キャッシュをクリア（主にテスト用）
 
 *定義場所: docgen/utils/prompt_loader.py:168*
-
----
-
-
-## scripts/debug_detection.py
-
-### main
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def main():
-```
-
-*説明なし*
-
-*定義場所: scripts/debug_detection.py:12*
 
 ---
 

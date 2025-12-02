@@ -336,6 +336,7 @@ class ReadmeGenerator(BaseGenerator):
             if manual_sections.get("architecture")
             else self._generate_architecture(project_info),
             "troubleshooting": "",
+            "scripts": project_info.scripts,
         }
 
         # Jinja2テンプレートでレンダリング

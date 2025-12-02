@@ -101,7 +101,107 @@ class ProjectInfoCollector:
             description=project_description,
             key_features=key_features,
             ci_cd_info=ci_cd_info,
+            scripts=self.collect_scripts(),
         )
+
+    def collect_scripts(self) -> dict[str, dict[str, str]]:
+        """
+        実行可能なスクリプトを収集
+
+        Returns:
+            スクリプト名と詳細情報の辞書 {name: {command: str, description: str}}
+        """
+        from .command_help_extractor import CommandHelpExtractor
+
+        scripts = {}
+
+        # 1. package.json scripts
+        package_json = self.project_root / self.PACKAGE_JSON
+        if package_json.exists():
+            try:
+                with open(package_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "scripts" in data:
+                        for name, cmd in data["scripts"].items():
+                            scripts[name] = {
+                                "command": cmd,
+                                "description": "",  # package.json doesn't have descriptions
+                                "options": [],  # Options not extracted from package.json
+                            }
+            except Exception:
+                pass
+
+        # 2. Makefile targets
+        for makefile_name in self.MAKEFILE_NAMES:
+            makefile = self.project_root / makefile_name
+            if makefile.exists():
+                try:
+                    content = makefile.read_text(encoding="utf-8")
+                    from .collector_utils import ConfigReader
+
+                    targets = ConfigReader.parse_makefile_targets(content)
+                    for target in targets:
+                        # Makefileの場合、コマンドは複雑な場合が多いので、make <target> を値とする
+                        scripts[target] = {
+                            "command": f"make {target}",
+                            "description": "",  # Makefile target descriptions not extracted yet
+                            "options": [],  # Options not extracted from Makefile
+                        }
+                except Exception:
+                    pass
+                break  # 最初のMakefileのみ処理
+
+        # 3. pyproject.toml scripts (poetry/pdm/hatch)
+        pyproject = self.project_root / self.PYPROJECT_TOML
+        if pyproject.exists():
+            try:
+                import tomllib
+
+                with open(pyproject, "rb") as f:
+                    data = tomllib.load(f)
+
+                # Standard [project.scripts] (PEP 621)
+                if "project" in data and "scripts" in data["project"]:
+                    for name, entry_point in data["project"]["scripts"].items():
+                        # entry_point format: "module.path:function"
+                        # Extract help text from the entry point
+                        description = CommandHelpExtractor.extract_from_entry_point(
+                            entry_point, self.project_root
+                        )
+                        # Extract options from the entry point
+                        options = CommandHelpExtractor.extract_options_from_entry_point(
+                            entry_point, self.project_root
+                        )
+                        scripts[name] = {
+                            "command": entry_point,
+                            "description": description,
+                            "options": options,
+                        }
+
+                # Poetry scripts
+                if "tool" in data and "poetry" in data["tool"] and "scripts" in data["tool"]["poetry"]:
+                    for name, cmd in data["tool"]["poetry"]["scripts"].items():
+                        scripts[name] = {
+                            "command": f"poetry run {name}",
+                            "description": "",  # Poetry scripts don't have descriptions
+                            "options": [],  # Options not extracted from Poetry
+                        }
+
+                # PDM scripts
+                if "tool" in data and "pdm" in data["tool"] and "scripts" in data["tool"]["pdm"]:
+                    for name, cmd in data["tool"]["pdm"]["scripts"].items():
+                        # PDM scripts can be string or dict, simplifying here
+                        if isinstance(cmd, str):
+                            scripts[name] = {
+                                "command": f"pdm run {name}",
+                                "description": "",  # PDM scripts don't have descriptions
+                                "options": [],  # Options not extracted from PDM
+                            }
+
+            except Exception:
+                pass
+
+        return scripts
 
     def collect_key_features(self) -> list[str]:
         """

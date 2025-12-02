@@ -62,6 +62,31 @@
 {%- endif %}
 {%- endif %}
 
+{% if scripts -%}
+## コマンド
+
+プロジェクトで利用可能なスクリプト:
+
+| コマンド | 説明 |
+| --- | --- |
+{% for name, script_info in scripts.items() %}
+| `{{ name }}` | {{ script_info.description if script_info.description else script_info.command }} |
+{% endfor %}
+
+{% for name, script_info in scripts.items() %}
+{% if script_info.options and script_info.options|length > 0 %}
+### `{{ name }}` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+{% for option in script_info.options %}
+| `{{ option.name }}` | {{ option.help }} |
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+{%- endif %}
+
 {% if troubleshooting -%}
 ## トラブルシューティング
 

@@ -147,6 +147,7 @@ class AgentsGenerator(BaseGenerator):
             "key_features": project_info.key_features or [],
             "architecture": self._generate_architecture(project_info),
             "troubleshooting": "",
+            "scripts": project_info.scripts,
         }
 
         # Jinja2テンプレートでレンダリング
