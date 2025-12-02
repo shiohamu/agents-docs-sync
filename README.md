@@ -5,52 +5,166 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-**agents-docs-sync は、プロジェクト内のエージェント設定を自動的に解析し、整形された Markdown ドキュメント（`AGENTS.md` など）へ同期する CLI ツールです。**
+> **IMPORTANT!!**
+>
+> まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 
-### 主な機能
-- **構成ファイルからデータ抽出**  
-  `docgen/models/agents.py` に定義されている Pydantic モデル (`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`) を用いて、YAML／JSON 等の設定を正確にパースします。  
-- **ドキュメント自動生成**  
-  抽出した構造化データから Markdown を生成し、既存ドキュメントと差分がある場合のみ更新することで無駄な書き換えを防ぎます。  
-- **CLI インターフェース**  
-  `agents-docs-sync --help` により使用方法・オプション一覧を即座に確認でき、スクリプトや CI パイプラインから簡単呼び出し可能です（例：`.github/workflows/docs.yml`）。  
-- **シンプルな統合**  
-  `pyproject.toml` の `[project.scripts]` に登録されているエントリポイント (`docgen.docgen:main`) を利用することで、Python 環境を持つ任意のマシンで即座に実行できます。  
+## プロジェクト構造
 
-### アーキテクチャ
 ```
-┌───────────────────────┐
-│  CLI (agents-docs-sync) │   ← pyproject.toml entry point  
-├─────────────┬───────────┤
-│ parser      │ generator │   ← docgen/docgen.py 内で実装  
-│             └───────────┘   
-│                                                    
-│   data models  (Pydantic) – docgen/models/agents.py    
-│                                                    
-└───────────────────────┘
+agents-docs-sync/
+ ├─ docgen/
+ │  ├─ archgen/
+ │  │  ├─ detectors/
+ │  │  │  └─ python_detector.py
+ │  │  └─ generators/
+ │  │     └─ mermaid_generator.py
+ │  ├─ collectors/
+ │  │  ├─ collector_utils.py
+ │  │  └─ project_info_collector.py
+ │  ├─ detectors/
+ │  │  ├─ configs/
+ │  │  │  ├─ go.toml
+ │  │  │  ├─ javascript.toml
+ │  │  │  ├─ python.toml
+ │  │  │  └─ typescript.toml
+ │  │  ├─ base_detector.py
+ │  │  ├─ detector_patterns.py
+ │  │  ├─ plugin_registry.py
+ │  │  └─ unified_detector.py
+ │  ├─ generators/
+ │  │  ├─ mixins/
+ │  │  │  ├─ llm_mixin.py
+ │  │  │  ├─ markdown_mixin.py
+ │  │  │  └─ template_mixin.py
+ │  │  ├─ parsers/
+ │  │  │  ├─ base_parser.py
+ │  │  │  ├─ generic_parser.py
+ │  │  │  ├─ js_parser.py
+ │  │  │  └─ python_parser.py
+ │  │  ├─ agents_generator.py
+ │  │  ├─ api_generator.py
+ │  │  ├─ base_generator.py
+ │  │  ├─ contributing_generator.py
+ │  │  └─ readme_generator.py
+ │  ├─ hooks/
+ │  │  ├─ tasks/
+ │  │  │  └─ base.py
+ │  │  ├─ config.py
+ │  │  └─ orchestrator.py
+ │  ├─ index/
+ │  │  └─ meta.json
+ │  ├─ models/
+ │  │  ├─ agents.py
+ │  │  ├─ config.py
+ │  │  └─ detector.py
+ │  ├─ prompts/
+ │  │  ├─ agents_prompts.toml
+ │  │  ├─ commit_message_prompts.toml
+ │  │  └─ readme_prompts.toml
+ │  ├─ rag/
+ │  │  ├─ embedder.py
+ │  │  ├─ indexer.py
+ │  │  ├─ retriever.py
+ │  │  └─ validator.py
+ │  ├─ utils/
+ │  │  ├─ llm/
+ │  │  │  ├─ base.py
+ │  │  │  └─ local_client.py
+ │  │  ├─ cache.py
+ │  │  ├─ exceptions.py
+ │  │  ├─ file_utils.py
+ │  │  └─ prompt_loader.py
+ │  ├─ config.toml
+ │  ├─ config_manager.py
+ │  ├─ docgen.py
+ │  └─ hooks.toml
+ ├─ docs/
+ ├─ scripts/
+ ├─ tests/
+ ├─ AGENTS.md
+ ├─ README.md
+ ├─ pyproject.toml
+ ├─ requirements-docgen.txt
+ └─ requirements-test.txt
 ```
-- **Parser**：設定ファイルを読み込み、`AgentsConfigSection`, `AgentsGenerationConfig` 等のモデルへ変換。  
-- **Generator**：各モデルから Markdown テンプレート（Jinja2 など）に埋め込んでドキュメント生成。差分検出は `git diff --name-only` を利用し、必要なファイルのみを書き込みます。
 
-### 開発・運用
-- **テスト**：pytest + coverage によりモデルと生成ロジックを網羅的に検証。  
-- **CI/CD 連携**：GitHub Actions の `agents-docs-sync` スクリプトで自動同期が可能です（設定ファイル変更時のみ実行）。  
 
-### 使用例
-```bash
-# インストール後の基本コマンド
-$ agents-docs-sync --config path/to/agents.yaml
 
-# ドキュメント確認用ヘルプ表示
-$ agents-docs-sync --help
+## アーキテクチャ
+
+```mermaid
+graph TB
+    %% Auto-generated architecture diagram
+
+    subgraph agents_docs_sync [fa:fa-python agents-docs-sync]
+        direction TB
+        subgraph docgen [docgen]
+            direction TB
+            docgen_collectors["collectors"]:::moduleStyle
+            subgraph docgen_utils [utils]
+                direction TB
+                docgen_utils_llm["llm"]:::moduleStyle
+            end
+            class docgen_utils moduleStyle
+            docgen_models["models"]:::moduleStyle
+            subgraph docgen_archgen [archgen]
+                direction TB
+                docgen_archgen_detectors["detectors"]:::moduleStyle
+                docgen_archgen_generators["generators"]:::moduleStyle
+            end
+            class docgen_archgen moduleStyle
+            docgen_detectors["detectors"]:::moduleStyle
+            subgraph docgen_generators [generators]
+                direction TB
+                docgen_generators_parsers["parsers"]:::moduleStyle
+                docgen_generators_mixins["mixins"]:::moduleStyle
+            end
+            class docgen_generators moduleStyle
+            subgraph docgen_rag [rag]
+                direction TB
+                docgen_rag_strategies["strategies"]:::moduleStyle
+            end
+            class docgen_rag moduleStyle
+        end
+        class docgen moduleStyle
+    end
+
+    docgen_collectors --> docgen_models
+    docgen_collectors --> docgen_utils
+    docgen_utils --> docgen_models
+    docgen_utils_llm --> docgen_models
+    docgen_archgen --> docgen_detectors
+    docgen_archgen --> docgen_generators
+    docgen_archgen --> docgen_models
+    docgen_archgen --> docgen_utils
+    docgen_archgen_detectors --> docgen_models
+    docgen_archgen_generators --> docgen_models
+    docgen_detectors --> docgen_utils
+    docgen_generators --> docgen_archgen
+    docgen_generators --> docgen_collectors
+    docgen_generators --> docgen_detectors
+    docgen_generators --> docgen_models
+    docgen_generators --> docgen_utils
+    docgen_generators_parsers --> docgen_detectors
+    docgen_generators_parsers --> docgen_models
+    docgen_generators_parsers --> docgen_utils
+    docgen_generators_mixins --> docgen_utils
+    docgen_rag --> docgen_utils
+    docgen_rag_strategies --> docgen_utils
+
+    classDef pythonStyle fill:#3776ab,stroke:#ffd43b,stroke-width:2px,color:#fff
+    classDef dockerStyle fill:#2496ed,stroke:#1d63ed,stroke-width:2px,color:#fff
+    classDef dbStyle fill:#336791,stroke:#6b9cd6,stroke-width:2px,color:#fff
+    classDef moduleStyle fill:#f9f9f9,stroke:#333,stroke-width:2px
 ```
 
-**まとめ**  
-`agents-docs-sync` は、エージェント関連設定をコードベースとドキュメントの両方で一貫性を保つために設計された軽量ツールです。Python の標準的なパッケージング・スクリプト機能と Pydantic モデルによる型安全さが組み合わされ、プロジェクト全体のドキュメント品質向上へ直接寄与します。
+## Services
 
-
-
-
+### agents-docs-sync
+- **Type**: python
+- **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
 ## 使用技術
 
@@ -143,4 +257,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-11-30 15:47:14*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-02 15:44:30*

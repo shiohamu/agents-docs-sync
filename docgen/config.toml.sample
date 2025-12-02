@@ -114,6 +114,13 @@ files = [
     "AGENTS.md",
 ]
 
+# アーキテクチャ生成設定
+[architecture]
+enabled = true
+output_dir = "docs/architecture"
+generator = "mermaid"  # "mermaid", "blockdiag", "matplotlib"
+image_formats = ["png"]  # blockdiag/matplotlib 使用時の画像形式
+
 # 除外設定
 [exclude]
 directories = [

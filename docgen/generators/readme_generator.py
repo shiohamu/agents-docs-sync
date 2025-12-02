@@ -144,6 +144,11 @@ class ReadmeGenerator(BaseGenerator):
 
     def _generate_architecture(self, project_info: ProjectInfo) -> str:
         """アーキテクチャを生成"""
+        # 設定ベースのアーキテクチャ図生成を試みる
+        arch_content = self._get_architecture_diagram_content()
+        if arch_content:
+            return arch_content
+
         if not self._should_use_llm():
             return ""
         return self._generate_content_with_llm("readme_prompts.toml", "architecture", project_info)
@@ -327,7 +332,7 @@ class ReadmeGenerator(BaseGenerator):
             "project_structure": self._format_project_structure(project_info.project_structure),
             # テンプレートモードではLLMを使用せず、データから取得した値のみ使用
             "key_features": project_info.key_features or [],
-            "architecture": "",
+            "architecture": self._generate_architecture(project_info),
             "troubleshooting": "",
         }
 

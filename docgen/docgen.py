@@ -135,6 +135,11 @@ class CommandLineInterface:
         parser.add_argument("--build-index", action="store_true", help="RAGインデックスをビルド")
         parser.add_argument("--use-rag", action="store_true", help="RAGを使用してドキュメント生成")
 
+        # アーキテクチャ生成オプション
+        parser.add_argument(
+            "--generate-arch", action="store_true", help="アーキテクチャ図を生成（Mermaid形式）"
+        )
+
         subparsers = parser.add_subparsers(dest="command", help="実行するコマンド")
 
         # commit-msg サブコマンド
@@ -215,6 +220,14 @@ class CommandLineInterface:
         # hooks コマンド
         if args.command == "hooks":
             return self._handle_hooks(args, project_root)
+
+        # アーキテクチャ生成コマンド
+        if args.generate_arch:
+            from .archgen.cli import generate_architecture
+
+            output_dir = project_root / "docs" / "architecture"
+            success = generate_architecture(project_root, output_dir)
+            return 0 if success else 1
 
         if args.detect_only:
             languages = self.docgen.detect_languages()

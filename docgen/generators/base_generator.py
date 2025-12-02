@@ -192,3 +192,58 @@ class BaseGenerator(
                 f"{self._get_document_type()}生成中にエラーが発生しました: {e}", exc_info=True
             )
             return False
+    def _get_architecture_diagram_content(self) -> str:
+        """アーキテクチャ図のコンテンツを取得"""
+        arch_config = self.config.get("architecture", {})
+
+        if not arch_config.get("enabled", False):
+            return ""
+
+        try:
+            # 遅延インポートで循環参照を回避
+            from ..archgen.renderer import ArchitectureRenderer
+            from ..archgen.scanner import ProjectScanner
+
+            # 出力ディレクトリの決定
+            output_dir_str = arch_config.get("output_dir", "docs/architecture")
+            output_dir = self.project_root / output_dir_str
+
+            # スキャナーとレンダラーの初期化
+            scanner = ProjectScanner(self.project_root)
+            manifest = scanner.scan()
+            self.logger.info(f"Architecture scan result: {len(manifest.services)} services detected")
+
+            renderer = ArchitectureRenderer(
+                generator_type=arch_config.get("generator", "mermaid"),
+                image_formats=arch_config.get("image_formats", ["png"]),
+            )
+
+            # レンダリング実行
+            generated_files = renderer.render(manifest, output_dir)
+            self.logger.info(f"Architecture render result: {generated_files}")
+
+            # Markdownファイルのパスを取得
+            markdown_path = generated_files.get("markdown")
+            if markdown_path and markdown_path.exists():
+                # Markdownファイルの内容を読み込む
+                content = markdown_path.read_text(encoding="utf-8")
+
+                # 最初のH1見出し（# で始まる行）を除去して返す
+                lines = content.splitlines()
+                # 最初の # で始まる行を見つけてスキップ
+                filtered_lines = []
+                found_title = False
+                for line in lines:
+                    if not found_title and line.strip().startswith("# "):
+                        found_title = True
+                        continue
+                    filtered_lines.append(line)
+
+                return "\n".join(filtered_lines).strip()
+
+            self.logger.warning(f"Architecture markdown file not found at {markdown_path}")
+            return ""
+
+        except Exception as e:
+            self.logger.warning(f"アーキテクチャ図の生成/取得に失敗しました: {e}", exc_info=True)
+            return ""

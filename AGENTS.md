@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-11-30 15:48:10
+自動生成日時: 2025-12-02 15:44:30
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,51 +12,6 @@
 <!-- MANUAL_END:description -->
 
 
-Python とシェルスクリプトで構築された **agents‑docs‑sync** は、エージェントの仕様書をコードベースから自動生成し、ドキュメントリポジトリへ同期するためのCLIツールです。  
-実行入口は `pyproject.toml` で定義されているスクリプト **agents-docs-sync**（同名シェルエイリアス）にあり、内部では `docgen.docgen:main()` が呼び出されています。
-
-### 技術スタック
-| 層 | 主な技術 |
-|----|----------|
-| CLI  | argparse / click (Python) |
-| 設定管理 | YAML/TOML + Pydantic（`docgen/models/agents.py` の `ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument` 等） |
-| テンプレートエンジン | Jinja2 で Markdown を生成 |
-| ビルド・CI | Bash スクリプト (例：`.github/workflows`) と GitHub Actions 用のヘルパー |
-| 実行環境 | Python3.8+、依存ライブラリは `poetry`/`pipenv` で管理 |
-
-### アーキテクチャ
-1. **設定読み込み**  
-   - CLI が受け取ったオプション（例：`--config path/to/config.yaml`, `--output docs/`) を解析し、Pydantic モデルへマッピング。  
-2. **バリデーション & 変換**  
-   - Pydantic により構造が正しいか検証され、不備は即座にエラーとして報告。`AgentsConfigSection` 等で各セクションの型安全性を保証。  
-3. **ドキュメント生成**  
-   - テンプレート（`.jinja2`）へモデルデータを渡し、Markdown 文字列を作成。 `AGENTS.md`, 各エージェント別ファイルなどが出力される。  
-4. **同期処理**  
-   - 出力先ディレクトリに既存ファイルと差分比較（`git diff --quiet` 等）し、変更のみコミット／プッシュするオプションを備えている。  
-
-### 主な機能
-| 機能 | 詳細 |
-|------|-----|
-| **自動ドキュメント生成** | 設定ファイルから `AGENTS.md` を含む全Markdownを一括生成し、フォーマットの統一性と再利用性を確保。 |
-| **設定バリデーション** | Pydantic により構造体を厳格に検証；不正なキーや型ミスは即時フィードバックで開発者へ通知。 |
-| **差分ベースの同期** | 既存ドキュメントと比較し、変更があった場合のみファイルを書き換え／コミットすることで無駄な更新を抑制。 |
-| **CLI オプション拡張性** | `--config`, `--output`, `--dry-run` 等のオプションで柔軟に動作モード切替が可能。 |
-| **CI/CD 連携** | シェルスクリプトや GitHub Actions のワークフローから呼び出し、PR 時自動生成・レビューを実現できる設計。 |
-
-### 実行例
-```bash
-# ヘルプ表示（RAG コンテキストに示された標準的な `--help`）
-agents-docs-sync --help
-
-# ドキュメントの同期 (設定ファイルはデフォルトで agents.yaml)
-agents-docs-sync -c config/agents.yml -o docs/
-```
-
-### まとめ
-- **Python** とシェルスクリプトを組み合わせた軽量 CLI。  
-- Pydantic モデルによる堅牢な設定管理とバリデーションでミスの早期検出。  
-- Jinja2 テンプレートにより Markdown を自動生成し、差分ベース同期で無駄を削減。  
-- CI/CD への統合が容易で、プロジェクト内ドキュメント管理の一元化と品質向上を実現します。
 **使用技術**: python, shell
 
 
@@ -64,6 +19,11 @@ agents-docs-sync -c config/agents.yml -o docs/
 ```
 agents-docs-sync/
  ├─ docgen/
+ │  ├─ archgen/
+ │  │  ├─ detectors/
+ │  │  │  └─ python_detector.py
+ │  │  └─ generators/
+ │  │     └─ mermaid_generator.py
  │  ├─ collectors/
  │  │  ├─ collector_utils.py
  │  │  └─ project_info_collector.py
@@ -137,6 +97,81 @@ agents-docs-sync/
 
 
 
+
+## アーキテクチャ
+
+```mermaid
+graph TB
+    %% Auto-generated architecture diagram
+
+    subgraph agents_docs_sync [fa:fa-python agents-docs-sync]
+        direction TB
+        subgraph docgen [docgen]
+            direction TB
+            docgen_collectors["collectors"]:::moduleStyle
+            subgraph docgen_utils [utils]
+                direction TB
+                docgen_utils_llm["llm"]:::moduleStyle
+            end
+            class docgen_utils moduleStyle
+            docgen_models["models"]:::moduleStyle
+            subgraph docgen_archgen [archgen]
+                direction TB
+                docgen_archgen_detectors["detectors"]:::moduleStyle
+                docgen_archgen_generators["generators"]:::moduleStyle
+            end
+            class docgen_archgen moduleStyle
+            docgen_detectors["detectors"]:::moduleStyle
+            subgraph docgen_generators [generators]
+                direction TB
+                docgen_generators_parsers["parsers"]:::moduleStyle
+                docgen_generators_mixins["mixins"]:::moduleStyle
+            end
+            class docgen_generators moduleStyle
+            subgraph docgen_rag [rag]
+                direction TB
+                docgen_rag_strategies["strategies"]:::moduleStyle
+            end
+            class docgen_rag moduleStyle
+        end
+        class docgen moduleStyle
+    end
+
+    docgen_collectors --> docgen_models
+    docgen_collectors --> docgen_utils
+    docgen_utils --> docgen_models
+    docgen_utils_llm --> docgen_models
+    docgen_archgen --> docgen_detectors
+    docgen_archgen --> docgen_generators
+    docgen_archgen --> docgen_models
+    docgen_archgen --> docgen_utils
+    docgen_archgen_detectors --> docgen_models
+    docgen_archgen_generators --> docgen_models
+    docgen_detectors --> docgen_utils
+    docgen_generators --> docgen_archgen
+    docgen_generators --> docgen_collectors
+    docgen_generators --> docgen_detectors
+    docgen_generators --> docgen_models
+    docgen_generators --> docgen_utils
+    docgen_generators_parsers --> docgen_detectors
+    docgen_generators_parsers --> docgen_models
+    docgen_generators_parsers --> docgen_utils
+    docgen_generators_mixins --> docgen_utils
+    docgen_rag --> docgen_utils
+    docgen_rag_strategies --> docgen_utils
+
+    classDef pythonStyle fill:#3776ab,stroke:#ffd43b,stroke-width:2px,color:#fff
+    classDef dockerStyle fill:#2496ed,stroke:#1d63ed,stroke-width:2px,color:#fff
+    classDef dbStyle fill:#336791,stroke:#6b9cd6,stroke-width:2px,color:#fff
+    classDef moduleStyle fill:#f9f9f9,stroke:#333,stroke-width:2px
+```
+
+## Services
+
+### agents-docs-sync
+- **Type**: python
+- **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
 
 ---
@@ -273,4 +308,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-11-30 15:48:10*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-02 15:44:30*

@@ -103,6 +103,32 @@ class RagConfig(BaseModel):
     exclude: RagExcludeConfig = Field(default_factory=RagExcludeConfig)
 
 
+class ArchitecturePythonConfig(BaseModel):
+    """Python architecture configuration."""
+
+    max_nodes: int = 400
+    collapse_packages: bool = True
+
+
+class ArchitectureJavascriptConfig(BaseModel):
+    """JavaScript architecture configuration."""
+
+    ignore_patterns: list[str] = Field(default_factory=lambda: ["**/node_modules/**"])
+
+
+class ArchitectureConfig(BaseModel):
+    """Architecture diagram generation configuration."""
+
+    enabled: bool = False
+    output_dir: str = "docs/architecture"
+    generator: str = "mermaid"
+    image_formats: list[str] = Field(default_factory=lambda: ["png"])
+    python: ArchitecturePythonConfig = Field(default_factory=ArchitecturePythonConfig)
+    javascript: ArchitectureJavascriptConfig = Field(
+        default_factory=ArchitectureJavascriptConfig
+    )
+
+
 class DocgenConfig(BaseModel):
     """Main configuration model for docgen."""
 
@@ -114,3 +140,4 @@ class DocgenConfig(BaseModel):
     cache: CacheConfig = Field(default_factory=CacheConfig)
     debug: DebugConfig = Field(default_factory=DebugConfig)
     rag: RagConfig = Field(default_factory=RagConfig)
+    architecture: ArchitectureConfig = Field(default_factory=ArchitectureConfig)

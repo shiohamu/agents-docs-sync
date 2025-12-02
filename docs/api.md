@@ -1,8 +1,361 @@
 # API ドキュメント
 
-自動生成日時: 2025-11-30 15:47:05
+自動生成日時: 2025-12-02 15:44:23
 
 ---
+
+## docgen/archgen/cli.py
+
+### generate_architecture
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def generate_architecture(project_root: Path, output_dir: Path) -> bool:
+```
+
+**説明**:
+
+アーキテクチャを生成
+
+Args:
+    project_root: プロジェクトルート
+    output_dir: 出力ディレクトリ
+
+*定義場所: docgen/archgen/cli.py:15*
+
+---
+
+### main
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def main():
+```
+
+**説明**:
+
+CLI エントリポイント
+
+*定義場所: docgen/archgen/cli.py:52*
+
+---
+
+
+## docgen/archgen/detectors/docker_detector.py
+
+### DockerDetector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DockerDetector:
+```
+
+**説明**:
+
+Docker 構成を検出
+
+*定義場所: docgen/archgen/detectors/docker_detector.py:11*
+
+---
+
+### detect
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect(self, project_root: Path) -> list[Service]:
+```
+
+*説明なし*
+
+*定義場所: docgen/archgen/detectors/docker_detector.py:14*
+
+---
+
+
+## docgen/archgen/detectors/python_detector.py
+
+### PythonDetector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class PythonDetector:
+```
+
+**説明**:
+
+Python プロジェクトを検出
+
+*定義場所: docgen/archgen/detectors/python_detector.py:11*
+
+---
+
+### detect
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect(self, project_root: Path) -> list[Service]:
+```
+
+*説明なし*
+
+*定義場所: docgen/archgen/detectors/python_detector.py:14*
+
+---
+
+
+## docgen/archgen/generators/mermaid_generator.py
+
+### MermaidGenerator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class MermaidGenerator:
+```
+
+**説明**:
+
+Mermaid.js形式でアーキテクチャ図を生成（依存なし）
+
+*定義場所: docgen/archgen/generators/mermaid_generator.py:11*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, manifest: ArchitectureManifest, output_dir: Path) -> Path:
+```
+
+**説明**:
+
+Mermaid形式のアーキテクチャ図を生成
+
+*定義場所: docgen/archgen/generators/mermaid_generator.py:23*
+
+---
+
+
+## docgen/archgen/models.py
+
+### Module
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class Module:
+```
+
+**説明**:
+
+モジュール/パッケージ
+
+*定義場所: docgen/archgen/models.py:12*
+
+---
+
+### Service
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class Service:
+```
+
+**説明**:
+
+個別サービス/コンポーネント
+
+*定義場所: docgen/archgen/models.py:22*
+
+---
+
+### ArchitectureManifest
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ArchitectureManifest:
+```
+
+**説明**:
+
+アーキテクチャマニフェスト
+
+*定義場所: docgen/archgen/models.py:34*
+
+---
+
+### to_yaml
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def to_yaml(self, path: Path) -> None:
+```
+
+**説明**:
+
+YAML形式で保存
+
+*定義場所: docgen/archgen/models.py:42*
+
+---
+
+### from_yaml
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def from_yaml(cls, path: Path) -> 'ArchitectureManifest':
+```
+
+**説明**:
+
+YAML形式から読み込み
+
+*定義場所: docgen/archgen/models.py:49*
+
+---
+
+
+## docgen/archgen/renderer.py
+
+### ArchitectureRenderer
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ArchitectureRenderer:
+```
+
+**説明**:
+
+アーキテクチャ図のレンダリングを管理
+
+*定義場所: docgen/archgen/renderer.py:11*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, generator_type: str, image_formats: list[str] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    generator_type: 生成器の種類 ("mermaid", "blockdiag", "matplotlib")
+    image_formats: 画像出力形式のリスト
+
+*定義場所: docgen/archgen/renderer.py:14*
+
+---
+
+### render
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def render(self, manifest: ArchitectureManifest, output_dir: Path) -> dict[str, Path]:
+```
+
+**説明**:
+
+図を生成
+
+Args:
+    manifest: アーキテクチャマニフェスト
+    output_dir: 出力ディレクトリ
+
+Returns:
+    生成されたファイルのパス辞書
+
+*定義場所: docgen/archgen/renderer.py:28*
+
+---
+
+
+## docgen/archgen/scanner.py
+
+### ProjectScanner
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ProjectScanner:
+```
+
+**説明**:
+
+プロジェクトをスキャンしてアーキテクチャを抽出
+
+*定義場所: docgen/archgen/scanner.py:12*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+*説明なし*
+
+*定義場所: docgen/archgen/scanner.py:15*
+
+---
+
+### scan
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def scan(self) -> ArchitectureManifest:
+```
+
+**説明**:
+
+プロジェクトをスキャン
+
+*定義場所: docgen/archgen/scanner.py:22*
+
+---
+
 
 ## docgen/collectors/coding_standards_collector.py
 
@@ -1627,7 +1980,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:617*
+*定義場所: docgen/docgen.py:630*
 
 ---
 
@@ -3824,6 +4177,57 @@ RAG configuration model.
 
 ---
 
+### ArchitecturePythonConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ArchitecturePythonConfig:
+```
+
+**説明**:
+
+Python architecture configuration.
+
+*定義場所: docgen/models/config.py:106*
+
+---
+
+### ArchitectureJavascriptConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ArchitectureJavascriptConfig:
+```
+
+**説明**:
+
+JavaScript architecture configuration.
+
+*定義場所: docgen/models/config.py:113*
+
+---
+
+### ArchitectureConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ArchitectureConfig:
+```
+
+**説明**:
+
+Architecture diagram generation configuration.
+
+*定義場所: docgen/models/config.py:119*
+
+---
+
 ### DocgenConfig
 
 **型**: `class`
@@ -3837,7 +4241,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:106*
+*定義場所: docgen/models/config.py:132*
 
 ---
 
