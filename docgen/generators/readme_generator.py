@@ -8,7 +8,7 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..models.readme import ReadmeDocument
-from ..utils.markdown_utils import get_current_timestamp
+from ..utils.markdown_utils import DESCRIPTION_START, get_current_timestamp
 from ..utils.prompt_loader import PromptLoader
 from .base_generator import BaseGenerator
 
@@ -214,7 +214,9 @@ class ReadmeGenerator(BaseGenerator):
 
     def _get_project_overview_section(self, content: str) -> str:
         """プロジェクト概要セクションを取得"""
-        return self._extract_description_section(content)
+        if DESCRIPTION_START in content:
+            return self._extract_description_section(content)
+        return content
 
     def _collect_project_description(self) -> str:
         """プロジェクト説明を収集"""
@@ -317,9 +319,8 @@ class ReadmeGenerator(BaseGenerator):
         # コンテキストの準備
         context = {
             "project_name": self.project_root.name or "agents-docs-sync",
-            "description_section": ""
-            if manual_sections.get("description")
-            else self._get_project_overview_section(project_info.description),
+            "notice_section": "",  # 手動セクションは自動マージされるため、ここでは空にする（重複防止）
+            "description_section": self._get_project_overview_section(project_info.description),
             "technologies": self._format_languages(),
             "dependencies_section": self._format_dependencies(),
             "setup_section": manual_sections.get("setup", "").strip()
@@ -360,16 +361,6 @@ class ReadmeGenerator(BaseGenerator):
         READMEではdescriptionセクションを置き換える
         """
         import re
-
-        # パターン0: 手動セクション内にコンテンツがある場合はスキップ
-        pattern_inside_tags = (
-            r"(<!-- MANUAL_START:description -->)(.+?)(<!-- MANUAL_END:description -->)"
-        )
-        if re.search(pattern_inside_tags, content, flags=re.DOTALL):
-            self.logger.info(
-                "手動記述された概要セクションを検出しました。LLMによる更新をスキップします。"
-            )
-            return content
 
         # パターン1: 手動セクションマーカーがある場合 (中身が空または空白のみ)
         # MANUAL_START:description ... MANUAL_END:description の後から、次のセクション（## 使用技術 または MANUAL_START:architecture）の前まで

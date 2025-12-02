@@ -6,7 +6,7 @@ Collects test commands from various configuration files.
 from pathlib import Path
 from typing import Any
 
-from ..utils.file_utils import safe_read_file, safe_read_json
+from ..utils.file_utils import safe_read_json
 from ..utils.logger import get_logger
 from .collector_utils import BuildCommandCollector
 

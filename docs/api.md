@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-02 17:57:23
+自動生成日時: 2025-12-02 19:00:01
 
 ---
 
@@ -686,7 +686,7 @@ Args:
 Returns:
     List of option dicts with 'name' and 'help' keys
 
-*定義場所: docgen/collectors/command_help_extractor.py:111*
+*定義場所: docgen/collectors/command_help_extractor.py:115*
 
 ---
 
@@ -851,7 +851,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:206*
+*定義場所: docgen/collectors/project_info_collector.py:210*
 
 ---
 
@@ -871,7 +871,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:216*
+*定義場所: docgen/collectors/project_info_collector.py:220*
 
 ---
 
@@ -891,7 +891,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:225*
+*定義場所: docgen/collectors/project_info_collector.py:229*
 
 ---
 
@@ -911,7 +911,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:234*
+*定義場所: docgen/collectors/project_info_collector.py:238*
 
 ---
 
@@ -931,7 +931,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:243*
+*定義場所: docgen/collectors/project_info_collector.py:247*
 
 ---
 
@@ -953,7 +953,7 @@ StructureAnalyzerに委譲して詳細な構造分析を実行
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:264*
+*定義場所: docgen/collectors/project_info_collector.py:268*
 
 ---
 
@@ -973,7 +973,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/project_info_collector.py:275*
+*定義場所: docgen/collectors/project_info_collector.py:279*
 
 ---
 

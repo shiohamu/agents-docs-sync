@@ -1,10 +1,11 @@
-
+import importlib.metadata
 import sys
 from unittest.mock import MagicMock
-import importlib.metadata
+
 importlib.metadata.version = MagicMock(return_value="0.0.0")
 
 from pathlib import Path
+
 sys.path.append("/home/user/projects/hamu/agents-docs-sync")
 
 from docgen.collectors.project_info_collector import ProjectInfoCollector

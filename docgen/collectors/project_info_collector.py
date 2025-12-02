@@ -179,7 +179,11 @@ class ProjectInfoCollector:
                         }
 
                 # Poetry scripts
-                if "tool" in data and "poetry" in data["tool"] and "scripts" in data["tool"]["poetry"]:
+                if (
+                    "tool" in data
+                    and "poetry" in data["tool"]
+                    and "scripts" in data["tool"]["poetry"]
+                ):
                     for name, cmd in data["tool"]["poetry"]["scripts"].items():
                         scripts[name] = {
                             "command": f"poetry run {name}",
@@ -279,21 +283,7 @@ class ProjectInfoCollector:
         Returns:
             プロジェクトの説明文（見つからない場合はNone）
         """
-        # 1. READMEから説明を取得
-        for readme_file in self.README_FILES:
-            readme_path = self.project_root / readme_file
-            if readme_path.exists():
-                try:
-                    content = readme_path.read_text(encoding="utf-8")
-                    # 最初の段落を取得（簡易的）
-                    lines = content.split("\n")
-                    for line in lines:
-                        if line.strip() and not line.startswith("#"):
-                            return line.strip()
-                except Exception:
-                    pass
-
-        # 2. pyproject.tomlから説明を取得
+        # 1. pyproject.tomlから説明を取得
         pyproject = self.project_root / self.PYPROJECT_TOML
         if pyproject.exists():
             try:
@@ -319,6 +309,17 @@ class ProjectInfoCollector:
                 except Exception:
                     pass
 
+        # 2. package.jsonから説明を取得
+        package_json = self.project_root / self.PACKAGE_JSON
+        if package_json.exists():
+            try:
+                with open(package_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "description" in data:
+                        return data["description"]
+            except Exception:
+                pass
+
         # 3. setup.pyから説明を取得
         setup_py = self.project_root / self.SETUP_PY
         if setup_py.exists():
@@ -330,15 +331,24 @@ class ProjectInfoCollector:
             except Exception:
                 pass
 
-        # 4. package.jsonから説明を取得
-        package_json = self.project_root / self.PACKAGE_JSON
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "description" in data:
-                        return data["description"]
-            except Exception:
-                pass
+        # 4. READMEから説明を取得 (フォールバック)
+        for readme_file in self.README_FILES:
+            readme_path = self.project_root / readme_file
+            if readme_path.exists():
+                try:
+                    content = readme_path.read_text(encoding="utf-8")
+                    # 最初の段落を取得（簡易的）
+                    lines = content.split("\n")
+                    for line in lines:
+                        line_stripped = line.strip()
+                        if (
+                            line_stripped
+                            and not line_stripped.startswith("#")
+                            and not line_stripped.startswith("<!--")
+                            and not line_stripped.startswith(">")
+                        ):
+                            return line_stripped
+                except Exception:
+                    pass
 
         return None

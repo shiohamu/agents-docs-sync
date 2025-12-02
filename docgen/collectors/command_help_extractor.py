@@ -4,8 +4,8 @@ Extracts help text and descriptions from Python CLI entry points
 """
 
 import importlib
-import sys
 from pathlib import Path
+import sys
 from typing import Any
 
 from ..utils.logger import get_logger
@@ -73,17 +73,19 @@ class CommandHelpExtractor:
             # Look for common patterns in the module
             # 1. Check if module has a CommandLineInterface class with a run method
             if hasattr(module, "CommandLineInterface"):
-                cli_class = getattr(module, "CommandLineInterface")
+                cli_class = module.CommandLineInterface
                 if hasattr(cli_class, "run"):
                     # Try to extract from the run method source
                     import inspect
+
                     source = inspect.getsource(cli_class.run)
 
                     # Look for argparse.ArgumentParser(description="...")
                     import re
+
                     match = re.search(
                         r'argparse\.ArgumentParser\s*\([^)]*description\s*=\s*["\']([^"\']+)["\']',
-                        source
+                        source,
                     )
                     if match:
                         return match.group(1)
@@ -91,12 +93,14 @@ class CommandHelpExtractor:
             # 2. Check for main() function
             if hasattr(module, "main"):
                 import inspect
+
                 source = inspect.getsource(module.main)
 
                 import re
+
                 match = re.search(
                     r'argparse\.ArgumentParser\s*\([^)]*description\s*=\s*["\']([^"\']+)["\']',
-                    source
+                    source,
                 )
                 if match:
                     return match.group(1)
@@ -108,7 +112,9 @@ class CommandHelpExtractor:
             return ""
 
     @staticmethod
-    def extract_options_from_entry_point(entry_point: str, project_root: Path | None = None) -> list[dict[str, str]]:
+    def extract_options_from_entry_point(
+        entry_point: str, project_root: Path | None = None
+    ) -> list[dict[str, str]]:
         """
         Extract command options from a Python entry point
 
@@ -166,14 +172,16 @@ class CommandHelpExtractor:
             # Look for common patterns in the module
             # 1. Check if module has a CommandLineInterface class with a run method
             if hasattr(module, "CommandLineInterface"):
-                cli_class = getattr(module, "CommandLineInterface")
+                cli_class = module.CommandLineInterface
                 if hasattr(cli_class, "run"):
                     # Try to extract from the run method source
                     import inspect
+
                     source = inspect.getsource(cli_class.run)
 
                     # Look for parser.add_argument(...) calls
                     import re
+
                     # Pattern to match: parser.add_argument("--option", ..., help="description", ...)
                     # or parser.add_argument("option", ..., help="description", ...)
                     pattern = r'parser\.add_argument\(\s*["\']([^"\']+)["\'][^)]*help\s*=\s*["\']([^"\']+)["\']'
@@ -181,29 +189,25 @@ class CommandHelpExtractor:
 
                     for option_name, help_text in matches:
                         # Skip version action as it's auto-handled
-                        if 'version' in option_name:
+                        if "version" in option_name:
                             continue
-                        options.append({
-                            "name": option_name,
-                            "help": help_text
-                        })
+                        options.append({"name": option_name, "help": help_text})
 
             # 2. Check for main() function
             if not options and hasattr(module, "main"):
                 import inspect
+
                 source = inspect.getsource(module.main)
 
                 import re
+
                 pattern = r'parser\.add_argument\(\s*["\']([^"\']+)["\'][^)]*help\s*=\s*["\']([^"\']+)["\']'
                 matches = re.findall(pattern, source)
 
                 for option_name, help_text in matches:
-                    if 'version' in option_name:
+                    if "version" in option_name:
                         continue
-                    options.append({
-                        "name": option_name,
-                        "help": help_text
-                    })
+                    options.append({"name": option_name, "help": help_text})
 
             return options
 

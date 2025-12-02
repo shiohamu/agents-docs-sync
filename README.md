@@ -1,91 +1,71 @@
 # agents-docs-sync
 
-<!-- MANUAL_START:description -->
+<!-- MANUAL_START:notice -->
 > **IMPORTANT!!**
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
+<!-- MANUAL_END:notice -->
+
+
+<!-- MANUAL_START:description -->
+
 <!-- MANUAL_END:description -->
+Python とシェルスクリプトで構成された **agents‑docs-sync** は、リポジトリへコミットが行われるたびに自動的に以下を実施する CI パイプラインです。  
+- **テストの走査（pytest）**：コード品質と機能保証を高速かつ継続的に検証します。  
+- **ドキュメント生成**：`jinja2` テンプレートエンジンで `docgen/models/agents.py` に定義された Pydantic モデル（`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument` など）を用い、プロジェクト全体の構造と設定情報から整形済み Markdown を作成。  
+- **AGENTS.md の自動更新**：生成したメタデータを `agents-docs-sync --help` によって確認できる CLI エントリーポイント（`pyproject.toml` で定義）により、最新の状態へ書き換えます。
 
+---
 
-## プロジェクト構造
+### アーキテクチャ概要
 
+| コンポーネント | 機能 | 主な依存 |
+|-----------------|------|----------|
+| `docgen.docgen:main`（CLI） | コマンドラインからパイプラインを起動、設定ファイル読み込み・バリデーション。 | pydantic, httpx, ruff |
+| ドキュメント生成エンジン | Jinja2 テンプレートで Markdown を構築し `AGENTS.md` へ出力。 | jinja2, yaml (pyyaml) |
+| 自動アーキテクチャ図作成（LLM 非使用） | プロジェクトディレクトリを解析して YAML/Graphviz の形に変換、図として保存。 | hnswlib, sentence-transformers, torch |
+| テスト実行サブシステム | `pytest`, `pytest-cov` でテスト走査・カバレッジ計算。 | pytest, pytest-mock |
+
+---
+
+### 主な機能
+
+- **CI トリガー**：GitHub Actions / GitLab CI 等の Webhook によりコミット時に自動起動。
+- **設定管理**  
+  - `CONFIG_GUIDE.md` と `docs/api.md` を参照して、YAML/JSON の構成を定義。  
+  - `agents_docs_sync hook install` コマンドで必要なフック（pre‑commit, post‑push 等）をインストール可能。
+- **ドキュメント統合**  
+  - 各モジュールの docstring を抽出し、構造化モデルへ変換。  
+  - `AGENTS.md` は単一ソースで管理されるため、手動更新不要。
+- **品質保証**  
+  - コードスタイルチェック（ruff）と型安全性確認（pydantic バリデーション）。  
+  - カバレッジが一定値を下回った場合はビルド失敗に設定可能。
+
+---
+
+### 技術的ハイライト
+
+- **Pythonic モデル設計**：Pydantic を用いた `ProjectOverview` 等のクラスで構成情報と文書化データを一元管理。  
+- **LLM フリー アーキテクチャ図生成**：プロジェクトファイルパターンから自動的に矢印付き UML 風 Diagram（Graphviz）へ変換し、CI のビルド出力として添付。  
+- **CLI スクリプト統合**：`pyproject.toml` に `agents_docs_sync = "docgen.docgen:main"` と記述して、システム全体を簡潔に呼び出せるよう設計。
+
+---
+
+### 使い方の流れ（例）
+
+```bash
+# クローン & 初期セットアップ
+git clone https://github.com/your-org/agents-docs-sync.git
+cd agents-docs-sync
+
+# フックインストール (pre‑commit 等)
+agents_docs_sync hook install
+
+# コミット時に自動でテスト・ドキュメント生成＆AGENTS.md更新が実行される
+git commit -m "Add new feature"
 ```
-agents-docs-sync/
- ├─ docgen/
- │  ├─ archgen/
- │  │  ├─ detectors/
- │  │  │  └─ python_detector.py
- │  │  └─ generators/
- │  │     └─ mermaid_generator.py
- │  ├─ collectors/
- │  │  ├─ collector_utils.py
- │  │  └─ project_info_collector.py
- │  ├─ detectors/
- │  │  ├─ configs/
- │  │  │  ├─ go.toml
- │  │  │  ├─ javascript.toml
- │  │  │  ├─ python.toml
- │  │  │  └─ typescript.toml
- │  │  ├─ base_detector.py
- │  │  ├─ detector_patterns.py
- │  │  ├─ plugin_registry.py
- │  │  └─ unified_detector.py
- │  ├─ generators/
- │  │  ├─ mixins/
- │  │  │  ├─ llm_mixin.py
- │  │  │  ├─ markdown_mixin.py
- │  │  │  └─ template_mixin.py
- │  │  ├─ parsers/
- │  │  │  ├─ base_parser.py
- │  │  │  ├─ generic_parser.py
- │  │  │  ├─ js_parser.py
- │  │  │  └─ python_parser.py
- │  │  ├─ agents_generator.py
- │  │  ├─ api_generator.py
- │  │  ├─ base_generator.py
- │  │  ├─ contributing_generator.py
- │  │  └─ readme_generator.py
- │  ├─ hooks/
- │  │  ├─ tasks/
- │  │  │  └─ base.py
- │  │  ├─ config.py
- │  │  └─ orchestrator.py
- │  ├─ index/
- │  │  └─ meta.json
- │  ├─ models/
- │  │  ├─ agents.py
- │  │  ├─ config.py
- │  │  └─ detector.py
- │  ├─ prompts/
- │  │  ├─ agents_prompts.toml
- │  │  ├─ commit_message_prompts.toml
- │  │  └─ readme_prompts.toml
- │  ├─ rag/
- │  │  ├─ embedder.py
- │  │  ├─ indexer.py
- │  │  ├─ retriever.py
- │  │  └─ validator.py
- │  ├─ utils/
- │  │  ├─ llm/
- │  │  │  ├─ base.py
- │  │  │  └─ local_client.py
- │  │  ├─ cache.py
- │  │  ├─ exceptions.py
- │  │  ├─ file_utils.py
- │  │  └─ prompt_loader.py
- │  ├─ config.toml
- │  ├─ config_manager.py
- │  ├─ docgen.py
- │  └─ hooks.toml
- ├─ docs/
- ├─ scripts/
- ├─ tests/
- ├─ AGENTS.md
- ├─ README.md
- ├─ pyproject.toml
- ├─ requirements-docgen.txt
- └─ requirements-test.txt
-```
+
+これらの機能を組み合わせることで、**コード変更と文書化を同一リポジトリー内でシームレスに同期させる開発フロー** を提供します。
 
 
 
@@ -268,42 +248,7 @@ uv run pytest tests/ -v --tb=short
 | コマンド | 説明 |
 | --- | --- |
 
-| `agents-docs-sync` | 汎用ドキュメント自動生成システム |
-
 | `agents_docs_sync` | 汎用ドキュメント自動生成システム |
-
-
-
-
-### `agents-docs-sync` のオプション
-
-| オプション | 説明 |
-| --- | --- |
-
-| `--config` | 設定ファイルのパス |
-
-| `--detect-only` | 言語検出のみ実行 |
-
-| `--no-api-doc` | APIドキュメントを生成しない |
-
-| `--no-readme` | READMEを更新しない |
-
-| `--build-index` | RAGインデックスをビルド |
-
-| `--use-rag` | RAGを使用してドキュメント生成 |
-
-| `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
-
-| `hook_name` | フック名（指定しない場合は全て） |
-
-| `hook_name` | フック名（指定しない場合は全て） |
-
-| `hook_name` | 実行するフック名 |
-
-| `hook_args` | フック引数 |
-
-| `--force` | 既存ファイルを強制上書き |
-
 
 
 
@@ -347,4 +292,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-02 17:57:32*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-02 19:00:09*

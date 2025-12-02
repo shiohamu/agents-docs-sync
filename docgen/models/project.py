@@ -18,5 +18,5 @@ class ProjectInfo(BaseModel):
     key_features: list[str] | None = Field(default=None, description="主要機能")
     scripts: dict[str, dict[str, Any]] = Field(
         default_factory=dict,
-        description="実行可能なスクリプト (name -> {command, description, options})"
+        description="実行可能なスクリプト (name -> {command, description, options})",
     )
