@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-02 15:44:30
+自動生成日時: 2025-12-02 16:56:50
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,6 +12,65 @@
 <!-- MANUAL_END:description -->
 
 
+- **目的**  
+  `agents-docs-sync` は、Python/シェルベースのプロジェクトでコミットごとに自動的にテストを実行し、ドキュメント（Markdown）やアーキテクチャ図を生成・更新するパイプラインです。AGENTS.md などの主要な技術文書が常に最新状態になるよう設計されています。
+
+- **CLI エントリポイント**  
+  ```bash
+  agents-docs-sync --help   # ヘルプ表示（docgen.docgen:main が実行）
+  ```
+  `agents_docs_sync` の別名も登録されているため、スクリプト呼び出しは柔軟に選べます。
+
+- **主要コンポーネント**  
+  | コンポーネント | 概要 |
+  |-----------------|------|
+  | *docgen.docgen* | CLI ハンドラ。`ProjectOverview`, `AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument` 等の Pydantic モデルをロードし、Jinja2 テンプレートで Markdown を生成します。 |
+  | *auto_architecture_generator* | LLM を使用せずにプロジェクト構造から自動的にアーキテクチャ図（SVG/PNG）を作成するユーティリティです。`docs/architecture_diagram.md` に記載されているようなパイプラインの一部として実行されます。 |
+  | *hooks*          | `agents_docs_sync hook install` コマンドで Git の pre‑commit/post‑merge フックを自動登録し、CI/CD スクリプトと同様にローカルでもドキュメント同期が可能です。 |
+
+- **アーキテクチャ構成**  
+  - **入力**：ソースコード（Python, Shell）＋ `architecture_manifest.yml` 等の設定ファイル
+  - **処理フロー**  
+    1. コミット検知 → テスト実行 (`pytest`, `coverage`)  
+    2. ソース構造解析 → アーキテクチャ図生成（hnswlib + sentence‑transformers を使った類似度検索）  
+    3. LLM（Anthropic/OpenAI, outlines）で自然言語要約・説明を作成  
+    4. Jinja2 テンプレートにデータバインド → AGENTS.md、docs/*.md 作成/更新
+  - **出力**：`AGENTS.md`, `docs/*.{md,png}`
+
+- **主要ライブラリとその役割**
+  | ライブラリ | 主な用途 |
+  |------------|----------|
+  | anthropic, openai | LLM API 呼び出し（要約・説明生成） |
+  | outlines          | 大規模テキスト生成のテンプレート化 |
+  | sentence‑transformers + hnswlib | コード片やドキュメント間で類似度検索を行い、関連情報を自動抽出 |
+  | httpx             | API 通信（LLM, 外部サービス）|
+  | jinja2            | Markdown テンプレートエンジン |
+  | pydantic          | 設定・データモデルのバリデーション |
+  | pytest / pytest‑cov| 単体テストとカバレッジ測定 |
+  | ruff              | 静的コード解析（フォーマット/品質）|
+  | torch             | 機械学習バックエンド (sentence-transformers) |
+
+- **開発・CI 手順**  
+  ```bash
+  # 開発環境構築
+  poetry install
+
+  # テスト実行とカバレッジ確認
+  pytest --cov=docgen
+
+  # ドキュメント生成（ローカル）
+  agents-docs-sync generate
+
+  # Git フックのインストール (pre‑commit 等)
+  agents_docs_sync hook install
+  ```
+
+- **拡張性**  
+  - Pydantic モデル (`ProjectOverview`, `AgentsConfigSection` …) を追加・修正するだけで、生成されるドキュメント構造を柔軟に変更できます。  
+  - テンプレートは Jinja2 によって任意の Markdown フォーマットへ容易にカスタマイズ可能です。  
+
+- **まとめ**  
+  `agents-docs-sync` は CI/CD パイプラインとローカル開発フローをシームレスにつなぎ、ドキュメント作成・更新を完全自動化します。LLM を活用した自然言語生成からアーキテクチャ図のコードベース解析まで、多様なツールを統合しつつも「構造的に管理」できる設計が特徴です。
 **使用技術**: python, shell
 
 
@@ -100,6 +159,8 @@ agents-docs-sync/
 
 ## アーキテクチャ
 
+<!-- MANUAL_START:architecture -->
+<!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
     %% Auto-generated architecture diagram
@@ -308,4 +369,4 @@ go test ./...
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-02 15:44:30*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-02 16:56:50*

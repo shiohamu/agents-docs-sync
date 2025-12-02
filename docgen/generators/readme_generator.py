@@ -317,9 +317,9 @@ class ReadmeGenerator(BaseGenerator):
         # コンテキストの準備
         context = {
             "project_name": self.project_root.name or "agents-docs-sync",
-            "description_section": manual_sections.get("description", "").strip()
-            or project_info.description
-            or self._collect_project_description(),
+            "description_section": ""
+            if manual_sections.get("description")
+            else self._get_project_overview_section(project_info.description),
             "technologies": self._format_languages(),
             "dependencies_section": self._format_dependencies(),
             "setup_section": manual_sections.get("setup", "").strip()
@@ -327,12 +327,14 @@ class ReadmeGenerator(BaseGenerator):
             "usage_section": manual_sections.get("usage", ""),
             "build_commands": self._format_commands(project_info.build_commands),
             "test_commands": self._format_commands(project_info.test_commands),
-            "other_section": manual_sections.get("other", ""),
+            "other_section": "" if manual_sections.get("other") else "",
             "footer": self._generate_footer(),
             "project_structure": self._format_project_structure(project_info.project_structure),
             # テンプレートモードではLLMを使用せず、データから取得した値のみ使用
             "key_features": project_info.key_features or [],
-            "architecture": self._generate_architecture(project_info),
+            "architecture": ""
+            if manual_sections.get("architecture")
+            else self._generate_architecture(project_info),
             "troubleshooting": "",
         }
 
@@ -358,9 +360,19 @@ class ReadmeGenerator(BaseGenerator):
         """
         import re
 
-        # パターン1: 手動セクションマーカーがある場合
-        # MANUAL_START:description ... MANUAL_END:description の後から、次のセクション（## 使用技術など）の前まで
-        pattern_with_markers = r"(<!-- MANUAL_START:description -->\s*<!-- MANUAL_END:description -->\s*)(.*?)(\s*## 使用技術)"
+        # パターン0: 手動セクション内にコンテンツがある場合はスキップ
+        pattern_inside_tags = (
+            r"(<!-- MANUAL_START:description -->)(.+?)(<!-- MANUAL_END:description -->)"
+        )
+        if re.search(pattern_inside_tags, content, flags=re.DOTALL):
+            self.logger.info(
+                "手動記述された概要セクションを検出しました。LLMによる更新をスキップします。"
+            )
+            return content
+
+        # パターン1: 手動セクションマーカーがある場合 (中身が空または空白のみ)
+        # MANUAL_START:description ... MANUAL_END:description の後から、次のセクション（## 使用技術 または MANUAL_START:architecture）の前まで
+        pattern_with_markers = r"(<!-- MANUAL_START:description -->\s*<!-- MANUAL_END:description -->\s*)(.*?)(\s*(?:## 使用技術|<!-- MANUAL_START:architecture -->))"
 
         if re.search(pattern_with_markers, content, flags=re.DOTALL):
             replacement = r"\1" + new_overview + r"\3"

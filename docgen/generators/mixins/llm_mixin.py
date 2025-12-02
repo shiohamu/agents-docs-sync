@@ -248,3 +248,60 @@ class LLMMixin:
                 info_parts.append(f"Dependencies: {', '.join(deps[:20])}...")  # Limit to 20
 
         return "\n".join(info_parts)
+
+    def _generate_content_with_llm(
+        self, prompt_file: str, prompt_name: str, project_info: ProjectInfo
+    ) -> str:
+        """
+        LLMを使用して特定のコンテンツを生成
+
+        Args:
+            prompt_file: プロンプトファイル名
+            prompt_name: プロンプト名
+            project_info: プロジェクト情報
+
+        Returns:
+            生成されたコンテンツ
+        """
+        try:
+            # LLMクライアントを取得
+            client = self._get_llm_client_with_fallback()
+
+            if not client:
+                self.logger.warning(
+                    f"LLMクライアントの作成に失敗しました。{prompt_name}の生成をスキップします。"
+                )
+                return ""
+
+            self.logger.info(f"LLMを使用して{prompt_name}を生成中...")
+
+            # RAGコンテキストを取得
+            rag_context = ""
+            if self.config.get("rag", {}).get("enabled", False):
+                query = f"{prompt_name} for {self.project_root.name}"
+                rag_context = self._get_rag_context(query)
+
+            # プロンプト作成
+            from ..utils.prompt_loader import PromptLoader
+
+            if rag_context:
+                prompt = PromptLoader.load_prompt(
+                    prompt_file,
+                    f"{prompt_name}_with_rag",
+                    project_info=self._format_project_info_for_prompt(project_info),
+                    rag_context=rag_context,
+                )
+            else:
+                prompt = PromptLoader.load_prompt(
+                    prompt_file,
+                    prompt_name,
+                    project_info=self._format_project_info_for_prompt(project_info),
+                )
+
+            # 生成
+            response = client.generate(prompt)
+            return self._clean_llm_output(response)
+
+        except Exception as e:
+            self.logger.warning(f"{prompt_name}の生成中にエラーが発生しました: {e}")
+            return ""

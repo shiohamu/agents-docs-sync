@@ -5,7 +5,7 @@ Python プロジェクト検出器
 from pathlib import Path
 import tomllib
 
-from ..models import Service, Module
+from ..models import Module, Service
 
 
 class PythonDetector:
@@ -31,13 +31,12 @@ class PythonDetector:
 
         # 重複を除去
         if services:
-            services[0].dependencies = sorted(list(set(services[0].dependencies)))
+            services[0].dependencies = sorted(set(services[0].dependencies))
 
         return services
 
     def _scan_modules(self, project_root: Path) -> list[Module]:
         """プロジェクト内のモジュールをスキャン"""
-        import ast
 
         modules = []
         # プロジェクトルート直下のディレクトリを探索（パッケージのみ）
@@ -53,7 +52,9 @@ class PythonDetector:
 
         return modules
 
-    def _scan_package(self, path: Path, project_root: Path, depth: int = 0, max_depth: int = 2) -> Module:
+    def _scan_package(
+        self, path: Path, project_root: Path, depth: int = 0, max_depth: int = 2
+    ) -> Module:
         """パッケージを再帰的にスキャン（最大深度制限付き）"""
 
         submodules = []
@@ -68,7 +69,7 @@ class PythonDetector:
                 path=path.relative_to(project_root),
                 is_package=True,
                 submodules=[],
-                dependencies=sorted(list(deps))
+                dependencies=sorted(deps),
             )
 
         # パッケージ内のサブパッケージのみをスキャン（個別ファイルは無視）
@@ -90,7 +91,7 @@ class PythonDetector:
             path=path.relative_to(project_root),
             is_package=True,
             submodules=submodules,
-            dependencies=sorted(list(dependencies))
+            dependencies=sorted(dependencies),
         )
 
     def _collect_package_dependencies(self, package_path: Path, project_root: Path) -> set[str]:
@@ -106,7 +107,15 @@ class PythonDetector:
 
         # プロジェクトのトップレベルパッケージ（docgen）の直下にあるパッケージ一覧
         # これらが認識すべき内部パッケージ
-        docgen_packages = {"collectors", "utils", "models", "archgen", "detectors", "generators", "rag"}
+        docgen_packages = {
+            "collectors",
+            "utils",
+            "models",
+            "archgen",
+            "detectors",
+            "generators",
+            "rag",
+        }
 
         # パッケージ内の全.pyファイルをスキャン
         for py_file in package_path.rglob("*.py"):
@@ -131,9 +140,10 @@ class PythonDetector:
     def _parse_imports(self, path: Path) -> list[str]:
         """Pythonファイルからインポートを抽出"""
         import ast
+
         deps = set()
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 tree = ast.parse(f.read(), filename=str(path))
 
             for node in ast.walk(tree):
@@ -207,9 +217,16 @@ class PythonDetector:
             # バージョン指定などを除去
             # e.g., "package>=1.0.0" -> "package"
             # e.g., "package[extra]>=1.0.0" -> "package"
-            pkg = line.split(">=")[0].split("==")[0].split("<")[0].split("~=")[0].split("!=")[0].strip()
-            pkg = pkg.split("[")[0].strip() # extrasを除去
+            pkg = (
+                line.split(">=")[0]
+                .split("==")[0]
+                .split("<")[0]
+                .split("~=")[0]
+                .split("!=")[0]
+                .strip()
+            )
+            pkg = pkg.split("[")[0].strip()  # extrasを除去
 
-            if pkg and pkg != "python": # python自体の指定を除外
+            if pkg and pkg != "python":  # python自体の指定を除外
                 deps.append(pkg)
         return deps

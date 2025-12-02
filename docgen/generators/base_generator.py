@@ -192,6 +192,7 @@ class BaseGenerator(
                 f"{self._get_document_type()}生成中にエラーが発生しました: {e}", exc_info=True
             )
             return False
+
     def _get_architecture_diagram_content(self) -> str:
         """アーキテクチャ図のコンテンツを取得"""
         arch_config = self.config.get("architecture", {})
@@ -211,7 +212,9 @@ class BaseGenerator(
             # スキャナーとレンダラーの初期化
             scanner = ProjectScanner(self.project_root)
             manifest = scanner.scan()
-            self.logger.info(f"Architecture scan result: {len(manifest.services)} services detected")
+            self.logger.info(
+                f"Architecture scan result: {len(manifest.services)} services detected"
+            )
 
             renderer = ArchitectureRenderer(
                 generator_type=arch_config.get("generator", "mermaid"),

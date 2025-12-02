@@ -5,9 +5,7 @@
 >
 > まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
 <!-- MANUAL_END:description -->
-> **IMPORTANT!!**
->
-> まだドキュメント出力が安定していないため、内容については正確性に欠けます。プルリクエスト待ってます。
+
 
 ## プロジェクト構造
 
@@ -91,8 +89,8 @@ agents-docs-sync/
 
 
 
-## アーキテクチャ
-
+<!-- MANUAL_START:architecture -->
+<!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
     %% Auto-generated architecture diagram
@@ -257,4 +255,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-02 15:44:30*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-02 16:55:48*

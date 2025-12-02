@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-02 15:44:23
+自動生成日時: 2025-12-02 16:55:39
 
 ---
 
@@ -4241,7 +4241,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:132*
+*定義場所: docgen/models/config.py:130*
 
 ---
 

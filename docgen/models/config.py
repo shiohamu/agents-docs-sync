@@ -124,9 +124,7 @@ class ArchitectureConfig(BaseModel):
     generator: str = "mermaid"
     image_formats: list[str] = Field(default_factory=lambda: ["png"])
     python: ArchitecturePythonConfig = Field(default_factory=ArchitecturePythonConfig)
-    javascript: ArchitectureJavascriptConfig = Field(
-        default_factory=ArchitectureJavascriptConfig
-    )
+    javascript: ArchitectureJavascriptConfig = Field(default_factory=ArchitectureJavascriptConfig)
 
 
 class DocgenConfig(BaseModel):

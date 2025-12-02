@@ -35,6 +35,7 @@ class TestCommandLineInterface:
                     "config": None,
                     "build_index": False,
                     "use_rag": False,
+                    "generate_arch": False,
                 },
             )()
 
@@ -213,6 +214,7 @@ class TestCommandLineInterface:
                     "config": None,
                     "build_index": False,
                     "use_rag": False,
+                    "generate_arch": False,
                 },
             )()
 
@@ -248,6 +250,7 @@ class TestCommandLineInterface:
                     "config": None,
                     "build_index": False,
                     "use_rag": False,
+                    "generate_arch": False,
                 },
             )()
 
