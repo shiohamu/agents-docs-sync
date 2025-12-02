@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-02 16:55:39
+自動生成日時: 2025-12-02 17:08:21
 
 ---
 
@@ -6750,6 +6750,24 @@ def clear_cache(cls):
 キャッシュをクリア（主にテスト用）
 
 *定義場所: docgen/utils/prompt_loader.py:168*
+
+---
+
+
+## scripts/debug_detection.py
+
+### main
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def main():
+```
+
+*説明なし*
+
+*定義場所: scripts/debug_detection.py:12*
 
 ---
 

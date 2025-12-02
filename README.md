@@ -90,6 +90,7 @@ agents-docs-sync/
 
 
 <!-- MANUAL_START:architecture -->
+
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -221,7 +222,24 @@ uv sync
    - ローカルリソース（メモリ、CPU）を監視してください
 
 
+## 使用方法
 
+<!-- MANUAL_START:usage -->
+```bash
+# ドキュメントの生成
+uv run agents-docs-sync generate
+
+# Gitフックのインストール（コミット時に自動更新）
+uv run agents-docs-sync hook install
+```
+<!-- MANUAL_END:usage -->
+```bash
+# ドキュメントの生成
+uv run agents-docs-sync generate
+
+# Gitフックのインストール（コミット時に自動更新）
+uv run agents-docs-sync hook install
+```
 
 ## ビルドおよびテスト
 
@@ -242,12 +260,6 @@ uv run python3 docgen/docgen.py
 ```bash
 uv run pytest tests/ -v --tb=short
 ```
-```bash
-npm test
-```
-```bash
-go test ./...
-```
 
 
 
@@ -255,4 +267,4 @@ go test ./...
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-02 16:55:48*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-02 17:08:30*

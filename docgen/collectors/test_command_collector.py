@@ -48,18 +48,6 @@ class TestCommandCollector:
         """
         commands = []
 
-        # Collect from scripts/run_tests.sh
-        test_script = self.project_root / self.SCRIPTS_DIR / self.RUN_TESTS_SCRIPT
-        content = safe_read_file(test_script)
-        if content:
-            for line in content.split("\n"):
-                if "pytest" in line or "test" in line.lower():
-                    # Extract command line
-                    command = line.strip()
-                    if command:
-                        command = self.build_collector._add_uv_run_if_needed(command)
-                    commands.append(command)
-
         # Collect from Makefile
         makefile = self.project_root / self.MAKEFILE_NAMES[0]
         if makefile.exists():
@@ -93,18 +81,19 @@ class TestCommandCollector:
             commands.append(command)
 
         # Collect from package.json
-        package_data = safe_read_json(self.project_root / self.PACKAGE_JSON)
-        if package_data and "scripts" in package_data and "test" in package_data["scripts"]:
-            pm = self.package_managers.get("javascript", "npm")
-            if pm == "pnpm":
-                commands.append("pnpm test")
-            elif pm == "yarn":
-                commands.append("yarn test")
-            else:  # npm
-                commands.append("npm test")
+        if (self.project_root / self.PACKAGE_JSON).exists():
+            package_data = safe_read_json(self.project_root / self.PACKAGE_JSON)
+            if package_data and "scripts" in package_data and "test" in package_data["scripts"]:
+                pm = self.package_managers.get("javascript", "npm")
+                if pm == "pnpm":
+                    commands.append("pnpm test")
+                elif pm == "yarn":
+                    commands.append("yarn test")
+                else:  # npm
+                    commands.append("npm test")
 
         # For Go projects
-        if "go" in self.package_managers:
+        if "go" in self.package_managers and (self.project_root / "go.mod").exists():
             pm = self.package_managers["go"]
             if pm == "go":
                 commands.append("go test ./...")
