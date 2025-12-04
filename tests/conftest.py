@@ -1,10 +1,22 @@
-"""Test fixtures for test suite (simplified path handling)."""
-
+import os
 from pathlib import Path
 import shutil
 import tempfile
 
 import pytest
+
+# Set environment variable for testing at module level to ensure it's set before logger initialization
+os.environ["DOCGEN_TESTING"] = "1"
+
+
+@pytest.fixture(autouse=True)
+def set_test_env():
+    """Ensure environment variable is set (redundant but safe)."""
+    os.environ["DOCGEN_TESTING"] = "1"
+    yield
+    # Do not remove it as other tests might need it if run in same process
+    # But for safety we can keep it. Or we can just rely on module level.
+    # Let's keep the fixture to be explicit about scope if needed, but module level is key.
 
 
 @pytest.fixture(scope="function")

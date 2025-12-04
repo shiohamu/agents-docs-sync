@@ -11,8 +11,8 @@ from ..utils.logger import get_logger
 from .collector_utils import BuildCommandCollector
 
 
-class TestCommandCollector:
-    """Test command collector class"""
+class TestingCommandScanner:
+    """Test command scanner class"""
 
     SCRIPTS_DIR = "scripts"
     RUN_TESTS_SCRIPT = "run_tests.sh"
@@ -47,6 +47,29 @@ class TestCommandCollector:
             List of test commands
         """
         commands = []
+
+        # Collect from scripts/run_tests.sh
+        run_tests_script = self.project_root / self.SCRIPTS_DIR / self.RUN_TESTS_SCRIPT
+        if run_tests_script.exists():
+            # If the script exists, it's the primary test command
+            # We can read it to see what it does, or just return the script execution
+            # For now, let's return the content if it's a single line command, or the script itself
+            try:
+                content = run_tests_script.read_text(encoding="utf-8").strip()
+                lines = [
+                    line
+                    for line in content.splitlines()
+                    if line.strip() and not line.startswith("#")
+                ]
+                if len(lines) == 1:
+                    command = lines[0]
+                    command = self.build_collector._add_uv_run_if_needed(command)
+                    commands.append(command)
+                else:
+                    # If it's a complex script, return the script execution command
+                    commands.append(f"bash {self.SCRIPTS_DIR}/{self.RUN_TESTS_SCRIPT}")
+            except Exception:
+                pass
 
         # Collect from Makefile
         makefile = self.project_root / self.MAKEFILE_NAMES[0]

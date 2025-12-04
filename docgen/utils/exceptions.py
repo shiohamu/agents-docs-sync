@@ -129,3 +129,26 @@ class FileOperationError(DocGenError):
             else None,
             **kwargs,
         )
+
+
+class GenerationError(DocGenError):
+    """ドキュメント生成関連のエラー"""
+
+    def __init__(
+        self,
+        message: str,
+        doc_type: str | None = None,
+        generator: str | None = None,
+        **kwargs,
+    ):
+        # 第2引数をdetailsとして扱う（後方互換性のため）
+        details = kwargs.get("details") or doc_type
+        super().__init__(
+            message=message,
+            details=details,
+            error_code="GENERATION_ERROR",
+            context={"doc_type": doc_type, "generator": generator}
+            if doc_type or generator
+            else None,
+            **kwargs,
+        )

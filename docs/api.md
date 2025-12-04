@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-04 09:29:50
+自動生成日時: 2025-12-04 12:17:26
 
 ---
 
@@ -484,6 +484,67 @@ Returns:
 ---
 
 
+## docgen/collectors/base_collector.py
+
+### BaseCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BaseCollector:
+```
+
+**説明**:
+
+ベースコレクタークラス
+
+*定義場所: docgen/collectors/base_collector.py:12*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, logger: Any | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    logger: ロガーインスタンス（Noneの場合はデフォルトロガーを使用）
+
+*定義場所: docgen/collectors/base_collector.py:15*
+
+---
+
+### collect
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect(self) -> Any:
+```
+
+**説明**:
+
+情報を収集（サブクラスで実装）
+
+Returns:
+    収集した情報
+
+*定義場所: docgen/collectors/base_collector.py:27*
+
+---
+
+
 ## docgen/collectors/coding_standards_collector.py
 
 ### CodingStandardsCollector
@@ -879,6 +940,101 @@ Returns:
 ---
 
 
+## docgen/collectors/language_info_collector.py
+
+### LanguageInfoCollector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LanguageInfoCollector:
+```
+
+**説明**:
+
+言語固有情報収集クラス
+
+*定義場所: docgen/collectors/language_info_collector.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, logger: Any | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/collectors/language_info_collector.py:24*
+
+---
+
+### collect
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+言語固有情報を収集
+
+Returns:
+    収集した情報の辞書
+
+*定義場所: docgen/collectors/language_info_collector.py:27*
+
+---
+
+### collect_scripts
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_scripts(self) -> dict[str, dict[str, str]]:
+```
+
+**説明**:
+
+実行可能なスクリプトを収集
+
+Returns:
+    スクリプト名と詳細情報の辞書 {name: {command: str, description: str}}
+
+*定義場所: docgen/collectors/language_info_collector.py:39*
+
+---
+
+### collect_project_description
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_project_description(self) -> str | None:
+```
+
+**説明**:
+
+プロジェクトの説明を収集
+
+Returns:
+    プロジェクトの説明文（見つからない場合はNone）
+
+*定義場所: docgen/collectors/language_info_collector.py:137*
+
+---
+
+
 ## docgen/collectors/project_info_collector.py
 
 ### ProjectInfoCollector
@@ -896,7 +1052,7 @@ class ProjectInfoCollector:
 
 プロジェクトのビルド/テスト手順、依存関係、コーディング規約などを収集する。
 
-*定義場所: docgen/collectors/project_info_collector.py:16*
+*定義場所: docgen/collectors/project_info_collector.py:14*
 
 ---
 
@@ -918,7 +1074,7 @@ Args:
     package_managers: 言語ごとのパッケージマネージャ辞書
     logger: ロガーインスタンス
 
-*定義場所: docgen/collectors/project_info_collector.py:44*
+*定義場所: docgen/collectors/project_info_collector.py:23*
 
 ---
 
@@ -938,27 +1094,7 @@ def collect_all(self) -> ProjectInfo:
 Returns:
     プロジェクト情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:76*
-
----
-
-### collect_scripts
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def collect_scripts(self) -> dict[str, dict[str, str]]:
-```
-
-**説明**:
-
-実行可能なスクリプトを収集
-
-Returns:
-    スクリプト名と詳細情報の辞書 {name: {command: str, description: str}}
-
-*定義場所: docgen/collectors/project_info_collector.py:107*
+*定義場所: docgen/collectors/project_info_collector.py:57*
 
 ---
 
@@ -978,7 +1114,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:210*
+*定義場所: docgen/collectors/project_info_collector.py:93*
 
 ---
 
@@ -998,7 +1134,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:220*
+*定義場所: docgen/collectors/project_info_collector.py:103*
 
 ---
 
@@ -1018,7 +1154,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:229*
+*定義場所: docgen/collectors/project_info_collector.py:112*
 
 ---
 
@@ -1038,7 +1174,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:238*
+*定義場所: docgen/collectors/project_info_collector.py:121*
 
 ---
 
@@ -1058,7 +1194,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:247*
+*定義場所: docgen/collectors/project_info_collector.py:130*
 
 ---
 
@@ -1080,27 +1216,7 @@ StructureAnalyzerに委譲して詳細な構造分析を実行
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:268*
-
----
-
-### collect_project_description
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def collect_project_description(self) -> str | None:
-```
-
-**説明**:
-
-プロジェクトの説明を収集
-
-Returns:
-    プロジェクトの説明文（見つからない場合はNone）
-
-*定義場所: docgen/collectors/project_info_collector.py:279*
+*定義場所: docgen/collectors/project_info_collector.py:151*
 
 ---
 
@@ -1219,18 +1335,18 @@ Returns:
 
 ## docgen/collectors/test_command_collector.py
 
-### TestCommandCollector
+### TestingCommandScanner
 
 **型**: `class`
 
 **シグネチャ**:
 ```
-class TestCommandCollector:
+class TestingCommandScanner:
 ```
 
 **説明**:
 
-Test command collector class
+Test command scanner class
 
 *定義場所: docgen/collectors/test_command_collector.py:14*
 
@@ -2519,7 +2635,7 @@ class BaseGenerator:
 
 ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）
 
-*定義場所: docgen/generators/base_generator.py:19*
+*定義場所: docgen/generators/base_generator.py:20*
 
 ---
 
@@ -2542,7 +2658,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/base_generator.py:29*
+*定義場所: docgen/generators/base_generator.py:31*
 
 ---
 
@@ -2562,7 +2678,7 @@ def generate(self) -> bool:
 Returns:
     生成に成功した場合True
 
-*定義場所: docgen/generators/base_generator.py:151*
+*定義場所: docgen/generators/base_generator.py:153*
 
 ---
 
@@ -2644,6 +2760,26 @@ class ContributingGenerator:
 CONTRIBUTING.md generation class
 
 *定義場所: docgen/generators/contributing_generator.py:12*
+
+---
+
+
+## docgen/generators/mixins/formatting_mixin.py
+
+### FormattingMixin
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class FormattingMixin:
+```
+
+**説明**:
+
+フォーマッティング用のmixin
+
+*定義場所: docgen/generators/mixins/formatting_mixin.py:7*
 
 ---
 
@@ -6143,6 +6279,38 @@ def __init__(self, message: str, file_path: str | None, operation: str | None):
 
 ---
 
+### GenerationError
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class GenerationError:
+```
+
+**説明**:
+
+ドキュメント生成関連のエラー
+
+*定義場所: docgen/utils/exceptions.py:134*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, message: str, doc_type: str | None, generator: str | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/exceptions.py:137*
+
+---
+
 
 ## docgen/utils/file_utils.py
 
@@ -6790,7 +6958,7 @@ Args:
 Returns:
     ロガー
 
-*定義場所: docgen/utils/logger.py:63*
+*定義場所: docgen/utils/logger.py:70*
 
 ---
 

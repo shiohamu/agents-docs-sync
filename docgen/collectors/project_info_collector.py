@@ -3,9 +3,7 @@
 ビルド/テスト手順、コーディング規約、依存関係などの情報を収集
 """
 
-import json
 from pathlib import Path
-import re
 from typing import Any
 
 from ..models.project import ProjectInfo
@@ -20,26 +18,7 @@ class ProjectInfoCollector:
     """
 
     # ファイルパス定数
-    # スクリプトディレクトリ
-    SCRIPTS_DIR = "scripts"
-    RUN_PIPELINE_SCRIPT = "run_pipeline.sh"
-    RUN_TESTS_SCRIPT = "run_tests.sh"
-    MAKEFILE_NAMES = ["Makefile", "makefile"]
-    REQUIREMENTS_FILES = ["requirements.txt", "requirements-docgen.txt", "requirements-test.txt"]
-    PACKAGE_JSON = "package.json"
-    PYPROJECT_TOML = "pyproject.toml"
-    PYTEST_INI = "pytest.ini"
-    GO_MOD = "go.mod"
-    CARGO_TOML = "Cargo.toml"
-    SETUP_PY = "setup.py"
-    EDITORCONFIG = ".editorconfig"
-    PRETTIER_FILES = [".prettierrc", "prettier.config.js", ".prettierrc.json"]
     GITHUB_WORKFLOWS_DIR = ".github/workflows"
-    MAIN_PY = "main.py"
-    INIT_PY = "__init__.py"
-    README_FILES = ["README.md", "README.rst"]
-    CHANGELOG = "CHANGELOG.md"
-    LICENSE = "LICENSE"
 
     def __init__(
         self,
@@ -62,16 +41,18 @@ class ProjectInfoCollector:
         # Initialize sub-collectors
         from .coding_standards_collector import CodingStandardsCollector
         from .dependency_collector import DependencyCollector
+        from .language_info_collector import LanguageInfoCollector
         from .structure_analyzer import StructureAnalyzer
-        from .test_command_collector import TestCommandCollector
+        from .test_command_collector import TestingCommandScanner
 
         self.build_collector = BuildCommandCollector(project_root, package_managers)
         self.dependency_collector = DependencyCollector(project_root, logger=self.logger)
-        self.test_command_collector = TestCommandCollector(
+        self.test_command_collector = TestingCommandScanner(
             project_root, package_managers, logger=self.logger
         )
         self.coding_standards_collector = CodingStandardsCollector(project_root, logger=self.logger)
         self.structure_analyzer = StructureAnalyzer(project_root, logger=self.logger)
+        self.language_info_collector = LanguageInfoCollector(project_root, logger=self.logger)
 
     def collect_all(self) -> ProjectInfo:
         """
@@ -88,7 +69,12 @@ class ProjectInfoCollector:
         build_commands = self.build_collector.collect_build_commands()
         coding_standards = self.collect_coding_standards()
         project_structure = self.collect_project_structure()
-        project_description = self.collect_project_description()
+
+        # LanguageInfoCollectorから情報を取得
+        lang_info = self.language_info_collector.collect()
+        project_description = lang_info["description"]
+        scripts = lang_info["scripts"]
+
         key_features = self.collect_key_features()
         ci_cd_info = self.collect_ci_cd_info()
 
@@ -101,111 +87,8 @@ class ProjectInfoCollector:
             description=project_description,
             key_features=key_features,
             ci_cd_info=ci_cd_info,
-            scripts=self.collect_scripts(),
+            scripts=scripts,
         )
-
-    def collect_scripts(self) -> dict[str, dict[str, str]]:
-        """
-        実行可能なスクリプトを収集
-
-        Returns:
-            スクリプト名と詳細情報の辞書 {name: {command: str, description: str}}
-        """
-        from .command_help_extractor import CommandHelpExtractor
-
-        scripts = {}
-
-        # 1. package.json scripts
-        package_json = self.project_root / self.PACKAGE_JSON
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "scripts" in data:
-                        for name, cmd in data["scripts"].items():
-                            scripts[name] = {
-                                "command": cmd,
-                                "description": "",  # package.json doesn't have descriptions
-                                "options": [],  # Options not extracted from package.json
-                            }
-            except Exception:
-                pass
-
-        # 2. Makefile targets
-        for makefile_name in self.MAKEFILE_NAMES:
-            makefile = self.project_root / makefile_name
-            if makefile.exists():
-                try:
-                    content = makefile.read_text(encoding="utf-8")
-                    from .collector_utils import ConfigReader
-
-                    targets = ConfigReader.parse_makefile_targets(content)
-                    for target in targets:
-                        # Makefileの場合、コマンドは複雑な場合が多いので、make <target> を値とする
-                        scripts[target] = {
-                            "command": f"make {target}",
-                            "description": "",  # Makefile target descriptions not extracted yet
-                            "options": [],  # Options not extracted from Makefile
-                        }
-                except Exception:
-                    pass
-                break  # 最初のMakefileのみ処理
-
-        # 3. pyproject.toml scripts (poetry/pdm/hatch)
-        pyproject = self.project_root / self.PYPROJECT_TOML
-        if pyproject.exists():
-            try:
-                import tomllib
-
-                with open(pyproject, "rb") as f:
-                    data = tomllib.load(f)
-
-                # Standard [project.scripts] (PEP 621)
-                if "project" in data and "scripts" in data["project"]:
-                    for name, entry_point in data["project"]["scripts"].items():
-                        # entry_point format: "module.path:function"
-                        # Extract help text from the entry point
-                        description = CommandHelpExtractor.extract_from_entry_point(
-                            entry_point, self.project_root
-                        )
-                        # Extract options from the entry point
-                        options = CommandHelpExtractor.extract_options_from_entry_point(
-                            entry_point, self.project_root
-                        )
-                        scripts[name] = {
-                            "command": entry_point,
-                            "description": description,
-                            "options": options,
-                        }
-
-                # Poetry scripts
-                if (
-                    "tool" in data
-                    and "poetry" in data["tool"]
-                    and "scripts" in data["tool"]["poetry"]
-                ):
-                    for name, cmd in data["tool"]["poetry"]["scripts"].items():
-                        scripts[name] = {
-                            "command": f"poetry run {name}",
-                            "description": "",  # Poetry scripts don't have descriptions
-                            "options": [],  # Options not extracted from Poetry
-                        }
-
-                # PDM scripts
-                if "tool" in data and "pdm" in data["tool"] and "scripts" in data["tool"]["pdm"]:
-                    for name, cmd in data["tool"]["pdm"]["scripts"].items():
-                        # PDM scripts can be string or dict, simplifying here
-                        if isinstance(cmd, str):
-                            scripts[name] = {
-                                "command": f"pdm run {name}",
-                                "description": "",  # PDM scripts don't have descriptions
-                                "options": [],  # Options not extracted from PDM
-                            }
-
-            except Exception:
-                pass
-
-        return scripts
 
     def collect_key_features(self) -> list[str]:
         """
@@ -275,80 +158,3 @@ class ProjectInfoCollector:
             プロジェクト構造の辞書
         """
         return self.structure_analyzer.analyze()
-
-    def collect_project_description(self) -> str | None:
-        """
-        プロジェクトの説明を収集
-
-        Returns:
-            プロジェクトの説明文（見つからない場合はNone）
-        """
-        # 1. pyproject.tomlから説明を取得
-        pyproject = self.project_root / self.PYPROJECT_TOML
-        if pyproject.exists():
-            try:
-                import tomllib
-
-                with open(pyproject, "rb") as f:
-                    data = tomllib.load(f)
-                if "project" in data and "description" in data["project"]:
-                    return data["project"]["description"]
-                if (
-                    "tool" in data
-                    and "poetry" in data["tool"]
-                    and "description" in data["tool"]["poetry"]
-                ):
-                    return data["tool"]["poetry"]["description"]
-            except Exception:
-                # 簡易パース
-                try:
-                    content = pyproject.read_text(encoding="utf-8")
-                    desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
-                    if desc_match:
-                        return desc_match.group(1)
-                except Exception:
-                    pass
-
-        # 2. package.jsonから説明を取得
-        package_json = self.project_root / self.PACKAGE_JSON
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "description" in data:
-                        return data["description"]
-            except Exception:
-                pass
-
-        # 3. setup.pyから説明を取得
-        setup_py = self.project_root / self.SETUP_PY
-        if setup_py.exists():
-            try:
-                content = setup_py.read_text(encoding="utf-8")
-                desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
-                if desc_match:
-                    return desc_match.group(1)
-            except Exception:
-                pass
-
-        # 4. READMEから説明を取得 (フォールバック)
-        for readme_file in self.README_FILES:
-            readme_path = self.project_root / readme_file
-            if readme_path.exists():
-                try:
-                    content = readme_path.read_text(encoding="utf-8")
-                    # 最初の段落を取得（簡易的）
-                    lines = content.split("\n")
-                    for line in lines:
-                        line_stripped = line.strip()
-                        if (
-                            line_stripped
-                            and not line_stripped.startswith("#")
-                            and not line_stripped.startswith("<!--")
-                            and not line_stripped.startswith(">")
-                        ):
-                            return line_stripped
-                except Exception:
-                    pass
-
-        return None

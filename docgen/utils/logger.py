@@ -48,7 +48,14 @@ def setup_logger(
     console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    logger.propagate = False
+
+    # テスト時はプロパゲーションを有効にする
+    import os
+
+    if os.environ.get("DOCGEN_TESTING"):
+        logger.propagate = True
+    else:
+        logger.propagate = False
 
     # ファイルハンドラー（指定されている場合）
     if log_file:

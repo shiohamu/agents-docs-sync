@@ -46,7 +46,16 @@ class DocumentGenerator:
             logger.warning("サポートされている言語が検出されませんでした")
             return False
 
-        success = True
+        generators_to_run = self._determine_generators_to_run()
+        return self._execute_generators(generators_to_run)
+
+    def _determine_generators_to_run(self) -> list[tuple[str, str]]:
+        """
+        実行するジェネレーターのリストを決定
+
+        Returns:
+            (generator_type, display_name)のタプルのリスト
+        """
         generators_to_run = []
 
         # 実行するジェネレーターを決定
@@ -64,20 +73,26 @@ class DocumentGenerator:
         if self.config.get("generation", {}).get("generate_contributing_doc", False):
             generators_to_run.append(("contributing", "CONTRIBUTING.md"))
 
+        return generators_to_run
+
+    def _execute_generators(self, generators_to_run: list[tuple[str, str]]) -> bool:
+        """
+        ジェネレーターを実行
+
+        Args:
+            generators_to_run: (generator_type, display_name)のタプルのリスト
+
+        Returns:
+            すべて成功したかどうか
+        """
+        success = True
+
         # 各ジェネレーターを実行
         for gen_type, gen_name in generators_to_run:
             logger.info(f"[{gen_name}生成]")
             if gen_type == "rag":
                 # RAGインデックス構築は特殊処理
-                try:
-                    if self._build_vector_index():
-                        logger.info("✓ RAGインデックスを構築しました")
-                    else:
-                        logger.warning("⚠ RAGインデックスの構築をスキップしました")
-                except Exception as e:
-                    logger.error(
-                        f"✗ RAGインデックスの構築中にエラーが発生しました: {e}", exc_info=True
-                    )
+                if not self._handle_rag_generation():
                     # ベクトルDB生成の失敗は全体の失敗にはしない
                     logger.warning(
                         "RAGインデックスの構築に失敗しましたが、ドキュメント生成は成功しました"
@@ -102,6 +117,24 @@ class DocumentGenerator:
                 success = False
 
         return success
+
+    def _handle_rag_generation(self) -> bool:
+        """
+        RAGインデックス構築を処理
+
+        Returns:
+            成功したかどうか
+        """
+        try:
+            if self._build_vector_index():
+                logger.info("✓ RAGインデックスを構築しました")
+                return True
+            else:
+                logger.warning("⚠ RAGインデックスの構築をスキップしました")
+                return False
+        except Exception as e:
+            logger.error(f"✗ RAGインデックスの構築中にエラーが発生しました: {e}", exc_info=True)
+            return False
 
     def _build_vector_index(self) -> bool:
         """

@@ -9,6 +9,7 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..utils.logger import get_logger
+from .mixins.formatting_mixin import FormattingMixin
 from .mixins.llm_mixin import LLMMixin
 from .mixins.manual_section_mixin import ManualSectionMixin
 from .mixins.markdown_mixin import MarkdownMixin
@@ -17,6 +18,7 @@ from .mixins.template_mixin import TemplateMixin
 
 
 class BaseGenerator(
+    FormattingMixin,
     LLMMixin,
     TemplateMixin,
     ManualSectionMixin,

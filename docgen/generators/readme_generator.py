@@ -66,7 +66,7 @@ class ReadmeGenerator(BaseGenerator):
             "project_name": data.title,
             "description_section": data.description,
             "technologies": self._format_technologies(data.technologies),
-            "dependencies_section": self._format_dependencies(data.dependencies),
+            "dependencies_section": self._format_dependencies_from_data(data.dependencies),
             "setup_section": self._format_setup_instructions(data.setup_instructions),
             "usage_section": "",  # 使用方法は手動セクションまたは別途生成
             "build_commands": self._format_commands(data.build_commands),
@@ -95,8 +95,8 @@ class ReadmeGenerator(BaseGenerator):
             return ""
         return "\n".join([f"- {tech}" for tech in technologies])
 
-    def _format_dependencies(self, dependencies: Any) -> str:
-        """依存関係を整形"""
+    def _format_dependencies_from_data(self, dependencies: Any) -> str:
+        """構造化データから依存関係を整形"""
         if not dependencies:
             return ""
 
@@ -129,12 +129,6 @@ class ReadmeGenerator(BaseGenerator):
                 lines.append(f"1. {step}")
 
         return "\n".join(lines)
-
-    def _format_commands(self, commands: list[str] | None) -> str:
-        """コマンドリストを整形"""
-        if not commands:
-            return ""
-        return "\n".join([f"```bash\n{cmd}\n```" for cmd in commands])
 
     def _generate_key_features(self, project_info: ProjectInfo) -> list[str]:
         """主要機能を生成"""
@@ -212,11 +206,11 @@ class ReadmeGenerator(BaseGenerator):
         # LLM生成では直接マークダウンを生成するため、このメソッドは使用しない
         return ""
 
-    def _get_project_overview_section(self, content: str) -> str:
+    def _get_project_overview_section(self, content: str | None) -> str:
         """プロジェクト概要セクションを取得"""
-        if DESCRIPTION_START in content:
+        if content and DESCRIPTION_START in content:
             return self._extract_description_section(content)
-        return content
+        return content or ""
 
     def _collect_project_description(self) -> str:
         """プロジェクト説明を収集"""
@@ -246,28 +240,8 @@ class ReadmeGenerator(BaseGenerator):
         # セットアップ用のサブテンプレートをレンダリング
         return self._render_template("setup_template.md.j2", setup_context)
 
-    def _format_languages(self) -> str:
-        """言語リストをフォーマット"""
-        lang_display = {
-            "python": "Python",
-            "javascript": "JavaScript",
-            "typescript": "TypeScript",
-            "go": "Go",
-            "rust": "Rust",
-            "java": "Java",
-            "cpp": "C++",
-            "c": "C",
-            "ruby": "Ruby",
-            "php": "PHP",
-        }
-        parts = []
-        for lang in self.languages:
-            display_name = lang_display.get(lang, lang.capitalize())
-            parts.append(f"- {display_name}")
-        return "\n".join(parts) if parts else "- Not detected"
-
-    def _format_dependencies(self) -> str:
-        """依存関係をフォーマット（簡略化版）"""
+    def _format_dependencies_from_languages(self) -> str:
+        """検出された言語から依存関係セクションを生成（簡略化版）"""
         parts = []
         if "python" in self.languages:
             parts.append("- **Python**: `pyproject.toml` または `requirements.txt` を参照")
@@ -322,7 +296,7 @@ class ReadmeGenerator(BaseGenerator):
             "notice_section": "",  # 手動セクションは自動マージされるため、ここでは空にする（重複防止）
             "description_section": self._get_project_overview_section(project_info.description),
             "technologies": self._format_languages(),
-            "dependencies_section": self._format_dependencies(),
+            "dependencies_section": self._format_dependencies_from_languages(),
             "setup_section": manual_sections.get("setup", "").strip()
             or self._generate_setup_from_project_info(project_info),
             "usage_section": manual_sections.get("usage", ""),

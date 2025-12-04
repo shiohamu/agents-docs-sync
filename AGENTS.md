@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-04 09:31:45
+自動生成日時: 2025-12-04 12:18:43
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,149 +12,159 @@
 <!-- MANUAL_END:description -->
 
 
-コミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md の更新を行うパイプラインです。  
-Python 3.x とシェルスクリプトで構成され、`docgen` パッケージが中心のモジュール群となっています。
+`agents-docs-sync` は、リポジトリにコミットが入るたびに自動で以下を実行する CI/CD パイプラインです。  
+- **テストの走査**：pytest + pytest‑cov でコード品質とカバレッジを確認し、失敗したらビルドは中断します。  
+- **ドキュメント生成**：Jinja2 テンプレートに基づき `AGENTS.md` を再構築。テンプレートには Pydantic モデル（`AgentsConfig`, `AgentsGenerationConfig`, `AgentsDocument`）から抽出した情報を埋め込み、各エージェントの設定・生成ロジック・ドキュメント化された API 仕様が自動的に反映されます。  
+- **アーキテクチャ図作成**：LLM を使わずに `auto_architecture_generator` がプロジェクト構造（Python パッケージ、YAML マニフェスト）を解析し、Graphviz 形式のダイアグラムを生成します。これにより、人間が手書きする必要なく最新状態の図が常に保持されます。
 
 ### 技術スタック
-- **言語**: Python, Bash / Shell  
-- **テスト & カバレッジ**: `pytest`, `pytest-cov`, `pytest-mock`  
-- **コード品質**: `ruff`, `pydantic`（型定義）  
-- **ドキュメント生成**: Jinja2 テンプレート、YAML で構成されたモデル (`AgentsConfig`, `AgentsDocument`)  
-- **自動アーキテクチャ図作成**: リポジトリを解析し PlantUML/Mermaid を出力（LLM 不使用）  
-- **検索・推論**: `hnswlib`, `sentence-transformers`、必要に応じて OpenAI / Anthropic API で補完  
-- **HTTP クライアント**: `httpx`  
-- **CLI エントリポイント**: `pyproject.toml` の `[project.scripts] agents_docs_sync = "docgen.docgen:main"`  
+| カテゴリ | ライブラリ |
+|----------|------------|
+| **Python** | `pydantic`, `jinja2`, `httpx`, `openai` (オプション), `anthropic` (オプション) |
+| **ML / NLP** | `sentence-transformers`, `hnswlib`, `torch` |
+| **テスト & CI** | `pytest`, `pytest-cov`, `ruff`, `pyyaml` |
+| **ドキュメント生成** | `outlines`（構造化データから Markdown へ変換） |
 
-### アーキテクチャ
-```
-┌───────────────────────┐
-│  CLI (agents_docs_sync) │  ← user entry point, parses args & config  
-├─────────────▲──────────┤
-│             │          │
-│   orchestrator           │
-│ (docgen.docgen.main)     │
-├─────────────▼──────────┘
-│ ┌───────────────────────┐
-│ │  test_runner.py        │  → runs pytest, generates coverage report  
-│ │  doc_generator.py      │  → renders Jinja2 templates into AGENTS.md  
-│ │  arch_gen.py           │  ← scans repo tree → Mermaid/PlantUML diagram  
-│ └───────────────────────┘
-```
-
-### 主な機能
-
-- **自動テスト実行**: コミット時に `pytest` を走らせ、失敗した場合はビルドを中断。カバレッジ情報は CI レポートへ出力。
-  
-- **AGENTS.md 自動生成**:
-  - ソースコードの docstring やメタデータから構造化モデル `AgentsDocument` を作成し、Jinja2 テンプレートで Markdown 化。  
-  - YAML 設定 (`agents.yaml`) によりカスタマイズ可能。
-  
-- **アーキテクチャ図自動生成**:
-  - リポジトリ構造を解析し、Python の import 関係やディレクトリ階層から Mermaid/PlantUML を作成。LLM は使用せず純粋にコードベースで推論。
-  
-- **CLI サブコマンド**:
-  - `agents_docs_sync --help` – 利用可能オプション表示  
-  - `agents_docs_sync hook install` – pre‑commit フックをインストールし、コミット前に自動実行。  
-
-### 設定 & モデル
-
-- **Configuration Guide (`docs/CONFIG_GUIDE.md`)** に詳細が記載されており、以下の Pydantic クラスで構成:
-  - `AgentsConfig`  
-  - `AgentsGenerationConfig`
-  - `ProjectOverview`, `AgentsConfigSection`
-
-### 実行例
-
+### エントリポイント
 ```bash
-# コミット時に自動実行（CI のステップとしても可）
-git commit -m "Update docs"
-agents_docs_sync   # → テスト→ドキュメント生成→AGENTS.md 更新
+# CLI ヘルプ表示例
+$ agents_docs_sync --help
+```
+- pyproject.toml の `[project.scripts]` により、実行時は `docgen.docgen:main` が呼び出されます。  
+- 主要なサブコマンド:
+  - `run`: テスト → ドキュメント生成 → アーキテクチャ図更新を順次実施
+  - `hook install`: CI に必要なフック（pre‑commit, post‑push 等）をインストール
 
-# pre-commit フックを手動でインストール
-agents_docs_sync hook install
+### Pydantic モデル構成 (`docgen/models/agents.py`)
+| クラス | 用途 |
+|--------|------|
+| `ProjectOverview` | プロジェクト全体のメタ情報。YAML マニフェストから読み込みます。 |
+| `AgentsConfigSection` / `AgentsGenerationConfig` | エージェントごとの設定・生成パラメータを保持し、ドキュメントテンプレートへ渡します。 |
+| `AgentsDocument` | 生成される AGENTS.md の構造化データモデルであり、JSON/YAML 出力にも利用可能です。 |
+
+### CI ワークフロー例（GitHub Actions）
+```yaml
+name: Docs Sync
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install poetry && poetry install --only main,dev
+      - run: agents_docs_sync run
 ```
 
-このパイプラインは、継続的なコード品質保持と最新のドキュメンテーション維持を一括して行うために設計されており、Python コミュニティ向けの標準化されたワークフローとして活用できます。
+### 使い方サンプル（ローカル）
+```bash
+# 開発環境で手動実行
+$ git checkout feature-branch
+$ agents_docs_sync hook install   # 必要ならフックを再インストール
+
+$ agents_docs_sync run            # テストとドキュメント更新を一括実施
+```
+
+### 成果物
+1. **AGENTS.md** – 最新のエージェント構成・API仕様が自動で記載。  
+2. **architecture_diagram.svg**（または .png）– プロジェクト全体と各モジュール間の関係を視覚化。  
+3. **テストレポート & カバレッジ統計** – `pytest --cov` で生成され、GitHub Actions のコメントに表示。
+
+---
+
+このプロジェクトは「変更があった時だけ自動更新」するという原則に基づき設計されています。  
+- **高速実行**：テストとドキュメント作成を同一スクリプトでまとめることで、CI 実行時間を最小化。  
+- **可搬性**：Python 3.12+ と標準的なツールチェーン（Poetry, ruff）に依存しつつ、シェルスクリプトも併用可能。  
+
+`agents-docs-sync` を導入すれば、ドキュメントの整合性を手動で保守する負担が大幅に軽減されます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
-agents-docs-sync/
- ├─ docgen/
- │  ├─ archgen/
- │  │  ├─ detectors/
- │  │  │  └─ python_detector.py
- │  │  └─ generators/
- │  │     └─ mermaid_generator.py
- │  ├─ collectors/
- │  │  ├─ collector_utils.py
- │  │  └─ project_info_collector.py
- │  ├─ detectors/
- │  │  ├─ configs/
- │  │  │  ├─ go.toml
- │  │  │  ├─ javascript.toml
- │  │  │  ├─ python.toml
- │  │  │  └─ typescript.toml
- │  │  ├─ base_detector.py
- │  │  ├─ detector_patterns.py
- │  │  ├─ plugin_registry.py
- │  │  └─ unified_detector.py
- │  ├─ generators/
- │  │  ├─ mixins/
- │  │  │  ├─ llm_mixin.py
- │  │  │  ├─ markdown_mixin.py
- │  │  │  └─ template_mixin.py
- │  │  ├─ parsers/
- │  │  │  ├─ base_parser.py
- │  │  │  ├─ generic_parser.py
- │  │  │  ├─ js_parser.py
- │  │  │  └─ python_parser.py
- │  │  ├─ agents_generator.py
- │  │  ├─ api_generator.py
- │  │  ├─ base_generator.py
- │  │  ├─ contributing_generator.py
- │  │  └─ readme_generator.py
- │  ├─ hooks/
- │  │  ├─ tasks/
- │  │  │  └─ base.py
- │  │  ├─ config.py
- │  │  └─ orchestrator.py
- │  ├─ index/
- │  │  └─ meta.json
- │  ├─ models/
- │  │  ├─ agents.py
- │  │  ├─ config.py
- │  │  └─ detector.py
- │  ├─ prompts/
- │  │  ├─ agents_prompts.toml
- │  │  ├─ commit_message_prompts.toml
- │  │  └─ readme_prompts.toml
- │  ├─ rag/
- │  │  ├─ embedder.py
- │  │  ├─ indexer.py
- │  │  ├─ retriever.py
- │  │  └─ validator.py
- │  ├─ utils/
- │  │  ├─ llm/
- │  │  │  ├─ base.py
- │  │  │  └─ local_client.py
- │  │  ├─ cache.py
- │  │  ├─ exceptions.py
- │  │  ├─ file_utils.py
- │  │  └─ prompt_loader.py
- │  ├─ cli_handlers.py
- │  ├─ config.toml
- │  ├─ config_manager.py
- │  ├─ detector_config_loader.py
- │  ├─ docgen.py
- │  └─ hooks.toml
- ├─ docs/
- ├─ scripts/
- ├─ tests/
- ├─ AGENTS.md
- ├─ README.md
- ├─ pyproject.toml
- ├─ requirements-docgen.txt
- └─ requirements-test.txt
+├── docgen//
+│   ├── archgen//
+│   │   ├── detectors//
+│   │   │   └── python_detector.py
+│   │   └── generators//
+│   │       └── mermaid_generator.py
+│   ├── collectors//
+│   │   ├── collector_utils.py
+│   │   └── project_info_collector.py
+│   ├── detectors//
+│   │   ├── configs//
+│   │   │   ├── go.toml
+│   │   │   ├── javascript.toml
+│   │   │   ├── python.toml
+│   │   │   └── typescript.toml
+│   │   ├── base_detector.py
+│   │   ├── detector_patterns.py
+│   │   ├── plugin_registry.py
+│   │   └── unified_detector.py
+│   ├── generators//
+│   │   ├── mixins//
+│   │   │   ├── formatting_mixin.py
+│   │   │   ├── llm_mixin.py
+│   │   │   ├── markdown_mixin.py
+│   │   │   └── template_mixin.py
+│   │   ├── parsers//
+│   │   │   ├── base_parser.py
+│   │   │   ├── generic_parser.py
+│   │   │   ├── js_parser.py
+│   │   │   └── python_parser.py
+│   │   ├── agents_generator.py
+│   │   ├── api_generator.py
+│   │   ├── base_generator.py
+│   │   ├── contributing_generator.py
+│   │   └── readme_generator.py
+│   ├── hooks//
+│   │   ├── tasks//
+│   │   │   └── base.py
+│   │   ├── config.py
+│   │   └── orchestrator.py
+│   ├── index//
+│   │   └── meta.json
+│   ├── models//
+│   │   ├── agents.py
+│   │   ├── config.py
+│   │   └── detector.py
+│   ├── prompts//
+│   │   ├── agents_prompts.toml
+│   │   ├── commit_message_prompts.toml
+│   │   └── readme_prompts.toml
+│   ├── rag//
+│   │   ├── embedder.py
+│   │   ├── indexer.py
+│   │   ├── retriever.py
+│   │   └── validator.py
+│   ├── utils//
+│   │   ├── llm//
+│   │   │   ├── base.py
+│   │   │   └── local_client.py
+│   │   ├── cache.py
+│   │   ├── exceptions.py
+│   │   ├── file_utils.py
+│   │   └── prompt_loader.py
+│   ├── cli_handlers.py
+│   ├── config.toml
+│   ├── config_manager.py
+│   ├── detector_config_loader.py
+│   ├── docgen.py
+│   ├── document_generator.py
+│   └── hooks.toml
+├── docs/
+├── scripts/
+├── tests/
+├── AGENTS.md
+├── README.md
+├── pyproject.toml
+├── requirements-docgen.txt
+└── requirements-test.txt
 ```
 ## アーキテクチャ
 
@@ -273,11 +283,18 @@ uv sync
 ### ビルド手順
 ```bash
 uv sync
+```
+```bash
 uv build
+```
+```bash
 uv run python3 docgen/docgen.py
 ```
 
 ### テスト実行
+```bash
+bash scripts/run_tests.sh
+```
 ```bash
 uv run pytest tests/ -v --tb=short
 ```
@@ -338,6 +355,7 @@ uv run pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
+   bash scripts/run_tests.sh
    uv run pytest tests/ -v --tb=short
    ```
 
@@ -347,4 +365,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 09:31:45*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 12:18:43*
