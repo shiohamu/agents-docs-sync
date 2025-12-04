@@ -5,8 +5,6 @@
 """
 
 from pathlib import Path
-import shutil
-import subprocess
 import sys
 from typing import Any
 
@@ -19,10 +17,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # パッケージとしてインストールされた場合は相対インポートを使用
+from .cli_handlers import BuildIndexHandler, HooksHandler, InitHandler
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator
 from .language_detector import LanguageDetector
-from .utils.exceptions import ErrorMessages
 from .utils.logger import get_logger
 
 # ロガーの初期化
@@ -98,6 +96,7 @@ class DocGen:
             成功したかどうか
         """
         self.detect_languages()
+        logger.info(f"Detected languages: {self.detected_languages}")
 
         if not self.detected_languages:
             logger.warning("サポートされている言語が検出されませんでした")
@@ -114,6 +113,9 @@ class CommandLineInterface:
 
     def __init__(self):
         self.docgen = None
+        self.init_handler = InitHandler()
+        self.build_index_handler = BuildIndexHandler()
+        self.hooks_handler = HooksHandler()
 
     def run(self) -> int:
         """メイン実行メソッド"""
@@ -181,7 +183,7 @@ class CommandLineInterface:
 
         # init コマンド（DocGen初期化前に処理）
         if args.command == "init":
-            return self._handle_init(args.force, project_root)
+            return self.init_handler.handle(args.force, project_root)
 
         # build-index コマンド（DocGen初期化後に処理）
         if args.build_index:
@@ -191,7 +193,7 @@ class CommandLineInterface:
                 return auto_init_result
 
             self.docgen = DocGen(project_root=project_root, config_path=args.config)
-            return self._handle_build_index(project_root, self.docgen.config)
+            return self.build_index_handler.handle(project_root, self.docgen.config)
 
         # DocGenの初期化（config.tomlが必要）
         # 必須ファイルがない場合は自動初期化
@@ -219,7 +221,7 @@ class CommandLineInterface:
 
         # hooks コマンド
         if args.command == "hooks":
-            return self._handle_hooks(args, project_root)
+            return self.hooks_handler.handle(args, project_root)
 
         # アーキテクチャ生成コマンド
         if args.generate_arch:
@@ -249,377 +251,13 @@ class CommandLineInterface:
         else:
             return 1
 
-    def _handle_hooks(self, args, project_root):
-        """Git hooksの管理アクションを処理"""
-        action = args.hooks_action
-
-        if action == "run":
-            # オーケストレーターを呼び出す
-            try:
-                from .hooks.orchestrator import HookOrchestrator
-
-                orchestrator = HookOrchestrator(args.hook_name, args.hook_args)
-
-                # タスクの登録（orchestrator.pyのmain関数と同様）
-                from .hooks.tasks.commit_msg_generator import CommitMsgGeneratorTask
-                from .hooks.tasks.doc_generator import DocGeneratorTask
-                from .hooks.tasks.file_stager import FileStagerTask
-                from .hooks.tasks.rag_generator import RagGeneratorTask
-                from .hooks.tasks.test_runner import TestRunnerTask
-                from .hooks.tasks.version_checker import VersionCheckerTask
-
-                orchestrator.register_task("run_tests", TestRunnerTask)
-                orchestrator.register_task("generate_docs", DocGeneratorTask)
-                orchestrator.register_task("generate_rag", RagGeneratorTask)
-                orchestrator.register_task("stage_changes", FileStagerTask)
-                orchestrator.register_task("generate_commit_message", CommitMsgGeneratorTask)
-                orchestrator.register_task("check_version", VersionCheckerTask)
-
-                return orchestrator.run()
-            except ImportError as e:
-                logger.error(f"フックオーケストレーターの読み込みに失敗しました: {e}")
-                return 1
-
-        git_hooks_dir = project_root / ".git" / "hooks"
-        docgen_hooks_dir = project_root / "docgen" / "hooks"
-
-        if not docgen_hooks_dir.exists():
-            logger.error(ErrorMessages.HOOKS_DIR_NOT_FOUND)
-            return 1
-
-        if action == "list":
-            print("\n利用可能なGitフック:")
-            print(f"  設定ファイル: {project_root}/docgen/hooks.toml")
-            print("-" * 40)
-
-            # hooks.tomlを読み込んで表示
-            try:
-                from .hooks.config import ConfigLoader
-
-                loader = ConfigLoader(str(project_root))
-                hooks = loader.load_config()
-                for name, hook_config in hooks.items():
-                    status = "有効" if hook_config.enabled else "無効"
-                    print(f"  {name}: {status}")
-                    for task in hook_config.tasks:
-                        task_status = "有効" if task.enabled else "無効"
-                        print(f"    - {task.name}: {task_status}")
-            except Exception as e:
-                print(f"  設定読み込みエラー: {e}")
-            print("-" * 40)
-            return 0
-
-        elif action == "validate":
-            print("フック設定を検証中...")
-            try:
-                from .hooks.config import ConfigLoader
-
-                loader = ConfigLoader(str(project_root))
-                config = loader.load_config()
-                print("✓ 設定ファイルは有効なTOMLです")
-                print(f"✓ {len(config)} 個のフック定義が見つかりました")
-                return 0
-            except Exception as e:
-                print(f"✗ 検証エラー: {e}")
-                return 1
-
-        hook_names = ["pre-commit", "post-commit", "pre-push", "commit-msg"]
-        target_hooks = [args.hook_name] if args.hook_name else hook_names
-
-        if action == "enable":
-            return self._enable_hooks(git_hooks_dir, docgen_hooks_dir, target_hooks)
-        elif action == "disable":
-            return self._disable_hooks(git_hooks_dir, target_hooks)
-        else:
-            logger.error(f"不明なアクション: {action}")
-            return 1
-
-    def _enable_hooks(self, git_hooks_dir, docgen_hooks_dir, hook_names):
-        """hooksを有効化"""
-
-        git_hooks_dir.mkdir(parents=True, exist_ok=True)
-
-        for hook_name in hook_names:
-            source_file = docgen_hooks_dir / hook_name
-            hook_file = git_hooks_dir / hook_name
-
-            if not source_file.exists():
-                logger.warning(
-                    ErrorMessages.HOOK_SOURCE_NOT_FOUND.format(
-                        hook_name=hook_name, source_file=source_file
-                    )
-                )
-                continue
-
-            # 既存のフックをバックアップ
-            if hook_file.exists() and not self._is_docgen_hook(hook_file):
-                backup_file = hook_file.with_suffix(
-                    f"{hook_file.suffix}.backup.{subprocess.run(['date', '+%Y%m%d_%H%M%S'], capture_output=True, text=True).stdout.strip()}"
-                )
-                shutil.copy2(hook_file, backup_file)
-                logger.info(f"既存の{hook_name}フックをバックアップしました: {backup_file}")
-
-            # フックを追加
-            if not self._is_docgen_hook(hook_file):
-                with open(hook_file, "a") as f:
-                    if not hook_file.exists() or not self._has_shebang(hook_file):
-                        f.write("#!/bin/bash\n")
-                    f.write(f"\n# docgen - {hook_name} hook\n")
-                    with open(source_file) as src:
-                        f.write(src.read())
-                hook_file.chmod(0o755)
-                logger.info(f"✓ {hook_name}フックをインストールしました")
-            else:
-                logger.info(f"✓ {hook_name}フックは既にインストールされています")
-
-        logger.info("Gitフックを有効化しました")
-        return 0
-
-    def _disable_hooks(self, git_hooks_dir, hook_names):
-        """hooksを無効化"""
-
-        for hook_name in hook_names:
-            hook_file = git_hooks_dir / hook_name
-            disabled_file = hook_file.with_suffix(f"{hook_file.suffix}.disabled")
-
-            if hook_file.exists():
-                if self._is_docgen_hook(hook_file):
-                    shutil.move(hook_file, disabled_file)
-                    logger.info(f"✓ {hook_name}フックを無効化しました")
-                else:
-                    logger.info(f"✓ {hook_name}フックはdocgenフックではありません（無視）")
-            else:
-                logger.info(f"✓ {hook_name}フックは存在しません")
-
-        logger.info("Gitフックを無効化しました")
-        return 0
-
-    def _is_docgen_hook(self, hook_file):
-        """フックファイルがdocgenフックかどうかをチェック"""
-        try:
-            with open(hook_file) as f:
-                return "# docgen" in f.read()
-        except FileNotFoundError:
-            return False
-
-    def _has_shebang(self, hook_file):
-        """フックファイルにシェバンがあるかどうかをチェック"""
-        try:
-            with open(hook_file) as f:
-                first_line = f.readline().strip()
-                return first_line.startswith("#!")
-        except FileNotFoundError:
-            return False
-
-    def _handle_init(self, force: bool, project_root: Path, quiet: bool = False) -> int:
-        """プロジェクトの初期化処理
-
-        Args:
-            force: 既存ファイルを強制上書き
-            project_root: プロジェクトルート
-            quiet: 詳細メッセージを抑制（自動初期化時に使用）
-
-        Returns:
-            成功時は0、失敗時は1
-        """
-        docgen_dir = project_root / "docgen"
-        config_file = docgen_dir / "config.toml"
-
-        # 既存ファイルチェック
-        if config_file.exists() and not force:
-            logger.warning(
-                f"設定ファイルが既に存在します: {config_file}\n"
-                "上書きする場合は --force フラグを使用してください。"
-            )
-            return 1
-
-        # docgenディレクトリの作成
-        docgen_dir.mkdir(parents=True, exist_ok=True)
-
-        # パッケージ内のソースディレクトリ（インストールされたパッケージまたは開発モード）
-        package_docgen_dir = DOCGEN_DIR
-
-        try:
-            # 1. config.toml.sampleをconfig.tomlにコピー
-            source_config = package_docgen_dir / "config.toml.sample"
-            if source_config.exists():
-                shutil.copy2(source_config, config_file)
-                if not quiet:
-                    logger.info(f"✓ 設定ファイルを作成しました: {config_file}")
-            else:
-                logger.error(f"ソースファイルが見つかりません: {source_config}")
-                return 1
-
-            # 2. templatesディレクトリのコピー
-            self._copy_directory_contents(
-                package_docgen_dir / "templates",
-                docgen_dir / "templates",
-                quiet=quiet,
-                description="テンプレート",
-            )
-
-            # 3. promptsディレクトリのコピー
-            self._copy_directory_contents(
-                package_docgen_dir / "prompts",
-                docgen_dir / "prompts",
-                quiet=quiet,
-                description="プロンプト",
-            )
-
-            # 4. hooksディレクトリのコピー（実行権限付与）
-            hooks_copied = self._copy_directory_contents(
-                package_docgen_dir / "hooks",
-                docgen_dir / "hooks",
-                quiet=quiet,
-                description="Git hooks",
-            )
-
-            # hooksファイルに実行権限を付与
-            if hooks_copied:
-                hooks_dir = docgen_dir / "hooks"
-                for hook_file in hooks_dir.iterdir():
-                    if hook_file.is_file():
-                        hook_file.chmod(0o755)
-
-            if not quiet:
-                logger.info("✓ プロジェクトの初期化が完了しました")
-
-            return 0
-
-        except Exception as e:
-            logger.error(f"初期化中にエラーが発生しました: {e}")
-            return 1
-
-    def _copy_directory_contents(
-        self, source_dir: Path, dest_dir: Path, quiet: bool = False, description: str = "ファイル"
-    ) -> bool:
-        """ディレクトリの内容をコピー
-
-        Args:
-            source_dir: コピー元ディレクトリ
-            dest_dir: コピー先ディレクトリ
-            quiet: 詳細メッセージを抑制
-            description: ログ用の説明文
-
-        Returns:
-            成功時はTrue、失敗時はFalse
-        """
-        if not source_dir.exists():
-            logger.warning(f"ソースディレクトリが見つかりません: {source_dir}")
-            return False
-
-        dest_dir.mkdir(parents=True, exist_ok=True)
-
-        try:
-            for item in source_dir.iterdir():
-                if item.is_file():
-                    shutil.copy2(item, dest_dir / item.name)
-
-            if not quiet:
-                file_count = len(list(dest_dir.iterdir()))
-                logger.info(f"✓ {description}をコピーしました: {file_count}ファイル")
-
-            return True
-
-        except Exception as e:
-            logger.error(f"{description}のコピー中にエラーが発生しました: {e}")
-            return False
-
-    def _handle_build_index(self, project_root: Path, config: dict) -> int:
-        """RAGインデックスを構築
-
-        Args:
-            project_root: プロジェクトルート
-            config: 設定辞書
-
-        Returns:
-            成功時は0、失敗時は1
-        """
-        try:
-            from .rag.chunker import CodeChunker
-            from .rag.embedder import Embedder
-            from .rag.indexer import VectorIndexer
-
-            logger.info("RAGインデックス構築を開始します...")
-
-            # RAG設定を取得
-            rag_config = config.get("rag", {})
-
-            # 1. コードベースをチャンク化
-            logger.info("Step 1/3: コードベースをチャンク化中...")
-            chunker = CodeChunker(rag_config)
-            chunks = chunker.chunk_codebase(project_root)
-
-            if not chunks:
-                logger.warning("チャンクが見つかりませんでした")
-                return 1
-
-            logger.info(f"✓ {len(chunks)} 個のチャンクを作成しました")
-
-            # 2. 埋め込み生成
-            logger.info("Step 2/3: 埋め込みを生成中...")
-            embedder = Embedder(rag_config)
-
-            # チャンクのテキストを抽出
-            texts = [chunk["text"] for chunk in chunks]
-
-            # バッチ処理で埋め込み生成
-            embeddings = embedder.embed_batch(texts, batch_size=32)
-
-            logger.info(f"✓ {len(embeddings)} 個の埋め込みを生成しました")
-
-            # 3. インデックス構築
-            logger.info("Step 3/3: インデックスを構築中...")
-            index_dir = project_root / "docgen" / "index"
-            indexer = VectorIndexer(
-                index_dir=index_dir,
-                embedding_dim=embedder.embedding_dim,
-                config=rag_config,
-            )
-
-            # インデックス構築
-            indexer.build(embeddings, chunks)
-
-            # 保存
-            indexer.save()
-
-            logger.info(f"✓ インデックスを保存しました: {index_dir}")
-            logger.info("=" * 60)
-            logger.info("RAGインデックス構築が完了しました！")
-            logger.info("=" * 60)
-            logger.info(f"インデックスディレクトリ: {index_dir}")
-            logger.info(f"チャンク数: {len(chunks)}")
-            logger.info(f"埋め込み次元: {embedder.embedding_dim}")
-            logger.info("")
-            logger.info("次のコマンドでRAGを使用してドキュメント生成:")
-            logger.info("  uv run python -m docgen.docgen --use-rag")
-
-            return 0
-
-        except ImportError as e:
-            logger.error(
-                f"RAGモジュールのインポートに失敗しました: {e}\n"
-                "RAG依存関係をインストールしてください: uv sync --extra rag"
-            )
-            return 1
-        except Exception as e:
-            logger.error(f"インデックス構築中にエラーが発生しました: {e}", exc_info=True)
-            return 1
-
     def _check_and_auto_init(self, project_root: Path) -> int:
-        """必須ファイルがない場合に自動初期化
-
-        Args:
-            project_root: プロジェクトルート
-
-        Returns:
-            成功時は0、失敗時は1
-        """
+        """必須ファイルがない場合に自動初期化"""
         config_path = project_root / "docgen" / "config.toml"
 
         if not config_path.exists():
             logger.info("必須ファイルが見つかりません。初期化を実行します...")
-            result = self._handle_init(force=True, project_root=project_root, quiet=True)
+            result = self.init_handler.handle(force=True, project_root=project_root, quiet=True)
             if result == 0:
                 logger.info("✓ 初期化が完了しました")
             return result

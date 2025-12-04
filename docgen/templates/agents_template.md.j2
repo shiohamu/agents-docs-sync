@@ -13,28 +13,28 @@
 
 **使用技術**: {{ languages|join(', ') }}
 
-{% if project_structure %}
+{%- if project_structure %}
 ## プロジェクト構造
 ```
 {{ project_structure }}
 ```
-{% endif %}
+{%- endif %}
 
-{% if key_features %}
+{%- if key_features %}
 ## 主要機能
 
-{% for feature in key_features %}
+{%- for feature in key_features %}
 - {{ feature }}
-{% endfor %}
-{% endif %}
+{%- endfor %}
+{%- endif %}
 
-{% if architecture %}
+{%- if architecture %}
 ## アーキテクチャ
 
 <!-- MANUAL_START:architecture -->
 <!-- MANUAL_END:architecture -->
 {{ architecture }}
-{% endif %}
+{%- endif %}
 
 ---
 
@@ -45,58 +45,62 @@
 ### 前提条件
 
 - Python 3.12以上
-{% if javascript %}- Node.js 18以上{% endif %}
-{% if go %}- Go 1.21以上{% endif %}
+{%- if javascript %}
+- Node.js 18以上
+{%- endif %}
+{%- if go %}
+- Go 1.21以上
+{%- endif %}
 
 ### 依存関係のインストール
 
-{% if "python" in languages %}
+{%- if "python" in languages %}
 #### Python依存関係
 
 ```bash
-{% if package_managers.python == "uv" %}
+{%- if package_managers.python == "uv" %}
 uv sync
-{% elif package_managers.python == "poetry" %}
+{%- elif package_managers.python == "poetry" %}
 poetry install
-{% elif package_managers.python == "conda" %}
+{%- elif package_managers.python == "conda" %}
 conda env create -f environment.yml
-{% else %}
+{%- else %}
 pip install -r requirements.txt
-{% endif %}
+{%- endif %}
 ```
-{% endif %}
+{%- endif %}
 
-{% if "javascript" in languages or "typescript" in languages %}
+{%- if "javascript" in languages or "typescript" in languages %}
 #### {{ "TypeScript" if "typescript" in languages else "JavaScript" }}依存関係
 
 ```bash
-{% if package_managers.javascript == "pnpm" %}
+{%- if package_managers.javascript == "pnpm" %}
 pnpm install
-{% elif package_managers.javascript == "yarn" %}
+{%- elif package_managers.javascript == "yarn" %}
 yarn install
-{% else %}
+{%- else %}
 npm install
-{% endif %}
+{%- endif %}
 ```
-{% endif %}
+{%- endif %}
 
-{% if "go" in languages %}
+{%- if "go" in languages %}
 #### Go依存関係
 
 ```bash
-{% if package_managers.go == "dep" %}
+{%- if package_managers.go == "dep" %}
 dep ensure
-{% elif package_managers.go == "glide" %}
+{%- elif package_managers.go == "glide" %}
 glide install
-{% else %}
+{%- else %}
 go mod download
-{% endif %}
+{%- endif %}
 ```
-{% endif %}
+{%- endif %}
 
 ### LLM環境のセットアップ
 
-{% if llm_mode == "api" or llm_mode == "both" %}
+{%- if llm_mode == "api" or llm_mode == "both" %}
 #### APIを使用する場合
 
 1. **APIキーの取得と設定**
@@ -107,9 +111,9 @@ go mod download
 2. **API使用時の注意事項**
    - APIレート制限に注意してください
    - コスト管理のために使用量を監視してください
-{% endif %}
+{%- endif %}
 
-{% if llm_mode == "local" or llm_mode == "both" %}
+{%- if llm_mode == "local" or llm_mode == "both" %}
 #### ローカルLLMを使用する場合
 
 1. **ローカルLLMのインストール**
@@ -121,7 +125,7 @@ go mod download
 2. **ローカルLLM使用時の注意事項**
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
-{% endif %}
+{%- endif %}
 
 ---
 
@@ -130,44 +134,44 @@ go mod download
 
 ### ビルド手順
 
-{% if build_commands %}
+{%- if build_commands %}
 {{ build_commands }}
-{% else %}
+{%- else %}
 ビルド手順は設定されていません。
-{% endif %}
+{%- endif %}
 
 ### テスト実行
 
-{% if test_commands %}
+{%- if test_commands %}
 {{ test_commands }}
-{% else %}
+{%- else %}
 テストコマンドは設定されていません。
-{% endif %}
+{%- endif %}
 
-{% if scripts %}
+{%- if scripts %}
 ### 利用可能なコマンド
 
 プロジェクトで定義されているスクリプトコマンド:
 
 | コマンド | 説明 |
 | --- | --- |
-{% for name, script_info in scripts.items() %}
+{%- for name, script_info in scripts.items() %}
 | `{{ name }}` | {{ script_info.description if script_info.description else script_info.command }} |
-{% endfor %}
+{%- endfor %}
 
-{% for name, script_info in scripts.items() %}
-{% if script_info.options and script_info.options|length > 0 %}
+{%- for name, script_info in scripts.items() %}
+{%- if script_info.options and script_info.options|length > 0 %}
 #### `{{ name }}` のオプション
 
 | オプション | 説明 |
 | --- | --- |
-{% for option in script_info.options %}
+{%- for option in script_info.options %}
 | `{{ option.name }}` | {{ option.help }} |
-{% endfor %}
+{%- endfor %}
 
-{% endif %}
-{% endfor %}
-{% endif %}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
 
 ---
 
@@ -175,38 +179,38 @@ go mod download
 
 <!-- MANUAL_START:other -->
 <!-- MANUAL_END:other -->
-{% if coding_standards.formatter %}
+{%- if coding_standards.formatter %}
 ### フォーマッター
 
 - **{{ coding_standards.formatter }}** を使用
-{% if coding_standards.formatter == "black" %}
+{%- if coding_standards.formatter == "black" %}
   ```bash
   black .
   ```
-{% elif coding_standards.formatter == "prettier" %}
+{%- elif coding_standards.formatter == "prettier" %}
   ```bash
   npx prettier --write .
   ```
-{% endif %}
-{% endif %}
+{%- endif %}
+{%- endif %}
 
-{% if coding_standards.linter %}
+{%- if coding_standards.linter %}
 ### リンター
 
 - **{{ coding_standards.linter }}** を使用
-{% if coding_standards.linter == "ruff" %}
+{%- if coding_standards.linter == "ruff" %}
   ```bash
   ruff check .
   ruff format .
   ```
-{% endif %}
-{% endif %}
+{%- endif %}
+{%- endif %}
 
-{% if coding_standards.style_guide %}
+{%- if coding_standards.style_guide %}
 ### スタイルガイド
 
 - {{ coding_standards.style_guide }} に準拠
-{% endif %}
+{%- endif %}
 
 ---
 
@@ -225,32 +229,32 @@ go mod download
 
 3. **テストの実行**
    ```bash
-   {% if raw_test_commands %}
-   {% for cmd in raw_test_commands %}
+   {%- if raw_test_commands %}
+   {%- for cmd in raw_test_commands %}
    {{ cmd }}
-   {% endfor %}
-   {% else %}
+   {%- endfor %}
+   {%- else %}
    # テストコマンドを実行
-   {% endif %}
+   {%- endif %}
    ```
 
 4. **プルリクエストの作成**
    - タイトル: `[種類] 簡潔な説明`
    - 説明: 変更内容、テスト結果、関連Issueを記載
 
-{% if troubleshooting %}
+{%- if troubleshooting %}
 ---
 
 ## トラブルシューティング
 
 {{ troubleshooting }}
-{% endif %}
+{%- endif %}
 
-{% if custom_instructions %}
+{%- if custom_instructions %}
 ---
 
 {{ custom_instructions }}
-{% endif %}
+{%- endif %}
 
 ---
 

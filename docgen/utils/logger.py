@@ -48,6 +48,7 @@ def setup_logger(
     console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
+    logger.propagate = False
 
     # ファイルハンドラー（指定されている場合）
     if log_file:

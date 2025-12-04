@@ -73,6 +73,7 @@ class LanguageDetector:
                 detectors.insert(0, plugin_detector)
 
         detected = []
+        package_managers = {}
 
         if use_parallel:
             # 並列処理で検出
@@ -89,6 +90,12 @@ class LanguageDetector:
                             if lang not in detected:
                                 detected.append(lang)
                                 logger.info(f"✓ 検出: {lang}")
+
+                                # パッケージマネージャも同時に取得
+                                pm = detector.detect_package_manager()
+                                if pm:
+                                    package_managers[lang] = pm
+                                    logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
                     except Exception as e:
                         logger.warning(
                             f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
@@ -102,28 +109,18 @@ class LanguageDetector:
                         if lang not in detected:
                             detected.append(lang)
                             logger.info(f"✓ 検出: {lang}")
+
+                            # パッケージマネージャも同時に取得
+                            pm = detector.detect_package_manager()
+                            if pm:
+                                package_managers[lang] = pm
+                                logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
                 except Exception as e:
                     logger.warning(
                         f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
                     )
 
         self.detected_languages = detected
-
-        # パッケージマネージャの検出
-        package_managers = {}
-        for detector in detectors:
-            try:
-                if detector.detect():
-                    lang = detector.get_language()
-                    pm = detector.detect_package_manager()
-                    if pm:
-                        package_managers[lang] = pm
-                        logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
-            except Exception as e:
-                logger.warning(
-                    f"パッケージマネージャ検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
-                )
-
         self.detected_package_managers = package_managers
         return detected
 

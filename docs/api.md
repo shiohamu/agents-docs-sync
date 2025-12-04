@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-02 19:06:55
+自動生成日時: 2025-12-04 09:29:50
 
 ---
 
@@ -353,6 +353,133 @@ def scan(self) -> ArchitectureManifest:
 プロジェクトをスキャン
 
 *定義場所: docgen/archgen/scanner.py:22*
+
+---
+
+
+## docgen/cli_handlers.py
+
+### InitHandler
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class InitHandler:
+```
+
+**説明**:
+
+Handler for the 'init' command
+
+*定義場所: docgen/cli_handlers.py:18*
+
+---
+
+### handle
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def handle(self, force: bool, project_root: Path, quiet: bool) -> int:
+```
+
+**説明**:
+
+Initialize the project
+
+Args:
+    force: Force overwrite existing files
+    project_root: Project root directory
+    quiet: Suppress detailed messages
+
+Returns:
+    Exit code (0 for success, 1 for failure)
+
+*定義場所: docgen/cli_handlers.py:21*
+
+---
+
+### BuildIndexHandler
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BuildIndexHandler:
+```
+
+**説明**:
+
+Handler for the 'build-index' command
+
+*定義場所: docgen/cli_handlers.py:126*
+
+---
+
+### handle
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def handle(self, project_root: Path, config: dict) -> int:
+```
+
+**説明**:
+
+Build RAG index
+
+Args:
+    project_root: Project root directory
+    config: Configuration dictionary
+
+Returns:
+    Exit code
+
+*定義場所: docgen/cli_handlers.py:129*
+
+---
+
+### HooksHandler
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HooksHandler:
+```
+
+**説明**:
+
+Handler for the 'hooks' command
+
+*定義場所: docgen/cli_handlers.py:212*
+
+---
+
+### handle
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def handle(self, args, project_root: Path) -> int:
+```
+
+**説明**:
+
+Handle Git hooks management actions
+
+Args:
+    args: Parsed arguments
+    project_root: Project root directory
+
+Returns:
+    Exit code
+
+*定義場所: docgen/cli_handlers.py:215*
 
 ---
 
@@ -1167,7 +1294,7 @@ class ConfigManager:
 
 設定ファイルの管理クラス
 
-*定義場所: docgen/config_manager.py:42*
+*定義場所: docgen/config_manager.py:43*
 
 ---
 
@@ -1190,7 +1317,7 @@ Args:
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
     package_config_sample: パッケージ内のサンプル設定ファイルパス
 
-*定義場所: docgen/config_manager.py:45*
+*定義場所: docgen/config_manager.py:46*
 
 ---
 
@@ -1207,7 +1334,7 @@ def get_config(self) -> dict[str, Any]:
 
 現在の設定を取得
 
-*定義場所: docgen/config_manager.py:150*
+*定義場所: docgen/config_manager.py:152*
 
 ---
 
@@ -1227,7 +1354,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/config_manager.py:182*
+*定義場所: docgen/config_manager.py:184*
 
 ---
 
@@ -1244,10 +1371,7 @@ def load_detector_defaults(self) -> dict[str, Any]:
 
 Detectorのデフォルト設定を読み込み
 
-Returns:
-    言語名をキーとした設定の辞書
-
-*定義場所: docgen/config_manager.py:207*
+*定義場所: docgen/config_manager.py:209*
 
 ---
 
@@ -1262,12 +1386,9 @@ def load_detector_user_overrides(self) -> dict[str, Any]:
 
 **説明**:
 
-Load detector configuration from config.toml.
+ユーザー設定ファイルを読み込み
 
-Returns:
-    Detector configuration dictionary.
-
-*定義場所: docgen/config_manager.py:234*
+*定義場所: docgen/config_manager.py:213*
 
 ---
 
@@ -1284,14 +1405,106 @@ def merge_detector_configs(self, defaults: dict[str, Any], overrides: dict[str, 
 
 Detectorのデフォルト設定とユーザー設定をマージ
 
-Args:
-    defaults: デフォルト設定
-    overrides: ユーザー設定
+*定義場所: docgen/config_manager.py:217*
+
+---
+
+
+## docgen/detector_config_loader.py
+
+### DetectorConfigLoader
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DetectorConfigLoader:
+```
+
+**説明**:
+
+Loader for detector configurations
+
+*定義場所: docgen/detector_config_loader.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path):
+```
+
+*説明なし*
+
+*定義場所: docgen/detector_config_loader.py:16*
+
+---
+
+### load_defaults
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_defaults(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+Load default detector configurations
 
 Returns:
-    マージされた設定
+    Dictionary of language configurations
 
-*定義場所: docgen/config_manager.py:262*
+*定義場所: docgen/detector_config_loader.py:19*
+
+---
+
+### load_user_overrides
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def load_user_overrides(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+Load detector configuration from config.toml
+
+Returns:
+    Detector configuration dictionary
+
+*定義場所: docgen/detector_config_loader.py:46*
+
+---
+
+### merge_configs
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def merge_configs(self, defaults: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+```
+
+**説明**:
+
+Merge default and user configurations
+
+Args:
+    defaults: Default configurations
+    overrides: User configurations
+
+Returns:
+    Merged configurations
+
+*定義場所: docgen/detector_config_loader.py:74*
 
 ---
 
@@ -1918,7 +2131,7 @@ class DocGen:
 
 ドキュメント自動生成メインクラス
 
-*定義場所: docgen/docgen.py:32*
+*定義場所: docgen/docgen.py:30*
 
 ---
 
@@ -1939,7 +2152,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ（Noneの場合は現在の作業ディレクトリ）
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
 
-*定義場所: docgen/docgen.py:35*
+*定義場所: docgen/docgen.py:33*
 
 ---
 
@@ -1962,7 +2175,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/docgen.py:69*
+*定義場所: docgen/docgen.py:67*
 
 ---
 
@@ -1982,7 +2195,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/docgen.py:83*
+*定義場所: docgen/docgen.py:81*
 
 ---
 
@@ -2002,7 +2215,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/docgen.py:93*
+*定義場所: docgen/docgen.py:91*
 
 ---
 
@@ -2019,7 +2232,7 @@ class CommandLineInterface:
 
 コマンドラインインターフェースクラス
 
-*定義場所: docgen/docgen.py:112*
+*定義場所: docgen/docgen.py:111*
 
 ---
 
@@ -2034,7 +2247,7 @@ def __init__(self):
 
 *説明なし*
 
-*定義場所: docgen/docgen.py:115*
+*定義場所: docgen/docgen.py:114*
 
 ---
 
@@ -2051,7 +2264,7 @@ def run(self) -> int:
 
 メイン実行メソッド
 
-*定義場所: docgen/docgen.py:118*
+*定義場所: docgen/docgen.py:120*
 
 ---
 
@@ -2068,7 +2281,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:630*
+*定義場所: docgen/docgen.py:268*
 
 ---
 
@@ -3775,7 +3988,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語を取得
 
-*定義場所: docgen/language_detector.py:130*
+*定義場所: docgen/language_detector.py:127*
 
 ---
 
@@ -3792,7 +4005,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:134*
+*定義場所: docgen/language_detector.py:131*
 
 ---
 
@@ -6577,7 +6790,7 @@ Args:
 Returns:
     ロガー
 
-*定義場所: docgen/utils/logger.py:62*
+*定義場所: docgen/utils/logger.py:63*
 
 ---
 

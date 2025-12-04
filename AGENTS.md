@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-02 19:08:32
+自動生成日時: 2025-12-04 09:31:45
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -8,70 +8,74 @@
 
 
 <!-- MANUAL_START:description -->
+
 <!-- MANUAL_END:description -->
 
-agents-docs-sync は、コミットごとに自動的にテスト実行・ドキュメント生成・AGENTS.md の更新を行う CI/CD パイプラインです。  
-Python で構築されており、シェルスクリプトも併用しているため、GitHub Actions や GitLab Runner といった任意の実行環境に簡単に組み込めます。
+
+コミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md の更新を行うパイプラインです。  
+Python 3.x とシェルスクリプトで構成され、`docgen` パッケージが中心のモジュール群となっています。
+
+### 技術スタック
+- **言語**: Python, Bash / Shell  
+- **テスト & カバレッジ**: `pytest`, `pytest-cov`, `pytest-mock`  
+- **コード品質**: `ruff`, `pydantic`（型定義）  
+- **ドキュメント生成**: Jinja2 テンプレート、YAML で構成されたモデル (`AgentsConfig`, `AgentsDocument`)  
+- **自動アーキテクチャ図作成**: リポジトリを解析し PlantUML/Mermaid を出力（LLM 不使用）  
+- **検索・推論**: `hnswlib`, `sentence-transformers`、必要に応じて OpenAI / Anthropic API で補完  
+- **HTTP クライアント**: `httpx`  
+- **CLI エントリポイント**: `pyproject.toml` の `[project.scripts] agents_docs_sync = "docgen.docgen:main"`  
 
 ### アーキテクチャ
-- **エントリポイント**  
-  `agents_docs_sync` スクリプトは `docgen.docgen:main` を呼び出し、CLI のオプション解析からパイプライン実行を開始します。  
-- **設定モデル** (`pydantic`)  
-  - `ProjectOverview`: プロジェクト全体のメタ情報（名前・バージョン等）  
-  - `AgentsConfigSection` / `AgentsGenerationConfig`: エージェント固有の構成と生成オプションを定義  
-  - `AgentsDocument`: AGENTS.md に落ちるデータ構造。YAML/JSON ファイルから読み込み、バリデーション後にテンプレートへ渡します。  
-- **テスト実行** (`pytest`)  
-  コミット時に自動で全ユニット・統合テストを走らせ、カバレッジ結果は `coverage.xml` に保存されます。  
-- **ドキュメント生成** (`jinja2`, `pydantic`)  
-  設定モデルから構造化データを取得し、Jinja テンプレートで AGENTS.md を再作成します。テンプレートのカスタマイズはプロジェクトルートに `templates/` 配下へ配置するだけです。  
-- **アーキテクチャ図自動生成** (`graphviz`, `hnswlib + sentence-transformers`)  
-  ソースコード構造を解析し、モジュール間の依存関係を可視化します。このプロセスは LLM を一切使用せず、ローカルで高速に実行可能です。生成画像は `docs/architecture_diagram.png` に保存されます。  
-- **フック管理** (`agents_docs_sync hook install`)  
-  Git の pre‑commit フックを自動設定し、新しいコミットが作られるたびにパイプラインを走らせるよう構成します。
+```
+┌───────────────────────┐
+│  CLI (agents_docs_sync) │  ← user entry point, parses args & config  
+├─────────────▲──────────┤
+│             │          │
+│   orchestrator           │
+│ (docgen.docgen.main)     │
+├─────────────▼──────────┘
+│ ┌───────────────────────┐
+│ │  test_runner.py        │  → runs pytest, generates coverage report  
+│ │  doc_generator.py      │  → renders Jinja2 templates into AGENTS.md  
+│ │  arch_gen.py           │  ← scans repo tree → Mermaid/PlantUML diagram  
+│ └───────────────────────┘
+```
 
 ### 主な機能
-| 機能 | 説明 |
-|------|-----|
-| **CI パイプライン** | コミット時に `pytest` でテスト実行、失敗した場合はビルド停止。成功なら次へ進む。 |
-| **AGENTS.md 自動更新** | 設定ファイル（YAML/JSON）を読み込み、テンプレートエンジンでマークダウン生成。既存の `agents` セクションが差分のみ書き換えられます。 |
-| **アーキテクチャ図自動化** | コードベースから依存関係グラフを抽出し、PNG 形式で保存。文脈情報は sentence‑transformers + hnswlib による埋め込み検索により補完されますが、LLM は使用せず高速です。 |
-| **柔軟な設定** | `docs/CONFIG_GUIDE.md` を参照し、フックの有効化・無効化やテンプレートパス変更などを簡単に行えます。 |
-| **依存性管理** | 必要ライブラリは pyproject.toml に明示されており、 `pip install -e .[dev]` で開発環境構築が可能です（anthropic, openai 等の外部 API キー設定もサポート）。 |
 
-### 主な依存パッケージ
-```
-pydantic          # 設定とデータバリデーション
-jinja2            # テンプレートエンジン
-pytest / pytest-cov  # テスト実行・カバレッジ取得
-httpx             # HTTP クライアント（API 呼び出し用）
-openai, anthropic   # 必要に応じて LLM API キーで拡張可能
-outlines          # 自動生成テンプレート補助 (LLM ベース)
-sentence-transformers / hnswlib  # 埋め込み検索・類似度判定
-torch             # ML モデル実行のバックエンド
-ruff              # 静的コード解析
-```
+- **自動テスト実行**: コミット時に `pytest` を走らせ、失敗した場合はビルドを中断。カバレッジ情報は CI レポートへ出力。
+  
+- **AGENTS.md 自動生成**:
+  - ソースコードの docstring やメタデータから構造化モデル `AgentsDocument` を作成し、Jinja2 テンプレートで Markdown 化。  
+  - YAML 設定 (`agents.yaml`) によりカスタマイズ可能。
+  
+- **アーキテクチャ図自動生成**:
+  - リポジトリ構造を解析し、Python の import 関係やディレクトリ階層から Mermaid/PlantUML を作成。LLM は使用せず純粋にコードベースで推論。
+  
+- **CLI サブコマンド**:
+  - `agents_docs_sync --help` – 利用可能オプション表示  
+  - `agents_docs_sync hook install` – pre‑commit フックをインストールし、コミット前に自動実行。  
 
-### 実行例（GitHub Actions）
-```yaml
-jobs:
-  docs-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install .[dev]
-      - run: agents_docs_sync --run-all
+### 設定 & モデル
+
+- **Configuration Guide (`docs/CONFIG_GUIDE.md`)** に詳細が記載されており、以下の Pydantic クラスで構成:
+  - `AgentsConfig`  
+  - `AgentsGenerationConfig`
+  - `ProjectOverview`, `AgentsConfigSection`
+
+### 実行例
+
+```bash
+# コミット時に自動実行（CI のステップとしても可）
+git commit -m "Update docs"
+agents_docs_sync   # → テスト→ドキュメント生成→AGENTS.md 更新
+
+# pre-commit フックを手動でインストール
+agents_docs_sync hook install
 ```
 
-このように、`agents-docs-sync` はコミットをトリガーとした自動テスト・ドキュメント生成パイプラインを提供し、プロジェクトの品質保証と情報共有を一元化します。
+このパイプラインは、継続的なコード品質保持と最新のドキュメンテーション維持を一括して行うために設計されており、Python コミュニティ向けの標準化されたワークフローとして活用できます。
 **使用技術**: python, shell
-
-
 ## プロジェクト構造
 ```
 agents-docs-sync/
@@ -137,8 +141,10 @@ agents-docs-sync/
  │  │  ├─ exceptions.py
  │  │  ├─ file_utils.py
  │  │  └─ prompt_loader.py
+ │  ├─ cli_handlers.py
  │  ├─ config.toml
  │  ├─ config_manager.py
+ │  ├─ detector_config_loader.py
  │  ├─ docgen.py
  │  └─ hooks.toml
  ├─ docs/
@@ -150,14 +156,10 @@ agents-docs-sync/
  ├─ requirements-docgen.txt
  └─ requirements-test.txt
 ```
-
-
-
-
-
 ## アーキテクチャ
 
 <!-- MANUAL_START:architecture -->
+
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -232,40 +234,25 @@ graph TB
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 - **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
-
 ---
 
 ## 開発環境のセットアップ
 
 <!-- MANUAL_START:setup -->
+
 <!-- MANUAL_END:setup -->
 ### 前提条件
 
 - Python 3.12以上
 
-
-
 ### 依存関係のインストール
-
-
 #### Python依存関係
 
 ```bash
-
 uv sync
-
 ```
 
-
-
-
-
-
 ### LLM環境のセットアップ
-
-
-
-
 #### ローカルLLMを使用する場合
 
 1. **ローカルLLMのインストール**
@@ -278,104 +265,67 @@ uv sync
    - モデルが起動していることを確認してください
    - ローカルリソース（メモリ、CPU）を監視してください
 
-
 ---
 
 
 ## ビルドおよびテスト手順
 
 ### ビルド手順
-
-
 ```bash
 uv sync
 uv build
 uv run python3 docgen/docgen.py
 ```
 
-
 ### テスト実行
-
-
 ```bash
 uv run pytest tests/ -v --tb=short
 ```
-
-
-
 ### 利用可能なコマンド
 
 プロジェクトで定義されているスクリプトコマンド:
 
 | コマンド | 説明 |
 | --- | --- |
-
 | `agents_docs_sync` | 汎用ドキュメント自動生成システム |
-
-
-
-
 #### `agents_docs_sync` のオプション
 
 | オプション | 説明 |
 | --- | --- |
-
 | `--config` | 設定ファイルのパス |
-
 | `--detect-only` | 言語検出のみ実行 |
-
 | `--no-api-doc` | APIドキュメントを生成しない |
-
 | `--no-readme` | READMEを更新しない |
-
 | `--build-index` | RAGインデックスをビルド |
-
 | `--use-rag` | RAGを使用してドキュメント生成 |
-
 | `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
-
 | `hook_name` | フック名（指定しない場合は全て） |
-
 | `hook_name` | フック名（指定しない場合は全て） |
-
 | `hook_name` | 実行するフック名 |
-
 | `hook_args` | フック引数 |
-
 | `--force` | 既存ファイルを強制上書き |
-
-
-
-
-
 
 ---
 
 ## コーディング規約
 
 <!-- MANUAL_START:other -->
+
 <!-- MANUAL_END:other -->
-
-
-
 ### リンター
 
 - **ruff** を使用
-
   ```bash
   ruff check .
   ruff format .
   ```
-
-
-
-
 
 ---
 
 ## プルリクエストの手順
 
 <!-- MANUAL_START:pr -->
+
 <!-- MANUAL_END:pr -->
 1. **ブランチの作成**
    ```bash
@@ -388,21 +338,13 @@ uv run pytest tests/ -v --tb=short
 
 3. **テストの実行**
    ```bash
-   
-   
    uv run pytest tests/ -v --tb=short
-   
-   
    ```
 
 4. **プルリクエストの作成**
    - タイトル: `[種類] 簡潔な説明`
    - 説明: 変更内容、テスト結果、関連Issueを記載
 
-
-
-
-
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-02 19:08:32*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 09:31:45*
