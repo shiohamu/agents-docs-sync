@@ -149,9 +149,9 @@ go mod download
 {%- endif %}
 
 {%- if scripts %}
-### 利用可能なコマンド
+## コマンド
 
-プロジェクトで定義されているスクリプトコマンド:
+プロジェクトで利用可能なスクリプト:
 
 | コマンド | 説明 |
 | --- | --- |
@@ -161,18 +161,65 @@ go mod download
 
 {%- for name, script_info in scripts.items() %}
 {%- if script_info.options and script_info.options|length > 0 %}
-#### `{{ name }}` のオプション
+
+### `{{ name }}` のオプション
 
 | オプション | 説明 |
 | --- | --- |
 {%- for option in script_info.options %}
 | `{{ option.name }}` | {{ option.help }} |
 {%- endfor %}
-
 {%- endif %}
+
+{%- if script_info.subcommands and script_info.subcommands|length > 0 %}
+
+### `{{ name }}` のサブコマンド
+
+| サブコマンド | 説明 |
+| --- | --- |
+{%- for subcmd_name, subcmd_info in script_info.subcommands.items() %}
+| `{{ name }} {{ subcmd_name }}` | {{ subcmd_info.help }} |
+{%- endfor %}
+
+{%- for subcmd_name, subcmd_info in script_info.subcommands.items() %}
+{%- if subcmd_info.options and subcmd_info.options|length > 0 %}
+
+#### `{{ name }} {{ subcmd_name }}` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+{%- for opt in subcmd_info.options %}
+| `{{ opt.name }}` | {{ opt.help }} |
 {%- endfor %}
 {%- endif %}
 
+{%- if subcmd_info.subcommands and subcmd_info.subcommands|length > 0 %}
+
+#### `{{ name }} {{ subcmd_name }}` のサブコマンド
+
+| サブコマンド | 説明 |
+| --- | --- |
+{%- for nested_name, nested_info in subcmd_info.subcommands.items() %}
+| `{{ name }} {{ subcmd_name }} {{ nested_name }}` | {{ nested_info.help }} |
+{%- endfor %}
+
+{%- for nested_name, nested_info in subcmd_info.subcommands.items() %}
+{%- if nested_info.options and nested_info.options|length > 0 %}
+
+##### `{{ name }} {{ subcmd_name }} {{ nested_name }}` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+{%- for nopt in nested_info.options %}
+| `{{ nopt.name }}` | {{ nopt.help }} |
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
+{%- endfor %}
+{%- endif %}
 ---
 
 ## コーディング規約

@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 import asyncio
 
+
 class HookOrchestrator:
     """Git hook実行のオーケストレーター"""
 

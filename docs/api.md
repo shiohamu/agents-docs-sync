@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-04 14:36:53
+自動生成日時: 2025-12-04 16:59:01
 
 ---
 
@@ -878,6 +878,34 @@ Returns:
 
 ---
 
+### extract_structured_commands_from_entry_point
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_structured_commands_from_entry_point(entry_point: str, project_root: Path | None) -> dict[str, Any]:
+```
+
+**説明**:
+
+Extract structured command hierarchy from a Python entry point.
+
+Returns a structured dict with:
+- options: list of main CLI options (e.g., --config, --detect-only)
+- subcommands: dict of subcommand name -> {help, options, subcommands}
+
+Args:
+    entry_point: Entry point string in format "module.path:function"
+    project_root: Project root directory to add to sys.path
+
+Returns:
+    Structured command hierarchy dict
+
+*定義場所: docgen/collectors/command_help_extractor.py:230*
+
+---
+
 
 ## docgen/collectors/dependency_collector.py
 
@@ -1030,7 +1058,7 @@ def collect_project_description(self) -> str | None:
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
 
-*定義場所: docgen/collectors/language_info_collector.py:137*
+*定義場所: docgen/collectors/language_info_collector.py:141*
 
 ---
 
@@ -4831,7 +4859,7 @@ class HookOrchestrator:
 
 Git hook実行のオーケストレーター
 
-*定義場所: docgen/hooks/orchestrator.py:16*
+*定義場所: docgen/hooks/orchestrator.py:19*
 
 ---
 
@@ -4846,7 +4874,7 @@ def __init__(self, hook_name: str, args: list[str]):
 
 *説明なし*
 
-*定義場所: docgen/hooks/orchestrator.py:19*
+*定義場所: docgen/hooks/orchestrator.py:22*
 
 ---
 
@@ -4863,7 +4891,24 @@ def register_task(self, name: str, task_class: type):
 
 タスクを登録する
 
-*定義場所: docgen/hooks/orchestrator.py:37*
+*定義場所: docgen/hooks/orchestrator.py:40*
+
+---
+
+### run_async
+
+**型**: `method`
+
+**シグネチャ**:
+```
+async def run_async(self) -> int:
+```
+
+**説明**:
+
+フックを非同期実行する
+
+*定義場所: docgen/hooks/orchestrator.py:44*
 
 ---
 
@@ -4878,9 +4923,9 @@ def run(self) -> int:
 
 **説明**:
 
-フックを実行する
+同期実行ラッパー
 
-*定義場所: docgen/hooks/orchestrator.py:41*
+*定義場所: docgen/hooks/orchestrator.py:122*
 
 ---
 
@@ -4897,7 +4942,78 @@ def main():
 
 エントリーポイント
 
-*定義場所: docgen/hooks/orchestrator.py:117*
+*定義場所: docgen/hooks/orchestrator.py:127*
+
+---
+
+
+## docgen/hooks/registry.py
+
+### TaskRegistry
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TaskRegistry:
+```
+
+**説明**:
+
+フックタスクのレジストリ
+
+*定義場所: docgen/hooks/registry.py:4*
+
+---
+
+### register
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def register(cls, name: str):
+```
+
+**説明**:
+
+タスクを登録するデコレータ
+
+*定義場所: docgen/hooks/registry.py:10*
+
+---
+
+### get_task
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_task(cls, name: str) -> type[HookTask] | None:
+```
+
+**説明**:
+
+タスククラスを取得
+
+*定義場所: docgen/hooks/registry.py:20*
+
+---
+
+### get_all_tasks
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_all_tasks(cls) -> dict[str, type[HookTask]]:
+```
+
+**説明**:
+
+全タスクを取得
+
+*定義場所: docgen/hooks/registry.py:25*
 
 ---
 
@@ -5015,6 +5131,23 @@ def should_run(self, context: HookContext) -> bool:
 
 ---
 
+### run_async
+
+**型**: `method`
+
+**シグネチャ**:
+```
+async def run_async(self, context: HookContext) -> TaskResult:
+```
+
+**説明**:
+
+タスクを非同期実行（デフォルトは同期実行をラップ）
+
+*定義場所: docgen/hooks/tasks/base.py:44*
+
+---
+
 
 ## docgen/hooks/tasks/commit_msg_generator.py
 
@@ -5031,7 +5164,7 @@ class CommitMsgGeneratorTask:
 
 コミットメッセージ生成タスク
 
-*定義場所: docgen/hooks/tasks/commit_msg_generator.py:7*
+*定義場所: docgen/hooks/tasks/commit_msg_generator.py:9*
 
 ---
 
@@ -5046,7 +5179,7 @@ def run(self, context: HookContext) -> TaskResult:
 
 *説明なし*
 
-*定義場所: docgen/hooks/tasks/commit_msg_generator.py:10*
+*定義場所: docgen/hooks/tasks/commit_msg_generator.py:12*
 
 ---
 
@@ -5066,7 +5199,7 @@ class DocGeneratorTask:
 
 ドキュメント生成タスク
 
-*定義場所: docgen/hooks/tasks/doc_generator.py:5*
+*定義場所: docgen/hooks/tasks/doc_generator.py:7*
 
 ---
 
@@ -5081,7 +5214,7 @@ def run(self, context: HookContext) -> TaskResult:
 
 *説明なし*
 
-*定義場所: docgen/hooks/tasks/doc_generator.py:8*
+*定義場所: docgen/hooks/tasks/doc_generator.py:10*
 
 ---
 
@@ -5101,7 +5234,7 @@ class FileStagerTask:
 
 ファイルステージングタスク
 
-*定義場所: docgen/hooks/tasks/file_stager.py:7*
+*定義場所: docgen/hooks/tasks/file_stager.py:9*
 
 ---
 
@@ -5116,7 +5249,7 @@ def run(self, context: HookContext) -> TaskResult:
 
 *説明なし*
 
-*定義場所: docgen/hooks/tasks/file_stager.py:10*
+*定義場所: docgen/hooks/tasks/file_stager.py:12*
 
 ---
 
@@ -5136,7 +5269,7 @@ class RagGeneratorTask:
 
 RAG生成タスク
 
-*定義場所: docgen/hooks/tasks/rag_generator.py:5*
+*定義場所: docgen/hooks/tasks/rag_generator.py:7*
 
 ---
 
@@ -5151,7 +5284,7 @@ def run(self, context: HookContext) -> TaskResult:
 
 *説明なし*
 
-*定義場所: docgen/hooks/tasks/rag_generator.py:8*
+*定義場所: docgen/hooks/tasks/rag_generator.py:10*
 
 ---
 
@@ -5171,7 +5304,7 @@ class TestRunnerTask:
 
 テスト実行タスク
 
-*定義場所: docgen/hooks/tasks/test_runner.py:7*
+*定義場所: docgen/hooks/tasks/test_runner.py:9*
 
 ---
 
@@ -5186,7 +5319,7 @@ def run(self, context: HookContext) -> TaskResult:
 
 *説明なし*
 
-*定義場所: docgen/hooks/tasks/test_runner.py:10*
+*定義場所: docgen/hooks/tasks/test_runner.py:12*
 
 ---
 
@@ -5206,7 +5339,7 @@ class VersionCheckerTask:
 
 バージョンチェック＆リリースタグ作成タスク
 
-*定義場所: docgen/hooks/tasks/version_checker.py:8*
+*定義場所: docgen/hooks/tasks/version_checker.py:10*
 
 ---
 
@@ -5221,7 +5354,7 @@ def run(self, context: HookContext) -> TaskResult:
 
 *説明なし*
 
-*定義場所: docgen/hooks/tasks/version_checker.py:11*
+*定義場所: docgen/hooks/tasks/version_checker.py:13*
 
 ---
 

@@ -8,73 +8,26 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-agents-docs-sync は、Git のコミットごとに自動的にテスト実行・ドキュメント生成・AGENTS.md 更新を行う CI パイプラインです。  
-Python 3.x とシェルスクリプトのみで構成されており、依存関係は `uv` が管理します。
+agents-docs-sync は、ソースコードの変更がコミットされるたびに自動で以下の処理を実行します。
 
-### 主な機能
+- **テスト実行**：Python 3.x 用の `uv` 環境下で `pytest`（+ `pytest-cov`, `pytest-mock`）を用いてユニット・統合テストを走らせ、カバレッジ情報も収集します。  
+- **ドキュメント生成**：プロジェクト内の docstring や Markdown ファイルから Sphinx で API ドキュメントをビルドし、`docs/` ディレクトリに出力します。また `pyyaml` を利用して設定ファイル（例: `_config.yml`, `agents.yaml`）を読み込み、必要なメタ情報も埋め込む仕組みです。  
+- **AGENTS.md 自動更新**：各エージェントの定義が記載された YAML/JSON ファイルから最新情報を抽出し、`AGENTS.md` を再生成します。これによりドキュメントと実際のコードベース間で整合性が保たれます。
 
-- **テスト実行**：`pytest`（バージョン ≥7.4）を使いユニット・統合テスト全体を走らせます。失敗したケースは CI ステータスに反映され、即座に修正が促されます。
-- **ドキュメント生成**：Sphinx などのツールでコードコメントやテスト結果から Markdown/Sphinx ドキュメントを自動作成します。`pyyaml ≥6.0.3` が YAML 設定ファイル（例: `agents.yaml`）をパースし、ドキュメント構造に反映。
-- **AGENTS.md 自動更新**：プロジェクト内のエージェント情報が記述された設定ファイルから最新データを抽出し、`AGENTS.md` を再生成。変更は自動でコミットされるため手作業不要。
+### 技術スタック
+- **言語**：Python（3.10+）＋ Bash  
+- **パッケージマネージャ**：`uv` (高速な Python 環境構築)  
+- **主要依存ライブラリ**  
+  - `pyyaml>=6.0.3` – 設定・メタ情報の読み込み  
+  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` – テスト実行とカバレッジ測定  
+- **CI/CD**：GitHub Actions（または任意の CI サーバ）で `push/main` イベントをトリガーし、上記スクリプトが順次走るように構成。
 
-### 主要依存ライブラリ
+### ワークフロー
+1. コミット → GitHub に Push  
+2. CI が起動：テスト→ドキュメント生成→AGENTS.md 更新  
+3. すべて成功した場合のみマージ／デプロイを許可  
 
-| ライブラリ | バージョン要件 |
-|------------|----------------|
-| pyyaml     | >=6.0.3        |
-| pytest     | >=7.4.0        |
-| pytest-cov | >=4.1.0        |
-| pytest-mock| >=3.11.1       |
-
-### インストール & 実行
-
-```bash
-# 依存パッケージをインストール（uv が必要）
-pip install uv
-uv sync --dev   # 開発環境用の依存も含めて同期
-
-# パイプラインスクリプト実行 (CI 環境で自動)
-./scripts/run_pipeline.sh
-```
-
-`run_pipeline.sh` は内部で以下を順に呼び出します：
-
-1. `pytest --cov=src tests/`
-2. Sphinx ドキュメントビルド (`sphinx-build -b html docs build/docs`)
-3. Python スクリプト `scripts/generate_agents_md.py` で AGENTS.md を生成
-4. 必要に応じて変更を Git にコミット
-
-### CI 設定例（GitHub Actions）
-
-```yaml
-name: Docs & Tests
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # コミット履歴取得で差分判定に使用
-      - name: Set up Python & uv
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: pip install uv
-      - run: uv sync --dev
-      - run: ./scripts/run_pipeline.sh
-```
-
-### カスタマイズ
-
-- **テスト設定**：`pytest.ini` や `pyproject.toml` でカバレッジ閾値・フィルタリングを調整できます。
-- **ドキュメントテーマ**：Sphinx のテーマや拡張機能（ex. autodoc, napoleon）を追加して外観と構造を自由に変更可能です。
-
-このパイプラインは、コードベースと関連ドキュメントの同期性を保ちつつ手動更新作業を最小化し、高品質なリポジトリ運用を実現します。<!-- MANUAL_START:architecture -->
+このパッケージは、コード品質と最新の開発者向け資料が常に同期された状態で保たれることを保証し、大規模なエージェントベースアプリケーションやライブラリ開発に最適です。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -227,6 +180,7 @@ uv run pytest tests/ -v --tb=short
 | コマンド | 説明 |
 | --- | --- |
 | `agents_docs_sync` | 汎用ドキュメント自動生成システム |
+
 ### `agents_docs_sync` のオプション
 
 | オプション | 説明 |
@@ -238,12 +192,7 @@ uv run pytest tests/ -v --tb=short
 | `--build-index` | RAGインデックスをビルド |
 | `--use-rag` | RAGを使用してドキュメント生成 |
 | `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
-| `hook_name` | フック名（指定しない場合は全て） |
-| `hook_name` | フック名（指定しない場合は全て） |
-| `hook_name` | 実行するフック名 |
-| `hook_args` | フック引数 |
-| `--force` | 既存ファイルを強制上書き |
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-04 14:37:03*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-04 16:59:08*

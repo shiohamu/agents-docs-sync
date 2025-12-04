@@ -97,13 +97,17 @@ class LanguageInfoCollector(BaseCollector):
                         description = CommandHelpExtractor.extract_from_entry_point(
                             entry_point, self.project_root
                         )
-                        options = CommandHelpExtractor.extract_options_from_entry_point(
-                            entry_point, self.project_root
+                        # Use structured command extraction for hierarchical display
+                        structured = (
+                            CommandHelpExtractor.extract_structured_commands_from_entry_point(
+                                entry_point, self.project_root
+                            )
                         )
                         scripts[name] = {
                             "command": entry_point,
                             "description": description,
-                            "options": options,
+                            "options": structured.get("options", []),
+                            "subcommands": structured.get("subcommands", {}),
                         }
 
                 # Poetry scripts

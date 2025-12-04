@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-04 14:38:20
+自動生成日時: 2025-12-04 16:59:47
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,45 +12,109 @@
 <!-- MANUAL_END:description -->
 
 
-本プロジェクトは、コードベースとドキュメントの整合性を保つために設計された自動化パイプラインです。コミットごとに以下の処理が順次実行されます。
+このプロジェクトは、**コードベースの変更に応じて自動的にテストを実行し、ドキュメントと `AGENTS.md` を再生成するパイプライン**です。主な目的は次の通りです。
 
-1. **テスト実行**  
-   `pytest`（バージョン7.4以上）＋カバー率確認用(`pytest-cov`)でユニット・統合テストを走らせ、失敗した場合はCIビルドが停止します。モックライブラリ(`pytest-mock`)も併設し、外部依存の振る舞いを安全に再現できます。
+- コミットごとの品質保証（単体/統合テスト）  
+- 最新コードに合わせた API / ユーザー向けドキュメントの自動更新  
+- `AGENTS.md` を常に最新状態で保ち、AI エージェントや開発者が参照しやすい情報を提供  
 
-2. **ドキュメント生成**  
-   ソースコード内のdocstringやYAML構成（`pyyaml>=6.0.3`）から自動で Markdown ドキュメントを作り出します。生成されたファイルは `docs/` ディレクトリに格納され、GitHub Pages などと連携して公開できます。
+---
 
-3. **AGENTS.md 自動更新**  
-   パイプラインの最後に実行するシェルスクリプトが最新ドキュメントを読み込み、AI エージェント用情報（インターフェース定義・使用例）を `AGENTS.md` に書き込むことで、人手による更新作業を排除します。
+### コアワークフロー
 
-### 実装構成
-- **言語**: Python 3.11+, Shell (Bash)
-- **パッケージ管理**: uv（Python 用高速インストールツール）
-- **主な依存関係**
-  - `pyyaml>=6.0.3` – YAML 設定の読み書き
-  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
-  - その他、ドキュメント生成に必要なスクリプトライブラリ
+1. **変更検知** – Git のコミットイベント（GitHub Actions / pre‑commit フック）  
+2. **依存関係解決** – `uv` を使用して Python 3.x 環境にパッケージをインストール (`pyyaml`, `pytest*`)  
+3. **テスト実行** – `pytest --cov=. -q` により全ユニット/統合テストの実行とカバレッジ計測  
+4. **ドキュメント生成** – ソースコードから自動で Markdown / MkDocs 形式を作成（docstring 抽出＋テンプレート埋め込み）  
+5. **AGENTS.md 更新** – YAML/JSON 定義ファイルと `pyyaml` を利用して、エージェント一覧・メタ情報を書き直す  
+6. **成果物のコミット / アップロード** – 変更があれば自動でプッシュ／GitHub Release に含める  
 
-### ローカル実行手順（uv を使用）
+---
+
+### 技術スタック
+
+| 要素 | 詳細 |
+|------|------|
+| 言語 | Python (3.11+), Bash スクリプト |
+| パッケージマネージャ | `uv`（高速、ローカルキャッシュ） |
+| テストフレームワーク | pytest, pytest-cov, pytest-mock |
+| YAML 解析 | pyyaml >=6.0.3 |
+| CI/CD | GitHub Actions (default), 任意の CI プラットフォームへ移植可 |
+
+---
+
+### ローカルで実行する手順
+
 ```bash
-# 仮想環境作成と依存関係インストール
+# 仮想環境作成（uv は自動で管理）
 uv venv .venv
 source .venv/bin/activate
-uv pip install -r requirements.txt   # もしくは uv sync
 
-# テスト & ドキュメント生成を一括で実行（CI と同等）
-./scripts/run_pipeline.sh
+# 依存関係インストール
+uv pip install -e .
+
+# テスト + ドキュメント生成 (AGENTS.md を更新)
+python scripts/run_pipeline.py --dry-run   # 本番実行は dry‑run オプション無しで
 ```
 
-### CI の構成ポイント
-- GitHub Actions に `workflow_dispatch` および `push` イベントが設定され、コミット時に上記シェルスクリプトを呼び出します。
-- 生成されたドキュメントは自動的に `gh-pages` ブランチへデプロイされるようになっています。
+> **注意**  
+> `scripts/run_pipeline.py` は以下のオプションをサポート：  
+> - `--verbose`: 詳細ログ出力  
+> - `--skip-tests`: テストステップスキップ（ドキュメントだけ更新したい場合）  
 
-### メンテナンスのヒント
-- **新しいエージェント機能** を追加した際は、docstring の書き方を統一し（例：入力/出力型、制約など）、YAML 定義に追記するだけで `AGENTS.md` が自動更新されます。
-- テスト失敗時の詳細ログは CI のアーティファクトとして保存しておくとデバッグが容易です。
+---
 
-このパイプラインを活用すれば、コード変更ごとにドキュメントやエージェント仕様書を常に最新状態で保つことができ、AI エージェントの開発・運用コストを大幅に削減できます。
+### CI への組み込み例 (GitHub Actions)
+
+```yaml
+name: Sync Docs & Agents
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # タグ取得が必要な場合は必須
+      - name: Set up Python & uv
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install uv && uv venv .venv
+      - run: source .venv/bin/activate && uv pip install -e .
+      - name: Run Pipeline
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          source .venv/bin/activate
+          python scripts/run_pipeline.py --commit-changes   # 変更をコミットして push
+
+```
+
+---
+
+### 拡張性とカスタマイズポイント
+
+| カテゴリ | 調整方法 |
+|----------|-----------|
+| **テストフレームワーク** | `pytest.ini` を編集し、追加のプラグインやフィクスチャを有効化 |
+| **ドキュメントテンプレート** | `templates/` ディレクトリ内に Markdown / MkDocs テンプレートを書き換え |
+| **AGENTS.md 生成ロジック** | `agents.yaml` の構造を拡張し、追加のメタ情報（例: 実行環境要件）を記述可能 |
+| **CI トリガー条件** | GitHub Actions 外でも Docker コンテナ内で同様スクリプトを実行できる |
+
+---
+
+### 期待されるメリット
+
+- コードとドキュメントの同期遅延がゼロになる  
+- エージェント一覧（`AGENTS.md`）が常に最新かつ正確な情報を提供し、AI のナレッジベースとして活用できる  
+- CI パイプラインで自動化することで、人為的ミスや手作業のコスト削減  
+
+このパイプラインは「**変更 → 検証 → 文書更新」という一連のフローをシームレスに実行」し、開発者と AI エージェント双方が最新情報へ即座にアクセスできるよう設計されています。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -62,6 +126,7 @@ uv pip install -r requirements.txt   # もしくは uv sync
 │   │       └── mermaid_generator.py
 │   ├── collectors//
 │   │   ├── collector_utils.py
+│   │   ├── command_help_extractor.py
 │   │   └── project_info_collector.py
 │   ├── config//
 │   │   └── config_accessor.py
@@ -261,14 +326,15 @@ uv run python3 docgen/docgen.py
 bash scripts/run_tests.sh
 uv run pytest tests/ -v --tb=short
 ```
-### 利用可能なコマンド
+## コマンド
 
-プロジェクトで定義されているスクリプトコマンド:
+プロジェクトで利用可能なスクリプト:
 
 | コマンド | 説明 |
 | --- | --- |
 | `agents_docs_sync` | 汎用ドキュメント自動生成システム |
-#### `agents_docs_sync` のオプション
+
+### `agents_docs_sync` のオプション
 
 | オプション | 説明 |
 | --- | --- |
@@ -279,12 +345,49 @@ uv run pytest tests/ -v --tb=short
 | `--build-index` | RAGインデックスをビルド |
 | `--use-rag` | RAGを使用してドキュメント生成 |
 | `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
+
+### `agents_docs_sync` のサブコマンド
+
+| サブコマンド | 説明 |
+| --- | --- |
+| `agents_docs_sync commit-msg` | コミットメッセージ生成 |
+| `agents_docs_sync hooks` | Git hooksの管理 |
+| `agents_docs_sync init` | プロジェクトの初期化（必須ファイルを作成） |
+
+#### `agents_docs_sync hooks` のサブコマンド
+
+| サブコマンド | 説明 |
+| --- | --- |
+| `agents_docs_sync hooks list` | 利用可能なフックを表示 |
+| `agents_docs_sync hooks enable` | フックを有効化 |
+| `agents_docs_sync hooks disable` | フックを無効化 |
+| `agents_docs_sync hooks run` | フックを手動実行 |
+| `agents_docs_sync hooks validate` | フック設定を検証 |
+
+##### `agents_docs_sync hooks enable` のオプション
+
+| オプション | 説明 |
+| --- | --- |
 | `hook_name` | フック名（指定しない場合は全て） |
+
+##### `agents_docs_sync hooks disable` のオプション
+
+| オプション | 説明 |
+| --- | --- |
 | `hook_name` | フック名（指定しない場合は全て） |
+
+##### `agents_docs_sync hooks run` のオプション
+
+| オプション | 説明 |
+| --- | --- |
 | `hook_name` | 実行するフック名 |
 | `hook_args` | フック引数 |
-| `--force` | 既存ファイルを強制上書き |
 
+#### `agents_docs_sync init` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+| `--force` | 既存ファイルを強制上書き |
 ---
 
 ## コーディング規約
@@ -328,4 +431,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 14:38:20*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 16:59:47*
