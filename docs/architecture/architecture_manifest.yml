@@ -109,6 +109,14 @@ services:
       - models
       - utils
       submodules:
+      - name: services
+        path: !!python/object/apply:pathlib.PosixPath
+        - docgen
+        - generators
+        - services
+        is_package: true
+        dependencies: []
+        submodules: []
       - name: parsers
         path: !!python/object/apply:pathlib.PosixPath
         - docgen

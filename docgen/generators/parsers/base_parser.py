@@ -1,14 +1,18 @@
 """
 パーサーのベースクラス
+
+Template Methodパターンを使用して、コード解析の共通フローを定義します。
+サブクラスでは `_parse_to_ast` と `_extract_elements` を実装します。
 """
 
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from ...models import APIInfo
+from ...utils.exceptions import ParseError
 from ...utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -18,7 +22,19 @@ logger = get_logger("parser")
 
 
 class BaseParser(ABC):
-    """コード解析のベースクラス"""
+    """コード解析のベースクラス
+
+    Template Methodパターンにより、解析フローの共通部分を定義します。
+    サブクラスでは以下の抽象メソッドを実装します：
+    - `_parse_to_ast`: コンテンツをASTにパース
+    - `_extract_elements`: ASTからAPI要素を抽出
+    - `get_supported_extensions`: サポートする拡張子を返す
+
+    Attributes:
+        PARSER_TYPE: パーサーの種類を示すクラス変数
+    """
+
+    PARSER_TYPE: ClassVar[str] = "generic"
 
     def __init__(self, project_root: Path):
         """
@@ -44,9 +60,15 @@ class BaseParser(ABC):
             ast = self._parse_to_ast(content, file_path)
             elements = self._extract_elements(ast, file_path)
             return self._post_process(elements)
+        except ParseError:
+            raise
         except Exception as e:
-            logger.warning(f"{file_path} の解析に失敗しました: {e}")
-            return []
+            raise ParseError(
+                message=f"{file_path} の解析に失敗しました",
+                file_path=str(file_path),
+                language=self.PARSER_TYPE,
+                details=str(e),
+            ) from e
 
     def _read_file(self, file_path: Path) -> str:
         """ファイルを読み込む"""
@@ -84,16 +106,7 @@ class BaseParser(ABC):
         Returns:
             パーサーの種類（例: 'python', 'javascript'）
         """
-        # デフォルト実装: クラス名から推測
-        class_name = self.__class__.__name__.lower()
-        if "python" in class_name:
-            return "python"
-        elif "javascript" in class_name or "js" in class_name:
-            return "javascript"
-        elif "go" in class_name:
-            return "go"
-        else:
-            return "generic"
+        return self.PARSER_TYPE
 
     def parse_project(
         self,
@@ -101,7 +114,7 @@ class BaseParser(ABC):
         use_parallel: bool = True,
         max_workers: int | None = None,
         use_cache: bool = True,
-        cache_manager: Optional["CacheManager"] = None,
+        cache_manager: "CacheManager | None" = None,
     ) -> list[APIInfo]:
         """
         プロジェクト全体を解析
@@ -214,7 +227,7 @@ class BaseParser(ABC):
         self,
         file_path: Path,
         file_path_relative: Path,
-        cache_manager: Optional["CacheManager"] = None,
+        cache_manager: "CacheManager | None" = None,
         parser_type: str | None = None,
     ) -> list[APIInfo]:
         """

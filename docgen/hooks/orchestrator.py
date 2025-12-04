@@ -3,6 +3,8 @@ from pathlib import Path
 import sys
 import time
 
+from docgen.utils.exceptions import HookError
+
 from .config import ConfigLoader, TaskConfig
 from .tasks.base import HookContext, TaskStatus
 
@@ -56,10 +58,16 @@ class HookOrchestrator:
             if not task_config.enabled:
                 continue
 
-            if not self._run_task(task_config, context):
+            try:
+                if not self._run_task(task_config, context):
+                    success = False
+                    if not task_config.continue_on_error:
+                        logger.error(f"Hook failed at task: {task_config.name}")
+                        return 1
+            except HookError as e:
+                logger.error(f"  ✗ {task_config.name} error: {e}")
                 success = False
                 if not task_config.continue_on_error:
-                    logger.error(f"Hook failed at task: {task_config.name}")
                     return 1
 
         return 0 if success else 1
@@ -94,9 +102,16 @@ class HookOrchestrator:
                 logger.error(f"  ✗ {config.name} failed: {result.message}")
                 return False
 
+        except HookError:
+            # 構造化されたHookErrorはそのまま再スロー
+            raise
         except Exception as e:
-            logger.error(f"  ✗ {config.name} error: {str(e)}")
-            return False
+            # 一般的な例外をHookErrorでラップ
+            raise HookError(
+                message="タスク実行時にエラーが発生しました",
+                hook_name=config.name,
+                details=str(e),
+            ) from e
 
 
 def main():

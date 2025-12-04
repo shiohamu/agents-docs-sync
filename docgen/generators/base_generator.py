@@ -1,20 +1,31 @@
 """
 ベースジェネレーターモジュール
 AGENTS.mdとREADME.mdのジェネレーターの共通部分を共通化
+
+DI移行対応: サービスを注入可能。サービスが提供されない場合はMixinにフォールバック。
 """
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..models.project import ProjectInfo
 from ..utils.logger import get_logger
+
+# Mixins (後方互換性のために残す - Phase 3完了後に削除予定)
 from .mixins.formatting_mixin import FormattingMixin
 from .mixins.llm_mixin import LLMMixin
 from .mixins.manual_section_mixin import ManualSectionMixin
 from .mixins.markdown_mixin import MarkdownMixin
 from .mixins.rag_mixin import RAGMixin
 from .mixins.template_mixin import TemplateMixin
+
+if TYPE_CHECKING:
+    from .services.formatting_service import FormattingService
+    from .services.llm_service import LLMService
+    from .services.manual_section_service import ManualSectionService
+    from .services.rag_service import RAGService
+    from .services.template_service import TemplateService
 
 
 class BaseGenerator(
@@ -26,7 +37,11 @@ class BaseGenerator(
     MarkdownMixin,
     ABC,
 ):
-    """ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）"""
+    """ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）
+
+    DI対応: コンストラクタでサービスを注入可能。
+    サービスが提供されない場合はMixin実装にフォールバック。
+    """
 
     def __init__(
         self,
@@ -34,6 +49,13 @@ class BaseGenerator(
         languages: list[str],
         config: dict[str, Any],
         package_managers: dict[str, str] | None = None,
+        *,
+        # DI対応: オプショナルサービス注入
+        llm_service: "LLMService | None" = None,
+        template_service: "TemplateService | None" = None,
+        rag_service: "RAGService | None" = None,
+        formatting_service: "FormattingService | None" = None,
+        manual_section_service: "ManualSectionService | None" = None,
     ):
         """
         初期化
@@ -43,6 +65,11 @@ class BaseGenerator(
             languages: 検出された言語のリスト
             config: 設定辞書
             package_managers: 検出されたパッケージマネージャの辞書
+            llm_service: LLMサービス（DI）
+            template_service: テンプレートサービス（DI）
+            rag_service: RAGサービス（DI）
+            formatting_service: フォーマットサービス（DI）
+            manual_section_service: 手動セクションサービス（DI）
         """
         self.project_root: Path = project_root
         self.languages: list[str] = languages
@@ -60,6 +87,13 @@ class BaseGenerator(
 
         # AGENTS設定
         self.agents_config: dict[str, Any] = config.get("agents", {})
+
+        # DIサービス（提供された場合のみ使用）
+        self._llm_service = llm_service
+        self._template_service = template_service
+        self._rag_service = rag_service
+        self._formatting_service = formatting_service
+        self._manual_section_service = manual_section_service
 
     @abstractmethod
     def _get_mode_key(self) -> str:

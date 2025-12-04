@@ -30,6 +30,8 @@ else:
 class PythonParser(BaseParser):
     """Pythonコード解析クラス"""
 
+    PARSER_TYPE: str = "python"
+
     def _parse_to_ast(self, content: str, file_path: Path) -> ast.AST | None:
         """ASTにパース"""
         try:

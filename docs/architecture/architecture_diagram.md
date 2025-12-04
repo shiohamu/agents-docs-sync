@@ -24,6 +24,7 @@ graph TB
             docgen_detectors["detectors"]:::moduleStyle
             subgraph docgen_generators [generators]
                 direction TB
+                docgen_generators_services["services"]:::moduleStyle
                 docgen_generators_parsers["parsers"]:::moduleStyle
                 docgen_generators_mixins["mixins"]:::moduleStyle
             end

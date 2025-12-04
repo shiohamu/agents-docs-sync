@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-04 13:39:06
+自動生成日時: 2025-12-04 14:09:10
 
 ---
 
@@ -1397,6 +1397,23 @@ Returns:
 
 ## docgen/config/config_accessor.py
 
+### ConfigKeys
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ConfigKeys:
+```
+
+**説明**:
+
+Configuration key constants to avoid hardcoding.
+
+*定義場所: docgen/config/config_accessor.py:10*
+
+---
+
 ### ConfigAccessor
 
 **型**: `class`
@@ -1411,7 +1428,7 @@ class ConfigAccessor:
 Type-safe configuration accessor.
 Wraps the raw configuration dictionary and provides typed properties.
 
-*定義場所: docgen/config/config_accessor.py:8*
+*定義場所: docgen/config/config_accessor.py:26*
 
 ---
 
@@ -1426,7 +1443,7 @@ def __init__(self, config: dict[str, Any]):
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:14*
+*定義場所: docgen/config/config_accessor.py:32*
 
 ---
 
@@ -1443,7 +1460,7 @@ def raw_config(self) -> dict[str, Any]:
 
 Get raw configuration dictionary
 
-*定義場所: docgen/config/config_accessor.py:18*
+*定義場所: docgen/config/config_accessor.py:36*
 
 ---
 
@@ -1458,7 +1475,7 @@ def generation(self) -> dict[str, Any]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:24*
+*定義場所: docgen/config/config_accessor.py:44*
 
 ---
 
@@ -1473,7 +1490,7 @@ def generate_api_doc(self) -> bool:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:28*
+*定義場所: docgen/config/config_accessor.py:48*
 
 ---
 
@@ -1488,7 +1505,7 @@ def update_readme(self) -> bool:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:32*
+*定義場所: docgen/config/config_accessor.py:52*
 
 ---
 
@@ -1503,7 +1520,22 @@ def generate_agents_doc(self) -> bool:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:36*
+*定義場所: docgen/config/config_accessor.py:56*
+
+---
+
+### preserve_manual_sections
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def preserve_manual_sections(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:60*
 
 ---
 
@@ -1518,7 +1550,7 @@ def llm(self) -> dict[str, Any]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:41*
+*定義場所: docgen/config/config_accessor.py:67*
 
 ---
 
@@ -1533,7 +1565,7 @@ def llm_provider(self) -> str:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:45*
+*定義場所: docgen/config/config_accessor.py:71*
 
 ---
 
@@ -1548,7 +1580,7 @@ def llm_model(self) -> str:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:49*
+*定義場所: docgen/config/config_accessor.py:75*
 
 ---
 
@@ -1563,7 +1595,7 @@ def llm_temperature(self) -> float:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:53*
+*定義場所: docgen/config/config_accessor.py:79*
 
 ---
 
@@ -1578,7 +1610,7 @@ def output(self) -> dict[str, Any]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:58*
+*定義場所: docgen/config/config_accessor.py:86*
 
 ---
 
@@ -1593,7 +1625,7 @@ def output_dir(self) -> str:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:62*
+*定義場所: docgen/config/config_accessor.py:90*
 
 ---
 
@@ -1608,7 +1640,37 @@ def api_doc_dir(self) -> str:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:66*
+*定義場所: docgen/config/config_accessor.py:94*
+
+---
+
+### readme_path
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def readme_path(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:98*
+
+---
+
+### agents_doc_path
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def agents_doc_path(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:102*
 
 ---
 
@@ -1623,7 +1685,7 @@ def rag(self) -> dict[str, Any]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:71*
+*定義場所: docgen/config/config_accessor.py:109*
 
 ---
 
@@ -1638,7 +1700,337 @@ def rag_enabled(self) -> bool:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:75*
+*定義場所: docgen/config/config_accessor.py:113*
+
+---
+
+### rag_auto_build_index
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def rag_auto_build_index(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:117*
+
+---
+
+### rag_embedding
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def rag_embedding(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:121*
+
+---
+
+### rag_retrieval
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def rag_retrieval(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:125*
+
+---
+
+### cache
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def cache(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:132*
+
+---
+
+### cache_enabled
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def cache_enabled(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:136*
+
+---
+
+### debug
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def debug(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:143*
+
+---
+
+### debug_enabled
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def debug_enabled(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:147*
+
+---
+
+### agents
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def agents(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:154*
+
+---
+
+### agents_llm_mode
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def agents_llm_mode(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:158*
+
+---
+
+### agents_generation
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def agents_generation(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:162*
+
+---
+
+### architecture
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def architecture(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:169*
+
+---
+
+### architecture_enabled
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def architecture_enabled(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:173*
+
+---
+
+### architecture_output_dir
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def architecture_output_dir(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:177*
+
+---
+
+### architecture_generator
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def architecture_generator(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:181*
+
+---
+
+### exclude
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def exclude(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:188*
+
+---
+
+### exclude_directories
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def exclude_directories(self) -> list[str]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:192*
+
+---
+
+### exclude_patterns
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def exclude_patterns(self) -> list[str]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:196*
+
+---
+
+### hooks
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def hooks(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:203*
+
+---
+
+### hooks_enabled
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def hooks_enabled(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:207*
+
+---
+
+### languages
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def languages(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:214*
+
+---
+
+### languages_auto_detect
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def languages_auto_detect(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:218*
+
+---
+
+### languages_preferred
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def languages_preferred(self) -> list[str]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:222*
 
 ---
 
@@ -1658,7 +2050,7 @@ class ConfigManager:
 
 設定ファイルの管理クラス
 
-*定義場所: docgen/config_manager.py:43*
+*定義場所: docgen/config_manager.py:44*
 
 ---
 
@@ -1681,7 +2073,7 @@ Args:
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
     package_config_sample: パッケージ内のサンプル設定ファイルパス
 
-*定義場所: docgen/config_manager.py:46*
+*定義場所: docgen/config_manager.py:47*
 
 ---
 
@@ -1698,7 +2090,24 @@ def get_config(self) -> dict[str, Any]:
 
 現在の設定を取得
 
-*定義場所: docgen/config_manager.py:152*
+*定義場所: docgen/config_manager.py:123*
+
+---
+
+### accessor
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def accessor(self) -> ConfigAccessor:
+```
+
+**説明**:
+
+型安全な設定アクセサを取得（遅延初期化）
+
+*定義場所: docgen/config_manager.py:128*
 
 ---
 
@@ -1718,7 +2127,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/config_manager.py:184*
+*定義場所: docgen/config_manager.py:162*
 
 ---
 
@@ -1735,7 +2144,7 @@ def load_detector_defaults(self) -> dict[str, Any]:
 
 Detectorのデフォルト設定を読み込み
 
-*定義場所: docgen/config_manager.py:209*
+*定義場所: docgen/config_manager.py:187*
 
 ---
 
@@ -1752,7 +2161,7 @@ def load_detector_user_overrides(self) -> dict[str, Any]:
 
 ユーザー設定ファイルを読み込み
 
-*定義場所: docgen/config_manager.py:213*
+*定義場所: docgen/config_manager.py:191*
 
 ---
 
@@ -1769,7 +2178,7 @@ def merge_detector_configs(self, defaults: dict[str, Any], overrides: dict[str, 
 
 Detectorのデフォルト設定とユーザー設定をマージ
 
-*定義場所: docgen/config_manager.py:217*
+*定義場所: docgen/config_manager.py:195*
 
 ---
 
@@ -2883,7 +3292,10 @@ class BaseGenerator:
 
 ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）
 
-*定義場所: docgen/generators/base_generator.py:20*
+DI対応: コンストラクタでサービスを注入可能。
+サービスが提供されない場合はMixin実装にフォールバック。
+
+*定義場所: docgen/generators/base_generator.py:31*
 
 ---
 
@@ -2905,8 +3317,13 @@ Args:
     languages: 検出された言語のリスト
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
+    llm_service: LLMサービス（DI）
+    template_service: テンプレートサービス（DI）
+    rag_service: RAGサービス（DI）
+    formatting_service: フォーマットサービス（DI）
+    manual_section_service: 手動セクションサービス（DI）
 
-*定義場所: docgen/generators/base_generator.py:31*
+*定義場所: docgen/generators/base_generator.py:46*
 
 ---
 
@@ -2926,7 +3343,7 @@ def generate(self) -> bool:
 Returns:
     生成に成功した場合True
 
-*定義場所: docgen/generators/base_generator.py:153*
+*定義場所: docgen/generators/base_generator.py:187*
 
 ---
 
@@ -3147,7 +3564,16 @@ class BaseParser:
 
 コード解析のベースクラス
 
-*定義場所: docgen/generators/parsers/base_parser.py:20*
+Template Methodパターンにより、解析フローの共通部分を定義します。
+サブクラスでは以下の抽象メソッドを実装します：
+- `_parse_to_ast`: コンテンツをASTにパース
+- `_extract_elements`: ASTからAPI要素を抽出
+- `get_supported_extensions`: サポートする拡張子を返す
+
+Attributes:
+    PARSER_TYPE: パーサーの種類を示すクラス変数
+
+*定義場所: docgen/generators/parsers/base_parser.py:24*
 
 ---
 
@@ -3167,7 +3593,7 @@ def __init__(self, project_root: Path):
 Args:
     project_root: プロジェクトのルートディレクトリ
 
-*定義場所: docgen/generators/parsers/base_parser.py:23*
+*定義場所: docgen/generators/parsers/base_parser.py:39*
 
 ---
 
@@ -3190,7 +3616,7 @@ Args:
 Returns:
     API情報のリスト
 
-*定義場所: docgen/generators/parsers/base_parser.py:32*
+*定義場所: docgen/generators/parsers/base_parser.py:48*
 
 ---
 
@@ -3210,7 +3636,7 @@ def get_supported_extensions(self) -> list[str]:
 Returns:
     拡張子のリスト（例: ['.py', '.pyw']）
 
-*定義場所: docgen/generators/parsers/base_parser.py:71*
+*定義場所: docgen/generators/parsers/base_parser.py:93*
 
 ---
 
@@ -3230,7 +3656,7 @@ def get_parser_type(self) -> str:
 Returns:
     パーサーの種類（例: 'python', 'javascript'）
 
-*定義場所: docgen/generators/parsers/base_parser.py:80*
+*定義場所: docgen/generators/parsers/base_parser.py:102*
 
 ---
 
@@ -3240,7 +3666,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def parse_project(self, exclude_dirs: list[str] | None, use_parallel: bool, max_workers: int | None, use_cache: bool, cache_manager: Optional['CacheManager']) -> list[APIInfo]:
+def parse_project(self, exclude_dirs: list[str] | None, use_parallel: bool, max_workers: int | None, use_cache: bool, cache_manager: 'CacheManager | None') -> list[APIInfo]:
 ```
 
 **説明**:
@@ -3257,7 +3683,7 @@ Args:
 Returns:
     全API情報のリスト
 
-*定義場所: docgen/generators/parsers/base_parser.py:98*
+*定義場所: docgen/generators/parsers/base_parser.py:111*
 
 ---
 
@@ -3355,7 +3781,7 @@ def get_supported_extensions(self) -> list[str]:
 
 サポートする拡張子を返す
 
-*定義場所: docgen/generators/parsers/js_parser.py:210*
+*定義場所: docgen/generators/parsers/js_parser.py:212*
 
 ---
 
@@ -3514,7 +3940,7 @@ def get_supported_extensions(self) -> list[str]:
 
 サポートする拡張子を返す
 
-*定義場所: docgen/generators/parsers/python_parser.py:49*
+*定義場所: docgen/generators/parsers/python_parser.py:51*
 
 ---
 
@@ -3531,7 +3957,7 @@ class PythonASTVisitor:
 
 Python AST訪問クラス
 
-*定義場所: docgen/generators/parsers/python_parser.py:56*
+*定義場所: docgen/generators/parsers/python_parser.py:58*
 
 ---
 
@@ -3546,7 +3972,7 @@ def __init__(self, file_path: Path, project_root: Path):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:59*
+*定義場所: docgen/generators/parsers/python_parser.py:61*
 
 ---
 
@@ -3561,7 +3987,7 @@ def visit_ClassDef(self, node: ast.ClassDef):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:65*
+*定義場所: docgen/generators/parsers/python_parser.py:67*
 
 ---
 
@@ -3576,7 +4002,7 @@ def visit_FunctionDef(self, node):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:88*
+*定義場所: docgen/generators/parsers/python_parser.py:90*
 
 ---
 
@@ -3591,7 +4017,7 @@ def visit_AsyncFunctionDef(self, node):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:91*
+*定義場所: docgen/generators/parsers/python_parser.py:93*
 
 ---
 
@@ -3650,6 +4076,724 @@ def readme_path(self):
 *説明なし*
 
 *定義場所: docgen/generators/readme_generator.py:45*
+
+---
+
+
+## docgen/generators/service_factory.py
+
+### GeneratorServiceFactory
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class GeneratorServiceFactory:
+```
+
+**説明**:
+
+ジェネレーターサービスファクトリ
+
+*定義場所: docgen/generators/service_factory.py:19*
+
+---
+
+### create_services
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_services(project_root: Path, config: dict[str, Any], logger: Logger | None) -> dict[str, Any]:
+```
+
+**説明**:
+
+全サービスを生成して返す
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    config: 設定辞書
+    logger: ロガー（各サービスに渡される）
+
+Returns:
+    サービスインスタンスの辞書
+
+*定義場所: docgen/generators/service_factory.py:23*
+
+---
+
+### create_llm_service
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_llm_service(config: dict[str, Any], logger: Logger | None) -> LLMService:
+```
+
+**説明**:
+
+LLMServiceを個別に生成
+
+*定義場所: docgen/generators/service_factory.py:50*
+
+---
+
+### create_template_service
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_template_service(template_dir: Path | None) -> TemplateService:
+```
+
+**説明**:
+
+TemplateServiceを個別に生成
+
+*定義場所: docgen/generators/service_factory.py:55*
+
+---
+
+### create_rag_service
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_rag_service(project_root: Path, config: dict[str, Any], logger: Logger | None) -> RAGService:
+```
+
+**説明**:
+
+RAGServiceを個別に生成
+
+*定義場所: docgen/generators/service_factory.py:60*
+
+---
+
+### create_formatting_service
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_formatting_service() -> FormattingService:
+```
+
+**説明**:
+
+FormattingServiceを個別に生成
+
+*定義場所: docgen/generators/service_factory.py:67*
+
+---
+
+### create_manual_section_service
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_manual_section_service() -> ManualSectionService:
+```
+
+**説明**:
+
+ManualSectionServiceを個別に生成
+
+*定義場所: docgen/generators/service_factory.py:72*
+
+---
+
+
+## docgen/generators/services/formatting_service.py
+
+### FormattingService
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class FormattingService:
+```
+
+**説明**:
+
+フォーマット・マークダウン処理サービス
+
+*定義場所: docgen/generators/services/formatting_service.py:15*
+
+---
+
+### format_languages
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_languages(self, languages: list[str]) -> str:
+```
+
+**説明**:
+
+言語リストをフォーマット
+
+Args:
+    languages: 言語のリスト
+
+Returns:
+    フォーマットされた言語リスト
+
+*定義場所: docgen/generators/services/formatting_service.py:36*
+
+---
+
+### format_commands
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_commands(self, commands: list[str] | None) -> str:
+```
+
+**説明**:
+
+コマンドリストをフォーマット
+
+Args:
+    commands: コマンドのリスト
+
+Returns:
+    フォーマットされたコマンド
+
+*定義場所: docgen/generators/services/formatting_service.py:55*
+
+---
+
+### format_project_structure
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_project_structure(self, structure: dict | None) -> str:
+```
+
+**説明**:
+
+プロジェクト構造をツリー形式でフォーマット
+
+Args:
+    structure: プロジェクト構造の辞書
+
+Returns:
+    フォーマットされたプロジェクト構造
+
+*定義場所: docgen/generators/services/formatting_service.py:69*
+
+---
+
+### clean_llm_output
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def clean_llm_output(self, content: str) -> str:
+```
+
+**説明**:
+
+LLMの出力をクリーニング
+
+Args:
+    content: LLM出力
+
+Returns:
+    クリーニングされたコンテンツ
+
+*定義場所: docgen/generators/services/formatting_service.py:114*
+
+---
+
+### validate_output
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate_output(self, content: str) -> bool:
+```
+
+**説明**:
+
+生成されたコンテンツを検証
+
+Args:
+    content: 生成されたコンテンツ
+
+Returns:
+    検証に成功した場合True
+
+*定義場所: docgen/generators/services/formatting_service.py:134*
+
+---
+
+### generate_footer
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_footer(self, document_type: str) -> str:
+```
+
+**説明**:
+
+フッターを生成
+
+Args:
+    document_type: ドキュメントタイプ
+
+Returns:
+    フッター文字列
+
+*定義場所: docgen/generators/services/formatting_service.py:150*
+
+---
+
+### extract_description_section
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_description_section(self, content: str) -> str:
+```
+
+**説明**:
+
+コンテンツから説明セクションを抽出
+
+Args:
+    content: ドキュメントコンテンツ
+
+Returns:
+    説明セクションのテキスト
+
+*定義場所: docgen/generators/services/formatting_service.py:162*
+
+---
+
+
+## docgen/generators/services/llm_service.py
+
+### LLMService
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class LLMService:
+```
+
+**説明**:
+
+LLM生成サービス
+
+*定義場所: docgen/generators/services/llm_service.py:15*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any], logger: Logger | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    config: 設定辞書（agents設定を含む）
+    logger: ロガー
+
+*定義場所: docgen/generators/services/llm_service.py:18*
+
+---
+
+### agents_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def agents_config(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+agents設定を取得
+
+*定義場所: docgen/generators/services/llm_service.py:35*
+
+---
+
+### get_client
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_client(self) -> Any:
+```
+
+**説明**:
+
+LLMクライアントを取得（フォールバック付き）
+
+Returns:
+    LLMクライアント（取得できない場合はNone）
+
+*定義場所: docgen/generators/services/llm_service.py:39*
+
+---
+
+### generate
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate(self, prompt: str) -> str:
+```
+
+**説明**:
+
+LLMを使用してテキストを生成
+
+Args:
+    prompt: 入力プロンプト
+
+Returns:
+    生成されたテキスト
+
+Raises:
+    RuntimeError: LLMクライアントが利用できない場合
+
+*定義場所: docgen/generators/services/llm_service.py:57*
+
+---
+
+### should_use_outlines
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def should_use_outlines(self) -> bool:
+```
+
+**説明**:
+
+Outlinesを使用するかどうかを判定
+
+Returns:
+    Outlinesを使用するかどうか
+
+*定義場所: docgen/generators/services/llm_service.py:76*
+
+---
+
+### create_outlines_model
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_outlines_model(self, client: Any) -> Any:
+```
+
+**説明**:
+
+Outlinesモデルを作成
+
+Args:
+    client: LLMクライアント
+
+Returns:
+    Outlinesモデル（サポートされない場合はNone）
+
+*定義場所: docgen/generators/services/llm_service.py:87*
+
+---
+
+
+## docgen/generators/services/manual_section_service.py
+
+### ManualSectionService
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ManualSectionService:
+```
+
+**説明**:
+
+手動セクション管理サービス
+
+*定義場所: docgen/generators/services/manual_section_service.py:11*
+
+---
+
+### extract
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract(self, content: str) -> dict[str, str]:
+```
+
+**説明**:
+
+既存のコンテンツから手動セクションを抽出
+
+Args:
+    content: 既存のドキュメントコンテンツ
+
+Returns:
+    セクションIDとコンテンツの辞書
+
+*定義場所: docgen/generators/services/manual_section_service.py:14*
+
+---
+
+### merge
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def merge(self, generated_content: str, manual_sections: dict[str, str]) -> str:
+```
+
+**説明**:
+
+生成されたコンテンツに手動セクションをマージ
+
+Args:
+    generated_content: 自動生成されたコンテンツ
+    manual_sections: 抽出された手動セクションの辞書
+
+Returns:
+    マージされたコンテンツ
+
+*定義場所: docgen/generators/services/manual_section_service.py:53*
+
+---
+
+
+## docgen/generators/services/rag_service.py
+
+### RAGService
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class RAGService:
+```
+
+**説明**:
+
+RAGコンテキスト取得サービス
+
+*定義場所: docgen/generators/services/rag_service.py:15*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, config: dict[str, Any], logger: Logger | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    config: 設定辞書
+    logger: ロガー
+
+*定義場所: docgen/generators/services/rag_service.py:18*
+
+---
+
+### is_enabled
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def is_enabled(self) -> bool:
+```
+
+**説明**:
+
+RAGが有効かどうか
+
+*定義場所: docgen/generators/services/rag_service.py:37*
+
+---
+
+### get_context
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_context(self, query: str, top_k: int | None) -> str:
+```
+
+**説明**:
+
+RAGコンテキストを取得してフォーマット
+
+Args:
+    query: 検索クエリ
+    top_k: 取得するチャンク数（Noneの場合は設定ファイルから読み取る）
+
+Returns:
+    フォーマット済みのコンテキスト文字列（RAG無効時は空文字列）
+
+*定義場所: docgen/generators/services/rag_service.py:41*
+
+---
+
+
+## docgen/generators/services/template_service.py
+
+### TemplateService
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TemplateService:
+```
+
+**説明**:
+
+テンプレートレンダリングサービス
+
+*定義場所: docgen/generators/services/template_service.py:14*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, template_dir: Path | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    template_dir: テンプレートディレクトリのパス（Noneの場合は自動検出）
+
+*定義場所: docgen/generators/services/template_service.py:17*
+
+---
+
+### render
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def render(self, template_name: str, context: dict[str, Any]) -> str:
+```
+
+**説明**:
+
+テンプレートをレンダリング
+
+Args:
+    template_name: テンプレートファイル名
+    context: テンプレート変数
+
+Returns:
+    レンダリングされた文字列
+
+*定義場所: docgen/generators/services/template_service.py:47*
+
+---
+
+### format_commands
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_commands(self, commands: list[str]) -> str:
+```
+
+**説明**:
+
+コマンドリストをマークダウンのコードブロックとしてフォーマット
+
+Args:
+    commands: コマンドのリスト
+
+Returns:
+    フォーマットされたマークダウン文字列
+
+*定義場所: docgen/generators/services/template_service.py:62*
+
+---
+
+### format_custom_instructions
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_custom_instructions(self, custom_instructions: str | dict[str, Any]) -> list[str]:
+```
+
+**説明**:
+
+カスタム指示セクションを生成
+
+Args:
+    custom_instructions: カスタム指示の内容（文字列または辞書）
+
+Returns:
+    生成された行のリスト
+
+*定義場所: docgen/generators/services/template_service.py:82*
 
 ---
 
@@ -3755,7 +4899,7 @@ class HookOrchestrator:
 
 Git hook実行のオーケストレーター
 
-*定義場所: docgen/hooks/orchestrator.py:14*
+*定義場所: docgen/hooks/orchestrator.py:16*
 
 ---
 
@@ -3770,7 +4914,7 @@ def __init__(self, hook_name: str, args: list[str]):
 
 *説明なし*
 
-*定義場所: docgen/hooks/orchestrator.py:17*
+*定義場所: docgen/hooks/orchestrator.py:19*
 
 ---
 
@@ -3787,7 +4931,7 @@ def register_task(self, name: str, task_class: type):
 
 タスクを登録する
 
-*定義場所: docgen/hooks/orchestrator.py:35*
+*定義場所: docgen/hooks/orchestrator.py:37*
 
 ---
 
@@ -3804,7 +4948,7 @@ def run(self) -> int:
 
 フックを実行する
 
-*定義場所: docgen/hooks/orchestrator.py:39*
+*定義場所: docgen/hooks/orchestrator.py:41*
 
 ---
 
@@ -3821,7 +4965,7 @@ def main():
 
 エントリーポイント
 
-*定義場所: docgen/hooks/orchestrator.py:102*
+*定義場所: docgen/hooks/orchestrator.py:117*
 
 ---
 

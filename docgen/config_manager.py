@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from .config.config_accessor import ConfigAccessor
 from .detector_config_loader import DetectorConfigLoader
 from .models import DocgenConfig
 from .utils.exceptions import ErrorMessages
@@ -66,6 +67,7 @@ class ConfigManager:
         self.config = self._load_config()
         self._validate_config()
         self.detector_config_loader = DetectorConfigLoader(project_root)
+        self._accessor: ConfigAccessor | None = None
 
     def _load_config(self) -> dict[str, Any]:
         """設定ファイルを読み込む"""
@@ -115,43 +117,19 @@ class ConfigManager:
             return False
 
     def _get_default_config(self) -> dict[str, Any]:
-        """デフォルト設定を返す"""
-        return {
-            "languages": {"auto_detect": True, "preferred": []},
-            "output": {
-                "api_doc": "docs/api.md",
-                "readme": "README.md",
-                "agents_doc": "AGENTS.md",
-            },
-            "generation": {
-                "update_readme": True,
-                "generate_api_doc": True,
-                "generate_agents_doc": True,
-                "preserve_manual_sections": True,
-            },
-            "agents": {
-                "llm_mode": "api",
-                "generation": {
-                    "agents_mode": "template",
-                    "readme_mode": "template",
-                    "enable_commit_message": True,
-                },
-            },
-            "exclude": {
-                "directories": [],
-                "patterns": [],
-            },
-            "cache": {
-                "enabled": True,
-            },
-            "debug": {
-                "enabled": False,
-            },
-        }
+        """デフォルト設定を返す（DocgenConfigモデルから生成）"""
+        return DocgenConfig().model_dump()
 
     def get_config(self) -> dict[str, Any]:
         """現在の設定を取得"""
         return self.config
+
+    @property
+    def accessor(self) -> ConfigAccessor:
+        """型安全な設定アクセサを取得（遅延初期化）"""
+        if self._accessor is None:
+            self._accessor = ConfigAccessor(self.config)
+        return self._accessor
 
     def _validate_config(self) -> None:
         """

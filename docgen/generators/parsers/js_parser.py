@@ -13,6 +13,8 @@ from .base_parser import BaseParser
 class JSParser(BaseParser):
     """JavaScript/TypeScriptコード解析クラス"""
 
+    PARSER_TYPE: str = "javascript"
+
     # JSDocコメントのパターン
     JSDOC_PATTERN = re.compile(
         r"/\*\*\s*\n(.*?)\*/\s*\n\s*(?:export\s+)?(?:async\s+)?(?:(?:function|class)\s+(\w+)|(?:const|let|var)\s+(\w+)\s*=|(\w+)\s*\([^)]*\)\s*\{)",
