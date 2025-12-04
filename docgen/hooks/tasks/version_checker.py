@@ -1,10 +1,12 @@
 import os
 import re
 
+from ..registry import TaskRegistry
 from ..utils import run_command
 from .base import HookContext, HookTask, TaskResult, TaskStatus
 
 
+@TaskRegistry.register("check_version")
 class VersionCheckerTask(HookTask):
     """バージョンチェック＆リリースタグ作成タスク"""
 

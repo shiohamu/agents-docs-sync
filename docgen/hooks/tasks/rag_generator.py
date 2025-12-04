@@ -1,7 +1,9 @@
+from ..registry import TaskRegistry
 from ..utils import get_python_command, run_command
 from .base import HookContext, HookTask, TaskResult, TaskStatus
 
 
+@TaskRegistry.register("generate_rag")
 class RagGeneratorTask(HookTask):
     """RAG生成タスク"""
 

@@ -40,3 +40,7 @@ class HookTask(ABC):
     def should_run(self, context: HookContext) -> bool:
         """タスクを実行すべきか判定"""
         return True
+
+    async def run_async(self, context: HookContext) -> TaskResult:
+        """タスクを非同期実行（デフォルトは同期実行をラップ）"""
+        return self.run(context)

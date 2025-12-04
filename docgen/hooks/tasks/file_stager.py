@@ -1,9 +1,11 @@
 import os
 
+from ..registry import TaskRegistry
 from ..utils import run_command
 from .base import HookContext, HookTask, TaskResult, TaskStatus
 
 
+@TaskRegistry.register("stage_changes")
 class FileStagerTask(HookTask):
     """ファイルステージングタスク"""
 

@@ -1,9 +1,11 @@
 import os
 
+from ..registry import TaskRegistry
 from ..utils import run_command
 from .base import HookContext, HookTask, TaskResult, TaskStatus
 
 
+@TaskRegistry.register("run_tests")
 class TestRunnerTask(HookTask):
     """テスト実行タスク"""
 

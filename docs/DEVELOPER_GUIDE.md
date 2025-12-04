@@ -147,7 +147,27 @@ pip install -e .
 - **AgentsGenerator**: `AGENTS.md`を生成（OpenAI仕様準拠、Jinja2テンプレート使用）
 - **BaseGenerator**: 共通のテンプレートレンダリング機能を提供
 
-#### 4. プロジェクト情報収集器（Collectors）
+#### 4. サービス層（Services）- DI対応
+
+ジェネレーターは以下のサービスをDIで受け取ります：
+
+| サービス               | 役割                                      |
+| ---------------------- | ----------------------------------------- |
+| `LLMService`           | LLM連携（プロンプト送信、レスポンス処理） |
+| `TemplateService`      | Jinja2テンプレートのレンダリング          |
+| `FormattingService`    | テキスト整形、バリデーション              |
+| `ManualSectionService` | 手動セクションの抽出・マージ              |
+| `RAGService`           | RAGコンテキストの取得                     |
+
+サービスは`GeneratorServiceFactory`で生成され、テスト時にはモックを注入可能です。
+
+#### 5. フックシステム（Hooks）
+
+- **HookOrchestrator**: フック実行のオーケストレーション（非同期対応）
+- **TaskRegistry**: デコレータベースのタスク登録
+- **HookTask**: 各フックタスクの基底クラス（`run_async`対応）
+
+#### 6. プロジェクト情報収集器（Collectors）
 
 - **目的**: プロジェクトのメタデータ（依存関係、ビルドコマンド、テストコマンドなど）を収集
 - **実装**: `ProjectInfoCollector`
@@ -165,11 +185,11 @@ pip install -e .
    │   └─> API情報を収集
    │   └─> Markdownを生成
     ├─> ReadmeGenerator.generate()
-    │   └─> 既存READMEから手動セクションを抽出
-    │   └─> Jinja2テンプレートで新しいREADMEを生成
+    │   └─> 既存READMEから手動セクションを抽出（ManualSectionService）
+    │   └─> Jinja2テンプレートで新しいREADMEを生成（TemplateService）
     └─> AgentsGenerator.generate()
         └─> ProjectInfoCollectorで情報収集
-        └─> Jinja2テンプレートでMarkdownを生成
+        └─> Jinja2テンプレートでMarkdownを生成（TemplateService）
 ```
 
 ---

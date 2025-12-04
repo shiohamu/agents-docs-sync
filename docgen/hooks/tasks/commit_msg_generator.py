@@ -1,9 +1,11 @@
 import os
 
+from ..registry import TaskRegistry
 from ..utils import get_python_command, run_command
 from .base import HookContext, HookTask, TaskResult, TaskStatus
 
 
+@TaskRegistry.register("generate_commit_message")
 class CommitMsgGeneratorTask(HookTask):
     """コミットメッセージ生成タスク"""
 
