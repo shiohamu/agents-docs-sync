@@ -97,3 +97,101 @@ class LLMService:
         from docgen.generators.utils.outlines_utils import create_outlines_model
 
         return create_outlines_model(client)
+
+    def format_project_info(
+        self,
+        project_info: Any,
+        languages: list[str],
+        package_managers: dict[str, str] | None = None,
+    ) -> str:
+        """
+        プロジェクト情報をプロンプト用に整形
+
+        Args:
+            project_info: プロジェクト情報
+            languages: 言語リスト
+            package_managers: パッケージマネージャ辞書
+
+        Returns:
+            整形された文字列
+        """
+        info_parts = []
+        # project_root.name は project_info に含まれていないため、呼び出し元で処理するか、
+        # ここでは project_info の中身だけを整形する。
+        # Mixinの実装を見ると self.project_root.name を使っている。
+        # 引数として project_name を受け取るように変更するか、project_info に name を持たせるのが良いが、
+        # ここではシンプルに project_info の内容を整形する。
+
+        info_parts.append(f"Description: {project_info.description}")
+        info_parts.append(f"Languages: {', '.join(languages)}")
+
+        if package_managers:
+            pms = [f"{lang}: {pm}" for lang, pm in package_managers.items()]
+            info_parts.append(f"Package Managers: {', '.join(pms)}")
+
+        if project_info.dependencies:
+            deps = []
+            if "python" in project_info.dependencies:
+                deps.extend(project_info.dependencies["python"])
+            if "nodejs" in project_info.dependencies:
+                deps.extend(project_info.dependencies["nodejs"])
+            if deps:
+                info_parts.append(f"Dependencies: {', '.join(deps[:20])}...")
+
+        return "\n".join(info_parts)
+
+    def generate_content(
+        self,
+        prompt_file: str,
+        prompt_name: str,
+        project_info_str: str,
+        rag_context: str = "",
+    ) -> str:
+        """
+        LLMを使用して特定のコンテンツを生成
+
+        Args:
+            prompt_file: プロンプトファイル名
+            prompt_name: プロンプト名
+            project_info_str: 整形済みプロジェクト情報
+            rag_context: RAGコンテキスト
+
+        Returns:
+            生成されたコンテンツ
+        """
+        try:
+            client = self.get_client()
+            if not client:
+                self._logger.warning(
+                    f"LLMクライアントが利用できません。{prompt_name}の生成をスキップします。"
+                )
+                return ""
+
+            self._logger.info(f"LLMを使用して{prompt_name}を生成中...")
+
+            from docgen.utils.prompt_loader import PromptLoader
+
+            if rag_context:
+                prompt = PromptLoader.load_prompt(
+                    prompt_file,
+                    f"{prompt_name}_with_rag",
+                    project_info=project_info_str,
+                    rag_context=rag_context,
+                )
+            else:
+                prompt = PromptLoader.load_prompt(
+                    prompt_file,
+                    prompt_name,
+                    project_info=project_info_str,
+                )
+
+            response = client.generate(prompt)
+
+            # クリーニングは呼び出し元で行うか、ここで行うか。
+            # FormattingServiceに依存したくないので、最低限のクリーニングを行うか、
+            # 生のレスポンスを返す。ここでは生のレスポンスを返す。
+            return response
+
+        except Exception as e:
+            self._logger.warning(f"{prompt_name}の生成中にエラーが発生しました: {e}")
+            return ""

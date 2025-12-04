@@ -2,7 +2,7 @@
 ベースジェネレーターモジュール
 AGENTS.mdとREADME.mdのジェネレーターの共通部分を共通化
 
-DI移行対応: サービスを注入可能。サービスが提供されない場合はMixinにフォールバック。
+DI対応: サービスを使用して機能を提供。
 """
 
 from abc import ABC, abstractmethod
@@ -12,14 +12,6 @@ from typing import TYPE_CHECKING, Any
 from ..models.project import ProjectInfo
 from ..utils.logger import get_logger
 
-# Mixins (後方互換性のために残す - Phase 3完了後に削除予定)
-from .mixins.formatting_mixin import FormattingMixin
-from .mixins.llm_mixin import LLMMixin
-from .mixins.manual_section_mixin import ManualSectionMixin
-from .mixins.markdown_mixin import MarkdownMixin
-from .mixins.rag_mixin import RAGMixin
-from .mixins.template_mixin import TemplateMixin
-
 if TYPE_CHECKING:
     from .services.formatting_service import FormattingService
     from .services.llm_service import LLMService
@@ -28,19 +20,10 @@ if TYPE_CHECKING:
     from .services.template_service import TemplateService
 
 
-class BaseGenerator(
-    FormattingMixin,
-    LLMMixin,
-    TemplateMixin,
-    ManualSectionMixin,
-    RAGMixin,
-    MarkdownMixin,
-    ABC,
-):
+class BaseGenerator(ABC):
     """ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）
 
     DI対応: コンストラクタでサービスを注入可能。
-    サービスが提供されない場合はMixin実装にフォールバック。
     """
 
     def __init__(
@@ -88,12 +71,24 @@ class BaseGenerator(
         # AGENTS設定
         self.agents_config: dict[str, Any] = config.get("agents", {})
 
-        # DIサービス（提供された場合のみ使用）
-        self._llm_service = llm_service
-        self._template_service = template_service
-        self._rag_service = rag_service
-        self._formatting_service = formatting_service
-        self._manual_section_service = manual_section_service
+        # サービス初期化（注入されない場合はデフォルト生成）
+        from .service_factory import GeneratorServiceFactory
+
+        self.llm_service = llm_service or GeneratorServiceFactory.create_llm_service(
+            config, self.logger
+        )
+        self.template_service = (
+            template_service or GeneratorServiceFactory.create_template_service()
+        )
+        self.rag_service = rag_service or GeneratorServiceFactory.create_rag_service(
+            project_root, config, self.logger
+        )
+        self.formatting_service = (
+            formatting_service or GeneratorServiceFactory.create_formatting_service()
+        )
+        self.manual_section_service = (
+            manual_section_service or GeneratorServiceFactory.create_manual_section_service()
+        )
 
     @abstractmethod
     def _get_mode_key(self) -> str:
@@ -156,7 +151,7 @@ class BaseGenerator(
             return {}
         try:
             content = self.output_path.read_text(encoding="utf-8")
-            return self._extract_manual_sections(content)
+            return self.manual_section_service.extract(content)
         except Exception:
             return {}
 
@@ -209,10 +204,10 @@ class BaseGenerator(
 
             # 手動セクションをマージ
             if manual_sections:
-                markdown = self._merge_manual_sections(markdown, manual_sections)
+                markdown = self.manual_section_service.merge(markdown, manual_sections)
 
             # 検証
-            if not self._validate_output(markdown):
+            if not self.formatting_service.validate_output(markdown):
                 self.logger.error("生成されたドキュメントが無効です")
                 return False
 

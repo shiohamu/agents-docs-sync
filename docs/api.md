@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-04 14:09:10
+自動生成日時: 2025-12-04 14:36:53
 
 ---
 
@@ -3213,6 +3213,7 @@ Args:
     languages: 検出された言語のリスト
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
+    **kwargs: BaseGeneratorに渡す追加引数（サービスなど）
 
 *定義場所: docgen/generators/agents_generator.py:23*
 
@@ -3229,7 +3230,7 @@ def agents_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/agents_generator.py:42*
+*定義場所: docgen/generators/agents_generator.py:44*
 
 ---
 
@@ -3293,9 +3294,8 @@ class BaseGenerator:
 ベースジェネレータークラス（AGENTS.mdとREADME.mdの共通部分）
 
 DI対応: コンストラクタでサービスを注入可能。
-サービスが提供されない場合はMixin実装にフォールバック。
 
-*定義場所: docgen/generators/base_generator.py:31*
+*定義場所: docgen/generators/base_generator.py:23*
 
 ---
 
@@ -3323,7 +3323,7 @@ Args:
     formatting_service: フォーマットサービス（DI）
     manual_section_service: 手動セクションサービス（DI）
 
-*定義場所: docgen/generators/base_generator.py:46*
+*定義場所: docgen/generators/base_generator.py:29*
 
 ---
 
@@ -3343,7 +3343,7 @@ def generate(self) -> bool:
 Returns:
     生成に成功した場合True
 
-*定義場所: docgen/generators/base_generator.py:187*
+*定義場所: docgen/generators/base_generator.py:182*
 
 ---
 
@@ -3425,126 +3425,6 @@ class ContributingGenerator:
 CONTRIBUTING.md generation class
 
 *定義場所: docgen/generators/contributing_generator.py:12*
-
----
-
-
-## docgen/generators/mixins/formatting_mixin.py
-
-### FormattingMixin
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class FormattingMixin:
-```
-
-**説明**:
-
-フォーマッティング用のmixin
-
-*定義場所: docgen/generators/mixins/formatting_mixin.py:7*
-
----
-
-
-## docgen/generators/mixins/llm_mixin.py
-
-### LLMMixin
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class LLMMixin:
-```
-
-**説明**:
-
-LLM生成機能を提供する Mixin
-
-*定義場所: docgen/generators/mixins/llm_mixin.py:14*
-
----
-
-
-## docgen/generators/mixins/manual_section_mixin.py
-
-### ManualSectionMixin
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class ManualSectionMixin:
-```
-
-**説明**:
-
-手動セクション管理機能を提供する Mixin
-
-*定義場所: docgen/generators/mixins/manual_section_mixin.py:11*
-
----
-
-
-## docgen/generators/mixins/markdown_mixin.py
-
-### MarkdownMixin
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class MarkdownMixin:
-```
-
-**説明**:
-
-マークダウン処理機能を提供する Mixin
-
-*定義場所: docgen/generators/mixins/markdown_mixin.py:14*
-
----
-
-
-## docgen/generators/mixins/rag_mixin.py
-
-### RAGMixin
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class RAGMixin:
-```
-
-**説明**:
-
-RAG機能を提供する Mixin
-
-*定義場所: docgen/generators/mixins/rag_mixin.py:9*
-
----
-
-
-## docgen/generators/mixins/template_mixin.py
-
-### TemplateMixin
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class TemplateMixin:
-```
-
-**説明**:
-
-テンプレート処理機能を提供する Mixin
-
-*定義場所: docgen/generators/mixins/template_mixin.py:10*
 
 ---
 
@@ -4059,6 +3939,7 @@ Args:
     languages: List of detected languages
     config: Configuration dictionary
     package_managers: Dictionary of detected package managers
+    **kwargs: Additional arguments passed to BaseGenerator (services, etc.)
 
 *定義場所: docgen/generators/readme_generator.py:19*
 
@@ -4075,7 +3956,7 @@ def readme_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/readme_generator.py:45*
+*定義場所: docgen/generators/readme_generator.py:47*
 
 ---
 
@@ -4534,6 +4415,57 @@ Returns:
     Outlinesモデル（サポートされない場合はNone）
 
 *定義場所: docgen/generators/services/llm_service.py:87*
+
+---
+
+### format_project_info
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def format_project_info(self, project_info: Any, languages: list[str], package_managers: dict[str, str] | None) -> str:
+```
+
+**説明**:
+
+プロジェクト情報をプロンプト用に整形
+
+Args:
+    project_info: プロジェクト情報
+    languages: 言語リスト
+    package_managers: パッケージマネージャ辞書
+
+Returns:
+    整形された文字列
+
+*定義場所: docgen/generators/services/llm_service.py:101*
+
+---
+
+### generate_content
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_content(self, prompt_file: str, prompt_name: str, project_info_str: str, rag_context: str) -> str:
+```
+
+**説明**:
+
+LLMを使用して特定のコンテンツを生成
+
+Args:
+    prompt_file: プロンプトファイル名
+    prompt_name: プロンプト名
+    project_info_str: 整形済みプロジェクト情報
+    rag_context: RAGコンテキスト
+
+Returns:
+    生成されたコンテンツ
+
+*定義場所: docgen/generators/services/llm_service.py:143*
 
 ---
 

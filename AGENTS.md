@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-04 14:10:09
+自動生成日時: 2025-12-04 14:38:20
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,71 +12,45 @@
 <!-- MANUAL_END:description -->
 
 
-コミットごとに自動で実行される CI パイプラインを提供します。  
-パイプラインは 3 本の主要タスクから構成されています。
+本プロジェクトは、コードベースとドキュメントの整合性を保つために設計された自動化パイプラインです。コミットごとに以下の処理が順次実行されます。
 
-- **テスト・品質検証** – `pytest` と `ruff` を使い、単体テスト（カバレッジ計測付き）とコード静的解析を実行。失敗時にはビルドが中断されます。
-- **ドキュメント生成** – Jinja2 テンプレートに `pydantic` で定義されたモデル (`ProjectOverview`, `AgentsConfig`, `AgentsGenerationConfig`, `AgentsDocument`) を埋め込み、Markdown と API ドキュメントを自動作成。  
-- **AGENTS.md 自動更新** – コードベースからエージェント構造を抽出し（`docgen/models/agents.py` に定義されたデータモデルに従い）、`outlines` を利用して統一フォーマットの `AGENTS.md` を再生成します。
+1. **テスト実行**  
+   `pytest`（バージョン7.4以上）＋カバー率確認用(`pytest-cov`)でユニット・統合テストを走らせ、失敗した場合はCIビルドが停止します。モックライブラリ(`pytest-mock`)も併設し、外部依存の振る舞いを安全に再現できます。
 
-### 技術スタック
-- **言語**：Python 3.11、Bash  
-- **依存ライブラリ**（主要）  
-  - `anthropic`, `openai`: LLM 呼び出しサポート（必要に応じて拡張可能）。  
-  - `hnswlib`, `sentence-transformers`, `torch`: ベクトル検索・埋め込み生成。  
-  - `httpx`: HTTP クライアントとして API コールを実装。  
-  - `jinja2`：テンプレートエンジン。  
-  - `outlines`：自然言語から構造化データへの変換に使用。  
-  - `pydantic`：設定ファイルとドキュメントモデルのバリデーション。  
-  - `pytest`, `pytest-cov`: テストフレームワーク・カバレッジ計測。  
-  - `ruff`: リント＆フォーマットツール。
+2. **ドキュメント生成**  
+   ソースコード内のdocstringやYAML構成（`pyyaml>=6.0.3`）から自動で Markdown ドキュメントを作り出します。生成されたファイルは `docs/` ディレクトリに格納され、GitHub Pages などと連携して公開できます。
 
-### アーキテクチャ（高水準）
-```
-┌───────────────────────┐
-│ GitHub Actions / CI    │ ← コミットイベントトリガー
-├─────────────▲───────────┤
-│             │           ▼
-│   ──────┬─────┴──────┐  └───────┬────────────────┘
-│         │            │          │
-│    テスト実行       ドキュメント生成      AGENTS.md 更新
-│ (pytest, ruff)     (jinja2 + outlines)
-├─────────────▼───────────┤
-│  ビルド結果／レポート   └─────────────────────┘
-```
+3. **AGENTS.md 自動更新**  
+   パイプラインの最後に実行するシェルスクリプトが最新ドキュメントを読み込み、AI エージェント用情報（インターフェース定義・使用例）を `AGENTS.md` に書き込むことで、人手による更新作業を排除します。
 
-- **CLI**：`agents_docs_sync --help` がエントリーポイント。  
-  `pyproject.toml` の `[project.scripts]` により、インストール後はシステム全体でコマンドとして利用可能。
+### 実装構成
+- **言語**: Python 3.11+, Shell (Bash)
+- **パッケージ管理**: uv（Python 用高速インストールツール）
+- **主な依存関係**
+  - `pyyaml>=6.0.3` – YAML 設定の読み書き
+  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
+  - その他、ドキュメント生成に必要なスクリプトライブラリ
 
-### 主な機能詳細
-
-| 機能 | 実装ポイント | ユーザーへのメリット |
-|------|---------------|------------------------|
-| **自動テスト・品質保証** | `pytest` + `ruff`; CI 失敗時に即通知 | コードの安全性を継続的に確保し、マージ前にバグ検出。 |
-| **構造化ドキュメント生成** | Jinja2 テンプレート＋pydantic モデル（`ProjectOverview`, `AgentsConfigSection`, など） | 手作業の Markdown 作成を排除し、一貫したフォーマットで最新情報を提供。 |
-| **AGENTS.md 自動更新** | コード解析 → outlines による構造化データ生成 → Jinja2 テンプレート適用 | エージェント仕様が変更された際に手作業の同期不要、ドキュメントと実装の整合性を保つ。 |
-| **アーキテクチャ図自動生成**（拡張） | プロジェクト構造から Mermaid/Graphviz を描画 (LLM 不使用) | ビジュアル化で設計理解が速く、README などに即埋め込み可能。 |
-
-### コマンド例
-
+### ローカル実行手順（uv を使用）
 ```bash
-# パイプライン全体を手動実行（CI の代替）
-agents_docs_sync run
+# 仮想環境作成と依存関係インストール
+uv venv .venv
+source .venv/bin/activate
+uv pip install -r requirements.txt   # もしくは uv sync
 
-# AGENTS.md をローカルで更新 (開発中のみ)
-agents_docs_sync generate-agents-md
-
-# Hook インストール（Git 事前フックなどに利用可）
-agents_docs_sync hook install
+# テスト & ドキュメント生成を一括で実行（CI と同等）
+./scripts/run_pipeline.sh
 ```
 
-### 拡張性・保守ポイント
+### CI の構成ポイント
+- GitHub Actions に `workflow_dispatch` および `push` イベントが設定され、コミット時に上記シェルスクリプトを呼び出します。
+- 生成されたドキュメントは自動的に `gh-pages` ブランチへデプロイされるようになっています。
 
-- **設定ファイル**は YAML/JSON に対応し、`pydantic` モデルでバリデーション。  
-- LLM を必要とせず構造解析を行う設計により、実行コストが低く済む（LLM はオプション）。  
-- 依存ライブラリは `requirements.txt` と `pyproject.toml` 両方で管理し、開発環境・CI 環境の差異を最小化。  
+### メンテナンスのヒント
+- **新しいエージェント機能** を追加した際は、docstring の書き方を統一し（例：入力/出力型、制約など）、YAML 定義に追記するだけで `AGENTS.md` が自動更新されます。
+- テスト失敗時の詳細ログは CI のアーティファクトとして保存しておくとデバッグが容易です。
 
-以上により、コミットごとに自動テスト実行からドキュメント生成までワンライフサイクルを完結させることで、エージェント系プロジェクトの品質保証と文書管理が一元化されます。
+このパイプラインを活用すれば、コード変更ごとにドキュメントやエージェント仕様書を常に最新状態で保つことができ、AI エージェントの開発・運用コストを大幅に削減できます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -102,11 +76,6 @@ agents_docs_sync hook install
 │   │   ├── plugin_registry.py
 │   │   └── unified_detector.py
 │   ├── generators//
-│   │   ├── mixins//
-│   │   │   ├── formatting_mixin.py
-│   │   │   ├── llm_mixin.py
-│   │   │   ├── markdown_mixin.py
-│   │   │   └── template_mixin.py
 │   │   ├── parsers//
 │   │   │   ├── base_parser.py
 │   │   │   ├── generic_parser.py
@@ -197,7 +166,6 @@ graph TB
                 direction TB
                 docgen_generators_services["services"]:::moduleStyle
                 docgen_generators_parsers["parsers"]:::moduleStyle
-                docgen_generators_mixins["mixins"]:::moduleStyle
             end
             class docgen_generators moduleStyle
             subgraph docgen_rag [rag]
@@ -229,7 +197,6 @@ graph TB
     docgen_generators_parsers --> docgen_detectors
     docgen_generators_parsers --> docgen_models
     docgen_generators_parsers --> docgen_utils
-    docgen_generators_mixins --> docgen_utils
     docgen_rag --> docgen_utils
     docgen_rag_strategies --> docgen_utils
 
@@ -285,19 +252,13 @@ uv sync
 ### ビルド手順
 ```bash
 uv sync
-```
-```bash
 uv build
-```
-```bash
 uv run python3 docgen/docgen.py
 ```
 
 ### テスト実行
 ```bash
 bash scripts/run_tests.sh
-```
-```bash
 uv run pytest tests/ -v --tb=short
 ```
 ### 利用可能なコマンド
@@ -367,4 +328,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 14:10:09*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 14:38:20*

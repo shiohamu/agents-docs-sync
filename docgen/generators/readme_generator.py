@@ -22,6 +22,7 @@ class ReadmeGenerator(BaseGenerator):
         languages: list[str],
         config: dict[str, Any],
         package_managers: dict[str, str] | None = None,
+        **kwargs: Any,
     ):
         """
         Initialize
@@ -31,8 +32,9 @@ class ReadmeGenerator(BaseGenerator):
             languages: List of detected languages
             config: Configuration dictionary
             package_managers: Dictionary of detected package managers
+            **kwargs: Additional arguments passed to BaseGenerator (services, etc.)
         """
-        super().__init__(project_root, languages, config, package_managers)
+        super().__init__(project_root, languages, config, package_managers, **kwargs)
         self.preserve_manual = config.get("generation", {}).get("preserve_manual_sections", True)
 
     def _should_use_llm(self) -> bool:
@@ -69,12 +71,12 @@ class ReadmeGenerator(BaseGenerator):
             "dependencies_section": self._format_dependencies_from_data(data.dependencies),
             "setup_section": self._format_setup_instructions(data.setup_instructions),
             "usage_section": "",  # 使用方法は手動セクションまたは別途生成
-            "build_commands": self._format_commands(data.build_commands),
-            "test_commands": self._format_commands(data.test_commands),
+            "build_commands": self.template_service.format_commands(data.build_commands),
+            "test_commands": self.template_service.format_commands(data.test_commands),
             "other_section": "",
             "footer": f"*このREADME.mdは自動生成されています。最終更新: {get_current_timestamp()}*",
             "project_structure": data.project_structure
-            or self._format_project_structure(project_info.project_structure),
+            or self.formatting_service.format_project_structure(project_info.project_structure),
             "key_features": data.key_features or self._generate_key_features(project_info),
             "architecture": data.architecture or self._generate_architecture(project_info),
             "troubleshooting": data.troubleshooting or self._generate_troubleshooting(project_info),
@@ -209,7 +211,7 @@ class ReadmeGenerator(BaseGenerator):
     def _get_project_overview_section(self, content: str | None) -> str:
         """プロジェクト概要セクションを取得"""
         if content and DESCRIPTION_START in content:
-            return self._extract_description_section(content)
+            return self.formatting_service.extract_description_section(content)
         return content or ""
 
     def _collect_project_description(self) -> str:
@@ -238,7 +240,7 @@ class ReadmeGenerator(BaseGenerator):
         }
 
         # セットアップ用のサブテンプレートをレンダリング
-        return self._render_template("setup_template.md.j2", setup_context)
+        return self.template_service.render("setup_template.md.j2", setup_context)
 
     def _format_dependencies_from_languages(self) -> str:
         """検出された言語から依存関係セクションを生成（簡略化版）"""
@@ -286,7 +288,7 @@ class ReadmeGenerator(BaseGenerator):
         # Extract manual sections from existing README
         try:
             existing_content = self.readme_path.read_text()
-            manual_sections = self._extract_manual_sections(existing_content)
+            manual_sections = self.manual_section_service.extract(existing_content)
         except (FileNotFoundError, OSError):
             manual_sections = {}
 
@@ -295,16 +297,18 @@ class ReadmeGenerator(BaseGenerator):
             "project_name": self.project_root.name or "agents-docs-sync",
             "notice_section": "",  # 手動セクションは自動マージされるため、ここでは空にする（重複防止）
             "description_section": self._get_project_overview_section(project_info.description),
-            "technologies": self._format_languages(),
+            "technologies": self.formatting_service.format_languages(self.languages),
             "dependencies_section": self._format_dependencies_from_languages(),
             "setup_section": manual_sections.get("setup", "").strip()
             or self._generate_setup_from_project_info(project_info),
             "usage_section": manual_sections.get("usage", ""),
-            "build_commands": self._format_commands(project_info.build_commands),
-            "test_commands": self._format_commands(project_info.test_commands),
+            "build_commands": self.template_service.format_commands(project_info.build_commands),
+            "test_commands": self.template_service.format_commands(project_info.test_commands),
             "other_section": "" if manual_sections.get("other") else "",
-            "footer": self._generate_footer(),
-            "project_structure": self._format_project_structure(project_info.project_structure),
+            "footer": self.formatting_service.generate_footer("README.md"),
+            "project_structure": self.formatting_service.format_project_structure(
+                project_info.project_structure
+            ),
             # テンプレートモードではLLMを使用せず、データから取得した値のみ使用
             "key_features": project_info.key_features or [],
             "architecture": ""
@@ -315,7 +319,7 @@ class ReadmeGenerator(BaseGenerator):
         }
 
         # Jinja2テンプレートでレンダリング
-        return self._render_template("readme_template.md.j2", context)
+        return self.template_service.render("readme_template.md.j2", context)
 
     def _create_overview_prompt(
         self, project_info: ProjectInfo, existing_overview: str, rag_context: str = ""
@@ -370,3 +374,99 @@ class ReadmeGenerator(BaseGenerator):
                 return description
             else:
                 return "Please describe this project here."
+
+    def _format_project_info_for_prompt(self, project_info: ProjectInfo) -> str:
+        """プロジェクト情報をプロンプト用に整形"""
+        base_info = self.llm_service.format_project_info(
+            project_info, self.languages, self.package_managers
+        )
+        return f"Project Name: {self.project_root.name}\n{base_info}"
+
+    def _generate_content_with_llm(
+        self, prompt_file: str, prompt_name: str, project_info: ProjectInfo
+    ) -> str:
+        """LLMを使用してコンテンツを生成"""
+        project_info_str = self._format_project_info_for_prompt(project_info)
+
+        # RAGコンテキスト取得
+        rag_context = ""
+        if self.config.get("rag", {}).get("enabled", False):
+            query = f"{prompt_name} for {self.project_root.name}"
+            rag_context = self.rag_service.get_context(query)
+
+        content = self.llm_service.generate_content(
+            prompt_file, prompt_name, project_info_str, rag_context
+        )
+        return self.formatting_service.clean_llm_output(content)
+
+    # LLMMixinのメソッドをここで再実装（サービス委譲）
+    def _generate_with_llm(self, project_info: ProjectInfo) -> str:
+        try:
+            # Outlinesを使用するかどうか
+            if self.llm_service.should_use_outlines():
+                client = self.llm_service.get_client()
+                if client:
+                    outlines_model = self.llm_service.create_outlines_model(client)
+                    if outlines_model:
+                        # RAGコンテキスト
+                        rag_context = ""
+                        if self.config.get("rag", {}).get("enabled", False):
+                            query = f"full documentation context for {self.project_root.name}"
+                            rag_context = self.rag_service.get_context(query)
+
+                        # プロンプト作成
+                        prompt = self._create_llm_prompt(project_info, rag_context=rag_context)
+
+                        # 生成
+                        self.logger.info("Outlinesを使用して構造化されたドキュメントを生成中...")
+                        structured_data = outlines_model(prompt, self._get_structured_model())
+
+                        # 変換
+                        return self._convert_structured_data_to_markdown(
+                            structured_data, project_info
+                        )
+
+            # フォールバック: テンプレート生成
+            self.logger.warning(
+                "Outlinesが利用できないため、テンプレート生成にフォールバックします"
+            )
+            return self._generate_template(project_info)
+
+        except Exception as e:
+            self.logger.error(f"LLM生成エラー: {e}")
+            return self._generate_template(project_info)
+
+    def _generate_hybrid(self, project_info: ProjectInfo) -> str:
+        # まずテンプレートでベースを生成
+        content = self._generate_template(project_info)
+
+        # 概要セクションをLLMで改善
+        try:
+            # 既存の概要を取得（テンプレート生成されたもの）
+            existing_overview = self._get_project_overview_section(content)
+
+            # RAGコンテキスト
+            rag_context = ""
+            if self.config.get("rag", {}).get("enabled", False):
+                query = f"project overview for {self.project_root.name}"
+                rag_context = self.rag_service.get_context(query)
+
+            # プロンプト作成
+            prompt = self._create_overview_prompt(project_info, existing_overview, rag_context)
+
+            # 生成
+            self.logger.info("LLMを使用して概要セクションを改善中...")
+            new_overview = self.llm_service.generate(prompt)
+
+            # クリーニング
+            new_overview = self.formatting_service.clean_llm_output(new_overview)
+
+            # 置換
+            if new_overview:
+                content = self._replace_overview_section(content, new_overview)
+
+        except Exception as e:
+            self.logger.warning(f"ハイブリッド生成（概要改善）中にエラーが発生しました: {e}")
+            # エラーが発生してもテンプレート生成されたコンテンツを返す
+
+        return content

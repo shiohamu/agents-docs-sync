@@ -26,7 +26,6 @@ graph TB
                 direction TB
                 docgen_generators_services["services"]:::moduleStyle
                 docgen_generators_parsers["parsers"]:::moduleStyle
-                docgen_generators_mixins["mixins"]:::moduleStyle
             end
             class docgen_generators moduleStyle
             subgraph docgen_rag [rag]
@@ -58,7 +57,6 @@ graph TB
     docgen_generators_parsers --> docgen_detectors
     docgen_generators_parsers --> docgen_models
     docgen_generators_parsers --> docgen_utils
-    docgen_generators_mixins --> docgen_utils
     docgen_rag --> docgen_utils
     docgen_rag_strategies --> docgen_utils
 

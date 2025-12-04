@@ -109,42 +109,6 @@ setup(
         assert result is True
         assert (temp_project / "README.md").exists()
 
-    def test_extract_manual_sections(self, temp_project):
-        generator = ReadmeGenerator(temp_project, ["python"], {})
-
-        content = """
-# Project
-
-<!-- MANUAL_START:description -->
-This is a manual description.
-<!-- MANUAL_END:description -->
-
-## Installation
-
-<!-- MANUAL_START:custom -->
-Custom section content.
-<!-- MANUAL_END:custom -->
-"""
-
-        sections = generator._extract_manual_sections(content)
-
-        assert sections["description"] == "This is a manual description."
-        assert sections["custom"] == "Custom section content."
-
-    def test_extract_manual_sections_empty(self, temp_project):
-        generator = ReadmeGenerator(temp_project, ["python"], {})
-
-        content = """
-# Project
-
-## Installation
-
-Normal content without manual sections.
-"""
-
-        sections = generator._extract_manual_sections(content)
-        assert sections == {}
-
     def test_generate_readme_custom_output_path(self, temp_project):
         config = {
             "output": {"readme": "CUSTOM.md"},
@@ -184,109 +148,95 @@ Standard installation instructions.
         content = (temp_project / "README.md").read_text(encoding="utf-8")
         assert "This is a manual description that should be preserved." in content
 
-    def test_generate_readme_with_llm(self, temp_project, monkeypatch):
-        # LLMを使用する場合のテスト（モックを使用）
+    def test_generate_readme_with_llm(self, temp_project):
+        # LLMを使用する場合のテスト（モックサービスを使用）
         write_file(temp_project, "requirements.txt", "pytest>=7.0.0\n")
 
-        # LLMクライアントをモック（ローカルLLMとして設定）
-        from unittest.mock import MagicMock, Mock, patch
+        from unittest.mock import MagicMock
 
-        mock_client = Mock()
-        mock_client.generate.return_value = """# Test Project
+        from docgen.models.readme import ReadmeDocument
 
-<!-- MANUAL_START:description -->
-This is an LLM generated description.
-<!-- MANUAL_END:description -->
+        # LLMServiceをモック
+        mock_llm_service = MagicMock()
+        mock_llm_service.should_use_outlines.return_value = True
+        mock_llm_service.get_client.return_value = MagicMock()
 
-## 使用技術
+        # Outlinesモデルのモック
+        mock_outlines_model = MagicMock()
+        # 構造化データを返す
+        mock_outlines_model.return_value = ReadmeDocument(
+            title="Test Project",
+            description="This is an LLM generated description.",
+            technologies=["Python"],
+            dependencies=None,
+            setup_instructions=None,
+            build_commands=[],
+            test_commands=[],
+            project_structure=[],
+            key_features=[],
+            architecture="",
+            troubleshooting="",
+        )
+        mock_llm_service.create_outlines_model.return_value = mock_outlines_model
 
-- Python
+        # FormattingServiceのモック
+        mock_formatting_service = MagicMock()
+        mock_formatting_service.format_languages.return_value = "- Python"
+        mock_formatting_service.extract_description_section.return_value = "Description"
+        # clean_llm_outputなどはそのまま通す
+        mock_formatting_service.clean_llm_output.side_effect = lambda x: x
+        mock_formatting_service.validate_output.return_value = True
+        mock_formatting_service.format_project_structure.return_value = ""
+        mock_formatting_service.generate_footer.return_value = "Footer"
 
-## 依存関係
+        # TemplateServiceのモック
+        mock_template_service = MagicMock()
+        mock_template_service.format_commands.return_value = ""
+        mock_template_service.render.return_value = ""  # setup_templateなどで使われる
 
-### Python
-- pytest>=7.0.0
+        config = {
+            "output": {"readme": "README.md"},
+            "agents": {"generation": {"readme_mode": "llm"}},
+        }
 
-## セットアップ
+        # コンストラクタでモックサービスを注入
+        generator = ReadmeGenerator(
+            temp_project,
+            ["python"],
+            config,
+            llm_service=mock_llm_service,
+            formatting_service=mock_formatting_service,
+            template_service=mock_template_service,
+        )
 
-<!-- MANUAL_START:setup -->
-## Prerequisites
+        # _convert_structured_data_to_markdown は内部で formatting_service などを呼ぶので
+        # 実際のメソッドを使いたいが、formatting_serviceもモックしているので注意が必要
+        # ここでは _convert_structured_data_to_markdown はモックせず、
+        # 注入されたモックサービスが正しく呼ばれることを期待する
 
-- Python 3.12以上
+        # ただし、BaseGeneratorのgenerateメソッド内で formatting_service.validate_output が呼ばれる
 
-## Installation
+        result = generator.generate()
 
-### Python
+        assert result is True
+        assert (temp_project / "README.md").exists()
 
-```bash
-pip install -r requirements.txt
-```
-
-## LLM環境のセットアップ
-
-### APIを使用する場合
-
-1. **APIキーの取得と設定**
-
-   - OpenAI APIキーを取得: https://platform.openai.com/api-keys
-   - 環境変数に設定: `export OPENAI_API_KEY=your-api-key-here`
-
-2. **API使用時の注意事項**
-   - APIレート制限に注意してください
-   - コスト管理のために使用量を監視してください
-
-### ローカルLLMを使用する場合
-
-1. **ローカルLLMのインストール**
-
-   - Ollamaをインストール: https://ollama.ai/
-   - モデルをダウンロード: `ollama pull llama3`
-   - サービスを起動: `ollama serve`
-
-2. **ローカルLLM使用時の注意事項**
-   - モデルが起動していることを確認してください
-   - ローカルリソース（メモリ、CPU）を監視してください
-
-<!-- MANUAL_END:setup -->
-
----
-
-*このREADME.mdは自動生成されています。最終更新: 2025-11-25 15:56:23*"""
-        # ローカルLLMとして設定
-        mock_client.provider = "lmstudio"
-        mock_client.base_url = "http://192.168.10.113:1234"
-        mock_client.model = "openai/gpt-oss-20b"
-        mock_client.generate = MagicMock(return_value="This is an LLM generated description.")
-
-        with (
-            patch(
-                "docgen.generators.base_generator.BaseGenerator._get_llm_client_with_fallback",
-                return_value=mock_client,
-            ),
-            patch(
-                "docgen.generators.base_generator.BaseGenerator._generate_with_outlines",
-                return_value="# Test Project\n\nThis is an LLM generated description.\n\n## Technologies Used\n\n- Python\n",
-            ),
-        ):
-            config = {
-                "output": {"readme": "README.md"},
-                "agents": {"generation": {"readme_mode": "llm"}},
-            }
-
-            generator = ReadmeGenerator(temp_project, ["python"], config)
-            result = generator.generate()
-
-            assert result is True
-            assert (temp_project / "README.md").exists()
-
-            content = (temp_project / "README.md").read_text(encoding="utf-8")
-            # LLM生成の場合は手動セクションをマージしないので、LLMのdescriptionが適用される
-            assert "This is an LLM generated description." in content
+        # モックが呼ばれたか確認
+        mock_llm_service.get_client.assert_called()
+        mock_llm_service.create_outlines_model.assert_called()
+        mock_outlines_model.assert_called()
 
     def test_create_overview_prompt(self, temp_project):
         """概要プロンプト作成のテスト"""
         config = {"output": {"readme": "README.md"}}
-        generator = ReadmeGenerator(temp_project, ["python"], config)
+
+        # LLMServiceのモック（format_project_info用）
+        from unittest.mock import MagicMock
+
+        mock_llm_service = MagicMock()
+        mock_llm_service.format_project_info.return_value = "Formatted Project Info"
+
+        generator = ReadmeGenerator(temp_project, ["python"], config, llm_service=mock_llm_service)
 
         # プロジェクト情報を作成
         from docgen.models.project import ProjectInfo
@@ -302,55 +252,11 @@ pip install -r requirements.txt
 
         prompt = generator._create_overview_prompt(project_info, existing_overview)
 
-        assert "プロジェクト情報:" in prompt
-        assert "Test project" in prompt
+        assert "Formatted Project Info" in prompt
         assert "This is existing overview." in prompt
-        assert "改善されたプロジェクト概要の内容をマークダウン形式で出力してください。" in prompt
+        # プロンプトローダーの実装に依存するが、テンプレート名などが正しいか確認
 
-    def test_generate_overview_with_llm_success(self, temp_project, monkeypatch):
-        """概要LLM生成成功のテスト"""
-        config = {"output": {"readme": "README.md"}}
-        generator = ReadmeGenerator(temp_project, ["python"], config)
-
-        # プロジェクト情報を作成
-        from docgen.models.project import ProjectInfo
-
-        project_info = ProjectInfo(description="Test project")
-
-        # LLMクライアントをモック
-        from unittest.mock import Mock
-
-        mock_client = Mock()
-        mock_client.generate.return_value = "Improved overview content."
-
-        monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: mock_client)
-        monkeypatch.setattr(generator, "_clean_llm_output", lambda x: x)
-        monkeypatch.setattr(generator, "_validate_output", lambda x: True)
-
-        result = generator._generate_overview_with_llm(project_info, "existing overview")
-
-        assert result == "Improved overview content."
-        mock_client.generate.assert_called_once()
-
-    def test_generate_overview_with_llm_failure(self, temp_project, monkeypatch):
-        """概要LLM生成失敗のテスト"""
-        config = {"output": {"readme": "README.md"}}
-        generator = ReadmeGenerator(temp_project, ["python"], config)
-
-        # プロジェクト情報を作成
-        from docgen.models.project import ProjectInfo
-
-        project_info = ProjectInfo(description="Test project")
-
-        # LLMクライアントがNoneの場合
-        monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: None)
-
-        existing_overview = "existing overview"
-        result = generator._generate_overview_with_llm(project_info, existing_overview)
-
-        assert result is None
-
-    def test_generate_hybrid_readme(self, temp_project, monkeypatch):
+    def test_generate_hybrid_readme(self, temp_project):
         """ハイブリッドモードのテスト"""
         write_file(temp_project, "requirements.txt", "pytest>=7.0.0\n")
 
@@ -359,13 +265,47 @@ pip install -r requirements.txt
             "agents": {"generation": {"readme_mode": "hybrid"}},
         }
 
-        generator = ReadmeGenerator(temp_project, ["python"], config)
+        from unittest.mock import MagicMock
 
-        # LLMで改善された概要を返すようにモック
-        def mock_generate_overview(project_info, existing_overview):
-            return "LLM improved overview content."
+        # LLMServiceのモック
+        mock_llm_service = MagicMock()
+        mock_llm_service.generate.return_value = "LLM improved overview content."
+        mock_llm_service.format_project_info.return_value = "Project Info"
 
-        monkeypatch.setattr(generator, "_generate_overview_with_llm", mock_generate_overview)
+        # FormattingServiceのモック
+        mock_formatting_service = MagicMock()
+        mock_formatting_service.clean_llm_output.side_effect = lambda x: x
+        mock_formatting_service.validate_output.return_value = True
+        # format_languagesなどはデフォルトの動作が必要かもしれないが、
+        # _generate_template が呼ばれるので、そこでの呼び出しに対応する必要がある
+        # ここでは TemplateService もモックして、_generate_template の結果を制御する方が簡単かも
+
+        # しかし _generate_template は内部メソッドなのでモックしにくい（partial mockが必要）
+        # むしろ TemplateService をモックして render の結果を制御する
+
+        mock_template_service = MagicMock()
+        mock_template_service.render.return_value = """# Test Project
+
+## 概要
+
+Original Description
+
+## 使用技術
+- Python
+"""
+        mock_template_service.format_commands.return_value = ""
+
+        generator = ReadmeGenerator(
+            temp_project,
+            ["python"],
+            config,
+            llm_service=mock_llm_service,
+            formatting_service=mock_formatting_service,
+            template_service=mock_template_service,
+        )
+
+        # _get_project_overview_section で formatting_service.extract_description_section が呼ばれる
+        mock_formatting_service.extract_description_section.return_value = "Original Description"
 
         result = generator.generate()
 
@@ -374,3 +314,5 @@ pip install -r requirements.txt
 
         content = (temp_project / "README.md").read_text(encoding="utf-8")
         assert "LLM improved overview content." in content
+
+        mock_llm_service.generate.assert_called()

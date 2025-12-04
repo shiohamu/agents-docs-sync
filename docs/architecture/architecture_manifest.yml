@@ -128,15 +128,6 @@ services:
         - models
         - utils
         submodules: []
-      - name: mixins
-        path: !!python/object/apply:pathlib.PosixPath
-        - docgen
-        - generators
-        - mixins
-        is_package: true
-        dependencies:
-        - utils
-        submodules: []
     - name: rag
       path: !!python/object/apply:pathlib.PosixPath
       - docgen

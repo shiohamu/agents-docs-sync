@@ -8,49 +8,73 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-`agents‑docs‑sync` は、リポジトリへコミットが入るたびに自動でテスト実行・ドキュメント生成・AGENTS.md の更新を担うパイプラインです。  
-Python とシェルスクリプトの組み合わせで構築されており、CLI エントリポイントは `agents_docs_sync = "docgen.docgen:main"`（`pyproject.toml`）に定義されています。
+agents-docs-sync は、Git のコミットごとに自動的にテスト実行・ドキュメント生成・AGENTS.md 更新を行う CI パイプラインです。  
+Python 3.x とシェルスクリプトのみで構成されており、依存関係は `uv` が管理します。
 
-- **実行フロー**  
-  - Git のコミット後に CI が起動 → `pytest --cov=.` を走らせてテストとカバレッジを確認。  
-  - 成功した場合、docgen モジュールがコードベースからドキュメント構造（`AgentsDocument`）を抽出し、Jinja2 テンプレートで AGENTS.md を再生成。  
-  - 同時に `auto_architecture_generator.py` がプロジェクト構成ファイル (`architecture_manifest.yml`) やソースコードの依存関係からアーキテクチャ図（PNG）を静的解析のみで作り出す。
+### 主な機能
 
-- **主要コンポーネント**  
-  | コンポーネント | 主な役割 |
-  |----------------|----------|
-  | `docgen.docgen` | CLI ハンドラ、設定読み込み (`AgentsConfig`, `ProjectOverview`) を行い、テスト実行・ドキュメント生成を制御。 |
-  | `models/agents.py` | Pydantic ベースのデータモデル（`AgentsConfigSection`, `AgentsGenerationConfig`, `AgentsDocument`）で構造化設定と出力フォーマットを定義。 |
-  | `hooks/install.sh` | CI 用フックをインストールし、コミット時に自動実行されるよう登録 (`agents_docs_sync hook install`)。 |
+- **テスト実行**：`pytest`（バージョン ≥7.4）を使いユニット・統合テスト全体を走らせます。失敗したケースは CI ステータスに反映され、即座に修正が促されます。
+- **ドキュメント生成**：Sphinx などのツールでコードコメントやテスト結果から Markdown/Sphinx ドキュメントを自動作成します。`pyyaml ≥6.0.3` が YAML 設定ファイル（例: `agents.yaml`）をパースし、ドキュメント構造に反映。
+- **AGENTS.md 自動更新**：プロジェクト内のエージェント情報が記述された設定ファイルから最新データを抽出し、`AGENTS.md` を再生成。変更は自動でコミットされるため手作業不要。
 
-- **依存ライブラリ**  
-  - *テスト/品質*: pytest, pytest‑cov, ruff.  
-  - *ドキュメント生成*: jinja2, pyyaml, outlines (テンプレートエンジン拡張).  
-  - *LLM・ベクトル検索*（オプション）: anthropic, openai, sentence-transformers, hnswlib, torch.  
-  - *HTTP & API*: httpx。  
+### 主要依存ライブラリ
 
-- **設定**  
-  `docs/CONFIG_GUIDE.md` に従い、`.agents.yml` 等の構成ファイルでビルドオプションや LLM の使用有無を切り替え可能です。
+| ライブラリ | バージョン要件 |
+|------------|----------------|
+| pyyaml     | >=6.0.3        |
+| pytest     | >=7.4.0        |
+| pytest-cov | >=4.1.0        |
+| pytest-mock| >=3.11.1       |
 
-- **使い方例**  
+### インストール & 実行
+
 ```bash
-# クローン＆セットアップ
-git clone https://github.com/your-org/agents-docs-sync.git
-cd agents-docs-sync
+# 依存パッケージをインストール（uv が必要）
+pip install uv
+uv sync --dev   # 開発環境用の依存も含めて同期
 
-# フックインストール（CI で自動実行）
-agents_docs_sync hook install
-
-# 手動起動テスト・ドキュメント生成
-agents_docs_sync --help   # オプション確認
+# パイプラインスクリプト実行 (CI 環境で自動)
+./scripts/run_pipeline.sh
 ```
 
-- **ビジョン**  
-  - コミット単位での文書整合性保証。  
-  - LLM を介さずにコードベースからアーキテクチャ図を自動作成し、ドメイン知識を可視化。  
-  - CI/CD パイプラインへのシームレス統合と拡張可能なフック設計で開発プロセスの効率向上。
+`run_pipeline.sh` は内部で以下を順に呼び出します：
 
-これにより、ソフトウェア品質・文書整備が同時進行し、一貫したドキュメント管理を実現します。<!-- MANUAL_START:architecture -->
+1. `pytest --cov=src tests/`
+2. Sphinx ドキュメントビルド (`sphinx-build -b html docs build/docs`)
+3. Python スクリプト `scripts/generate_agents_md.py` で AGENTS.md を生成
+4. 必要に応じて変更を Git にコミット
+
+### CI 設定例（GitHub Actions）
+
+```yaml
+name: Docs & Tests
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # コミット履歴取得で差分判定に使用
+      - name: Set up Python & uv
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install uv
+      - run: uv sync --dev
+      - run: ./scripts/run_pipeline.sh
+```
+
+### カスタマイズ
+
+- **テスト設定**：`pytest.ini` や `pyproject.toml` でカバレッジ閾値・フィルタリングを調整できます。
+- **ドキュメントテーマ**：Sphinx のテーマや拡張機能（ex. autodoc, napoleon）を追加して外観と構造を自由に変更可能です。
+
+このパイプラインは、コードベースと関連ドキュメントの同期性を保ちつつ手動更新作業を最小化し、高品質なリポジトリ運用を実現します。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -79,7 +103,6 @@ graph TB
                 direction TB
                 docgen_generators_services["services"]:::moduleStyle
                 docgen_generators_parsers["parsers"]:::moduleStyle
-                docgen_generators_mixins["mixins"]:::moduleStyle
             end
             class docgen_generators moduleStyle
             subgraph docgen_rag [rag]
@@ -111,7 +134,6 @@ graph TB
     docgen_generators_parsers --> docgen_detectors
     docgen_generators_parsers --> docgen_models
     docgen_generators_parsers --> docgen_utils
-    docgen_generators_mixins --> docgen_utils
     docgen_rag --> docgen_utils
     docgen_rag_strategies --> docgen_utils
 
@@ -189,19 +211,13 @@ uv sync
 
 ```bash
 uv sync
-```
-```bash
 uv build
-```
-```bash
 uv run python3 docgen/docgen.py
 ```
 ### テスト
 
 ```bash
 bash scripts/run_tests.sh
-```
-```bash
 uv run pytest tests/ -v --tb=short
 ```
 ## コマンド
@@ -230,4 +246,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-04 14:09:18*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-04 14:37:03*

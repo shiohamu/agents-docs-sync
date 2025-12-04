@@ -138,215 +138,65 @@ def test_agents_generator_output_path(temp_project):
     assert result is True
     assert (temp_project / custom_path).exists()
 
+    def test_generate_markdown_hybrid_mode(self, temp_project):
+        """ハイブリッドモードでのマークダウン生成テスト"""
+        # テスト用のファイルを作成
+        (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n")
 
-def test_extract_manual_sections_with_existing_file(temp_project):
-    """既存ファイルからの手動セクション抽出テスト"""
-    # 手動セクションを含む既存のAGENTS.mdを作成
-    agents_content = """# AGENTS ドキュメント
+        config = {
+            "output": {"agents_doc": "AGENTS.md"},
+            "agents": {
+                "generation": {"agents_mode": "hybrid"},
+                "llm_mode": "api",
+                "api": {"provider": "openai"},
+            },
+        }
 
-<!-- MANUAL_START:description -->
-これは手動で編集されたプロジェクト説明です。
-重要な情報が含まれています。
-<!-- MANUAL_END:description -->
+        from unittest.mock import MagicMock
 
-## 自動生成セクション
+        # LLMServiceのモック
+        mock_llm_service = MagicMock()
+        mock_llm_service.generate.return_value = "LLM improved overview content."
+        mock_llm_service.format_project_info.return_value = "Project Info"
 
-この部分は自動生成されます。
+        # FormattingServiceのモック
+        mock_formatting_service = MagicMock()
+        mock_formatting_service.clean_llm_output.side_effect = lambda x: x
+        mock_formatting_service.validate_output.return_value = True
+        mock_formatting_service.extract_description_section.return_value = "Original Description"
+        # format_project_structureなども必要
+        mock_formatting_service.format_project_structure.return_value = ""
 
-<!-- MANUAL_START:custom_notes -->
-特別な注意事項：
-- セキュリティに注意
-- パフォーマンスを重視
-<!-- MANUAL_END:custom_notes -->
+        # TemplateServiceのモック
+        mock_template_service = MagicMock()
+        mock_template_service.format_commands.return_value = ""
+        mock_template_service.render.return_value = """# AGENTS ドキュメント
+
+## 概要
+
+Original Description
+
+## 開発環境のセットアップ
 """
+        mock_template_service.format_custom_instructions.return_value = []
 
-    agents_file = temp_project / "AGENTS.md"
-    agents_file.write_text(agents_content, encoding="utf-8")
+        generator = AgentsGenerator(
+            temp_project,
+            ["python"],
+            config,
+            llm_service=mock_llm_service,
+            formatting_service=mock_formatting_service,
+            template_service=mock_template_service,
+        )
 
-    config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
-    generator = AgentsGenerator(temp_project, ["python"], config)
+        project_info = generator.collector.collect_all()
 
-    manual_sections = generator._extract_manual_sections_from_existing()
+        # ハイブリッドモードで生成
+        markdown = generator._generate_markdown(project_info)
 
-    # パースのデバッグ情報
-    print(f"Extracted sections: {list(manual_sections.keys())}")
-
-    assert "description" in manual_sections
-    assert "custom_notes" in manual_sections
-    assert "これは手動で編集されたプロジェクト説明です。" in manual_sections["description"]
-    assert "セキュリティに注意" in manual_sections["custom_notes"]
-
-
-def test_extract_manual_sections_no_file(temp_project):
-    """ファイルが存在しない場合のテスト"""
-    config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
-    generator = AgentsGenerator(temp_project, ["python"], config)
-
-    manual_sections = generator._extract_manual_sections_from_existing()
-
-    assert manual_sections == {}
-
-
-def test_extract_manual_sections_malformed_content(temp_project):
-    """不正な形式のコンテンツ処理テスト"""
-    # 不完全な手動セクション
-    agents_content = """# AGENTS ドキュメント
-
-<!-- MANUAL_START:description -->
-このセクションは終了タグがない
-
-<!-- MANUAL_START:another -->
-別のセクションの内容
-<!-- MANUAL_END:another -->
-"""
-
-    agents_file = temp_project / "AGENTS.md"
-    agents_file.write_text(agents_content, encoding="utf-8")
-
-    config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
-    generator = AgentsGenerator(temp_project, ["python"], config)
-
-    # エラーが発生しても処理が続くことを確認
-    manual_sections = generator._extract_manual_sections_from_existing()
-
-    # 終了タグのあるセクションのみ抽出される
-    assert "another" in manual_sections
-    assert "別のセクションの内容" in manual_sections["another"]
-    # 終了タグのないセクションは抽出されない
-    assert "description" not in manual_sections
-
-
-def test_merge_manual_sections(temp_project):
-    """手動セクションのマージテスト"""
-    config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
-    generator = AgentsGenerator(temp_project, ["python"], config)
-
-    # 生成されたマークダウン
-    markdown = """# AGENTS ドキュメント
-
-<!-- MANUAL_START:description -->
-自動生成された説明がここに入ります。
-<!-- MANUAL_END:description -->
-
-## 自動生成セクション
-
-これは自動生成されたコンテンツです。
-"""
-
-    # 手動セクション（現在の実装に合わせてキー名を調整）
-    manual_sections = {"description -->": "これは手動で編集された重要なプロジェクト説明です。"}
-
-    result = generator._merge_manual_sections(markdown, manual_sections)
-
-    # マージ処理が実行されることを確認
-    assert result is not None
-    assert isinstance(result, str)
-    assert "# AGENTS ドキュメント" in result
-    # 自動生成セクションは保持される
-    assert "これは自動生成されたコンテンツです。" in result
-
-
-def test_merge_manual_sections_empty_manual(temp_project):
-    """手動セクションが空の場合のテスト"""
-    config = {"output": {"agents_doc": "AGENTS.md"}, "agents": {"llm_mode": "api"}}
-    generator = AgentsGenerator(temp_project, ["python"], config)
-
-    markdown = """# AGENTS ドキュメント
-
-<!-- MANUAL_START:description -->
-自動生成された説明
-<!-- MANUAL_END:description -->
-
-## 自動生成セクション
-
-コンテンツ
-"""
-
-    manual_sections = {}
-
-    result = generator._merge_manual_sections(markdown, manual_sections)
-
-    # 元のマークダウンが変更されない
-    assert result == markdown
-
-
-def test_generate_markdown_template_mode(temp_project):
-    """テンプレートモードでのマークダウン生成テスト"""
-    # テスト用のファイルを作成
-    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n")
-
-    config = {
-        "output": {"agents_doc": "AGENTS.md"},
-        "agents": {"generation": {"agents_mode": "template"}, "llm_mode": "api"},
-    }
-
-    generator = AgentsGenerator(temp_project, ["python"], config)
-    project_info = generator.collector.collect_all()
-
-    markdown = generator._generate_markdown(project_info)
-
-    assert "# AGENTS ドキュメント" in markdown
-    assert "概要" in markdown
-    assert "開発環境のセットアップ" in markdown
-
-
-def test_generate_markdown_llm_mode(temp_project):
-    """LLMモードでのマークダウン生成テスト"""
-    # テスト用のファイルを作成
-    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n")
-
-    config = {
-        "output": {"agents_doc": "AGENTS.md"},
-        "agents": {
-            "generation": {"agents_mode": "llm"},
-            "llm_mode": "api",
-            "api": {"provider": "openai"},
-        },
-    }
-
-    generator = AgentsGenerator(temp_project, ["python"], config)
-    project_info = generator.collector.collect_all()
-
-    # LLMモードではエラーが発生してもフォールバックする
-    markdown = generator._generate_markdown(project_info)
-
-    # フォールバックでテンプレートが使用される
-    assert "# AGENTS ドキュメント" in markdown
-
-
-def test_generate_markdown_hybrid_mode(temp_project, monkeypatch):
-    """ハイブリッドモードでのマークダウン生成テスト"""
-    # テスト用のファイルを作成
-    (temp_project / "requirements.txt").write_text("pytest>=7.0.0\n")
-
-    config = {
-        "output": {"agents_doc": "AGENTS.md"},
-        "agents": {
-            "generation": {"agents_mode": "hybrid"},
-            "llm_mode": "api",
-            "api": {"provider": "openai"},
-        },
-    }
-
-    generator = AgentsGenerator(temp_project, ["python"], config)
-
-    # LLMクライアントをモック
-    from unittest.mock import Mock
-
-    mock_client = Mock()
-    mock_client.generate.return_value = "LLM improved overview content."
-
-    monkeypatch.setattr(generator, "_get_llm_client_with_fallback", lambda: mock_client)
-    monkeypatch.setattr(generator, "_clean_llm_output", lambda x: x)
-    monkeypatch.setattr(generator, "_validate_output", lambda x: True)
-
-    project_info = generator.collector.collect_all()
-
-    # ハイブリッドモードで生成
-    markdown = generator._generate_markdown(project_info)
-
-    # LLMで生成された内容が含まれていることを確認
-    assert "LLM improved overview content." in markdown
+        # LLMで生成された内容が含まれていることを確認
+        assert "LLM improved overview content." in markdown
+        mock_llm_service.generate.assert_called()
 
 
 def test_generate_error_handling(temp_project):

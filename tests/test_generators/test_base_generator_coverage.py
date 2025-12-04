@@ -75,8 +75,9 @@ class TestBaseGeneratorCoverage:
         generator.collector = MagicMock()
         generator.collector.collect_all.return_value = ProjectInfo()
 
-        # Mock validate
-        generator._validate_output = MagicMock(return_value=True)
+        # Mock formatting_service
+        generator.formatting_service = MagicMock()
+        generator.formatting_service.validate_output.return_value = True
 
         success = generator.generate()
         assert success is True
@@ -87,7 +88,10 @@ class TestBaseGeneratorCoverage:
         """Test generation with validation failure."""
         generator.collector = MagicMock()
         generator.collector.collect_all.return_value = ProjectInfo()
-        generator._validate_output = MagicMock(return_value=False)
+
+        # Mock formatting_service
+        generator.formatting_service = MagicMock()
+        generator.formatting_service.validate_output.return_value = False
 
         success = generator.generate()
         assert success is False
