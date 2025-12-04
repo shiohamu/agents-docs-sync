@@ -28,121 +28,107 @@ class JSParser(BaseParser):
     # クラス定義のパターン
     CLASS_PATTERN = re.compile(r"(?:export\s+)?class\s+(\w+)", re.MULTILINE)
 
-    def parse_file(self, file_path: Path) -> list[APIInfo]:
-        """
-        JavaScript/TypeScriptファイルを解析
+    def _parse_to_ast(self, content: str, file_path: Path) -> str:
+        """ASTにパース（正規表現ベースなのでコンテンツをそのまま返す）"""
+        return content
 
-        Args:
-            file_path: 解析するファイルのパス
+    def _extract_elements(self, content: str, file_path: Path) -> list[APIInfo]:
+        """要素を抽出"""
+        apis = []
+        class_stack = []
 
-        Returns:
-            API情報のリスト
-        """
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read()
+        # クラス定義を先に抽出してclass_stackを作成
+        for match in self.CLASS_PATTERN.finditer(content):
+            name = match.group(1)
+            class_start = match.start()
+            # 対応する}を見つける
+            brace_count = 0
+            class_end = class_start
+            for i, char in enumerate(content[class_start:], class_start):
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        class_end = i + 1
+                        break
+            class_stack.append((name, class_start, class_end))
 
-            apis = []
-            class_stack = []
+        # JSDoc付きの関数/クラスを抽出
+        for match in self.JSDOC_PATTERN.finditer(content):
+            docstring = match.group(1).strip()
+            name = match.group(2) or match.group(3) or match.group(4)
 
-            # クラス定義を先に抽出してclass_stackを作成
-            for match in self.CLASS_PATTERN.finditer(content):
-                name = match.group(1)
-                class_start = match.start()
-                # 対応する}を見つける
-                brace_count = 0
-                class_end = class_start
-                for i, char in enumerate(content[class_start:], class_start):
-                    if char == "{":
-                        brace_count += 1
-                    elif char == "}":
-                        brace_count -= 1
-                        if brace_count == 0:
-                            class_end = i + 1
-                            break
-                class_stack.append((name, class_start, class_end))
+            # 行番号を取得
+            line_num = content[: match.start()].count("\n") + 1
 
-            # JSDoc付きの関数/クラスを抽出
-            for match in self.JSDOC_PATTERN.finditer(content):
-                docstring = match.group(1).strip()
-                name = match.group(2) or match.group(3) or match.group(4)
+            # 関数かクラスかを判定
+            api_type = "function"
+            if "class" in match.group(0):
+                api_type = "class"
+            elif match.group(4):  # メソッドの場合
+                api_type = "method"
 
-                # 行番号を取得
+            # シグネチャを抽出
+            signature = self._extract_signature(content, match.end(), name, api_type)
+
+            # パラメータを抽出
+            parameters = self._extract_parameters(docstring)
+
+            apis.append(
+                {
+                    "name": name,
+                    "type": api_type,
+                    "signature": signature,
+                    "docstring": self._clean_jsdoc(docstring),
+                    "parameters": parameters,
+                    "line": line_num,
+                    "file": str(file_path.relative_to(self.project_root)),
+                }
+            )
+
+        # JSDocなしの関数も抽出（簡易版）
+        for match in self.FUNCTION_PATTERN.finditer(content):
+            name = match.group(1) or match.group(2) or match.group(3) or match.group(4)
+            if name and not any(api["name"] == name for api in apis):
                 line_num = content[: match.start()].count("\n") + 1
 
-                # 関数かクラスかを判定
+                # クラス内にあるかをチェック
                 api_type = "function"
-                if "class" in match.group(0):
-                    api_type = "class"
-                elif match.group(4):  # メソッドの場合
-                    api_type = "method"
+                for _class_name, class_start, class_end in class_stack:
+                    if class_start < match.start() < class_end:
+                        api_type = "method"
+                        break
 
-                # シグネチャを抽出
                 signature = self._extract_signature(content, match.end(), name, api_type)
-
-                # パラメータを抽出
-                parameters = self._extract_parameters(docstring)
-
                 apis.append(
                     {
                         "name": name,
                         "type": api_type,
                         "signature": signature,
-                        "docstring": self._clean_jsdoc(docstring),
-                        "parameters": parameters,
+                        "docstring": "",
                         "line": line_num,
                         "file": str(file_path.relative_to(self.project_root)),
                     }
                 )
 
-            # JSDocなしの関数も抽出（簡易版）
-            for match in self.FUNCTION_PATTERN.finditer(content):
-                name = match.group(1) or match.group(2) or match.group(3) or match.group(4)
-                if name and not any(api["name"] == name for api in apis):
-                    line_num = content[: match.start()].count("\n") + 1
+        for match in self.CLASS_PATTERN.finditer(content):
+            name = match.group(1)
+            if name and not any(api["name"] == name for api in apis):
+                line_num = content[: match.start()].count("\n") + 1
+                signature = f"class {name}"
+                apis.append(
+                    {
+                        "name": name,
+                        "type": "class",
+                        "signature": signature,
+                        "docstring": "",
+                        "line": line_num,
+                        "file": str(file_path.relative_to(self.project_root)),
+                    }
+                )
 
-                    # クラス内にあるかをチェック
-                    api_type = "function"
-                    for _class_name, class_start, class_end in class_stack:
-                        if class_start < match.start() < class_end:
-                            api_type = "method"
-                            break
-
-                    signature = self._extract_signature(content, match.end(), name, api_type)
-                    apis.append(
-                        {
-                            "name": name,
-                            "type": api_type,
-                            "signature": signature,
-                            "docstring": "",
-                            "line": line_num,
-                            "file": str(file_path.relative_to(self.project_root)),
-                        }
-                    )
-
-            for match in self.CLASS_PATTERN.finditer(content):
-                name = match.group(1)
-                if name and not any(api["name"] == name for api in apis):
-                    line_num = content[: match.start()].count("\n") + 1
-                    signature = f"class {name}"
-                    apis.append(
-                        {
-                            "name": name,
-                            "type": "class",
-                            "signature": signature,
-                            "docstring": "",
-                            "line": line_num,
-                            "file": str(file_path.relative_to(self.project_root)),
-                        }
-                    )
-
-            return apis
-        except Exception as e:
-            # base_parserのloggerを使用
-            from .base_parser import logger
-
-            logger.warning(f"{file_path} の解析エラー: {e}")
-            return []
+        return apis
 
     def _extract_signature(self, content: str, start_pos: int, name: str, api_type: str) -> str:
         """

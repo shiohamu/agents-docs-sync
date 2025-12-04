@@ -146,6 +146,13 @@ services:
         dependencies:
         - utils
         submodules: []
+    - name: config
+      path: !!python/object/apply:pathlib.PosixPath
+      - docgen
+      - config
+      is_package: true
+      dependencies: []
+      submodules: []
   metadata:
     version: 0.1.4
 metadata: {}

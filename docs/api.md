@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-04 12:17:26
+自動生成日時: 2025-12-04 13:39:06
 
 ---
 
@@ -1391,6 +1391,254 @@ Returns:
     List of test commands
 
 *定義場所: docgen/collectors/test_command_collector.py:42*
+
+---
+
+
+## docgen/config/config_accessor.py
+
+### ConfigAccessor
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ConfigAccessor:
+```
+
+**説明**:
+
+Type-safe configuration accessor.
+Wraps the raw configuration dictionary and provides typed properties.
+
+*定義場所: docgen/config/config_accessor.py:8*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, config: dict[str, Any]):
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:14*
+
+---
+
+### raw_config
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def raw_config(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+Get raw configuration dictionary
+
+*定義場所: docgen/config/config_accessor.py:18*
+
+---
+
+### generation
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generation(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:24*
+
+---
+
+### generate_api_doc
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_api_doc(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:28*
+
+---
+
+### update_readme
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def update_readme(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:32*
+
+---
+
+### generate_agents_doc
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_agents_doc(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:36*
+
+---
+
+### llm
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def llm(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:41*
+
+---
+
+### llm_provider
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def llm_provider(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:45*
+
+---
+
+### llm_model
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def llm_model(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:49*
+
+---
+
+### llm_temperature
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def llm_temperature(self) -> float:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:53*
+
+---
+
+### output
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def output(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:58*
+
+---
+
+### output_dir
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def output_dir(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:62*
+
+---
+
+### api_doc_dir
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def api_doc_dir(self) -> str:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:66*
+
+---
+
+### rag
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def rag(self) -> dict[str, Any]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:71*
+
+---
+
+### rag_enabled
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def rag_enabled(self) -> bool:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:75*
 
 ---
 
@@ -2934,21 +3182,15 @@ def parse_file(self, file_path: Path) -> list[APIInfo]:
 
 **説明**:
 
-ファイルを解析してAPI情報を抽出
+ファイルを解析してAPI情報を抽出 (Template Method)
 
 Args:
     file_path: 解析するファイルのパス
 
 Returns:
-    API情報のリスト。各要素は以下のキーを持つ辞書:
-    - name: 関数/クラス名
-    - type: 'function' または 'class'
-    - signature: シグネチャ
-    - docstring: ドキュメント文字列
-    - line: 行番号
-    - file: ファイルパス（相対パス）
+    API情報のリスト
 
-*定義場所: docgen/generators/parsers/base_parser.py:33*
+*定義場所: docgen/generators/parsers/base_parser.py:32*
 
 ---
 
@@ -2968,7 +3210,7 @@ def get_supported_extensions(self) -> list[str]:
 Returns:
     拡張子のリスト（例: ['.py', '.pyw']）
 
-*定義場所: docgen/generators/parsers/base_parser.py:52*
+*定義場所: docgen/generators/parsers/base_parser.py:71*
 
 ---
 
@@ -2988,7 +3230,7 @@ def get_parser_type(self) -> str:
 Returns:
     パーサーの種類（例: 'python', 'javascript'）
 
-*定義場所: docgen/generators/parsers/base_parser.py:61*
+*定義場所: docgen/generators/parsers/base_parser.py:80*
 
 ---
 
@@ -3015,7 +3257,7 @@ Args:
 Returns:
     全API情報のリスト
 
-*定義場所: docgen/generators/parsers/base_parser.py:79*
+*定義場所: docgen/generators/parsers/base_parser.py:98*
 
 ---
 
@@ -3060,29 +3302,6 @@ Args:
 
 ---
 
-### parse_file
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def parse_file(self, file_path: Path) -> list[APIInfo]:
-```
-
-**説明**:
-
-汎用ファイルを解析
-
-Args:
-    file_path: 解析するファイルのパス
-
-Returns:
-    API情報のリスト
-
-*定義場所: docgen/generators/parsers/generic_parser.py:42*
-
----
-
 ### get_supported_extensions
 
 **型**: `method`
@@ -3099,7 +3318,7 @@ def get_supported_extensions(self) -> list[str]:
 Returns:
     言語に応じた拡張子のリスト
 
-*定義場所: docgen/generators/parsers/generic_parser.py:157*
+*定義場所: docgen/generators/parsers/generic_parser.py:143*
 
 ---
 
@@ -3123,29 +3342,6 @@ JavaScript/TypeScriptコード解析クラス
 
 ---
 
-### parse_file
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def parse_file(self, file_path: Path) -> list[APIInfo]:
-```
-
-**説明**:
-
-JavaScript/TypeScriptファイルを解析
-
-Args:
-    file_path: 解析するファイルのパス
-
-Returns:
-    API情報のリスト
-
-*定義場所: docgen/generators/parsers/js_parser.py:31*
-
----
-
 ### get_supported_extensions
 
 **型**: `method`
@@ -3159,7 +3355,7 @@ def get_supported_extensions(self) -> list[str]:
 
 サポートする拡張子を返す
 
-*定義場所: docgen/generators/parsers/js_parser.py:224*
+*定義場所: docgen/generators/parsers/js_parser.py:210*
 
 ---
 
@@ -3305,29 +3501,6 @@ Pythonコード解析クラス
 
 ---
 
-### parse_file
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def parse_file(self, file_path: Path) -> list[APIInfo]:
-```
-
-**説明**:
-
-Pythonファイルを解析
-
-Args:
-    file_path: 解析するPythonファイルのパス
-
-Returns:
-    API情報のリスト
-
-*定義場所: docgen/generators/parsers/python_parser.py:33*
-
----
-
 ### get_supported_extensions
 
 **型**: `method`
@@ -3341,7 +3514,7 @@ def get_supported_extensions(self) -> list[str]:
 
 サポートする拡張子を返す
 
-*定義場所: docgen/generators/parsers/python_parser.py:62*
+*定義場所: docgen/generators/parsers/python_parser.py:49*
 
 ---
 
@@ -3358,7 +3531,7 @@ class PythonASTVisitor:
 
 Python AST訪問クラス
 
-*定義場所: docgen/generators/parsers/python_parser.py:69*
+*定義場所: docgen/generators/parsers/python_parser.py:56*
 
 ---
 
@@ -3373,7 +3546,7 @@ def __init__(self, file_path: Path, project_root: Path):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:72*
+*定義場所: docgen/generators/parsers/python_parser.py:59*
 
 ---
 
@@ -3388,7 +3561,7 @@ def visit_ClassDef(self, node: ast.ClassDef):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:78*
+*定義場所: docgen/generators/parsers/python_parser.py:65*
 
 ---
 
@@ -3403,7 +3576,7 @@ def visit_FunctionDef(self, node):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:101*
+*定義場所: docgen/generators/parsers/python_parser.py:88*
 
 ---
 
@@ -3418,7 +3591,7 @@ def visit_AsyncFunctionDef(self, node):
 
 *説明なし*
 
-*定義場所: docgen/generators/parsers/python_parser.py:104*
+*定義場所: docgen/generators/parsers/python_parser.py:91*
 
 ---
 
@@ -6308,6 +6481,70 @@ def __init__(self, message: str, doc_type: str | None, generator: str | None):
 *説明なし*
 
 *定義場所: docgen/utils/exceptions.py:137*
+
+---
+
+### HookError
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HookError:
+```
+
+**説明**:
+
+フック関連のエラー
+
+*定義場所: docgen/utils/exceptions.py:157*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, message: str, hook_name: str | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/exceptions.py:160*
+
+---
+
+### TemplateError
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TemplateError:
+```
+
+**説明**:
+
+テンプレート関連のエラー
+
+*定義場所: docgen/utils/exceptions.py:171*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, message: str, template_name: str | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/utils/exceptions.py:174*
 
 ---
 

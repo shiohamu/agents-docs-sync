@@ -39,84 +39,70 @@ class GenericParser(BaseParser):
         super().__init__(project_root)
         self.language = language
 
-    def parse_file(self, file_path: Path) -> list[APIInfo]:
-        """
-        汎用ファイルを解析
+    def _parse_to_ast(self, content: str, file_path: Path) -> str:
+        """ASTにパース（正規表現ベースなのでコンテンツをそのまま返す）"""
+        return content
 
-        Args:
-            file_path: 解析するファイルのパス
+    def _extract_elements(self, content: str, file_path: Path) -> list[APIInfo]:
+        """要素を抽出"""
+        apis = []
 
-        Returns:
-            API情報のリスト
-        """
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read()
+        # 言語に応じたパターンを取得
+        patterns = self.COMMENT_PATTERNS.get(self.language)
+        if not patterns:
+            # デフォルトパターン（Cスタイルコメント）
+            patterns = (
+                r"/\*\*\s*\n(.*?)\*/",
+                r"(\w+)\s*\([^)]*\)",
+                r"class\s+(\w+)|struct\s+(\w+)",
+            )
 
-            apis = []
+        comment_pattern, func_pattern, class_pattern = patterns
 
-            # 言語に応じたパターンを取得
-            patterns = self.COMMENT_PATTERNS.get(self.language)
-            if not patterns:
-                # デフォルトパターン（Cスタイルコメント）
-                patterns = (
-                    r"/\*\*\s*\n(.*?)\*/",
-                    r"(\w+)\s*\([^)]*\)",
-                    r"class\s+(\w+)|struct\s+(\w+)",
+        # コメント付き関数を抽出
+        for match in re.finditer(comment_pattern, content, re.DOTALL):
+            docstring = match.group(1).strip()
+            start_pos = match.end()
+
+            # 次の関数定義を探す
+            func_match = re.search(func_pattern, content[start_pos : start_pos + 200])
+            if func_match:
+                name = func_match.group(1)
+                line_num = content[: start_pos + func_match.start()].count("\n") + 1
+                signature = self._extract_signature(
+                    content, start_pos + func_match.start(), name, "function"
                 )
 
-            comment_pattern, func_pattern, class_pattern = patterns
+                apis.append(
+                    {
+                        "name": name,
+                        "type": "function",
+                        "signature": signature,
+                        "docstring": self._clean_docstring(docstring),
+                        "line": line_num,
+                        "file": str(file_path.relative_to(self.project_root)),
+                    }
+                )
 
-            # コメント付き関数を抽出
-            for match in re.finditer(comment_pattern, content, re.DOTALL):
-                docstring = match.group(1).strip()
-                start_pos = match.end()
+        # クラス定義を抽出
+        for match in re.finditer(class_pattern, content):
+            name = match.group(1) or match.group(2) if match.lastindex else None
+            if name:
+                line_num = content[: match.start()].count("\n") + 1
+                signature = f"class {name}" if "class" in match.group(0) else f"struct {name}"
 
-                # 次の関数定義を探す
-                func_match = re.search(func_pattern, content[start_pos : start_pos + 200])
-                if func_match:
-                    name = func_match.group(1)
-                    line_num = content[: start_pos + func_match.start()].count("\n") + 1
-                    signature = self._extract_signature(
-                        content, start_pos + func_match.start(), name, "function"
-                    )
+                apis.append(
+                    {
+                        "name": name,
+                        "type": "class",
+                        "signature": signature,
+                        "docstring": "",
+                        "line": line_num,
+                        "file": str(file_path.relative_to(self.project_root)),
+                    }
+                )
 
-                    apis.append(
-                        {
-                            "name": name,
-                            "type": "function",
-                            "signature": signature,
-                            "docstring": self._clean_docstring(docstring),
-                            "line": line_num,
-                            "file": str(file_path.relative_to(self.project_root)),
-                        }
-                    )
-
-            # クラス定義を抽出
-            for match in re.finditer(class_pattern, content):
-                name = match.group(1) or match.group(2) if match.lastindex else None
-                if name:
-                    line_num = content[: match.start()].count("\n") + 1
-                    signature = f"class {name}" if "class" in match.group(0) else f"struct {name}"
-
-                    apis.append(
-                        {
-                            "name": name,
-                            "type": "class",
-                            "signature": signature,
-                            "docstring": "",
-                            "line": line_num,
-                            "file": str(file_path.relative_to(self.project_root)),
-                        }
-                    )
-
-            return apis
-        except Exception as e:
-            # base_parserのloggerを使用
-            from .base_parser import logger
-
-            logger.warning(f"{file_path} の解析エラー: {e}")
-            return []
+        return apis
 
     def _extract_signature(self, content: str, start_pos: int, name: str, api_type: str) -> str:
         """

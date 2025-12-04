@@ -33,6 +33,7 @@ graph TB
                 docgen_rag_strategies["strategies"]:::moduleStyle
             end
             class docgen_rag moduleStyle
+            docgen_config["config"]:::moduleStyle
         end
         class docgen moduleStyle
     end

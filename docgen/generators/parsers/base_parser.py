@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from ...models import APIInfo
 from ...utils.logger import get_logger
@@ -29,24 +29,43 @@ class BaseParser(ABC):
         """
         self.project_root: Path = project_root
 
-    @abstractmethod
     def parse_file(self, file_path: Path) -> list[APIInfo]:
         """
-        ファイルを解析してAPI情報を抽出
+        ファイルを解析してAPI情報を抽出 (Template Method)
 
         Args:
             file_path: 解析するファイルのパス
 
         Returns:
-            API情報のリスト。各要素は以下のキーを持つ辞書:
-            - name: 関数/クラス名
-            - type: 'function' または 'class'
-            - signature: シグネチャ
-            - docstring: ドキュメント文字列
-            - line: 行番号
-            - file: ファイルパス（相対パス）
+            API情報のリスト
         """
+        try:
+            content = self._read_file(file_path)
+            ast = self._parse_to_ast(content, file_path)
+            elements = self._extract_elements(ast, file_path)
+            return self._post_process(elements)
+        except Exception as e:
+            logger.warning(f"{file_path} の解析に失敗しました: {e}")
+            return []
+
+    def _read_file(self, file_path: Path) -> str:
+        """ファイルを読み込む"""
+        with open(file_path, encoding="utf-8") as f:
+            return f.read()
+
+    @abstractmethod
+    def _parse_to_ast(self, content: str, file_path: Path) -> Any:
+        """ASTにパース（サブクラスで実装）"""
         pass
+
+    @abstractmethod
+    def _extract_elements(self, ast: Any, file_path: Path) -> list[APIInfo]:
+        """要素を抽出（サブクラスで実装）"""
+        pass
+
+    def _post_process(self, elements: list[APIInfo]) -> list[APIInfo]:
+        """後処理（オプション）"""
+        return elements
 
     @abstractmethod
     def get_supported_extensions(self) -> list[str]:

@@ -30,34 +30,21 @@ else:
 class PythonParser(BaseParser):
     """Pythonコード解析クラス"""
 
-    def parse_file(self, file_path: Path) -> list[APIInfo]:
-        """
-        Pythonファイルを解析
-
-        Args:
-            file_path: 解析するPythonファイルのパス
-
-        Returns:
-            API情報のリスト
-        """
+    def _parse_to_ast(self, content: str, file_path: Path) -> ast.AST | None:
+        """ASTにパース"""
         try:
-            with open(file_path, encoding="utf-8") as f:
-                content = f.read()
-
-            tree = ast.parse(content, filename=str(file_path))
-            visitor = PythonASTVisitor(file_path, self.project_root)
-            visitor.visit(tree)
-
-            return visitor.apis
+            return ast.parse(content, filename=str(file_path))
         except SyntaxError:
-            # 構文エラーは無視
-            return []
-        except Exception as e:
-            # base_parserのloggerを使用
-            from .base_parser import logger
+            return None
 
-            logger.warning(f"{file_path} の解析エラー: {e}")
+    def _extract_elements(self, tree: ast.AST | None, file_path: Path) -> list[APIInfo]:
+        """要素を抽出"""
+        if tree is None:
             return []
+
+        visitor = PythonASTVisitor(file_path, self.project_root)
+        visitor.visit(tree)
+        return visitor.apis
 
     def get_supported_extensions(self) -> list[str]:
         """サポートする拡張子を返す"""

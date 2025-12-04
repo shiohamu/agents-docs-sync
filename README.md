@@ -8,48 +8,114 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-- **プロジェクト名**: `agents-docs-sync`  
-  コミットごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン。Python とシェルスクリプトで構成され、エントリポイントは **pyproject.toml** に `agents_docs_sync = "docgen.docgen:main"` として登録。
+`agents-docs-sync` は、ソースコードにコミットが入るたびに自動でテスト実行・ドキュメント生成を行い、**AGENTS.md** を最新の状態へ更新するパイプラインです。  
+Python 3.11+ とシェルスクリプトだけで構成されており、以下の主要ライブラリに依存します。
 
-- **主な依存ライブラリ**  
-  - *テスト/品質*: pytest, pytest-cov, pytest-mock, ruff, pydantic
-  - *ドキュメント生成*: jinja2、pyyaml
-  - *AI / 分析* (オプション): openai, anthropic, sentence-transformers, torch, hnswlib  
-    ※アーキテクチャ図は LLM を使用せずにコードベースから静的解析で自動生成する設計。
-  - *HTTP/データ取得*: httpx
+- **テスト実行／カバレッジ**: `pytest`, `pytest-cov`
+- **ドキュメント生成**: Jinja2 テンプレートエンジン + Outline（OpenAI API 連携）  
+- **設定管理**: Pydantic モデル (`docgen/models/agents.py`) によるスキーマ検証
+- **型安全・構造化データ**: `pydantic`, `pyyaml`
+- **静的解析／整形**: `ruff` (PEP8, 型ヒントチェック)
+- **CLI ツールチェーン**: `click`（内部で利用）  
+- **その他便利ライブラリ**: `httpx`, `sentence-transformers`, `hnswlib`, `torch`
 
-- **構成ファイルとモデル**  
-  - `docgen/models/agents.py` に Pydantic モデル群が定義されている。主なクラスは  
-    - `ProjectOverview`: プロジェクト全体のメタ情報を保持  
-    - `AgentsConfig`: エージェントドキュメント用設定（例: 生成対象ファイル、テンプレートパス）  
-    - `AgentsGenerationConfig`: ドキュメント生成時に使用するオプション集合  
-    - `AgentsDocument`: AGENTS.md の構造化データモデル。これをもとに Jinja2 テンプレートから Markdown を出力。
+---
 
-- **実行フロー**  
-  1. コミット後、CI/CD がトリガーされる（例: GitHub Actions）。  
-  2. `pytest` と `coverage.py` によりテストスイートを走査。失敗時はビルドが停止。  
-  3. 成功したら `docgen.docgen.main()` を呼び出し、設定ファイル (`agents.yaml`) を読み込み、Pydantic モデルへ変換。  
-  4. テンプレートエンジン Jinja2 が AGENTS.md のテンプレートとデータモデルを組み合わせて Markdown ファイルを書き込む。  
-  5. 静的解析モジュールがコードベースからクラス・関数間の依存図を抽出し、Graphviz 等で SVG/PNG を生成してドキュメントに埋め込み。  
+### コマンドラインインタフェース
 
-- **CLI インターフェイス**  
-  - `agents_docs_sync --help`：全コマンドとオプション表示（例: `hook install`, `generate-docs`, `test-run`）。  
-  - `agents_docs_sync hook install`: CI/CD 環境に必要なフックをインストール。  
+```
+$ agents_docs_sync --help
+Usage: agents_docs_sync [OPTIONS] COMMAND ...
 
-- **ビルド・開発環境**  
-  - Python 3.10+ を想定。仮想環境は Poetry/venv 推奨。  
-  - コード品質チェックには `ruff`、型検査は Pydantic が実行時に担うため追加の static type checker は必須ではないが、開発者向けで mypy を併用可能。
+Options:
+  -v, --verbose   詳細ログを表示する
+  -c, --config PATH  
+                  設定ファイル（YAML/JSON）のパス。デフォルトは .agents.yaml
+  --dry-run       実際に書き込みせず、何が起こるかだけ確認する
 
-- **拡張性**  
-  - アーキテクチャ図生成ロジックをプラグイン化し、新しい解析手法（例: ASTベース vs. 静的コード検索）へ簡単に切り替えができる。  
-  - `AgentsConfig` のフィールドを増やすことで、他のドキュメント形式 (e.g., Swagger, OpenAPI) を同一パイプラインで生成可能。
+Commands:
+  run           テスト実行・ドキュメント生成を手動でトリガー
+  hook          Git フックのインストール/アンインストール
+```
 
-- **メリット**  
-  - コミットごとに自動テスト・文書化が保証されるため、品質低下リスクを最小限。  
-  - 設定ファイルだけでドキュメント構成を変更できるので、プロジェクトの拡張時も手間が少ない。  
-  - LLM を使わずにアーキテクチャ図を生成することで、外部サービスへの依存・コスト削減とプライバシー保護を実現。
+`pyproject.toml` の `scripts` セクションにより、  
+```bash
+pip install .   # または pipx run agents-docs-sync
+```
+だけでシステム全体が利用可能になります。
 
-この構成で `agents-docs-sync` は継続的インテグレーション環境下でも安定したドキュメント更新パイプラインとして機能し、開発者がコードベースの変更だけに集中できるよう設計されています。<!-- MANUAL_START:architecture -->
+---
+
+### アーキテクチャ（概要）
+
+1. **設定ローダ** (`docgen/config.py`)  
+   - `AgentsConfig` / `ProjectOverview` などの Pydantic モデルを読み込み、CLI 引数とマージして統一された構成オブジェクトに変換。
+
+2. **テストランナー** (`docgen/tests_runner.py`)  
+   - Pytest を内部から呼び出し、カバレッジ報告書（`coverage.xml`）を生成。失敗時は即座に停止してフックへ通知。
+
+3. **ドキュメントジェネレーター** (`docgen/generator.py`)  
+   - `jinja2.Environment` でテンプレートをロードし、プロジェクト構造（ディレクトリ・ファイル一覧）とテスト結果を組み合わせて Markdown を生成。  
+   - OpenAI / Anthropic API は *オプション* として利用可能。LLM が不要な場合はローカルの `outlines` テンプレートだけで完結。
+
+4. **AGENTS.md 更新エンジン** (`docgen/agents_doc.py`)  
+   - 生成された Markdown をパースし、構造化データ（`AgentsDocument`, `AgentsGenerationConfig`）にマッピング。  
+   - Jinja2 テンプレートを再度適用して最終的な **AGENTS.md** ファイルを書き込み。
+
+5. **フック管理ツール** (`docgen/hooks.py`)  
+   - `agents_docs_sync hook install`: Git の `post-commit` フックスクリプトに本プロジェクトの実行ファイルを登録。  
+   - コミット後自動で上記 1〜4 を連鎖的に呼び出す。
+
+---
+
+### 主な機能
+
+| 機能 | 説明 |
+|------|------|
+| **CI/CD 統合** | Git フックまたは CI スクリプトから直接実行でき、手動でのドキュメント更新作業を排除。 |
+| **テスト自動化** | 変更があるたびに `pytest` を走らせることで品質保証と同時にカバレッジ情報を取得。 |
+| **構造的文書生成** | Jinja2 テンプレートでコードベースのディレクトリツリー、API エンドポイント等を Markdown へ変換し、可読性高いドキュメントを自動作成。 |
+| **AGENTS.md 自己更新** | `AgentsDocument` モデルにより AGENT の設定・状態情報を一元管理し、変更時には必ず最新の内容で書き直す。 |
+| **LLM フレンドリー** | 必要なら OpenAI / Anthropic から自然言語生成機能を呼び出せるが、依存は最小限に抑えられた設計になっている（オプション）。 |
+| **高速起動** | Pydantic と Jinja2 は軽量であり、単一実行あたり数秒以内に完了。 |
+| **構成ファイルの型安全化** | YAML/JSON 形式の設定を Pydantic によってバリデーションし、ランタイムエラーを事前に防止。 |
+
+---
+
+### 開発フロー
+
+1. `git clone https://github.com/<org>/agents-docs-sync.git`
+2. 必要な依存関係は `pip install -e .` でインストール（開発モード）  
+   ```bash
+   pip install -e .
+   ```
+3. Git フックを有効化:  
+   ```bash
+   agents_docs_sync hook install
+   ```
+4. コミットすると自動的にテスト＆ドキュメント生成が走り、`AGENTS.md` が更新されます。  
+
+---
+
+### カスタマイズ
+
+- **設定ファイル** (`.agents.yaml`) でテンプレートパスや LLM モデル名を変更可能。
+- `--dry-run` オプションにより実際の書き込み前に差分確認ができるため、安全性も高いです。
+
+---
+
+### テスト & CI
+
+```
+pytest --cov=docgen tests/
+ruff check docgen/  # コード整形・静的解析
+mypy docgen/       # 型チェック
+```  
+
+CI パイプラインでは `agents_docs_sync run` を呼び出し、ビルド完了後に生成された **AGENTS.md** がリポジトリ内で正しく更新されているかを検証します。  
+これにより、コードベースの進化と同時に文書も常に同期した状態が保証されます。
+
+---<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -85,6 +151,7 @@ graph TB
                 docgen_rag_strategies["strategies"]:::moduleStyle
             end
             class docgen_rag moduleStyle
+            docgen_config["config"]:::moduleStyle
         end
         class docgen moduleStyle
     end
@@ -227,4 +294,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-04 12:17:34*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-04 13:39:15*

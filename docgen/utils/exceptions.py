@@ -152,3 +152,31 @@ class GenerationError(DocGenError):
             else None,
             **kwargs,
         )
+
+
+class HookError(DocGenError):
+    """フック関連のエラー"""
+
+    def __init__(self, message: str, hook_name: str | None = None, **kwargs):
+        details = kwargs.get("details") or hook_name
+        super().__init__(
+            message=message,
+            details=details,
+            error_code="HOOK_ERROR",
+            context={"hook_name": hook_name} if hook_name else None,
+            **kwargs,
+        )
+
+
+class TemplateError(DocGenError):
+    """テンプレート関連のエラー"""
+
+    def __init__(self, message: str, template_name: str | None = None, **kwargs):
+        details = kwargs.get("details") or template_name
+        super().__init__(
+            message=message,
+            details=details,
+            error_code="TEMPLATE_ERROR",
+            context={"template_name": template_name} if template_name else None,
+            **kwargs,
+        )
