@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-04 16:59:47
+自動生成日時: 2025-12-05 12:31:22
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,109 +12,38 @@
 <!-- MANUAL_END:description -->
 
 
-このプロジェクトは、**コードベースの変更に応じて自動的にテストを実行し、ドキュメントと `AGENTS.md` を再生成するパイプライン**です。主な目的は次の通りです。
+The **agents-docs-sync** project is a continuous‑integration style pipeline that keeps three key artifacts in sync whenever new code is committed:
 
-- コミットごとの品質保証（単体/統合テスト）  
-- 最新コードに合わせた API / ユーザー向けドキュメントの自動更新  
-- `AGENTS.md` を常に最新状態で保ち、AI エージェントや開発者が参照しやすい情報を提供  
+1. **Unit tests and coverage reports** – All Python modules are executed under `pytest`, with optional mocking via `pytest-mock`. Coverage statistics are collected through `pytest-cov` to ensure the test suite continues to exercise all agent behaviours.
+2. **Project documentation** – A lightweight static‑site generator (e.g., MkDocs or pdoc) is run against the source tree, producing Markdown/HTML files that expose API usage and example snippets for each AI agent defined in the repository.
+3. **AGENTS.md** – This file serves as a machine‑readable catalog of all available agents. The pipeline scans every module for classes decorated with `@agent` (or another agreed pattern), extracts their docstrings, signatures, and any metadata stored in YAML front matter via `pyyaml`, then rewrites AGENTS.md so that downstream tools or chat‑based assistants can query the current list of capabilities without manual edits.
 
----
+### Trigger & Execution
 
-### コアワークフロー
+- **Trigger**: The pipeline is invoked automatically on every commit to the main branch (via GitHub Actions, GitLab CI/CD, or a local `pre-push` hook).  
+- **Execution order**:
+  1. Install dependencies using `uv pip install -r requirements.txt`.  
+  2. Run tests with coverage: `pytest --cov=agents --cov-report xml`.  
+  3. Build docs: e.g., `mkdocs build` or `pdoc --html agents/`.  
+  4. Regenerate AGENTS.md by running a small Python script (`scripts/generate_agents_md.py`) that parses the source tree.
 
-1. **変更検知** – Git のコミットイベント（GitHub Actions / pre‑commit フック）  
-2. **依存関係解決** – `uv` を使用して Python 3.x 環境にパッケージをインストール (`pyyaml`, `pytest*`)  
-3. **テスト実行** – `pytest --cov=. -q` により全ユニット/統合テストの実行とカバレッジ計測  
-4. **ドキュメント生成** – ソースコードから自動で Markdown / MkDocs 形式を作成（docstring 抽出＋テンプレート埋め込み）  
-5. **AGENTS.md 更新** – YAML/JSON 定義ファイルと `pyyaml` を利用して、エージェント一覧・メタ情報を書き直す  
-6. **成果物のコミット / アップロード** – 変更があれば自動でプッシュ／GitHub Release に含める  
+### Technology Stack
 
----
+| Component | Purpose |
+|-----------|---------|
+| **Python** | Core language for agent logic, tests, and pipeline scripts. |
+| **Shell** | Wrapper scripts to orchestrate `uv`, documentation tools, and git commands. |
+| **`uv` (package manager)** | Fast dependency resolution and isolation; used to install the exact versions listed in `pyproject.toml`. |
+| **PyYAML (`>=6.0.3`)** | Parses YAML front‑matter or configuration files embedded within agent modules for metadata extraction. |
+| **pytest (`>=7.4.0`), pytest-cov (`>=4.1.0`), pytest-mock (`>=3.11.1`)** | Provides a robust testing ecosystem, coverage measurement, and mocking utilities to simulate external services during tests. |
 
-### 技術スタック
+### Why It Matters for AI Agents
 
-| 要素 | 詳細 |
-|------|------|
-| 言語 | Python (3.11+), Bash スクリプト |
-| パッケージマネージャ | `uv`（高速、ローカルキャッシュ） |
-| テストフレームワーク | pytest, pytest-cov, pytest-mock |
-| YAML 解析 | pyyaml >=6.0.3 |
-| CI/CD | GitHub Actions (default), 任意の CI プラットフォームへ移植可 |
+- **Up‑to‑date documentation** ensures that an assistant can read the latest API surface without manual intervention.
+- **Automated AGENTS.md** gives agents a reliable source of truth about which behaviours exist in the codebase, supporting features like auto‑completion, intent matching, or dynamic import resolution.
+- **Continuous testing and coverage guarantees** reduce regressions when new agent logic is added, allowing AI assistants to rely on stable implementations.
 
----
-
-### ローカルで実行する手順
-
-```bash
-# 仮想環境作成（uv は自動で管理）
-uv venv .venv
-source .venv/bin/activate
-
-# 依存関係インストール
-uv pip install -e .
-
-# テスト + ドキュメント生成 (AGENTS.md を更新)
-python scripts/run_pipeline.py --dry-run   # 本番実行は dry‑run オプション無しで
-```
-
-> **注意**  
-> `scripts/run_pipeline.py` は以下のオプションをサポート：  
-> - `--verbose`: 詳細ログ出力  
-> - `--skip-tests`: テストステップスキップ（ドキュメントだけ更新したい場合）  
-
----
-
-### CI への組み込み例 (GitHub Actions)
-
-```yaml
-name: Sync Docs & Agents
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # タグ取得が必要な場合は必須
-      - name: Set up Python & uv
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install uv && uv venv .venv
-      - run: source .venv/bin/activate && uv pip install -e .
-      - name: Run Pipeline
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          source .venv/bin/activate
-          python scripts/run_pipeline.py --commit-changes   # 変更をコミットして push
-
-```
-
----
-
-### 拡張性とカスタマイズポイント
-
-| カテゴリ | 調整方法 |
-|----------|-----------|
-| **テストフレームワーク** | `pytest.ini` を編集し、追加のプラグインやフィクスチャを有効化 |
-| **ドキュメントテンプレート** | `templates/` ディレクトリ内に Markdown / MkDocs テンプレートを書き換え |
-| **AGENTS.md 生成ロジック** | `agents.yaml` の構造を拡張し、追加のメタ情報（例: 実行環境要件）を記述可能 |
-| **CI トリガー条件** | GitHub Actions 外でも Docker コンテナ内で同様スクリプトを実行できる |
-
----
-
-### 期待されるメリット
-
-- コードとドキュメントの同期遅延がゼロになる  
-- エージェント一覧（`AGENTS.md`）が常に最新かつ正確な情報を提供し、AI のナレッジベースとして活用できる  
-- CI パイプラインで自動化することで、人為的ミスや手作業のコスト削減  
-
-このパイプラインは「**変更 → 検証 → 文書更新」という一連のフローをシームレスに実行」し、開発者と AI エージェント双方が最新情報へ即座にアクセスできるよう設計されています。
+By keeping tests, docs, and the agents catalog automatically aligned with every commit, this pipeline eliminates a common source of friction for developers and ensures that any downstream tooling—whether an IDE extension or a conversational UI—has accurate, current information about all available agents.
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -431,4 +360,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-04 16:59:47*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-05 12:31:22*

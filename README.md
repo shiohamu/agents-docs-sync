@@ -8,26 +8,75 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-agents-docs-sync は、ソースコードの変更がコミットされるたびに自動で以下の処理を実行します。
+このプロジェクトは、リポジトリにコミットがあるたびに自動で以下のタスクを実行するパイプラインです。  
+* **テスト実行** – `pytest` でユニット・統合テストを走らせます。  
+* **ドキュメント生成** – Python ソースと YAML 設定から Markdown/HTML ドキュメント（Sphinx 等）を作成します。  
+* **AGENTS.md の更新** – エージェント構成や設定情報が変更された場合に、`AGENTS.md` を最新状態へ自動反映させます。
 
-- **テスト実行**：Python 3.x 用の `uv` 環境下で `pytest`（+ `pytest-cov`, `pytest-mock`）を用いてユニット・統合テストを走らせ、カバレッジ情報も収集します。  
-- **ドキュメント生成**：プロジェクト内の docstring や Markdown ファイルから Sphinx で API ドキュメントをビルドし、`docs/` ディレクトリに出力します。また `pyyaml` を利用して設定ファイル（例: `_config.yml`, `agents.yaml`）を読み込み、必要なメタ情報も埋め込む仕組みです。  
-- **AGENTS.md 自動更新**：各エージェントの定義が記載された YAML/JSON ファイルから最新情報を抽出し、`AGENTS.md` を再生成します。これによりドキュメントと実際のコードベース間で整合性が保たれます。
+---
 
-### 技術スタック
-- **言語**：Python（3.10+）＋ Bash  
-- **パッケージマネージャ**：`uv` (高速な Python 環境構築)  
-- **主要依存ライブラリ**  
-  - `pyyaml>=6.0.3` – 設定・メタ情報の読み込み  
-  - `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` – テスト実行とカバレッジ測定  
-- **CI/CD**：GitHub Actions（または任意の CI サーバ）で `push/main` イベントをトリガーし、上記スクリプトが順次走るように構成。
+## 技術スタック
 
-### ワークフロー
-1. コミット → GitHub に Push  
-2. CI が起動：テスト→ドキュメント生成→AGENTS.md 更新  
-3. すべて成功した場合のみマージ／デプロイを許可  
+| 項目 | 詳細 |
+|------|-------|
+| 言語 | Python 3.10+（テスト・ドキュメント生成）、Bash（パイプラインスクリプト） |
+| パッケージマネージャー | `uv` (Python) |
+| 主な依存ライブラリ | <ul><li>pyyaml ≥ 6.0.3 – YAML 解析</li><li>pytest ≥ 7.4.0 – テストフレームワーク</li><li>pytest-cov ≥ 4.1.0 – カバレッジ測定</li><li>pytest-mock ≥ 3.11.1 – モックサポート</li></ul>|
 
-このパッケージは、コード品質と最新の開発者向け資料が常に同期された状態で保たれることを保証し、大規模なエージェントベースアプリケーションやライブラリ開発に最適です。<!-- MANUAL_START:architecture -->
+---
+
+## 主要な機能とフロー
+
+1. **コミット検知**  
+   * Git の pre‑commit フックまたは CI ジョブで `git log` を監視し、変更があればパイプラインを起動。
+
+2. **テスト実行 (`tests/run_tests.sh`)**  
+   ```bash
+   uv run pytest --cov=src tests/
+   ```
+   * 失敗した場合はビルドを中断し、エラーログを出力。
+
+3. **ドキュメント生成 (`docs/generate_docs.py`)**  
+   * ソースコードと `config/*.yaml` を解析して Markdown/HTML ドキュメントを `/site/docs` に書き込み。  
+   * Sphinx でビルドする場合は `make html` を実行。
+
+4. **AGENTS.md 更新 (`scripts/update_agents.sh`)**  
+   * YAML 設定からエージェント情報（名前、バージョン、依存関係など）を抽出し、整形して `/docs/AGENTS.md` に書き込む。  
+
+5. **成果物のコミット／プッシュ**  
+   * 生成されたドキュメントと `AGENTS.md` を自動で Git に追加・コミットし、リモートへ push。
+
+---
+
+## ローカル実行手順
+
+```bash
+# 必要なパッケージをインストール（uv が未導入の場合は先に公式サイトから取得）
+uv sync  # pyproject.toml を参照して依存関係を解決・インストール
+
+# テスト＋カバレッジ確認
+uv run pytest --cov=src tests/
+
+# ドキュメント生成（Sphinx が必要な場合は `make html` 等実行）
+python docs/generate_docs.py
+
+# AGENTS.md を更新
+bash scripts/update_agents.sh
+```
+
+---
+
+## 拡張性・カスタマイズポイント  
+
+| カスタマイズ項目 | 変更例 |
+|-----------------|--------|
+| テストフレームワークの切替 | `pytest` → `unittest`, `nose2` 等に置き換えるだけで実行スクリプトを更新可能。 |
+| ドキュメント生成ツール | Sphinx のテーマや静的サイトジェネレーター（MkDocs, Hugo）へ差し替え可。 |
+| AGENTS.md フォーマット | `scripts/update_agents.sh` 内のテンプレート文字列を書き換えるだけでレイアウト変更が可能。 |
+
+---
+
+このパイプラインを導入することで、コードベースに加わるたびに自動的にテスト結果・ドキュメント・エージェント情報が最新化され、一貫した品質と可視性の確保が実現します。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -195,4 +244,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-04 16:59:08*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-05 12:30:34*
