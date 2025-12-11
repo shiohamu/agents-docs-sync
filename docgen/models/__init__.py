@@ -14,6 +14,7 @@ from .agents import (
     SetupInstructions,
 )
 from .api import APIInfo, APIParameter
+from .base import DocgenBaseModel
 from .cache import CacheEntry, CacheMetadata
 from .config import (
     CacheConfig,
@@ -30,6 +31,8 @@ from .project import ProjectInfo
 from .readme import Dependencies, ReadmeConfig, ReadmeDocument, ReadmeSetupInstructions
 
 __all__ = [
+    # Base
+    "DocgenBaseModel",
     # Agents
     "ProjectOverview",
     "LLMSetup",

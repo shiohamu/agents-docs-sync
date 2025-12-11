@@ -12,6 +12,7 @@ from docgen.generators.services.formatting_service import FormattingService
 from docgen.generators.services.llm_service import LLMService
 from docgen.generators.services.manual_section_service import ManualSectionService
 from docgen.generators.services.rag_service import RAGService
+from docgen.generators.services.service_container import ServiceContainer
 from docgen.generators.services.template_service import TemplateService
 from docgen.utils.logger import get_logger
 
@@ -20,13 +21,40 @@ class GeneratorServiceFactory:
     """ジェネレーターサービスファクトリ"""
 
     @staticmethod
+    def create_container(
+        project_root: Path,
+        config: dict[str, Any],
+        logger: Logger | None = None,
+    ) -> ServiceContainer:
+        """
+        ServiceContainerを生成して返す
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+            config: 設定辞書
+            logger: ロガー（各サービスに渡される）
+
+        Returns:
+            ServiceContainerインスタンス
+        """
+        logger = logger or get_logger("service_factory")
+
+        return ServiceContainer(
+            llm_service=LLMService(config=config, logger=logger),
+            template_service=TemplateService(),
+            rag_service=RAGService(project_root=project_root, config=config, logger=logger),
+            formatting_service=FormattingService(),
+            manual_section_service=ManualSectionService(),
+        )
+
+    @staticmethod
     def create_services(
         project_root: Path,
         config: dict[str, Any],
         logger: Logger | None = None,
     ) -> dict[str, Any]:
         """
-        全サービスを生成して返す
+        全サービスを生成して返す（後方互換性のため）
 
         Args:
             project_root: プロジェクトルートディレクトリ
@@ -36,14 +64,14 @@ class GeneratorServiceFactory:
         Returns:
             サービスインスタンスの辞書
         """
-        logger = logger or get_logger("service_factory")
+        container = GeneratorServiceFactory.create_container(project_root, config, logger)
 
         return {
-            "llm": LLMService(config=config, logger=logger),
-            "template": TemplateService(),
-            "rag": RAGService(project_root=project_root, config=config, logger=logger),
-            "formatting": FormattingService(),
-            "manual_section": ManualSectionService(),
+            "llm": container.llm_service,
+            "template": container.template_service,
+            "rag": container.rag_service,
+            "formatting": container.formatting_service,
+            "manual_section": container.manual_section_service,
         }
 
     @staticmethod

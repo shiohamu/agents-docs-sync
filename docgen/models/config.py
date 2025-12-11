@@ -2,19 +2,20 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from .agents import AgentsConfigSection
+from .base import DocgenBaseModel
 
 
-class LanguagesConfig(BaseModel):
+class LanguagesConfig(DocgenBaseModel):
     """Languages configuration model."""
 
     auto_detect: bool = True
     preferred: list[str] = Field(default_factory=list)
 
 
-class OutputConfig(BaseModel):
+class OutputConfig(DocgenBaseModel):
     """Output configuration model."""
 
     api_doc: str = "docs/api.md"
@@ -22,7 +23,7 @@ class OutputConfig(BaseModel):
     agents_doc: str = "AGENTS.md"
 
 
-class GenerationConfig(BaseModel):
+class GenerationConfig(DocgenBaseModel):
     """Generation configuration model."""
 
     update_readme: bool = True
@@ -31,33 +32,33 @@ class GenerationConfig(BaseModel):
     preserve_manual_sections: bool = True
 
 
-class ExcludeConfig(BaseModel):
+class ExcludeConfig(DocgenBaseModel):
     """Exclude configuration model."""
 
     directories: list[str] = Field(default_factory=list)
     patterns: list[str] = Field(default_factory=list)
 
 
-class CacheConfig(BaseModel):
+class CacheConfig(DocgenBaseModel):
     """Cache configuration model."""
 
     enabled: bool = True
 
 
-class DebugConfig(BaseModel):
+class DebugConfig(DocgenBaseModel):
     """Debug configuration model."""
 
     enabled: bool = False
 
 
-class EmbeddingConfig(BaseModel):
+class EmbeddingConfig(DocgenBaseModel):
     """Embedding configuration model."""
 
     model: str = "all-MiniLM-L6-v2"
     device: str = "cpu"
 
 
-class IndexConfig(BaseModel):
+class IndexConfig(DocgenBaseModel):
     """Index configuration model."""
 
     type: str = "hnswlib"
@@ -65,21 +66,21 @@ class IndexConfig(BaseModel):
     M: int = 16
 
 
-class RetrievalConfig(BaseModel):
+class RetrievalConfig(DocgenBaseModel):
     """Retrieval configuration model."""
 
     top_k: int = 6
     score_threshold: float = 0.3
 
 
-class ChunkingConfig(BaseModel):
+class ChunkingConfig(DocgenBaseModel):
     """Chunking configuration model."""
 
     max_chunk_size: int = 512
     overlap: int = 50
 
 
-class RagExcludeConfig(BaseModel):
+class RagExcludeConfig(DocgenBaseModel):
     patterns: list[str] = Field(
         default_factory=lambda: [
             r".*\.env$",
@@ -91,7 +92,7 @@ class RagExcludeConfig(BaseModel):
     files: list[str] = Field(default_factory=lambda: ["README.md", "AGENTS.md"])
 
 
-class RagConfig(BaseModel):
+class RagConfig(DocgenBaseModel):
     """RAG configuration model."""
 
     enabled: bool = True
@@ -103,20 +104,20 @@ class RagConfig(BaseModel):
     exclude: RagExcludeConfig = Field(default_factory=RagExcludeConfig)
 
 
-class ArchitecturePythonConfig(BaseModel):
+class ArchitecturePythonConfig(DocgenBaseModel):
     """Python architecture configuration."""
 
     max_nodes: int = 400
     collapse_packages: bool = True
 
 
-class ArchitectureJavascriptConfig(BaseModel):
+class ArchitectureJavascriptConfig(DocgenBaseModel):
     """JavaScript architecture configuration."""
 
     ignore_patterns: list[str] = Field(default_factory=lambda: ["**/node_modules/**"])
 
 
-class ArchitectureConfig(BaseModel):
+class ArchitectureConfig(DocgenBaseModel):
     """Architecture diagram generation configuration."""
 
     enabled: bool = False
@@ -127,7 +128,7 @@ class ArchitectureConfig(BaseModel):
     javascript: ArchitectureJavascriptConfig = Field(default_factory=ArchitectureJavascriptConfig)
 
 
-class DocgenConfig(BaseModel):
+class DocgenConfig(DocgenBaseModel):
     """Main configuration model for docgen."""
 
     languages: LanguagesConfig = Field(default_factory=LanguagesConfig)

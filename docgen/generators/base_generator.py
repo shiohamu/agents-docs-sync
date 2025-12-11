@@ -281,3 +281,104 @@ class BaseGenerator(ABC):
         except Exception as e:
             self.logger.warning(f"アーキテクチャ図の生成/取得に失敗しました: {e}", exc_info=True)
             return ""
+
+    def _generate_key_features(
+        self, project_info: ProjectInfo, prompt_file: str = "agents_prompts.toml"
+    ) -> list[str]:
+        """主要機能を生成
+
+        Args:
+            project_info: プロジェクト情報
+            prompt_file: プロンプトファイル名（デフォルト: agents_prompts.toml）
+
+        Returns:
+            主要機能のリスト
+        """
+        if not self._should_use_llm():
+            return []
+
+        content = self._generate_content_with_llm(prompt_file, "key_features", project_info)
+
+        # コンテンツをリストに変換
+        if isinstance(content, list):
+            return content
+
+        # 文字列の場合は行ごとに分割してリスト化
+        return [line.strip("- ") for line in content.splitlines() if line.strip()]
+
+    def _generate_architecture(
+        self, project_info: ProjectInfo, prompt_file: str = "agents_prompts.toml"
+    ) -> str:
+        """アーキテクチャを生成
+
+        Args:
+            project_info: プロジェクト情報
+            prompt_file: プロンプトファイル名（デフォルト: agents_prompts.toml）
+
+        Returns:
+            アーキテクチャの説明文字列
+        """
+        # 設定ベースのアーキテクチャ図生成を試みる
+        arch_content = self._get_architecture_diagram_content()
+        if arch_content:
+            return arch_content
+
+        if not self._should_use_llm():
+            return ""
+
+        return self._generate_content_with_llm(prompt_file, "architecture", project_info)
+
+    def _should_use_llm(self) -> bool:
+        """LLMを使用すべきかどうかを判定
+
+        Returns:
+            LLMを使用する場合True
+        """
+        generation_config = self.agents_config.get("generation", {})
+        mode = generation_config.get(self._get_mode_key(), "template")
+        return mode in ("llm", "hybrid")
+
+    def _generate_content_with_llm(
+        self, prompt_file: str, section: str, project_info: ProjectInfo
+    ) -> Any:
+        """LLMでコンテンツを生成
+
+        Args:
+            prompt_file: プロンプトファイル名
+            section: セクション名
+            project_info: プロジェクト情報
+
+        Returns:
+            生成されたコンテンツ
+        """
+        # サブクラスで実装される想定だが、デフォルト実装を提供
+        self.logger.warning(
+            f"_generate_content_with_llm is not implemented in {self.__class__.__name__}"
+        )
+        return ""
+
+    def _generate_with_llm(self, project_info: ProjectInfo) -> str:
+        """LLMでドキュメント全体を生成
+
+        Args:
+            project_info: プロジェクト情報
+
+        Returns:
+            生成されたマークダウン
+        """
+        # サブクラスで実装される想定だが、デフォルト実装を提供
+        self.logger.warning(f"_generate_with_llm is not implemented in {self.__class__.__name__}")
+        return self._generate_template(project_info)
+
+    def _generate_hybrid(self, project_info: ProjectInfo) -> str:
+        """ハイブリッド方式でドキュメントを生成
+
+        Args:
+            project_info: プロジェクト情報
+
+        Returns:
+            生成されたマークダウン
+        """
+        # サブクラスで実装される想定だが、デフォルト実装を提供
+        self.logger.warning(f"_generate_hybrid is not implemented in {self.__class__.__name__}")
+        return self._generate_template(project_info)

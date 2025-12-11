@@ -1,9 +1,11 @@
 """README related Pydantic models."""
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .base import DocgenBaseModel
 
 
-class Dependencies(BaseModel):
+class Dependencies(DocgenBaseModel):
     """Dependencies model."""
 
     python: list[str] | None = None
@@ -11,14 +13,14 @@ class Dependencies(BaseModel):
     other: list[str] | None = None
 
 
-class ReadmeSetupInstructions(BaseModel):
+class ReadmeSetupInstructions(DocgenBaseModel):
     """Setup instructions for README."""
 
     prerequisites: list[str] | None = None
     installation_steps: list[str] | None = None
 
 
-class ReadmeConfig(BaseModel):
+class ReadmeConfig(DocgenBaseModel):
     """Configuration model for README documentation."""
 
     title: str = Field(description="プロジェクトタイトル")
@@ -37,7 +39,7 @@ class ReadmeConfig(BaseModel):
     )
 
 
-class ReadmeDocument(BaseModel):
+class ReadmeDocument(DocgenBaseModel):
     """READMEドキュメントの構造化データモデル"""
 
     title: str = Field(description="プロジェクトタイトル")

@@ -2,10 +2,12 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .base import DocgenBaseModel
 
 
-class ProjectInfo(BaseModel):
+class ProjectInfo(DocgenBaseModel):
     """Project information model."""
 
     description: str | None = None

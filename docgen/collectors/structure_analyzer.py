@@ -9,10 +9,10 @@ import ast
 from pathlib import Path
 from typing import Any
 
-from ..utils.logger import get_logger
+from .base_collector import BaseCollector
 
 
-class StructureAnalyzer:
+class StructureAnalyzer(BaseCollector[dict[str, Any]]):
     """プロジェクト構造分析クラス"""
 
     # 除外するディレクトリ
@@ -48,16 +48,17 @@ class StructureAnalyzer:
     # 構造に含める設定ファイルの拡張子
     CONFIG_EXTENSIONS = {".md", ".yaml", ".yml", ".toml", ".json", ".txt", ".sh"}
 
-    def __init__(self, project_root: Path, logger: Any | None = None):
+    def collect(self, max_depth: int = 3) -> dict[str, Any]:
         """
-        初期化
+        プロジェクト構造を収集（BaseCollectorインターフェース実装）
 
         Args:
-            project_root: プロジェクトのルートディレクトリ
-            logger: ロガーインスタンス
+            max_depth: ディレクトリの最大探索深度
+
+        Returns:
+            プロジェクト構造の辞書
         """
-        self.project_root = project_root
-        self.logger = logger or get_logger(__name__)
+        return self.analyze(max_depth=max_depth)
 
     def count_symbols_in_file(self, file_path: Path) -> int:
         """

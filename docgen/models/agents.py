@@ -2,10 +2,12 @@
 
 from typing import Any, Union
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from .base import DocgenBaseModel
 
 
-class LLMConfig(BaseModel):
+class LLMConfig(DocgenBaseModel):
     """LLM設定モデル"""
 
     provider: str | None = Field(
@@ -23,7 +25,7 @@ class LLMConfig(BaseModel):
     max_tokens: int | None = Field(default=None, description="最大トークン数")
 
 
-class ProjectOverview(BaseModel):
+class ProjectOverview(DocgenBaseModel):
     """Project overview model."""
 
     name: str
@@ -31,14 +33,14 @@ class ProjectOverview(BaseModel):
     dependencies: list[str] | None = None
 
 
-class LLMSetup(BaseModel):
+class LLMSetup(DocgenBaseModel):
     """LLM setup model."""
 
     api_setup: str | None = None
     local_setup: str | None = None
 
 
-class SetupInstructions(BaseModel):
+class SetupInstructions(DocgenBaseModel):
     """Setup instructions model."""
 
     prerequisites: list[str] | None = None
@@ -46,7 +48,7 @@ class SetupInstructions(BaseModel):
     llm_setup: LLMSetup | None = None
 
 
-class BuildTestInstructions(BaseModel):
+class BuildTestInstructions(DocgenBaseModel):
     """Build and test instructions model."""
 
     build_commands: list[str] | None = None
@@ -54,14 +56,14 @@ class BuildTestInstructions(BaseModel):
     test_execution_notes: str | None = None
 
 
-class CodingStandards(BaseModel):
+class CodingStandards(DocgenBaseModel):
     """Coding standards model."""
 
     standards: list[str] | None = None
     notes: str | None = None
 
 
-class PRGuidelines(BaseModel):
+class PRGuidelines(DocgenBaseModel):
     """PR guidelines model."""
 
     branch_creation: str | None = None
@@ -69,7 +71,7 @@ class PRGuidelines(BaseModel):
     pr_creation: str | None = None
 
 
-class AgentsConfig(BaseModel):
+class AgentsConfig(DocgenBaseModel):
     """Configuration model for agents documentation."""
 
     title: str = Field(description="ドキュメントのタイトル")
@@ -86,7 +88,7 @@ class AgentsConfig(BaseModel):
     auto_generated_note: str | None = Field(default=None, description="自動生成に関する注意書き")
 
 
-class AgentsGenerationConfig(BaseModel):
+class AgentsGenerationConfig(DocgenBaseModel):
     """Agents generation configuration model."""
 
     agents_mode: str = "template"
@@ -94,7 +96,7 @@ class AgentsGenerationConfig(BaseModel):
     enable_commit_message: bool = True
 
 
-class AgentsConfigSection(BaseModel):
+class AgentsConfigSection(DocgenBaseModel):
     """Agents configuration section model."""
 
     llm_mode: str = "both"
@@ -107,7 +109,7 @@ class AgentsConfigSection(BaseModel):
     custom_instructions: str | None = Field(default=None, description="プロジェクト固有の指示")
 
 
-class AgentsDocument(BaseModel):
+class AgentsDocument(DocgenBaseModel):
     """AGENTS.mdドキュメントの構造化データモデル"""
 
     title: str = Field(description="ドキュメントのタイトル")
