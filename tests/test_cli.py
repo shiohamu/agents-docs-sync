@@ -5,24 +5,17 @@ CLIモジュールのテスト
 import os
 from unittest.mock import patch
 
-from docgen.docgen import CommandLineInterface
+from docgen.docgen import run_cli
 
 
-class TestCommandLineInterface:
-    """CommandLineInterfaceクラスのテスト"""
-
-    def test_init(self):
-        """初期化テスト"""
-        cli = CommandLineInterface()
-        assert cli.docgen is None
+class TestCLI:
+    """CLI関数のテスト"""
 
     @patch("docgen.docgen.DocGen")
     def test_run_detect_only(self, mock_docgen_class, tmp_path):
         """言語検出のみ実行テスト"""
         mock_docgen = mock_docgen_class.return_value
         mock_docgen.detect_languages.return_value = ["python"]
-
-        cli = CommandLineInterface()
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
@@ -32,20 +25,22 @@ class TestCommandLineInterface:
                     "command": None,
                     "detect_only": True,
                     "no_readme": False,
+                    "no_api_doc": False,
                     "config": None,
                     "build_index": False,
                     "use_rag": False,
                     "generate_arch": False,
+                    "quiet": False,
                 },
             )()
 
-            result = cli.run()
-            assert result == 0
-            mock_docgen.detect_languages.assert_called_once()
+            with patch("pathlib.Path.cwd", return_value=tmp_path):
+                result = run_cli()
+                assert result == 0
+                mock_docgen.detect_languages.assert_called_once()
 
     def test_init_command_creates_config(self, tmp_path):
         """initコマンドが設定ファイルを作成することを確認"""
-        cli = CommandLineInterface()
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
@@ -54,17 +49,17 @@ class TestCommandLineInterface:
                 {
                     "command": "init",
                     "force": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
                 assert (tmp_path / "docgen" / "config.toml").exists()
 
     def test_init_command_creates_all_directories(self, tmp_path):
         """initコマンドがすべてのディレクトリを作成することを確認"""
-        cli = CommandLineInterface()
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
@@ -73,11 +68,12 @@ class TestCommandLineInterface:
                 {
                     "command": "init",
                     "force": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
                 assert (tmp_path / "docgen").exists()
                 assert (tmp_path / "docgen" / "templates").exists()
@@ -86,7 +82,6 @@ class TestCommandLineInterface:
 
     def test_init_command_copies_all_files(self, tmp_path):
         """initコマンドがすべてのファイルをコピーすることを確認"""
-        cli = CommandLineInterface()
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
@@ -95,11 +90,12 @@ class TestCommandLineInterface:
                 {
                     "command": "init",
                     "force": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
 
                 # config.tomlが作成されている
@@ -119,7 +115,6 @@ class TestCommandLineInterface:
 
     def test_init_command_sets_hook_permissions(self, tmp_path):
         """initコマンドがhooksファイルに実行権限を付与することを確認"""
-        cli = CommandLineInterface()
 
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
@@ -128,11 +123,12 @@ class TestCommandLineInterface:
                 {
                     "command": "init",
                     "force": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
 
                 # hooksディレクトリ内のファイルが実行可能
@@ -144,7 +140,6 @@ class TestCommandLineInterface:
 
     def test_init_command_with_existing_config(self, tmp_path):
         """既存の設定ファイルがある場合に警告を表示することを確認"""
-        cli = CommandLineInterface()
 
         # 既存の設定ファイルを作成
         docgen_dir = tmp_path / "docgen"
@@ -159,11 +154,12 @@ class TestCommandLineInterface:
                 {
                     "command": "init",
                     "force": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 # 既存ファイルがある場合は失敗
                 assert result == 1
                 # 元の内容が保持されていることを確認
@@ -171,7 +167,6 @@ class TestCommandLineInterface:
 
     def test_init_command_with_force_flag(self, tmp_path):
         """--forceフラグで既存ファイルを上書きすることを確認"""
-        cli = CommandLineInterface()
 
         # 既存の設定ファイルを作成
         docgen_dir = tmp_path / "docgen"
@@ -186,11 +181,12 @@ class TestCommandLineInterface:
                 {
                     "command": "init",
                     "force": True,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
                 # 内容が上書きされていることを確認
                 assert config_file.read_text() != "existing config"
@@ -201,8 +197,6 @@ class TestCommandLineInterface:
         mock_docgen = mock_docgen_class.return_value
         mock_docgen.detect_languages.return_value = ["python"]
 
-        cli = CommandLineInterface()
-
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
                 "Args",
@@ -211,15 +205,17 @@ class TestCommandLineInterface:
                     "command": None,
                     "detect_only": True,
                     "no_readme": False,
+                    "no_api_doc": False,
                     "config": None,
                     "build_index": False,
                     "use_rag": False,
                     "generate_arch": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
                 # 自動的にconfig.tomlが作成されている
                 assert (tmp_path / "docgen" / "config.toml").exists()
@@ -236,8 +232,6 @@ class TestCommandLineInterface:
         mock_docgen = mock_docgen_class.return_value
         mock_docgen.detect_languages.return_value = ["python"]
 
-        cli = CommandLineInterface()
-
         with patch("argparse.ArgumentParser.parse_args") as mock_args:
             mock_args.return_value = type(
                 "Args",
@@ -251,11 +245,12 @@ class TestCommandLineInterface:
                     "build_index": False,
                     "use_rag": False,
                     "generate_arch": False,
+                    "quiet": False,
                 },
             )()
 
             with patch("pathlib.Path.cwd", return_value=tmp_path):
-                result = cli.run()
+                result = run_cli()
                 assert result == 0
                 # 元の内容が保持されている
                 assert config_file.read_text() == "existing config"
