@@ -18,12 +18,7 @@ agents_doc = "AGENTS.md"
 update_readme = true
 generate_api_doc = true
 generate_agents_doc = true
-# 生成モード: "template", "llm", "hybrid"
-agents_mode = "hybrid"
-readme_mode = "hybrid"
 preserve_manual_sections = true
-# Outlinesを使用した構造化出力（実験的）
-use_outlines = false
 
 # キャッシュ設定
 [cache]
@@ -98,7 +93,7 @@ max_chunk_size = 512
 overlap = 50
 
 # 除外パターン（機密情報保護）
-[rag.exclude_patterns]
+[rag.exclude]
 patterns = [
     '.*\.env$',
     'secrets/.*',
@@ -106,9 +101,6 @@ patterns = [
     '.*API_KEY.*',
     '.*\.old$',
 ]
-
-# 除外ファイル名リスト
-[rag.exclude_files]
 files = [
     "README.md",
     "AGENTS.md",

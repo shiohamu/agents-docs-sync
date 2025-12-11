@@ -14,6 +14,11 @@ graph TB
                 docgen_utils_llm["llm"]:::moduleStyle
             end
             class docgen_utils moduleStyle
+            subgraph docgen_cli [cli]
+                direction TB
+                docgen_cli_commands["commands"]:::moduleStyle
+            end
+            class docgen_cli moduleStyle
             docgen_models["models"]:::moduleStyle
             subgraph docgen_archgen [archgen]
                 direction TB
@@ -42,6 +47,12 @@ graph TB
     docgen_collectors --> docgen_utils
     docgen_utils --> docgen_models
     docgen_utils_llm --> docgen_models
+    docgen_cli --> docgen_archgen
+    docgen_cli --> docgen_generators
+    docgen_cli --> docgen_rag
+    docgen_cli --> docgen_utils
+    docgen_cli_commands --> docgen_rag
+    docgen_cli_commands --> docgen_utils
     docgen_archgen --> docgen_detectors
     docgen_archgen --> docgen_generators
     docgen_archgen --> docgen_models
@@ -71,5 +82,5 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 

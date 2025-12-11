@@ -12,6 +12,7 @@ services:
   - jinja2
   - openai
   - outlines
+  - pip-licenses
   - pydantic
   - pytest
   - pytest-cov
@@ -52,6 +53,27 @@ services:
         is_package: true
         dependencies:
         - models
+        submodules: []
+    - name: cli
+      path: !!python/object/apply:pathlib.PosixPath
+      - docgen
+      - cli
+      is_package: true
+      dependencies:
+      - archgen
+      - generators
+      - rag
+      - utils
+      submodules:
+      - name: commands
+        path: !!python/object/apply:pathlib.PosixPath
+        - docgen
+        - cli
+        - commands
+        is_package: true
+        dependencies:
+        - rag
+        - utils
         submodules: []
     - name: models
       path: !!python/object/apply:pathlib.PosixPath

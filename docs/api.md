@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-05 12:30:25
+自動生成日時: 2025-12-12 00:19:18
 
 ---
 
@@ -357,74 +357,179 @@ def scan(self) -> ArchitectureManifest:
 ---
 
 
-## docgen/cli_handlers.py
+## docgen/cli/base_command.py
 
-### InitHandler
+### BaseCommand
 
 **型**: `class`
 
 **シグネチャ**:
 ```
-class InitHandler:
+class BaseCommand:
 ```
 
 **説明**:
 
-Handler for the 'init' command
+CLIコマンドの基底クラス
 
-*定義場所: docgen/cli_handlers.py:18*
+*定義場所: docgen/cli/base_command.py:12*
 
 ---
 
-### handle
+### __init__
 
 **型**: `method`
 
 **シグネチャ**:
 ```
-def handle(self, force: bool, project_root: Path, quiet: bool) -> int:
+def __init__(self, project_root: Path):
 ```
 
 **説明**:
 
-Initialize the project
+初期化
 
 Args:
-    force: Force overwrite existing files
-    project_root: Project root directory
-    quiet: Suppress detailed messages
+    project_root: プロジェクトのルートディレクトリ
 
-Returns:
-    Exit code (0 for success, 1 for failure)
-
-*定義場所: docgen/cli_handlers.py:21*
+*定義場所: docgen/cli/base_command.py:15*
 
 ---
 
-### BuildIndexHandler
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class BuildIndexHandler:
-```
-
-**説明**:
-
-Handler for the 'build-index' command
-
-*定義場所: docgen/cli_handlers.py:126*
-
----
-
-### handle
+### execute
 
 **型**: `method`
 
 **シグネチャ**:
 ```
-def handle(self, project_root: Path, config: dict) -> int:
+def execute(self, args: Any) -> int:
+```
+
+**説明**:
+
+コマンドを実行
+
+Args:
+    args: コマンドライン引数
+
+Returns:
+    終了コード（0: 成功, 1: 失敗）
+
+*定義場所: docgen/cli/base_command.py:25*
+
+---
+
+### get_name
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_name(self) -> str:
+```
+
+**説明**:
+
+コマンド名を取得
+
+Returns:
+    コマンド名
+
+*定義場所: docgen/cli/base_command.py:38*
+
+---
+
+### get_help
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_help(self) -> str:
+```
+
+**説明**:
+
+ヘルプメッセージを取得
+
+Returns:
+    ヘルプメッセージ
+
+*定義場所: docgen/cli/base_command.py:48*
+
+---
+
+
+## docgen/cli/commands/base.py
+
+### BaseCommand
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BaseCommand:
+```
+
+**説明**:
+
+コマンドハンドラーの基底クラス
+
+*定義場所: docgen/cli/commands/base.py:10*
+
+---
+
+### execute
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def execute(self, args: Namespace, project_root: Path) -> int:
+```
+
+**説明**:
+
+コマンドを実行
+
+Args:
+    args: コマンドライン引数
+    project_root: プロジェクトルートディレクトリ
+
+Returns:
+    終了コード（0=成功、1=失敗）
+
+*定義場所: docgen/cli/commands/base.py:14*
+
+---
+
+
+## docgen/cli/commands/build_index.py
+
+### BuildIndexCommand
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BuildIndexCommand:
+```
+
+**説明**:
+
+RAGインデックス構築コマンド
+
+*定義場所: docgen/cli/commands/build_index.py:14*
+
+---
+
+### execute
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def execute(self, args: Namespace, project_root: Path) -> int:
 ```
 
 **説明**:
@@ -432,40 +537,87 @@ def handle(self, project_root: Path, config: dict) -> int:
 Build RAG index
 
 Args:
+    args: Command line arguments
     project_root: Project root directory
-    config: Configuration dictionary
 
 Returns:
-    Exit code
+    Exit code (0 for success, 1 for failure)
 
-*定義場所: docgen/cli_handlers.py:129*
+*定義場所: docgen/cli/commands/build_index.py:17*
 
 ---
 
-### HooksHandler
+
+## docgen/cli/commands/generate.py
+
+### GenerateCommand
 
 **型**: `class`
 
 **シグネチャ**:
 ```
-class HooksHandler:
+class GenerateCommand:
 ```
 
 **説明**:
 
-Handler for the 'hooks' command
+ドキュメント生成コマンド
 
-*定義場所: docgen/cli_handlers.py:212*
+*定義場所: docgen/cli/commands/generate.py:14*
 
 ---
 
-### handle
+### execute
 
 **型**: `method`
 
 **シグネチャ**:
 ```
-def handle(self, args, project_root: Path) -> int:
+def execute(self, args: Namespace, project_root: Path) -> int:
+```
+
+**説明**:
+
+Generate documentation
+
+Args:
+    args: Command line arguments
+    project_root: Project root directory
+
+Returns:
+    Exit code (0 for success, 1 for failure)
+
+*定義場所: docgen/cli/commands/generate.py:17*
+
+---
+
+
+## docgen/cli/commands/hooks.py
+
+### HooksCommand
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class HooksCommand:
+```
+
+**説明**:
+
+Git hooks管理コマンド
+
+*定義場所: docgen/cli/commands/hooks.py:17*
+
+---
+
+### execute
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def execute(self, args: Namespace, project_root: Path) -> int:
 ```
 
 **説明**:
@@ -473,13 +625,139 @@ def handle(self, args, project_root: Path) -> int:
 Handle Git hooks management actions
 
 Args:
-    args: Parsed arguments
+    args: Command line arguments
     project_root: Project root directory
 
 Returns:
-    Exit code
+    Exit code (0 for success, 1 for failure)
 
-*定義場所: docgen/cli_handlers.py:215*
+*定義場所: docgen/cli/commands/hooks.py:20*
+
+---
+
+
+## docgen/cli/commands/init.py
+
+### InitCommand
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class InitCommand:
+```
+
+**説明**:
+
+プロジェクト初期化コマンド
+
+*定義場所: docgen/cli/commands/init.py:18*
+
+---
+
+### execute
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def execute(self, args: Namespace, project_root: Path) -> int:
+```
+
+**説明**:
+
+Initialize the project
+
+Args:
+    args: Command line arguments
+    project_root: Project root directory
+
+Returns:
+    Exit code (0 for success, 1 for failure)
+
+*定義場所: docgen/cli/commands/init.py:21*
+
+---
+
+
+## docgen/cli/parser.py
+
+### create_parser
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def create_parser() -> argparse.ArgumentParser:
+```
+
+**説明**:
+
+Create and configure the CLI argument parser
+
+Returns:
+    Configured ArgumentParser instance
+
+*定義場所: docgen/cli/parser.py:9*
+
+---
+
+
+## docgen/cli/runner.py
+
+### CommandRunner
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class CommandRunner:
+```
+
+**説明**:
+
+コマンド実行を管理するオーケストレーター
+
+*定義場所: docgen/cli/runner.py:20*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self):
+```
+
+*説明なし*
+
+*定義場所: docgen/cli/runner.py:23*
+
+---
+
+### run
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def run(self, args: Namespace, project_root: Path) -> int:
+```
+
+**説明**:
+
+Execute the appropriate command based on parsed arguments
+
+Args:
+    args: Parsed command line arguments
+    project_root: Project root directory
+
+Returns:
+    Exit code (0 for success, 1 for failure)
+
+*定義場所: docgen/cli/runner.py:34*
 
 ---
 
@@ -498,6 +776,11 @@ class BaseCollector:
 **説明**:
 
 ベースコレクタークラス
+
+Generic[T]を使用して、各collectorが返す型を明示的に定義可能にする。
+
+Type Parameters:
+    T: このコレクターが収集して返すデータの型
 
 *定義場所: docgen/collectors/base_collector.py:12*
 
@@ -520,7 +803,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     logger: ロガーインスタンス（Noneの場合はデフォルトロガーを使用）
 
-*定義場所: docgen/collectors/base_collector.py:15*
+*定義場所: docgen/collectors/base_collector.py:21*
 
 ---
 
@@ -530,7 +813,7 @@ Args:
 
 **シグネチャ**:
 ```
-def collect(self) -> Any:
+def collect(self) -> T:
 ```
 
 **説明**:
@@ -538,9 +821,9 @@ def collect(self) -> Any:
 情報を収集（サブクラスで実装）
 
 Returns:
-    収集した情報
+    収集した情報（型Tのインスタンス）
 
-*定義場所: docgen/collectors/base_collector.py:27*
+*定義場所: docgen/collectors/base_collector.py:33*
 
 ---
 
@@ -826,7 +1109,7 @@ class CommandHelpExtractor:
 
 Extract help text from Python CLI entry points
 
-*定義場所: docgen/collectors/command_help_extractor.py:16*
+*定義場所: docgen/collectors/command_help_extractor.py:17*
 
 ---
 
@@ -850,7 +1133,7 @@ Args:
 Returns:
     Description string, or empty string if extraction fails
 
-*定義場所: docgen/collectors/command_help_extractor.py:20*
+*定義場所: docgen/collectors/command_help_extractor.py:21*
 
 ---
 
@@ -874,7 +1157,7 @@ Args:
 Returns:
     List of option dicts with 'name' and 'help' keys
 
-*定義場所: docgen/collectors/command_help_extractor.py:115*
+*定義場所: docgen/collectors/command_help_extractor.py:116*
 
 ---
 
@@ -902,7 +1185,7 @@ Args:
 Returns:
     Structured command hierarchy dict
 
-*定義場所: docgen/collectors/command_help_extractor.py:230*
+*定義場所: docgen/collectors/command_help_extractor.py:231*
 
 ---
 
@@ -1268,22 +1551,24 @@ class StructureAnalyzer:
 
 ---
 
-### __init__
+### collect
 
 **型**: `method`
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, logger: Any | None):
+def collect(self, max_depth: int) -> dict[str, Any]:
 ```
 
 **説明**:
 
-初期化
+プロジェクト構造を収集（BaseCollectorインターフェース実装）
 
 Args:
-    project_root: プロジェクトのルートディレクトリ
-    logger: ロガーインスタンス
+    max_depth: ディレクトリの最大探索深度
+
+Returns:
+    プロジェクト構造の辞書
 
 *定義場所: docgen/collectors/structure_analyzer.py:51*
 
@@ -1308,7 +1593,7 @@ Args:
 Returns:
     シンボル数（クラス、関数、非同期関数の合計）
 
-*定義場所: docgen/collectors/structure_analyzer.py:62*
+*定義場所: docgen/collectors/structure_analyzer.py:63*
 
 ---
 
@@ -1333,7 +1618,7 @@ Args:
 Returns:
     ディレクトリ構造の辞書、またはネストしないディレクトリの場合は "directory"
 
-*定義場所: docgen/collectors/structure_analyzer.py:85*
+*定義場所: docgen/collectors/structure_analyzer.py:86*
 
 ---
 
@@ -1356,7 +1641,7 @@ Args:
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/structure_analyzer.py:142*
+*定義場所: docgen/collectors/structure_analyzer.py:143*
 
 ---
 
@@ -3020,52 +3305,23 @@ Returns:
 
 ---
 
-### CommandLineInterface
+### run_cli
 
-**型**: `class`
+**型**: `function`
 
 **シグネチャ**:
 ```
-class CommandLineInterface:
+def run_cli() -> int:
 ```
 
 **説明**:
 
-コマンドラインインターフェースクラス
+Run the command line interface
 
-*定義場所: docgen/docgen.py:111*
+Returns:
+    Exit code
 
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self):
-```
-
-*説明なし*
-
-*定義場所: docgen/docgen.py:114*
-
----
-
-### run
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def run(self) -> int:
-```
-
-**説明**:
-
-メイン実行メソッド
-
-*定義場所: docgen/docgen.py:120*
+*定義場所: docgen/docgen.py:142*
 
 ---
 
@@ -3082,7 +3338,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:268*
+*定義場所: docgen/docgen.py:167*
 
 ---
 
@@ -4004,7 +4260,32 @@ class GeneratorServiceFactory:
 
 ジェネレーターサービスファクトリ
 
-*定義場所: docgen/generators/service_factory.py:19*
+*定義場所: docgen/generators/service_factory.py:20*
+
+---
+
+### create_container
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_container(project_root: Path, config: dict[str, Any], logger: Logger | None) -> ServiceContainer:
+```
+
+**説明**:
+
+ServiceContainerを生成して返す
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    config: 設定辞書
+    logger: ロガー（各サービスに渡される）
+
+Returns:
+    ServiceContainerインスタンス
+
+*定義場所: docgen/generators/service_factory.py:24*
 
 ---
 
@@ -4019,7 +4300,7 @@ def create_services(project_root: Path, config: dict[str, Any], logger: Logger |
 
 **説明**:
 
-全サービスを生成して返す
+全サービスを生成して返す（後方互換性のため）
 
 Args:
     project_root: プロジェクトルートディレクトリ
@@ -4029,7 +4310,7 @@ Args:
 Returns:
     サービスインスタンスの辞書
 
-*定義場所: docgen/generators/service_factory.py:23*
+*定義場所: docgen/generators/service_factory.py:51*
 
 ---
 
@@ -4046,7 +4327,7 @@ def create_llm_service(config: dict[str, Any], logger: Logger | None) -> LLMServ
 
 LLMServiceを個別に生成
 
-*定義場所: docgen/generators/service_factory.py:50*
+*定義場所: docgen/generators/service_factory.py:78*
 
 ---
 
@@ -4063,7 +4344,7 @@ def create_template_service(template_dir: Path | None) -> TemplateService:
 
 TemplateServiceを個別に生成
 
-*定義場所: docgen/generators/service_factory.py:55*
+*定義場所: docgen/generators/service_factory.py:83*
 
 ---
 
@@ -4080,7 +4361,7 @@ def create_rag_service(project_root: Path, config: dict[str, Any], logger: Logge
 
 RAGServiceを個別に生成
 
-*定義場所: docgen/generators/service_factory.py:60*
+*定義場所: docgen/generators/service_factory.py:88*
 
 ---
 
@@ -4097,7 +4378,7 @@ def create_formatting_service() -> FormattingService:
 
 FormattingServiceを個別に生成
 
-*定義場所: docgen/generators/service_factory.py:67*
+*定義場所: docgen/generators/service_factory.py:95*
 
 ---
 
@@ -4114,7 +4395,7 @@ def create_manual_section_service() -> ManualSectionService:
 
 ManualSectionServiceを個別に生成
 
-*定義場所: docgen/generators/service_factory.py:72*
+*定義場所: docgen/generators/service_factory.py:100*
 
 ---
 
@@ -4644,6 +4925,53 @@ Returns:
     フォーマット済みのコンテキスト文字列（RAG無効時は空文字列）
 
 *定義場所: docgen/generators/services/rag_service.py:41*
+
+---
+
+
+## docgen/generators/services/service_container.py
+
+### ServiceContainer
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ServiceContainer:
+```
+
+**説明**:
+
+サービスコンテナ
+
+全てのジェネレーター用サービスを一箇所に集約し、
+依存関係を明示的に管理します。
+
+Attributes:
+    llm_service: LLM連携サービス
+    template_service: テンプレートレンダリングサービス
+    formatting_service: テキスト整形サービス
+    manual_section_service: 手動セクション管理サービス
+    rag_service: RAGコンテキスト取得サービス（オプショナル）
+
+*定義場所: docgen/generators/services/service_container.py:18*
+
+---
+
+### __post_init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __post_init__(self):
+```
+
+**説明**:
+
+初期化後の検証
+
+*定義場所: docgen/generators/services/service_container.py:38*
 
 ---
 
@@ -5543,7 +5871,7 @@ class LLMConfig:
 
 LLM設定モデル
 
-*定義場所: docgen/models/agents.py:8*
+*定義場所: docgen/models/agents.py:10*
 
 ---
 
@@ -5560,7 +5888,7 @@ class ProjectOverview:
 
 Project overview model.
 
-*定義場所: docgen/models/agents.py:26*
+*定義場所: docgen/models/agents.py:28*
 
 ---
 
@@ -5577,7 +5905,7 @@ class LLMSetup:
 
 LLM setup model.
 
-*定義場所: docgen/models/agents.py:34*
+*定義場所: docgen/models/agents.py:36*
 
 ---
 
@@ -5594,7 +5922,7 @@ class SetupInstructions:
 
 Setup instructions model.
 
-*定義場所: docgen/models/agents.py:41*
+*定義場所: docgen/models/agents.py:43*
 
 ---
 
@@ -5611,7 +5939,7 @@ class BuildTestInstructions:
 
 Build and test instructions model.
 
-*定義場所: docgen/models/agents.py:49*
+*定義場所: docgen/models/agents.py:51*
 
 ---
 
@@ -5628,7 +5956,7 @@ class CodingStandards:
 
 Coding standards model.
 
-*定義場所: docgen/models/agents.py:57*
+*定義場所: docgen/models/agents.py:59*
 
 ---
 
@@ -5645,7 +5973,7 @@ class PRGuidelines:
 
 PR guidelines model.
 
-*定義場所: docgen/models/agents.py:64*
+*定義場所: docgen/models/agents.py:66*
 
 ---
 
@@ -5662,7 +5990,7 @@ class AgentsConfig:
 
 Configuration model for agents documentation.
 
-*定義場所: docgen/models/agents.py:72*
+*定義場所: docgen/models/agents.py:74*
 
 ---
 
@@ -5679,7 +6007,7 @@ class AgentsGenerationConfig:
 
 Agents generation configuration model.
 
-*定義場所: docgen/models/agents.py:89*
+*定義場所: docgen/models/agents.py:91*
 
 ---
 
@@ -5696,7 +6024,7 @@ class AgentsConfigSection:
 
 Agents configuration section model.
 
-*定義場所: docgen/models/agents.py:97*
+*定義場所: docgen/models/agents.py:99*
 
 ---
 
@@ -5713,7 +6041,7 @@ class AgentsDocument:
 
 AGENTS.mdドキュメントの構造化データモデル
 
-*定義場所: docgen/models/agents.py:110*
+*定義場所: docgen/models/agents.py:112*
 
 ---
 
@@ -5751,6 +6079,55 @@ class APIInfo:
 API情報モデル
 
 *定義場所: docgen/models/api.py:18*
+
+---
+
+
+## docgen/models/base.py
+
+### DocgenBaseModel
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DocgenBaseModel:
+```
+
+**説明**:
+
+Base model for all docgen models.
+
+Provides common configuration and methods for all Pydantic models
+used throughout the docgen system.
+
+Features:
+- Extra fields forbidden to catch typos
+- Assignment validation enabled
+- Enum values automatically used
+- Template context conversion method
+
+*定義場所: docgen/models/base.py:8*
+
+---
+
+### to_template_context
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def to_template_context(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+Convert model to template rendering context.
+
+Returns:
+    Dictionary suitable for Jinja2 template rendering.
+
+*定義場所: docgen/models/base.py:27*
 
 ---
 
@@ -5807,7 +6184,7 @@ class LanguagesConfig:
 
 Languages configuration model.
 
-*定義場所: docgen/models/config.py:10*
+*定義場所: docgen/models/config.py:11*
 
 ---
 
@@ -5824,7 +6201,7 @@ class OutputConfig:
 
 Output configuration model.
 
-*定義場所: docgen/models/config.py:17*
+*定義場所: docgen/models/config.py:18*
 
 ---
 
@@ -5841,7 +6218,7 @@ class GenerationConfig:
 
 Generation configuration model.
 
-*定義場所: docgen/models/config.py:25*
+*定義場所: docgen/models/config.py:26*
 
 ---
 
@@ -5858,7 +6235,7 @@ class ExcludeConfig:
 
 Exclude configuration model.
 
-*定義場所: docgen/models/config.py:34*
+*定義場所: docgen/models/config.py:35*
 
 ---
 
@@ -5875,7 +6252,7 @@ class CacheConfig:
 
 Cache configuration model.
 
-*定義場所: docgen/models/config.py:41*
+*定義場所: docgen/models/config.py:42*
 
 ---
 
@@ -5892,7 +6269,7 @@ class DebugConfig:
 
 Debug configuration model.
 
-*定義場所: docgen/models/config.py:47*
+*定義場所: docgen/models/config.py:48*
 
 ---
 
@@ -5909,7 +6286,7 @@ class EmbeddingConfig:
 
 Embedding configuration model.
 
-*定義場所: docgen/models/config.py:53*
+*定義場所: docgen/models/config.py:54*
 
 ---
 
@@ -5926,7 +6303,7 @@ class IndexConfig:
 
 Index configuration model.
 
-*定義場所: docgen/models/config.py:60*
+*定義場所: docgen/models/config.py:61*
 
 ---
 
@@ -5943,7 +6320,7 @@ class RetrievalConfig:
 
 Retrieval configuration model.
 
-*定義場所: docgen/models/config.py:68*
+*定義場所: docgen/models/config.py:69*
 
 ---
 
@@ -5960,7 +6337,7 @@ class ChunkingConfig:
 
 Chunking configuration model.
 
-*定義場所: docgen/models/config.py:75*
+*定義場所: docgen/models/config.py:76*
 
 ---
 
@@ -5975,7 +6352,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:82*
+*定義場所: docgen/models/config.py:83*
 
 ---
 
@@ -5992,7 +6369,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:94*
+*定義場所: docgen/models/config.py:95*
 
 ---
 
@@ -6009,7 +6386,7 @@ class ArchitecturePythonConfig:
 
 Python architecture configuration.
 
-*定義場所: docgen/models/config.py:106*
+*定義場所: docgen/models/config.py:107*
 
 ---
 
@@ -6026,7 +6403,7 @@ class ArchitectureJavascriptConfig:
 
 JavaScript architecture configuration.
 
-*定義場所: docgen/models/config.py:113*
+*定義場所: docgen/models/config.py:114*
 
 ---
 
@@ -6043,7 +6420,7 @@ class ArchitectureConfig:
 
 Architecture diagram generation configuration.
 
-*定義場所: docgen/models/config.py:119*
+*定義場所: docgen/models/config.py:120*
 
 ---
 
@@ -6060,7 +6437,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:130*
+*定義場所: docgen/models/config.py:131*
 
 ---
 
@@ -6216,7 +6593,7 @@ class ProjectInfo:
 
 Project information model.
 
-*定義場所: docgen/models/project.py:8*
+*定義場所: docgen/models/project.py:10*
 
 ---
 
@@ -6236,7 +6613,7 @@ class Dependencies:
 
 Dependencies model.
 
-*定義場所: docgen/models/readme.py:6*
+*定義場所: docgen/models/readme.py:8*
 
 ---
 
@@ -6253,7 +6630,7 @@ class ReadmeSetupInstructions:
 
 Setup instructions for README.
 
-*定義場所: docgen/models/readme.py:14*
+*定義場所: docgen/models/readme.py:16*
 
 ---
 
@@ -6270,7 +6647,7 @@ class ReadmeConfig:
 
 Configuration model for README documentation.
 
-*定義場所: docgen/models/readme.py:21*
+*定義場所: docgen/models/readme.py:23*
 
 ---
 
@@ -6287,7 +6664,7 @@ class ReadmeDocument:
 
 READMEドキュメントの構造化データモデル
 
-*定義場所: docgen/models/readme.py:40*
+*定義場所: docgen/models/readme.py:42*
 
 ---
 
@@ -8707,5 +9084,23 @@ def main():
 メイン処理
 
 *定義場所: scripts/generate_requirements.py:74*
+
+---
+
+
+## test_argparse_inspect.py
+
+### inspect_parser
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def inspect_parser():
+```
+
+*説明なし*
+
+*定義場所: test_argparse_inspect.py:3*
 
 ---

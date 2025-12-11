@@ -3,6 +3,7 @@ Command help text extractor utility
 Extracts help text and descriptions from Python CLI entry points
 """
 
+import argparse
 import importlib
 from pathlib import Path
 import sys
@@ -268,6 +269,47 @@ class CommandHelpExtractor:
             return result
 
     @staticmethod
+    def _extract_from_parser_object(parser: "argparse.ArgumentParser") -> dict[str, Any]:
+        """
+        Extract structure from an actual ArgumentParser object
+        """
+        import argparse
+
+        result = {"options": [], "subcommands": {}}
+
+        for action in parser._actions:
+            # Skip help/version actions
+            if any(opt in ["-h", "--help"] for opt in action.option_strings):
+                continue
+            if getattr(action, "help", "") == "==SUPPRESS==":
+                continue
+            if isinstance(action, argparse._HelpAction) or isinstance(
+                action, argparse._VersionAction
+            ):
+                continue
+
+            if isinstance(action, argparse._SubParsersAction):
+                # Build a map of command name to help text from _choices_actions
+                help_map = {}
+                if hasattr(action, "_choices_actions"):
+                    for choice_action in action._choices_actions:
+                        help_map[choice_action.dest] = choice_action.help
+
+                for name, subparser in action.choices.items():
+                    sub_result = CommandHelpExtractor._extract_from_parser_object(subparser)
+                    # Use the help from the action definition if available, else parser description
+                    sub_result["help"] = help_map.get(name, subparser.description or "")
+                    result["subcommands"][name] = sub_result
+
+            elif action.option_strings:
+                for opt in action.option_strings:
+                    result["options"].append(
+                        {"name": opt, "help": str(action.help) if action.help else ""}
+                    )
+
+        return result
+
+    @staticmethod
     def _extract_structured_argparse(module: Any) -> dict[str, Any]:
         """
         Extract structured command hierarchy from argparse in a module.
@@ -281,6 +323,16 @@ class CommandHelpExtractor:
         result = {"options": [], "subcommands": {}}
 
         try:
+            # 0. Try dynamic extraction via create_parser
+            if hasattr(module, "create_parser"):
+                try:
+                    import argparse
+                    parser = module.create_parser()
+                    if isinstance(parser, argparse.ArgumentParser):
+                        return CommandHelpExtractor._extract_from_parser_object(parser)
+                except Exception as e:
+                    logger.debug(f"Dynamic extraction failed: {e}")
+
             source = None
 
             if hasattr(module, "CommandLineInterface"):

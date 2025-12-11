@@ -8,75 +8,38 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-このプロジェクトは、リポジトリにコミットがあるたびに自動で以下のタスクを実行するパイプラインです。  
-* **テスト実行** – `pytest` でユニット・統合テストを走らせます。  
-* **ドキュメント生成** – Python ソースと YAML 設定から Markdown/HTML ドキュメント（Sphinx 等）を作成します。  
-* **AGENTS.md の更新** – エージェント構成や設定情報が変更された場合に、`AGENTS.md` を最新状態へ自動反映させます。
+`agents-docs-sync` は、ソースコードをコミットするたびに自動で以下の三つのタスクを実行し、プロジェクト全体の品質とドキュメント整合性を保ちます。
 
----
+1. **テスト実行** – `pytest` とカバレッジツール（`pytest-cov`）を使用してユニット・統合テストを走らせる。失敗した場合は CI ビルドが停止し、エラー内容がすぐに確認できるようになっています。
+2. **ドキュメント生成** – コードベースから自動で API ドキュメント（Markdown 形式）や設定ファイルのサンプルを作成。`pyyaml` を利用して YAML 設定例をパースし、整形したテーブルとして出力します。
+3. **AGENTS.md の更新** – プロジェクト内にあるエージェント構成（例えば `agents.yaml`）から情報を抽出し、最新の状態で `AGENTS.md` を書き換えます。これによりドキュメントと実際の設定が常に同期します。
 
-## 技術スタック
-
-| 項目 | 詳細 |
-|------|-------|
-| 言語 | Python 3.10+（テスト・ドキュメント生成）、Bash（パイプラインスクリプト） |
+### 主な技術スタック
+| カテゴリ | ツール/ライブラリ |
+|----------|------------------|
+| 言語 | Python 3.11+, Bash（シェルスクリプト） |
 | パッケージマネージャー | `uv` (Python) |
-| 主な依存ライブラリ | <ul><li>pyyaml ≥ 6.0.3 – YAML 解析</li><li>pytest ≥ 7.4.0 – テストフレームワーク</li><li>pytest-cov ≥ 4.1.0 – カバレッジ測定</li><li>pytest-mock ≥ 3.11.1 – モックサポート</li></ul>|
+| テストフレームワーク | `pytest`, `pytest-cov`, `pytest-mock` |
+| ドキュメント生成 | Python スクリプト + Markdown（標準ライブラリ） |
+| YAML 解析 | `pyyaml >=6.0.3` |
 
----
-
-## 主要な機能とフロー
-
-1. **コミット検知**  
-   * Git の pre‑commit フックまたは CI ジョブで `git log` を監視し、変更があればパイプラインを起動。
-
-2. **テスト実行 (`tests/run_tests.sh`)**  
+### 使用方法
+1. **依存関係をインストール**  
    ```bash
-   uv run pytest --cov=src tests/
+   uv sync --frozen
    ```
-   * 失敗した場合はビルドを中断し、エラーログを出力。
+2. **パイプラインの手動実行（開発時に便利）**  
+   ```bash
+   ./scripts/run_pipeline.sh  # シェルスクリプトでテスト・ドキュメント生成・AGENTS.md 更新を順次呼び出す
+   ```
+3. **CI 設定例** – GitHub Actions や GitLab CI の `.yml` ファイルに `run_pipeline.sh` を実行させるだけです。
 
-3. **ドキュメント生成 (`docs/generate_docs.py`)**  
-   * ソースコードと `config/*.yaml` を解析して Markdown/HTML ドキュメントを `/site/docs` に書き込み。  
-   * Sphinx でビルドする場合は `make html` を実行。
+### 期待できるメリット
+- コミット単位での自動検証により、バグ混入リスクを低減します。  
+- ドキュメントとコードが常に同期しているため、新規開発者や外部コントリビューターへのハンドオフがスムーズになります。  
+- 依存関係管理は `uv` が高速かつ正確な解決を提供し、CI のビルド時間短縮にも寄与します。
 
-4. **AGENTS.md 更新 (`scripts/update_agents.sh`)**  
-   * YAML 設定からエージェント情報（名前、バージョン、依存関係など）を抽出し、整形して `/docs/AGENTS.md` に書き込む。  
-
-5. **成果物のコミット／プッシュ**  
-   * 生成されたドキュメントと `AGENTS.md` を自動で Git に追加・コミットし、リモートへ push。
-
----
-
-## ローカル実行手順
-
-```bash
-# 必要なパッケージをインストール（uv が未導入の場合は先に公式サイトから取得）
-uv sync  # pyproject.toml を参照して依存関係を解決・インストール
-
-# テスト＋カバレッジ確認
-uv run pytest --cov=src tests/
-
-# ドキュメント生成（Sphinx が必要な場合は `make html` 等実行）
-python docs/generate_docs.py
-
-# AGENTS.md を更新
-bash scripts/update_agents.sh
-```
-
----
-
-## 拡張性・カスタマイズポイント  
-
-| カスタマイズ項目 | 変更例 |
-|-----------------|--------|
-| テストフレームワークの切替 | `pytest` → `unittest`, `nose2` 等に置き換えるだけで実行スクリプトを更新可能。 |
-| ドキュメント生成ツール | Sphinx のテーマや静的サイトジェネレーター（MkDocs, Hugo）へ差し替え可。 |
-| AGENTS.md フォーマット | `scripts/update_agents.sh` 内のテンプレート文字列を書き換えるだけでレイアウト変更が可能。 |
-
----
-
-このパイプラインを導入することで、コードベースに加わるたびに自動的にテスト結果・ドキュメント・エージェント情報が最新化され、一貫した品質と可視性の確保が実現します。<!-- MANUAL_START:architecture -->
+このプロジェクトにより、コード品質と文書整合性の両立が実現できるため、大規模チームやオープンソース開発で特に有用です。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -93,6 +56,11 @@ graph TB
                 docgen_utils_llm["llm"]:::moduleStyle
             end
             class docgen_utils moduleStyle
+            subgraph docgen_cli [cli]
+                direction TB
+                docgen_cli_commands["commands"]:::moduleStyle
+            end
+            class docgen_cli moduleStyle
             docgen_models["models"]:::moduleStyle
             subgraph docgen_archgen [archgen]
                 direction TB
@@ -121,6 +89,12 @@ graph TB
     docgen_collectors --> docgen_utils
     docgen_utils --> docgen_models
     docgen_utils_llm --> docgen_models
+    docgen_cli --> docgen_archgen
+    docgen_cli --> docgen_generators
+    docgen_cli --> docgen_rag
+    docgen_cli --> docgen_utils
+    docgen_cli_commands --> docgen_rag
+    docgen_cli_commands --> docgen_utils
     docgen_archgen --> docgen_detectors
     docgen_archgen --> docgen_generators
     docgen_archgen --> docgen_models
@@ -150,7 +124,7 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
 ## 使用技術
 
@@ -228,13 +202,14 @@ uv run pytest tests/ -v --tb=short
 
 | コマンド | 説明 |
 | --- | --- |
-| `agents_docs_sync` | 汎用ドキュメント自動生成システム |
+| `agents_docs_sync` | docgen.docgen:main |
 
 ### `agents_docs_sync` のオプション
 
 | オプション | 説明 |
 | --- | --- |
 | `--config` | 設定ファイルのパス |
+| `--quiet` | 詳細メッセージを抑制 |
 | `--detect-only` | 言語検出のみ実行 |
 | `--no-api-doc` | APIドキュメントを生成しない |
 | `--no-readme` | READMEを更新しない |
@@ -244,4 +219,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-05 12:30:34*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-12 00:19:28*

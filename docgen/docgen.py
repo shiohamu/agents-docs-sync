@@ -17,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # パッケージとしてインストールされた場合は相対インポートを使用
+from .cli import CommandRunner, create_parser
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator
 from .language_detector import LanguageDetector
@@ -145,8 +146,6 @@ def run_cli() -> int:
     Returns:
         Exit code
     """
-    from .cli import CommandRunner, create_parser
-
     parser = create_parser()
     args = parser.parse_args()
 
