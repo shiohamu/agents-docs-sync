@@ -82,3 +82,111 @@ def mock_llm_client(mocker):
     mock_client = mocker.Mock()
     mock_client.generate.return_value = "Mocked LLM response"
     return mock_client
+
+
+@pytest.fixture(scope="function")
+def sample_project_root(tmp_path):
+    """
+    Create a complete sample project structure for testing
+
+    Returns:
+        Path: Root directory of the sample project
+    """
+    project_root = tmp_path / "sample_project"
+    project_root.mkdir()
+
+    # Basic Python project structure
+    (project_root / "src").mkdir()
+    (project_root / "src" / "__init__.py").touch()
+    (project_root / "src" / "main.py").write_text('def main():\n    print("Hello, World!")\n')
+
+    # pyproject.toml
+    (project_root / "pyproject.toml").write_text(
+        '[project]\nname = "sample-project"\nversion = "0.1.0"\n'
+    )
+
+    # docgen configuration
+    (project_root / "docgen").mkdir()
+    (project_root / "docgen" / "config.toml").write_text('[output]\nagents_doc = "AGENTS.md"\n')
+
+    return project_root
+
+
+@pytest.fixture(scope="function")
+def mock_config():
+    """
+    Mock configuration object for testing
+
+    Returns:
+        dict: Configuration dictionary
+    """
+    return {
+        "output": {
+            "agents_doc": "AGENTS.md",
+            "api_doc": "API.md",
+            "readme": "README.md",
+        },
+        "generation": {
+            "generate_api_doc": True,
+            "update_readme": True,
+        },
+        "llm": {
+            "provider": "openai",
+            "model": "gpt-4",
+        },
+    }
+
+
+@pytest.fixture(scope="function")
+def mock_services(mocker, mock_config):
+    """
+    Create mock service container with all services
+
+    Returns:
+        dict: Dictionary of mocked services
+    """
+    from docgen.generators.services import (
+        FormattingService,
+        LLMService,
+        ManualSectionService,
+        TemplateService,
+    )
+
+    mock_llm = mocker.Mock(spec=LLMService)
+    mock_template = mocker.Mock(spec=TemplateService)
+    mock_formatting = mocker.Mock(spec=FormattingService)
+    mock_manual = mocker.Mock(spec=ManualSectionService)
+
+    # Set default return values
+    mock_llm.generate.return_value = "Generated content"
+    mock_template.render.return_value = "Rendered content"
+    mock_formatting.format_markdown.return_value = "Formatted content"
+
+    return {
+        "llm": mock_llm,
+        "template": mock_template,
+        "formatting": mock_formatting,
+        "manual": mock_manual,
+    }
+
+
+@pytest.fixture(scope="function")
+def mock_project_info():
+    """
+    Create mock ProjectInfo data for testing
+
+    Returns:
+        ProjectInfo: Mock project information
+    """
+    from docgen.models.project import ProjectInfo
+
+    return ProjectInfo(
+        name="test-project",
+        description="A test project",
+        version="1.0.0",
+        languages=["python"],
+        frameworks=[],
+        package_managers={},
+        dependencies=[],
+        dev_dependencies=[],
+    )
