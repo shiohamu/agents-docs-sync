@@ -2,9 +2,11 @@
 言語検出モジュール
 """
 
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from .detectors.detector_patterns import DetectorPatterns
 from .detectors.plugin_registry import PluginRegistry
 from .utils.logger import get_logger
 
@@ -76,8 +78,10 @@ class LanguageDetector:
         package_managers = {}
 
         if use_parallel:
-            # 並列処理で検出
-            with ThreadPoolExecutor(max_workers=len(detectors)) as executor:
+            # 並列処理で検出（スレッド数はCPU数に基づいて制限）
+            # 過剰なスレッドはI/O競合を引き起こす可能性があるため
+            max_workers = min(len(detectors), (os.cpu_count() or 4) * 2)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_detector = {
                     executor.submit(detector.detect): detector for detector in detectors
                 }
@@ -122,6 +126,11 @@ class LanguageDetector:
 
         self.detected_languages = detected
         self.detected_package_managers = package_managers
+
+        # 検出完了後、キャッシュをクリア（メモリリーク防止）
+        # ただし、同じプロジェクトで再度検出する可能性があるため、クリアは任意
+        # DetectorPatterns.clear_cache(self.project_root)
+
         return detected
 
     def get_detected_languages(self) -> list[str]:

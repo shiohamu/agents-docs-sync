@@ -86,10 +86,17 @@ def create_parser() -> argparse.ArgumentParser:
     )
     benchmark_parser.add_argument(
         "--format",
-        choices=["markdown", "json"],
+        choices=["markdown", "json", "csv"],
         default="markdown",
         help="出力形式（デフォルト: markdown）",
     )
     benchmark_parser.add_argument("--output", type=Path, help="出力ファイルのパス（指定しない場合は標準出力）")
+    benchmark_parser.add_argument("--verbose", action="store_true", help="詳細情報を表示")
+    benchmark_parser.add_argument(
+        "--compare",
+        nargs=2,
+        metavar=("BASELINE", "CURRENT"),
+        help="2つのベンチマーク結果を比較（JSONファイルのパスを2つ指定）",
+    )
 
     return parser

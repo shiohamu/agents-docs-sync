@@ -96,12 +96,25 @@ class UnifiedDetectorFactory:
         サポートされているすべての言語を取得
 
         Returns:
-            言語名のリスト
+            言語名のリスト（よく使われる言語を優先）
         """
         # パッケージファイルまたはソース拡張子が定義されている言語
         package_languages = set(DetectorPatterns.PACKAGE_FILES.keys())
         source_languages = set(DetectorPatterns.SOURCE_EXTENSIONS.keys())
-        return sorted(package_languages | source_languages)
+        all_languages = sorted(package_languages | source_languages)
+
+        # よく使われる言語を優先的にチェック（パッケージファイルチェックが高速なため）
+        priority_languages = ["python", "javascript", "typescript", "go", "rust", "java"]
+        ordered = []
+        for lang in priority_languages:
+            if lang in all_languages:
+                ordered.append(lang)
+        # 残りの言語を追加
+        for lang in all_languages:
+            if lang not in ordered:
+                ordered.append(lang)
+
+        return ordered
 
     @classmethod
     def create_detector(cls, project_root: Path, language: str) -> UnifiedDetector:

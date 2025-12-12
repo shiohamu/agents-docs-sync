@@ -1,10 +1,18 @@
 """Common file detection patterns for language detectors."""
 
+import os
 from pathlib import Path
+from typing import Optional
 
 
 class DetectorPatterns:
     """Common file detection patterns used by language detectors."""
+
+    # ファイル検索結果のキャッシュ（プロジェクトルートごと）
+    _file_cache: dict[Path, dict[str, bool]] = {}
+
+    # 統合ファイル検索結果のキャッシュ（一度の走査で全言語を検出）
+    _unified_scan_cache: dict[Path, dict[str, bool]] = {}
 
     # Package manager detection patterns: list of (file_patterns, manager_name)
     # file_patterns can be str or tuple of str (all must exist)
@@ -213,30 +221,125 @@ class DetectorPatterns:
     def detect_by_source_files_with_exclusions(cls, project_root: Path, language: str) -> bool:
         """Detect language by checking for source files, excluding common directories."""
         extensions = cls.get_source_extensions(language)
-        for ext in extensions:
-            try:
-                for file_path in project_root.rglob(f"*{ext}"):
-                    if cls.is_excluded_path(file_path, project_root):
+        # キャッシュ機能を使用
+        return cls.detect_by_extensions_with_exclusions(project_root, extensions)
+
+    @classmethod
+    def _unified_scan_for_all_languages(cls, project_root: Path) -> dict[str, bool]:
+        """一度の走査で全言語を検出（os.walkを使用して高速化）
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+
+        Returns:
+            言語名をキー、検出結果を値とする辞書
+        """
+        # キャッシュをチェック
+        if project_root in cls._unified_scan_cache:
+            return cls._unified_scan_cache[project_root]
+
+        # 全言語の拡張子マップを作成（拡張子 -> 言語のリスト）
+        ext_to_languages: dict[str, list[str]] = {}
+        for lang, exts in cls.SOURCE_EXTENSIONS.items():
+            for ext in exts:
+                if ext not in ext_to_languages:
+                    ext_to_languages[ext] = []
+                ext_to_languages[ext].append(lang)
+
+        # 検出結果を初期化
+        detected_languages: dict[str, bool] = {lang: False for lang in cls.SOURCE_EXTENSIONS.keys()}
+
+        # os.walkで一度だけ走査（除外ディレクトリを早期にスキップ）
+        try:
+            for root, dirs, files in os.walk(project_root, followlinks=False):
+                # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
+                dirs[:] = [
+                    d for d in dirs
+                    if d not in cls.EXCLUDE_DIRS and not d.startswith(".")
+                ]
+
+                # パスベースの除外チェック
+                root_path = Path(root)
+                try:
+                    rel_path = root_path.relative_to(project_root)
+                    if any(part in cls.EXCLUDE_DIRS for part in rel_path.parts):
+                        dirs[:] = []  # このディレクトリ以下をスキップ
                         continue
-                    return True
-            except (OSError, PermissionError):
-                continue
-        return False
+                except ValueError:
+                    # プロジェクトルート外の場合はスキップ
+                    continue
+
+                # ファイルをチェック
+                for file_name in files:
+                    file_path = root_path / file_name
+
+                    # ファイル拡張子をチェック
+                    ext = file_path.suffix.lower()
+                    if ext in ext_to_languages:
+                        # 大きなファイルをスキップ
+                        try:
+                            if file_path.stat().st_size > 10 * 1024 * 1024:  # 10MB
+                                continue
+                        except (OSError, PermissionError):
+                            continue
+
+                        # 該当する言語を検出済みにマーク
+                        for lang in ext_to_languages[ext]:
+                            detected_languages[lang] = True
+        except (OSError, PermissionError):
+            pass
+
+        # キャッシュに保存
+        cls._unified_scan_cache[project_root] = detected_languages
+        return detected_languages
 
     @classmethod
     def detect_by_extensions_with_exclusions(
-        cls, project_root: Path, extensions: list[str]
+        cls, project_root: Path, extensions: list[str], max_file_size: int = 10 * 1024 * 1024
     ) -> bool:
-        """Detect files by extensions, excluding common directories."""
+        """Detect files by extensions, excluding common directories.
+
+        Args:
+            project_root: プロジェクトルートディレクトリ
+            extensions: 検索する拡張子のリスト
+            max_file_size: スキップする最大ファイルサイズ（バイト、デフォルト: 10MB）
+                          大きなファイルは検出対象外として扱う
+        """
+        # キャッシュキー: 拡張子のソート済みタプル
+        cache_key = tuple(sorted(extensions))
+
+        # キャッシュをチェック
+        if project_root in cls._file_cache:
+            if cache_key in cls._file_cache[project_root]:
+                return cls._file_cache[project_root][cache_key]
+        else:
+            cls._file_cache[project_root] = {}
+
+        # 統合スキャンの結果を利用（一度の走査で全言語を検出）
+        unified_results = cls._unified_scan_for_all_languages(project_root)
+
+        # 拡張子から言語を逆引き
+        ext_to_languages: dict[str, list[str]] = {}
+        for lang, exts in cls.SOURCE_EXTENSIONS.items():
+            for ext in exts:
+                if ext not in ext_to_languages:
+                    ext_to_languages[ext] = []
+                ext_to_languages[ext].append(lang)
+
+        # 指定された拡張子に対応する言語が検出されているかチェック
+        result = False
         for ext in extensions:
-            try:
-                for file_path in project_root.rglob(f"*{ext}"):
-                    if cls.is_excluded_path(file_path, project_root):
-                        continue
-                    return True
-            except (OSError, PermissionError):
-                continue
-        return False
+            if ext in ext_to_languages:
+                for lang in ext_to_languages[ext]:
+                    if unified_results.get(lang, False):
+                        result = True
+                        break
+                if result:
+                    break
+
+        # キャッシュに保存
+        cls._file_cache[project_root][cache_key] = result
+        return result
 
     @classmethod
     def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
@@ -276,6 +379,23 @@ class DetectorPatterns:
         return any(pattern in name for pattern in cls.EXCLUDE_JS_FILES)
 
     @classmethod
+    def clear_cache(cls, project_root: Optional[Path] = None) -> None:
+        """Clear file detection cache.
+
+        Args:
+            project_root: If provided, clear cache for this project only.
+                         If None, clear all caches.
+        """
+        if project_root is None:
+            cls._file_cache.clear()
+            cls._unified_scan_cache.clear()
+        else:
+            if project_root in cls._file_cache:
+                del cls._file_cache[project_root]
+            if project_root in cls._unified_scan_cache:
+                del cls._unified_scan_cache[project_root]
+
+    @classmethod
     def detect_python_package_manager(cls, project_root: Path) -> str | None:
         """Detect Python package manager with special handling for pyproject.toml."""
         # uv.lockが存在する場合（優先度最高）
@@ -289,16 +409,29 @@ class DetectorPatterns:
         # pyproject.tomlが存在し、[tool.poetry]セクションがある場合
         pyproject_path = project_root / "pyproject.toml"
         if pyproject_path.exists():
+            # 先頭8KBだけ読んで高速に判定（[tool.poetry]セクションは通常ファイルの先頭付近にある）
+            # 大きなファイルでも高速に処理できる
+            MAX_READ_SIZE = 8 * 1024  # 8KB
             try:
-                import tomllib
-
                 with open(pyproject_path, "rb") as f:
-                    data = tomllib.load(f)
-                    if "tool" in data and "poetry" in data["tool"]:
-                        return "poetry"
-            except ImportError:
-                # tomllibが利用できない場合（Python 3.10以前）
-                pass
+                    # 先頭部分だけ読み込む
+                    content = f.read(MAX_READ_SIZE)
+                    # 文字列検索で高速に判定（バイト列で検索）
+                    # [tool.poetry]が見つかった場合のみ、ファイル全体を読み込んで正確に判定
+                    if b"[tool.poetry]" in content or b'[tool.poetry]' in content:
+                        try:
+                            import tomllib
+                            f.seek(0)
+                            data = tomllib.load(f)
+                            if "tool" in data and "poetry" in data["tool"]:
+                                return "poetry"
+                        except ImportError:
+                            # tomllibが利用できない場合（Python 3.10以前）
+                            # 先頭部分に[tool.poetry]があればpoetryと判定
+                            return "poetry"
+                        except Exception:
+                            # パースエラーでも、先頭部分に[tool.poetry]があればpoetryと判定
+                            return "poetry"
             except Exception:
                 pass
 

@@ -8,52 +8,38 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-- **目的**  
-  `agents-docs-sync` は、リポジトリへコミットが入るたびに自動で以下の処理を実行する CI パイプラインです。  
+agents-docs-sync は、コミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md の更新を行うパイプラインです。  
+主な機能は以下の通りです。
 
-  | 処理 | 内容 |
-  |------|-----|
-  | テスト実行 | `pytest`, `pytest-cov`, `pytest-mock` を用いてユニットテストとカバレッジ測定を行う。 |
-  | ドキュメント生成 | ソースコードから Markdown / HTML のドキュメント（例: MkDocs、Sphinx）へ変換し、最新の API リファレンスや使用方法を提供する。 |
-  | AGENTS.md 自動更新 | プロジェクト内に定義されたエージェント情報を YAML 等で管理し、コミット時に `AGENTS.md` を再生成して常に最新状態に保つ。 |
+- **CI/CD 連携** – GitHub Actions 等から呼び出すことで、ビルドごとに最新状態が保証されます。
+- **テスト実行・カバレッジ計測** – `pytest`（+ pytest‑cov, pytest‑mock）でユニットテストを走らせ、コード品質の維持管理をサポートします。  
+- **ドキュメント生成** – Sphinx などのツールと連携し、ソース内docstringやMarkdownから HTML/MD を自動的に作成します。
+- **AGENTS.md 自動更新** – プロジェクト内で定義されているエージェント（クラス・関数）を解析し、その一覧と概要を書き換えることで、ドキュメントの整合性が保たれます。
 
-- **構成**  
-  - 言語: Python（3.11+）とシェルスクリプト
-  - パッケージマネージャー: [uv](https://github.com/astral-sh/uv) を使用し、依存関係を高速に解決・インストール。  
-    ```bash
-    uv sync   # 必要なパッケージのインストール／更新
-    ```
-  - 主な Python ライブラリ（バージョン指定）: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`  
-    他のユーティリティやテストヘルパーも同様に uv で管理される。  
+### 技術スタック
 
-- **ワークフロー**  
-  1. コミットがプッシュされると、GitHub Actions（または他 CI）から `ci/pipeline.sh` が起動。  
-  2. スクリプト内で以下を順に実行:  
-     - `uv sync --frozen`
-     - `pytest tests/ --cov=src --cov-report xml`
-     - ドキュメントビルド (`mkdocs build`, `sphinx-build` 等)
-     - AGENTS.md 生成スクリプト（例: `scripts/gen_agents_md.py`)  
-  3. 成功すれば成果物を GitHub に自動コミット／PRに反映、失敗した場合はログとエラー情報が通知される。  
+| カテゴリ | ツール/言語 |
+|----------|-------------|
+| スクリプト  | Python, Bash (shell) |
+| パッケージ管理 | uv（Python） |
+| 主な依存関係 | `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` など |
 
-- **メリット**  
-  - コードベースの品質（テスト・カバレッジ）を常時確認でき、ドキュメントとのズレを防止。  
-  - AGENTS.md の手動更新作業が不要になり、人為的ミスや忘れ漏れリスクを低減。  
-  - `uv` による高速な依存解決で CI 実行時間の短縮に貢献。  
+### 使用方法
 
-- **拡張性**  
-  新しいテストフレームワーク、ドキュメントツール、またはエージェント情報フォーマットを追加したい場合も、スクリプトと YAML 定義ファイルを編集するだけで簡単に対応可能。  
+```bash
+# 環境構築（uv が必要）
+$ uv sync          # 依存関係をインストール
 
-- **利用例**  
-  ```bash
-  # 開発中のローカルテスト＆ドキュメント生成（CI と同じ手順）
-  uv sync --frozen
-  pytest tests/ --cov=src
-  mkdocs build   # または sphinx-build -b html docs src/_build/html
+# パイプラインの手動実行 (スクリプトはプロジェクトルートに配置)
+$ ./scripts/run_all.sh   # テスト・ドキュメント生成・AGENTS.md 更新
+```
 
-  # AGENTS.md を最新化するだけで OK
-  python scripts/gen_agents_md.py
-  ```
-このプロジェクトにより、コミットごとに一貫した品質保証・ドキュメント管理が自動化されるため、開発者は実装やバグ修正に専念できるようになります。<!-- MANUAL_START:architecture -->
+### カスタマイズポイント
+
+- `agents-docs-sync.yaml`（ある場合）で対象ディレクトリや除外パターンを設定できます。  
+- Sphinx のテーマや Markdown 変換ツールは、`requirements.txt` や `pyproject.toml` に追加して自由に拡張可能です。
+
+このプロジェクトにより、コミットごとに常に最新のテスト結果・ドキュメントが生成されるため、大規模なエージェントベース開発でも品質管理を楽に行えます。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -236,4 +222,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-12 15:27:28*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-12 19:31:56*

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 15:27:19
+自動生成日時: 2025-12-12 19:31:46
 
 ---
 
@@ -353,6 +353,107 @@ def scan(self) -> ArchitectureManifest:
 プロジェクトをスキャン
 
 *定義場所: docgen/archgen/scanner.py:22*
+
+---
+
+
+## docgen/benchmark/comparator.py
+
+### BenchmarkComparator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkComparator:
+```
+
+**説明**:
+
+ベンチマーク結果の比較クラス
+
+*定義場所: docgen/benchmark/comparator.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, baseline_path: Path, current_path: Path):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    baseline_path: ベースライン（比較元）のJSONファイルパス
+    current_path: 現在の（比較先）のJSONファイルパス
+
+*定義場所: docgen/benchmark/comparator.py:16*
+
+---
+
+### compare
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def compare(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+ベンチマーク結果を比較
+
+Returns:
+    比較結果の辞書
+
+*定義場所: docgen/benchmark/comparator.py:45*
+
+---
+
+### generate_comparison_report
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_comparison_report(self) -> str:
+```
+
+**説明**:
+
+比較レポートをMarkdown形式で生成
+
+Returns:
+    Markdown形式のレポート
+
+*定義場所: docgen/benchmark/comparator.py:150*
+
+---
+
+### save_comparison_report
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def save_comparison_report(self, path: Path) -> None:
+```
+
+**説明**:
+
+比較レポートをファイルに保存
+
+Args:
+    path: 保存先のパス
+
+*定義場所: docgen/benchmark/comparator.py:235*
 
 ---
 
@@ -716,7 +817,7 @@ class BenchmarkReporter:
 
 ベンチマーク結果のレポート生成クラス
 
-*定義場所: docgen/benchmark/reporter.py:15*
+*定義場所: docgen/benchmark/reporter.py:16*
 
 ---
 
@@ -736,7 +837,7 @@ def __init__(self, recorder: BenchmarkRecorder | None):
 Args:
     recorder: ベンチマークレコーダー（Noneの場合はグローバルレコーダーを使用）
 
-*定義場所: docgen/benchmark/reporter.py:18*
+*定義場所: docgen/benchmark/reporter.py:19*
 
 ---
 
@@ -759,7 +860,7 @@ Args:
 Returns:
     Markdown形式のレポート
 
-*定義場所: docgen/benchmark/reporter.py:27*
+*定義場所: docgen/benchmark/reporter.py:28*
 
 ---
 
@@ -779,7 +880,7 @@ JSON形式のレポートを生成
 Returns:
     JSON形式の辞書
 
-*定義場所: docgen/benchmark/reporter.py:107*
+*定義場所: docgen/benchmark/reporter.py:108*
 
 ---
 
@@ -799,7 +900,7 @@ Markdownレポートをファイルに保存
 Args:
     path: 保存先のパス
 
-*定義場所: docgen/benchmark/reporter.py:116*
+*定義場所: docgen/benchmark/reporter.py:117*
 
 ---
 
@@ -819,7 +920,51 @@ JSONレポートをファイルに保存
 Args:
     path: 保存先のパス
 
-*定義場所: docgen/benchmark/reporter.py:126*
+*定義場所: docgen/benchmark/reporter.py:127*
+
+---
+
+### generate_csv
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_csv(self, include_children: bool) -> str:
+```
+
+**説明**:
+
+CSV形式のレポートを生成
+
+Args:
+    include_children: 子処理の結果を含めるかどうか
+
+Returns:
+    CSV形式の文字列
+
+*定義場所: docgen/benchmark/reporter.py:137*
+
+---
+
+### save_csv
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def save_csv(self, path: Path, include_children: bool) -> None:
+```
+
+**説明**:
+
+CSVレポートをファイルに保存
+
+Args:
+    path: 保存先のパス
+    include_children: 子処理の結果を含めるかどうか
+
+*定義場所: docgen/benchmark/reporter.py:206*
 
 ---
 
@@ -842,7 +987,7 @@ Args:
 Returns:
     ボトルネックの処理名のリスト
 
-*定義場所: docgen/benchmark/reporter.py:136*
+*定義場所: docgen/benchmark/reporter.py:217*
 
 ---
 
@@ -3207,7 +3352,7 @@ class DetectorPatterns:
 
 Common file detection patterns used by language detectors.
 
-*定義場所: docgen/detectors/detector_patterns.py:6*
+*定義場所: docgen/detectors/detector_patterns.py:8*
 
 ---
 
@@ -3224,7 +3369,7 @@ def get_package_files(cls, language: str) -> list[str]:
 
 Get package manager files for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:185*
+*定義場所: docgen/detectors/detector_patterns.py:193*
 
 ---
 
@@ -3241,7 +3386,7 @@ def get_source_extensions(cls, language: str) -> list[str]:
 
 Get source file extensions for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:190*
+*定義場所: docgen/detectors/detector_patterns.py:198*
 
 ---
 
@@ -3258,7 +3403,7 @@ def detect_by_package_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for package manager files.
 
-*定義場所: docgen/detectors/detector_patterns.py:195*
+*定義場所: docgen/detectors/detector_patterns.py:203*
 
 ---
 
@@ -3275,7 +3420,7 @@ def detect_by_source_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for source files.
 
-*定義場所: docgen/detectors/detector_patterns.py:201*
+*定義場所: docgen/detectors/detector_patterns.py:209*
 
 ---
 
@@ -3292,7 +3437,7 @@ def detect_by_source_files_with_exclusions(cls, project_root: Path, language: st
 
 Detect language by checking for source files, excluding common directories.
 
-*定義場所: docgen/detectors/detector_patterns.py:213*
+*定義場所: docgen/detectors/detector_patterns.py:221*
 
 ---
 
@@ -3302,14 +3447,20 @@ Detect language by checking for source files, excluding common directories.
 
 **シグネチャ**:
 ```
-def detect_by_extensions_with_exclusions(cls, project_root: Path, extensions: list[str]) -> bool:
+def detect_by_extensions_with_exclusions(cls, project_root: Path, extensions: list[str], max_file_size: int) -> bool:
 ```
 
 **説明**:
 
 Detect files by extensions, excluding common directories.
 
-*定義場所: docgen/detectors/detector_patterns.py:227*
+Args:
+    project_root: プロジェクトルートディレクトリ
+    extensions: 検索する拡張子のリスト
+    max_file_size: スキップする最大ファイルサイズ（バイト、デフォルト: 10MB）
+                  大きなファイルは検出対象外として扱う
+
+*定義場所: docgen/detectors/detector_patterns.py:297*
 
 ---
 
@@ -3326,7 +3477,7 @@ def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
 
 Check if a path should be excluded from detection.
 
-*定義場所: docgen/detectors/detector_patterns.py:242*
+*定義場所: docgen/detectors/detector_patterns.py:345*
 
 ---
 
@@ -3350,7 +3501,7 @@ Args:
 Returns:
     Package manager name or None
 
-*定義場所: docgen/detectors/detector_patterns.py:252*
+*定義場所: docgen/detectors/detector_patterns.py:355*
 
 ---
 
@@ -3367,7 +3518,28 @@ def is_js_config_or_test(cls, file_path: Path) -> bool:
 
 Check if a file is likely a JavaScript config or test file.
 
-*定義場所: docgen/detectors/detector_patterns.py:273*
+*定義場所: docgen/detectors/detector_patterns.py:376*
+
+---
+
+### clear_cache
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def clear_cache(cls, project_root: Optional[Path]) -> None:
+```
+
+**説明**:
+
+Clear file detection cache.
+
+Args:
+    project_root: If provided, clear cache for this project only.
+                 If None, clear all caches.
+
+*定義場所: docgen/detectors/detector_patterns.py:382*
 
 ---
 
@@ -3384,7 +3556,7 @@ def detect_python_package_manager(cls, project_root: Path) -> str | None:
 
 Detect Python package manager with special handling for pyproject.toml.
 
-*定義場所: docgen/detectors/detector_patterns.py:279*
+*定義場所: docgen/detectors/detector_patterns.py:399*
 
 ---
 
@@ -3645,7 +3817,7 @@ def get_all_languages(cls) -> list[str]:
 サポートされているすべての言語を取得
 
 Returns:
-    言語名のリスト
+    言語名のリスト（よく使われる言語を優先）
 
 *定義場所: docgen/detectors/unified_detector.py:94*
 
@@ -3671,7 +3843,7 @@ Args:
 Returns:
     UnifiedDetector インスタンス
 
-*定義場所: docgen/detectors/unified_detector.py:107*
+*定義場所: docgen/detectors/unified_detector.py:120*
 
 ---
 
@@ -3694,7 +3866,7 @@ Args:
 Returns:
     UnifiedDetector インスタンスのリスト
 
-*定義場所: docgen/detectors/unified_detector.py:121*
+*定義場所: docgen/detectors/unified_detector.py:134*
 
 ---
 
@@ -6270,7 +6442,7 @@ class LanguageDetector:
 
 言語検出クラス
 
-*定義場所: docgen/language_detector.py:14*
+*定義場所: docgen/language_detector.py:16*
 
 ---
 
@@ -6291,7 +6463,7 @@ Args:
     project_root: プロジェクトルートパス
     config_manager: 設定マネージャー（Noneの場合は新規作成）
 
-*定義場所: docgen/language_detector.py:17*
+*定義場所: docgen/language_detector.py:19*
 
 ---
 
@@ -6314,7 +6486,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/language_detector.py:54*
+*定義場所: docgen/language_detector.py:56*
 
 ---
 
@@ -6331,7 +6503,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語を取得
 
-*定義場所: docgen/language_detector.py:127*
+*定義場所: docgen/language_detector.py:136*
 
 ---
 
@@ -6348,7 +6520,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:131*
+*定義場所: docgen/language_detector.py:140*
 
 ---
 

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-12 15:28:15
+自動生成日時: 2025-12-12 19:32:36
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,21 +12,29 @@
 <!-- MANUAL_END:description -->
 
 
-This repository implements an automated pipeline that keeps the agent documentation (AGENTS.md) perfectly in sync with the source code and test suite. Every time a commit is pushed, the CI workflow performs three core tasks:
+`agents-docs-sync`は、コミットごとに自動でテスト実行・ドキュメント生成を行い、その結果から **AGENTS.md** を更新するCI/CDパイプラインです。  
+主な構成要素とフローは以下の通りです。
 
-1. **Dependency installation** – Using `uv`, the lightweight Python package manager bundled in this project, it creates an isolated environment from `pyproject.toml`. The minimal runtime set includes `pyyaml>=6.0.3`, which parses agent YAML descriptors; and a comprehensive testing stack (`pytest≥7.4.0`, `pytest‑cov≥4.1.0`, `pytest-mock≥3.11.1`) that ensures both functional correctness and coverage metrics.
+- **言語/ツールチェーン**  
+  - Python（3.10+）＋シェルスクリプトで実装され、`uv` がパッケージ管理を担います。  
+  - 必須依存ライブラリ: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`.  
 
-2. **Test execution** – The pipeline runs the entire test matrix with pytest, generating an up‑to‑date coverage report (`--cov`). This guarantees that any changes to agent logic or configuration are immediately validated against existing tests before documentation is regenerated.
+- **テストフロー**  
+  1. コミットが検知されると、CIは依存関係を`uv install --no-dev`でインストール。  
+  2. `pytest -vvv --cov=agents_doc_sync tests/` を実行し、単体テストの失敗やカバレッジ不足を即座に検出します。
 
-3. **Documentation generation & AGENTS.md update** – Leveraging a custom shell script (or Python helper) the pipeline parses all YAML/Markdown files describing agents, extracts their metadata and docstrings, then compiles them into a single cohesive `AGENTS.md`. The resulting file reflects every agent’s name, purpose, inputs, outputs, and example usage. By automating this step, developers never need to manually edit documentation after adding or modifying an agent.
+- **ドキュメント生成**  
+  - Pythonスクリプトはプロジェクト内のYAML定義（エージェントメタ情報）とdocstring を解析し、Markdown形式で `docs/agents/*.md` に書き込みます。  
+  - この段階では`pyyaml` が設定ファイルを読み込む役割を担い、ドキュメントの一貫性が保たれます。
 
-Key benefits for AI‑agent developers:
+- **AGENTS.md の自動更新**  
+  - `scripts/update_agents_md.py`（またはシェルラッパー）により、最新生成されたMarkdownファイルとテスト結果からメタ情報を抽出し、テンプレート化した `AGENTS.md` を再構築します。  
+  - これにより、新しいエージェントが追加・変更されても手動での編集作業は不要です。
 
-- **Consistency** – Source code changes automatically propagate into the human‑readable spec used by downstream tools (e.g., LangChain agents, LLM orchestration frameworks).
-- **Visibility** – The updated AGENTS.md serves as a living contract that other teams or services can consume to discover available agent capabilities without inspecting raw YAML.
-- **Rapid feedback loop** – Immediate test failures surface issues before documentation is regenerated, preventing stale docs from being published.
+- **ローカル実行**  
+  プロジェクトルートには `make sync` や直接シェルスクリプトを呼び出すことで、CIと同等の処理を開発マシン上でも再現できます。  
 
-In short, `agents-docs-sync` removes the manual overhead of maintaining agent documentation and ensures every commit delivers a fully validated codebase with an up‑to‑date, machine‑readable specification.
+このパイプラインは「コードが変更されたら必ずテストに合格し、ドキュメントも同期される」ことを保証するため、AIエージェントの設計・実装チームにとって信頼性の高い開発フローとなります。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -37,6 +45,7 @@ In short, `agents-docs-sync` removes the manual overhead of maintaining agent do
 │   │   └── generators//
 │   │       └── mermaid_generator.py
 │   ├── benchmark//
+│   │   ├── comparator.py
 │   │   ├── core.py
 │   │   ├── recorder.py
 │   │   └── reporter.py
@@ -116,6 +125,7 @@ In short, `agents-docs-sync` removes the manual overhead of maintaining agent do
 ├── AGENTS.md
 ├── BENCHMARK_PLAN.md
 ├── README.md
+├── benchmark.md
 ├── pyproject.toml
 ├── requirements-docgen.txt
 └── requirements-test.txt
@@ -313,6 +323,8 @@ uv run pytest tests/ -v --tb=short
 | `--targets` | 測定対象の処理（デフォルト: all） |
 | `--format` | 出力形式（デフォルト: markdown） |
 | `--output` | 出力ファイルのパス（指定しない場合は標準出力） |
+| `--verbose` | 詳細情報を表示 |
+| `--compare` | 2つのベンチマーク結果を比較（JSONファイルのパスを2つ指定） |
 ---
 
 ## コーディング規約
@@ -356,4 +368,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-12 15:28:15*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-12 19:32:36*

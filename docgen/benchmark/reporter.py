@@ -2,6 +2,7 @@
 ベンチマーク結果のレポート生成モジュール
 """
 
+import csv
 import json
 from datetime import datetime
 from pathlib import Path
@@ -132,6 +133,86 @@ class BenchmarkReporter:
         """
         content = self.generate_json()
         path.write_text(json.dumps(content, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    def generate_csv(self, include_children: bool = True) -> str:
+        """
+        CSV形式のレポートを生成
+
+        Args:
+            include_children: 子処理の結果を含めるかどうか
+
+        Returns:
+            CSV形式の文字列
+        """
+        import io
+
+        summary = self.recorder.get_summary()
+        results = summary.results
+
+        if not results:
+            return ""
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # ヘッダー
+        writer.writerow(
+            [
+                "処理名",
+                "実行時間(秒)",
+                "メモリ使用量(バイト)",
+                "メモリ増加(バイト)",
+                "CPU使用率(%)",
+                "ボトルネック",
+                "タイムスタンプ",
+            ]
+        )
+
+        # ボトルネックのセットを作成
+        bottleneck_set = set(summary.bottlenecks)
+
+        # データ行
+        for result in sorted(results, key=lambda r: r.duration, reverse=True):
+            is_bottleneck = "⚠️" if result.name in bottleneck_set else ""
+            writer.writerow(
+                [
+                    result.name,
+                    f"{result.duration:.6f}",
+                    result.memory_peak,
+                    result.memory_delta,
+                    f"{result.cpu_percent:.2f}",
+                    is_bottleneck,
+                    result.timestamp.isoformat(),
+                ]
+            )
+
+            # 子処理の表示
+            if include_children and result.children:
+                for child in sorted(result.children, key=lambda r: r.duration, reverse=True):
+                    writer.writerow(
+                        [
+                            f"  {child.name}",
+                            f"{child.duration:.6f}",
+                            child.memory_peak,
+                            child.memory_delta,
+                            f"{child.cpu_percent:.2f}",
+                            "",
+                            child.timestamp.isoformat(),
+                        ]
+                    )
+
+        return output.getvalue()
+
+    def save_csv(self, path: Path, include_children: bool = True) -> None:
+        """
+        CSVレポートをファイルに保存
+
+        Args:
+            path: 保存先のパス
+            include_children: 子処理の結果を含めるかどうか
+        """
+        content = self.generate_csv(include_children=include_children)
+        path.write_text(content, encoding="utf-8")
 
     def detect_bottlenecks(self, threshold_percent: float = 10.0) -> list[str]:
         """
