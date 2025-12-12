@@ -144,20 +144,33 @@ class CacheManager:
         if cache_entry is None:
             return None
 
-        # ファイルのハッシュとタイムスタンプを確認
-        current_hash = self.get_file_hash(file_path)
-        current_mtime = file_path.stat().st_mtime
+        # まずmtimeをチェック（軽い処理）
+        # mtimeが一致しない場合は、ハッシュ計算をスキップして早期リターン
+        try:
+            current_mtime = file_path.stat().st_mtime
+        except OSError:
+            # ファイルアクセスエラーの場合、キャッシュを無効化
+            del self._cache_data[cache_key]
+            return None
 
-        cached_hash = cache_entry.get("hash")
         cached_mtime = cache_entry.get("mtime")
+        if current_mtime != cached_mtime:
+            # mtimeが一致しない場合、キャッシュは無効
+            logger.debug(f"キャッシュが無効（mtime不一致）: {file_path}")
+            del self._cache_data[cache_key]
+            return None
 
-        # ハッシュとタイムスタンプが一致する場合、キャッシュを返す
-        if current_hash and current_hash == cached_hash and current_mtime == cached_mtime:
+        # mtimeが一致する場合のみ、ハッシュを計算して検証（重い処理）
+        # ハッシュが一致すれば、キャッシュは有効
+        current_hash = self.get_file_hash(file_path)
+        cached_hash = cache_entry.get("hash")
+
+        if current_hash and current_hash == cached_hash:
             logger.debug(f"キャッシュから結果を取得: {file_path}")
             return cache_entry.get("result")
 
-        # キャッシュが無効な場合、エントリを削除
-        logger.debug(f"キャッシュが無効: {file_path}")
+        # ハッシュが一致しない場合、キャッシュは無効
+        logger.debug(f"キャッシュが無効（ハッシュ不一致）: {file_path}")
         del self._cache_data[cache_key]
         return None
 

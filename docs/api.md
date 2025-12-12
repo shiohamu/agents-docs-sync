@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 19:31:46
+自動生成日時: 2025-12-12 19:50:34
 
 ---
 
@@ -8308,7 +8308,7 @@ Args:
     parser_type: パーサーの種類
     result: 解析結果
 
-*定義場所: docgen/utils/cache.py:164*
+*定義場所: docgen/utils/cache.py:177*
 
 ---
 
@@ -8325,7 +8325,7 @@ def clear_cache(self) -> None:
 
 キャッシュをクリア
 
-*定義場所: docgen/utils/cache.py:194*
+*定義場所: docgen/utils/cache.py:207*
 
 ---
 
@@ -8346,7 +8346,7 @@ Args:
     file_path: ファイルパス
     parser_type: パーサーの種類（Noneの場合はすべてのパーサータイプ）
 
-*定義場所: docgen/utils/cache.py:201*
+*定義場所: docgen/utils/cache.py:214*
 
 ---
 
@@ -8363,7 +8363,7 @@ def save(self) -> None:
 
 キャッシュを保存（明示的に保存する場合）
 
-*定義場所: docgen/utils/cache.py:237*
+*定義場所: docgen/utils/cache.py:250*
 
 ---
 
@@ -8383,7 +8383,7 @@ def get_cache_stats(self) -> dict[str, Any]:
 Returns:
     統計情報の辞書
 
-*定義場所: docgen/utils/cache.py:241*
+*定義場所: docgen/utils/cache.py:254*
 
 ---
 

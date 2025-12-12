@@ -7,7 +7,7 @@ Template Methodパターンを使用して、コード解析の共通フロー�
 
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import copy
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -140,47 +140,81 @@ class BaseParser(ABC):
 
         all_apis = []
         extensions = self.get_supported_extensions()
+        # 拡張子をセットに変換して高速な検索を可能にする
+        extensions_set = {ext.lower() for ext in extensions}
 
         # プロジェクトルートを正規化（絶対パスに変換）
         project_root_resolved = self.project_root.resolve()
 
-        # 解析対象ファイルのリストを収集
+        # 解析対象ファイルのリストを収集（os.walkで一度だけ走査）
         files_to_parse = []
-        for ext in extensions:
-            for file_path in self.project_root.rglob(f"*{ext}"):
+        try:
+            for root, dirs, files in os.walk(self.project_root, followlinks=False):
+                root_path = Path(root)
+
+                # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
+                dirs[:] = [
+                    d
+                    for d in dirs
+                    if d not in exclude_dirs
+                    and not d.startswith(".")
+                    and not d.endswith(".egg-info")
+                ]
+
+                # パスベースの除外チェック
                 try:
-                    # パスの正規化（シンボリックリンクを解決）
-                    file_path_resolved = file_path.resolve()
-
-                    # プロジェクトルート外へのアクセスを防止
-                    try:
-                        file_path_relative = file_path_resolved.relative_to(project_root_resolved)
-                    except ValueError:
-                        # プロジェクトルート外のファイルはスキップ
-                        logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                    rel_path = root_path.relative_to(project_root_resolved)
+                    if any(excluded in rel_path.parts for excluded in exclude_dirs):
+                        dirs[:] = []  # このディレクトリ以下をスキップ
                         continue
-
-                    # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
-                    if file_path.is_symlink():
-                        logger.debug(f"シンボリックリンクをスキップ: {file_path}")
+                    if any(part.endswith(".egg-info") for part in rel_path.parts):
+                        dirs[:] = []  # egg-infoディレクトリ以下をスキップ
                         continue
-
-                    # 除外ディレクトリをスキップ
-                    if any(excluded in file_path.parts for excluded in exclude_dirs):
-                        continue
-
-                    # egg-infoディレクトリをスキップ（動的な名前のため）
-                    if any(part.endswith(".egg-info") for part in file_path.parts):
-                        continue
-
-                    files_to_parse.append((file_path, file_path_relative))
-                except (OSError, PermissionError) as e:
-                    # ファイルアクセスエラー（権限エラーなど）は無視して続行
-                    logger.debug(f"{file_path} へのアクセスに失敗しました: {e}")
+                except ValueError:
+                    # プロジェクトルート外の場合はスキップ
                     continue
 
+                # ファイルをチェック
+                for file_name in files:
+                    file_path = root_path / file_name
+
+                    # 拡張子をチェック
+                    ext = file_path.suffix.lower()
+                    if ext not in extensions_set:
+                        continue
+
+                    try:
+                        # パスの正規化（シンボリックリンクを解決）
+                        file_path_resolved = file_path.resolve()
+
+                        # プロジェクトルート外へのアクセスを防止
+                        try:
+                            file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                        except ValueError:
+                            # プロジェクトルート外のファイルはスキップ
+                            logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                            continue
+
+                        # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
+                        if file_path.is_symlink():
+                            logger.debug(f"シンボリックリンクをスキップ: {file_path}")
+                            continue
+
+                        files_to_parse.append((file_path, file_path_relative))
+                    except (OSError, PermissionError) as e:
+                        # ファイルアクセスエラー（権限エラーなど）は無視して続行
+                        logger.debug(f"{file_path} へのアクセスに失敗しました: {e}")
+                        continue
+        except (OSError, PermissionError) as e:
+            logger.warning(f"プロジェクトの走査中にエラーが発生しました: {e}")
+
         # 並列処理または逐次処理で解析
-        if use_parallel and len(files_to_parse) > 10:  # ファイル数が10を超える場合のみ並列処理
+        # 閾値: ファイル数が5を超える場合、またはCPU数が2以上でファイル数が3を超える場合
+        import os as os_module
+
+        cpu_count = os_module.cpu_count() or 1
+        parallel_threshold = 3 if cpu_count >= 2 else 5
+        if use_parallel and len(files_to_parse) > parallel_threshold:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_file = {
                     executor.submit(
@@ -246,11 +280,20 @@ class BaseParser(ABC):
         if cache_manager is not None and parser_type is not None:
             cached_result = cache_manager.get_cached_result(file_path, parser_type)
             if cached_result is not None:
-                # キャッシュされた結果のコピーを作成（キャッシュ内のデータを変更しないため）
-                result = copy.deepcopy(cached_result)
-                # 相対パスを設定
-                for api in result:
-                    api["file"] = str(file_path_relative)
+                # キャッシュされた結果の浅いコピーを作成（キャッシュ内のデータを変更しないため）
+                # 各API情報は辞書なので、浅いコピーで十分（ネストされたリストがある場合は個別にコピー）
+                result = []
+                for api in cached_result:
+                    # 辞書の浅いコピーを作成
+                    api_copy = api.copy()
+                    # 相対パスを設定
+                    api_copy["file"] = str(file_path_relative)
+                    # ネストされたリスト（parametersなど）がある場合はコピー
+                    if "parameters" in api_copy and api_copy["parameters"] is not None:
+                        api_copy["parameters"] = api_copy["parameters"].copy()
+                    if "decorators" in api_copy and api_copy["decorators"] is not None:
+                        api_copy["decorators"] = api_copy["decorators"].copy()
+                    result.append(api_copy)
                 return result
 
         try:
