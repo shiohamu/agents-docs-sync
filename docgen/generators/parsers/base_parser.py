@@ -115,6 +115,8 @@ class BaseParser(ABC):
         max_workers: int | None = None,
         use_cache: bool = True,
         cache_manager: "CacheManager | None" = None,
+        files_to_parse: list[tuple[Path, Path]] | None = None,
+        skip_cache_save: bool = False,
     ) -> list[APIInfo]:
         """
         プロジェクト全体を解析
@@ -125,6 +127,8 @@ class BaseParser(ABC):
             max_workers: 並列処理の最大ワーカー数（Noneの場合は自動）
             use_cache: キャッシュを使用するかどうか（デフォルト: True）
             cache_manager: キャッシュマネージャー（Noneの場合はキャッシュを使用しない）
+            files_to_parse: 既にスキャン済みのファイルリスト（Noneの場合は新規スキャン）
+            skip_cache_save: キャッシュ保存をスキップするか（デフォルト: False）
 
         Returns:
             全API情報のリスト
@@ -147,66 +151,75 @@ class BaseParser(ABC):
         project_root_resolved = self.project_root.resolve()
 
         # 解析対象ファイルのリストを収集（os.walkで一度だけ走査）
-        files_to_parse = []
-        try:
-            for root, dirs, files in os.walk(self.project_root, followlinks=False):
-                root_path = Path(root)
+        # files_to_parseが提供されている場合はそれを使用（重複スキャンを避ける）
+        if files_to_parse is None:
+            files_to_parse = []
+            try:
+                for root, dirs, files in os.walk(self.project_root, followlinks=False):
+                    root_path = Path(root)
 
-                # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
-                dirs[:] = [
-                    d
-                    for d in dirs
-                    if d not in exclude_dirs
-                    and not d.startswith(".")
-                    and not d.endswith(".egg-info")
-                ]
+                    # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
+                    dirs[:] = [
+                        d
+                        for d in dirs
+                        if d not in exclude_dirs
+                        and not d.startswith(".")
+                        and not d.endswith(".egg-info")
+                    ]
 
-                # パスベースの除外チェック
-                try:
-                    rel_path = root_path.relative_to(project_root_resolved)
-                    if any(excluded in rel_path.parts for excluded in exclude_dirs):
-                        dirs[:] = []  # このディレクトリ以下をスキップ
-                        continue
-                    if any(part.endswith(".egg-info") for part in rel_path.parts):
-                        dirs[:] = []  # egg-infoディレクトリ以下をスキップ
-                        continue
-                except ValueError:
-                    # プロジェクトルート外の場合はスキップ
-                    continue
-
-                # ファイルをチェック
-                for file_name in files:
-                    file_path = root_path / file_name
-
-                    # 拡張子をチェック
-                    ext = file_path.suffix.lower()
-                    if ext not in extensions_set:
-                        continue
-
+                    # パスベースの除外チェック
                     try:
-                        # パスの正規化（シンボリックリンクを解決）
-                        file_path_resolved = file_path.resolve()
-
-                        # プロジェクトルート外へのアクセスを防止
-                        try:
-                            file_path_relative = file_path_resolved.relative_to(project_root_resolved)
-                        except ValueError:
-                            # プロジェクトルート外のファイルはスキップ
-                            logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                        rel_path = root_path.relative_to(project_root_resolved)
+                        if any(excluded in rel_path.parts for excluded in exclude_dirs):
+                            dirs[:] = []  # このディレクトリ以下をスキップ
                             continue
-
-                        # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
-                        if file_path.is_symlink():
-                            logger.debug(f"シンボリックリンクをスキップ: {file_path}")
+                        if any(part.endswith(".egg-info") for part in rel_path.parts):
+                            dirs[:] = []  # egg-infoディレクトリ以下をスキップ
                             continue
-
-                        files_to_parse.append((file_path, file_path_relative))
-                    except (OSError, PermissionError) as e:
-                        # ファイルアクセスエラー（権限エラーなど）は無視して続行
-                        logger.debug(f"{file_path} へのアクセスに失敗しました: {e}")
+                    except ValueError:
+                        # プロジェクトルート外の場合はスキップ
                         continue
-        except (OSError, PermissionError) as e:
-            logger.warning(f"プロジェクトの走査中にエラーが発生しました: {e}")
+
+                    # ファイルをチェック
+                    for file_name in files:
+                        file_path = root_path / file_name
+
+                        # 拡張子をチェック
+                        ext = file_path.suffix.lower()
+                        if ext not in extensions_set:
+                            continue
+
+                        try:
+                            # パスの正規化（シンボリックリンクを解決）
+                            file_path_resolved = file_path.resolve()
+
+                            # プロジェクトルート外へのアクセスを防止
+                            try:
+                                file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                            except ValueError:
+                                # プロジェクトルート外のファイルはスキップ
+                                logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                                continue
+
+                            # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
+                            if file_path.is_symlink():
+                                logger.debug(f"シンボリックリンクをスキップ: {file_path}")
+                                continue
+
+                            files_to_parse.append((file_path, file_path_relative))
+                        except (OSError, PermissionError) as e:
+                            # ファイルアクセスエラー（権限エラーなど）は無視して続行
+                            logger.debug(f"{file_path} へのアクセスに失敗しました: {e}")
+                            continue
+            except (OSError, PermissionError) as e:
+                logger.warning(f"プロジェクトの走査中にエラーが発生しました: {e}")
+        else:
+            # 提供されたファイルリストから、このパーサーがサポートする拡張子のファイルのみをフィルタリング
+            files_to_parse = [
+                (file_path, file_path_relative)
+                for file_path, file_path_relative in files_to_parse
+                if file_path.suffix.lower() in extensions_set
+            ]
 
         # 並列処理または逐次処理で解析
         # 閾値: ファイル数が5を超える場合、またはCPU数が2以上でファイル数が3を超える場合
@@ -251,8 +264,8 @@ class BaseParser(ABC):
                     logger.warning(f"{file_path} の解析に失敗しました: {e}")
                     continue
 
-        # キャッシュを保存
-        if effective_use_cache and cache_manager:
+        # キャッシュを保存（skip_cache_saveがFalseの場合のみ）
+        if effective_use_cache and cache_manager and not skip_cache_save:
             cache_manager.save()
 
         return all_apis

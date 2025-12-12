@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 19:50:34
+自動生成日時: 2025-12-12 19:56:22
 
 ---
 
@@ -4203,7 +4203,7 @@ class APIGenerator:
 
 APIドキュメント生成クラス
 
-*定義場所: docgen/generators/api_generator.py:26*
+*定義場所: docgen/generators/api_generator.py:27*
 
 ---
 
@@ -4226,7 +4226,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/api_generator.py:29*
+*定義場所: docgen/generators/api_generator.py:30*
 
 ---
 
@@ -4499,7 +4499,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def parse_project(self, exclude_dirs: list[str] | None, use_parallel: bool, max_workers: int | None, use_cache: bool, cache_manager: 'CacheManager | None') -> list[APIInfo]:
+def parse_project(self, exclude_dirs: list[str] | None, use_parallel: bool, max_workers: int | None, use_cache: bool, cache_manager: 'CacheManager | None', files_to_parse: list[tuple[Path, Path]] | None, skip_cache_save: bool) -> list[APIInfo]:
 ```
 
 **説明**:
@@ -4512,6 +4512,8 @@ Args:
     max_workers: 並列処理の最大ワーカー数（Noneの場合は自動）
     use_cache: キャッシュを使用するかどうか（デフォルト: True）
     cache_manager: キャッシュマネージャー（Noneの場合はキャッシュを使用しない）
+    files_to_parse: 既にスキャン済みのファイルリスト（Noneの場合は新規スキャン）
+    skip_cache_save: キャッシュ保存をスキップするか（デフォルト: False）
 
 Returns:
     全API情報のリスト

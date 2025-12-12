@@ -2,6 +2,7 @@
 APIドキュメント生成モジュール
 """
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -106,13 +107,34 @@ class APIGenerator(BaseGenerator):
         # キャッシュの使用設定
         use_cache = self.config.get("cache", {}).get("enabled", True)
 
+        # 一度だけファイルスキャンを行い、結果を各パーサーに共有（重複スキャンを避ける）
+        # すべてのパーサーの拡張子を集めて一度だけスキャン
+        all_extensions = set()
         for parser in parsers:
+            all_extensions.update(parser.get_supported_extensions())
+
+        shared_files_to_parse = self._scan_project_files(
+            exclude_dirs=exclude_dirs,
+            extensions=all_extensions,
+        )
+
+        # 各パーサーで解析（ファイルスキャン結果を共有）
+        for i, parser in enumerate(parsers):
+            # 最後のパーサー以外はキャッシュ保存をスキップ（最後に一度だけ保存）
+            skip_cache_save = i < len(parsers) - 1
+
             apis = parser.parse_project(
                 exclude_dirs=exclude_dirs,
                 use_cache=use_cache,
                 cache_manager=self.cache_manager,
+                files_to_parse=shared_files_to_parse,
+                skip_cache_save=skip_cache_save,
             )
             all_apis.extend(apis)
+
+        # すべてのパーサー実行後に一度だけキャッシュを保存
+        if use_cache and self.cache_manager:
+            self.cache_manager.save()
 
         # API情報をソート（ファイル名、行番号順）
         all_apis.sort(key=lambda x: (x["file"], x["line"]))
@@ -204,3 +226,82 @@ class APIGenerator(BaseGenerator):
                 parsers.append(GenericParser(self.project_root, language=lang))
 
         return parsers
+
+    def _scan_project_files(
+        self, exclude_dirs: list[str], extensions: set[str]
+    ) -> list[tuple[Path, Path]]:
+        """
+        プロジェクトファイルを一度だけスキャン（複数パーサー間で共有）
+
+        Args:
+            exclude_dirs: 除外するディレクトリ
+            extensions: スキャン対象の拡張子セット
+
+        Returns:
+            (絶対パス, 相対パス)のタプルのリスト
+        """
+        files_to_parse = []
+        project_root_resolved = self.project_root.resolve()
+        extensions_set = {ext.lower() for ext in extensions}
+
+        try:
+            for root, dirs, files in os.walk(self.project_root, followlinks=False):
+                root_path = Path(root)
+
+                # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
+                dirs[:] = [
+                    d
+                    for d in dirs
+                    if d not in exclude_dirs
+                    and not d.startswith(".")
+                    and not d.endswith(".egg-info")
+                ]
+
+                # パスベースの除外チェック
+                try:
+                    rel_path = root_path.relative_to(project_root_resolved)
+                    if any(excluded in rel_path.parts for excluded in exclude_dirs):
+                        dirs[:] = []  # このディレクトリ以下をスキップ
+                        continue
+                    if any(part.endswith(".egg-info") for part in rel_path.parts):
+                        dirs[:] = []  # egg-infoディレクトリ以下をスキップ
+                        continue
+                except ValueError:
+                    # プロジェクトルート外の場合はスキップ
+                    continue
+
+                # ファイルをチェック
+                for file_name in files:
+                    file_path = root_path / file_name
+
+                    # 拡張子をチェック
+                    ext = file_path.suffix.lower()
+                    if ext not in extensions_set:
+                        continue
+
+                    try:
+                        # パスの正規化（シンボリックリンクを解決）
+                        file_path_resolved = file_path.resolve()
+
+                        # プロジェクトルート外へのアクセスを防止
+                        try:
+                            file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                        except ValueError:
+                            # プロジェクトルート外のファイルはスキップ
+                            continue
+
+                        # シンボリックリンクのチェック
+                        if file_path.is_symlink():
+                            continue
+
+                        files_to_parse.append((file_path, file_path_relative))
+                    except (OSError, PermissionError):
+                        # ファイルアクセスエラーは無視して続行
+                        continue
+        except (OSError, PermissionError) as e:
+            from ..utils.logger import get_logger
+
+            logger = get_logger("api_generator")
+            logger.warning(f"プロジェクトの走査中にエラーが発生しました: {e}")
+
+        return files_to_parse
