@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 14:38:08
+自動生成日時: 2025-12-12 15:27:19
 
 ---
 
@@ -357,6 +357,565 @@ def scan(self) -> ArchitectureManifest:
 ---
 
 
+## docgen/benchmark/core.py
+
+### BenchmarkContext
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkContext:
+```
+
+**説明**:
+
+ベンチマーク測定用のコンテキストマネージャー
+
+*定義場所: docgen/benchmark/core.py:19*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, name: str, recorder: BenchmarkRecorder | None, enabled: bool):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    name: 測定対象の処理名
+    recorder: ベンチマークレコーダー（Noneの場合はグローバルレコーダーを使用）
+    enabled: 測定を有効にするかどうか
+
+*定義場所: docgen/benchmark/core.py:22*
+
+---
+
+### __enter__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __enter__(self) -> 'BenchmarkContext':
+```
+
+**説明**:
+
+測定開始
+
+*定義場所: docgen/benchmark/core.py:39*
+
+---
+
+### __exit__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+```
+
+**説明**:
+
+測定終了と結果記録
+
+*定義場所: docgen/benchmark/core.py:50*
+
+---
+
+### benchmark
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def benchmark(name: str | None, enabled: bool) -> Callable:
+```
+
+**説明**:
+
+関数の実行時間を測定するデコレータ
+
+Args:
+    name: 測定対象の処理名（Noneの場合は関数名を使用）
+    enabled: 測定を有効にするかどうか
+
+Returns:
+    デコレータ関数
+
+Example:
+    @benchmark("my_function")
+    def my_function():
+        # 処理
+        pass
+
+*定義場所: docgen/benchmark/core.py:83*
+
+---
+
+### benchmark_context
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def benchmark_context(name: str, recorder: BenchmarkRecorder | None, enabled: bool) -> Generator[BenchmarkContext, None, None]:
+```
+
+**説明**:
+
+ベンチマークコンテキストマネージャー（関数形式）
+
+Args:
+    name: 測定対象の処理名
+    recorder: ベンチマークレコーダー
+    enabled: 測定を有効にするかどうか
+
+Yields:
+    BenchmarkContextインスタンス
+
+Example:
+    with benchmark_context("my_operation"):
+        # 処理
+        pass
+
+*定義場所: docgen/benchmark/core.py:115*
+
+---
+
+
+## docgen/benchmark/models.py
+
+### BenchmarkResult
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkResult:
+```
+
+**説明**:
+
+ベンチマーク測定結果
+
+*定義場所: docgen/benchmark/models.py:11*
+
+---
+
+### BenchmarkSummary
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkSummary:
+```
+
+**説明**:
+
+ベンチマーク結果の集計情報
+
+*定義場所: docgen/benchmark/models.py:30*
+
+---
+
+
+## docgen/benchmark/recorder.py
+
+### BenchmarkRecorder
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkRecorder:
+```
+
+**説明**:
+
+ベンチマーク結果の記録と集計を行うクラス
+
+*定義場所: docgen/benchmark/recorder.py:10*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self):
+```
+
+**説明**:
+
+初期化
+
+*定義場所: docgen/benchmark/recorder.py:15*
+
+---
+
+### get_global
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_global(cls) -> 'BenchmarkRecorder':
+```
+
+**説明**:
+
+グローバルレコーダーインスタンスを取得
+
+Returns:
+    グローバルレコーダーインスタンス
+
+*定義場所: docgen/benchmark/recorder.py:20*
+
+---
+
+### reset_global
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def reset_global(cls) -> None:
+```
+
+**説明**:
+
+グローバルレコーダーをリセット
+
+*定義場所: docgen/benchmark/recorder.py:32*
+
+---
+
+### record
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def record(self, result: BenchmarkResult) -> None:
+```
+
+**説明**:
+
+ベンチマーク結果を記録
+
+Args:
+    result: ベンチマーク結果
+
+*定義場所: docgen/benchmark/recorder.py:36*
+
+---
+
+### get_results
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_results(self) -> list[BenchmarkResult]:
+```
+
+**説明**:
+
+記録された結果を取得
+
+Returns:
+    ベンチマーク結果のリスト
+
+*定義場所: docgen/benchmark/recorder.py:45*
+
+---
+
+### clear
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def clear(self) -> None:
+```
+
+**説明**:
+
+記録をクリア
+
+*定義場所: docgen/benchmark/recorder.py:54*
+
+---
+
+### get_summary
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_summary(self) -> BenchmarkSummary:
+```
+
+**説明**:
+
+ベンチマーク結果の集計情報を取得
+
+Returns:
+    ベンチマーク集計情報
+
+*定義場所: docgen/benchmark/recorder.py:58*
+
+---
+
+### export_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def export_json(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+結果をJSON形式でエクスポート
+
+Returns:
+    JSON形式の辞書
+
+*定義場所: docgen/benchmark/recorder.py:92*
+
+---
+
+
+## docgen/benchmark/reporter.py
+
+### BenchmarkReporter
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkReporter:
+```
+
+**説明**:
+
+ベンチマーク結果のレポート生成クラス
+
+*定義場所: docgen/benchmark/reporter.py:15*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, recorder: BenchmarkRecorder | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    recorder: ベンチマークレコーダー（Noneの場合はグローバルレコーダーを使用）
+
+*定義場所: docgen/benchmark/reporter.py:18*
+
+---
+
+### generate_markdown
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_markdown(self, include_children: bool) -> str:
+```
+
+**説明**:
+
+Markdown形式のレポートを生成
+
+Args:
+    include_children: 子処理の結果を含めるかどうか
+
+Returns:
+    Markdown形式のレポート
+
+*定義場所: docgen/benchmark/reporter.py:27*
+
+---
+
+### generate_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def generate_json(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+JSON形式のレポートを生成
+
+Returns:
+    JSON形式の辞書
+
+*定義場所: docgen/benchmark/reporter.py:107*
+
+---
+
+### save_markdown
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def save_markdown(self, path: Path) -> None:
+```
+
+**説明**:
+
+Markdownレポートをファイルに保存
+
+Args:
+    path: 保存先のパス
+
+*定義場所: docgen/benchmark/reporter.py:116*
+
+---
+
+### save_json
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def save_json(self, path: Path) -> None:
+```
+
+**説明**:
+
+JSONレポートをファイルに保存
+
+Args:
+    path: 保存先のパス
+
+*定義場所: docgen/benchmark/reporter.py:126*
+
+---
+
+### detect_bottlenecks
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect_bottlenecks(self, threshold_percent: float) -> list[str]:
+```
+
+**説明**:
+
+ボトルネックを検出
+
+Args:
+    threshold_percent: ボトルネックとみなす実行時間の割合（%）
+
+Returns:
+    ボトルネックの処理名のリスト
+
+*定義場所: docgen/benchmark/reporter.py:136*
+
+---
+
+
+## docgen/benchmark/utils.py
+
+### get_current_process
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def get_current_process() -> psutil.Process:
+```
+
+**説明**:
+
+現在のプロセスを取得
+
+Returns:
+    現在のプロセス
+
+*定義場所: docgen/benchmark/utils.py:10*
+
+---
+
+### format_duration
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def format_duration(seconds: float) -> str:
+```
+
+**説明**:
+
+実行時間をフォーマット
+
+Args:
+    seconds: 秒数
+
+Returns:
+    フォーマットされた文字列
+
+*定義場所: docgen/benchmark/utils.py:20*
+
+---
+
+### format_memory
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def format_memory(bytes_size: int) -> str:
+```
+
+**説明**:
+
+メモリサイズをフォーマット
+
+Args:
+    bytes_size: バイト数
+
+Returns:
+    フォーマットされた文字列
+
+*定義場所: docgen/benchmark/utils.py:38*
+
+---
+
+
 ## docgen/cli/commands/base.py
 
 ### BaseCommand
@@ -397,6 +956,50 @@ Returns:
     終了コード（0=成功、1=失敗）
 
 *定義場所: docgen/cli/commands/base.py:14*
+
+---
+
+
+## docgen/cli/commands/benchmark.py
+
+### BenchmarkCommand
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkCommand:
+```
+
+**説明**:
+
+ベンチマークコマンド
+
+*定義場所: docgen/cli/commands/benchmark.py:15*
+
+---
+
+### execute
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def execute(self, args: Namespace, project_root: Path) -> int:
+```
+
+**説明**:
+
+Run benchmarks and generate reports
+
+Args:
+    args: Command line arguments
+    project_root: Project root directory
+
+Returns:
+    Exit code (0 for success, 1 for failure)
+
+*定義場所: docgen/cli/commands/benchmark.py:18*
 
 ---
 
@@ -615,7 +1218,7 @@ class CommandRunner:
 
 コマンド実行を管理するオーケストレーター
 
-*定義場所: docgen/cli/runner.py:20*
+*定義場所: docgen/cli/runner.py:21*
 
 ---
 
@@ -630,7 +1233,7 @@ def __init__(self):
 
 *説明なし*
 
-*定義場所: docgen/cli/runner.py:23*
+*定義場所: docgen/cli/runner.py:24*
 
 ---
 
@@ -654,7 +1257,7 @@ Args:
 Returns:
     Exit code (0 for success, 1 for failure)
 
-*定義場所: docgen/cli/runner.py:34*
+*定義場所: docgen/cli/runner.py:36*
 
 ---
 
@@ -3111,7 +3714,7 @@ class DocGen:
 
 ドキュメント自動生成メインクラス
 
-*定義場所: docgen/docgen.py:30*
+*定義場所: docgen/docgen.py:31*
 
 ---
 
@@ -3132,7 +3735,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ（Noneの場合は現在の作業ディレクトリ）
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
 
-*定義場所: docgen/docgen.py:33*
+*定義場所: docgen/docgen.py:34*
 
 ---
 
@@ -3155,7 +3758,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/docgen.py:67*
+*定義場所: docgen/docgen.py:68*
 
 ---
 
@@ -3175,7 +3778,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/docgen.py:81*
+*定義場所: docgen/docgen.py:84*
 
 ---
 
@@ -3195,7 +3798,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/docgen.py:91*
+*定義場所: docgen/docgen.py:94*
 
 ---
 
@@ -3215,7 +3818,7 @@ Run the command line interface
 Returns:
     Exit code
 
-*定義場所: docgen/docgen.py:142*
+*定義場所: docgen/docgen.py:147*
 
 ---
 
@@ -3232,7 +3835,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:167*
+*定義場所: docgen/docgen.py:172*
 
 ---
 
@@ -3252,7 +3855,7 @@ class DocumentGenerator:
 
 ドキュメント生成クラス
 
-*定義場所: docgen/document_generator.py:14*
+*定義場所: docgen/document_generator.py:15*
 
 ---
 
@@ -3275,7 +3878,7 @@ Args:
     config: 設定辞書
     detected_package_managers: 検出されたパッケージマネージャ辞書
 
-*定義場所: docgen/document_generator.py:17*
+*定義場所: docgen/document_generator.py:18*
 
 ---
 
@@ -3295,7 +3898,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/document_generator.py:38*
+*定義場所: docgen/document_generator.py:39*
 
 ---
 
@@ -6150,6 +6753,23 @@ Cache configuration model.
 
 ---
 
+### BenchmarkConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class BenchmarkConfig:
+```
+
+**説明**:
+
+Benchmark configuration model.
+
+*定義場所: docgen/models/config.py:48*
+
+---
+
 ### DebugConfig
 
 **型**: `class`
@@ -6163,7 +6783,7 @@ class DebugConfig:
 
 Debug configuration model.
 
-*定義場所: docgen/models/config.py:48*
+*定義場所: docgen/models/config.py:54*
 
 ---
 
@@ -6180,7 +6800,7 @@ class EmbeddingConfig:
 
 Embedding configuration model.
 
-*定義場所: docgen/models/config.py:54*
+*定義場所: docgen/models/config.py:60*
 
 ---
 
@@ -6197,7 +6817,7 @@ class IndexConfig:
 
 Index configuration model.
 
-*定義場所: docgen/models/config.py:61*
+*定義場所: docgen/models/config.py:67*
 
 ---
 
@@ -6214,7 +6834,7 @@ class RetrievalConfig:
 
 Retrieval configuration model.
 
-*定義場所: docgen/models/config.py:69*
+*定義場所: docgen/models/config.py:75*
 
 ---
 
@@ -6231,7 +6851,7 @@ class ChunkingConfig:
 
 Chunking configuration model.
 
-*定義場所: docgen/models/config.py:76*
+*定義場所: docgen/models/config.py:82*
 
 ---
 
@@ -6246,7 +6866,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:83*
+*定義場所: docgen/models/config.py:89*
 
 ---
 
@@ -6263,7 +6883,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:95*
+*定義場所: docgen/models/config.py:101*
 
 ---
 
@@ -6280,7 +6900,7 @@ class ArchitecturePythonConfig:
 
 Python architecture configuration.
 
-*定義場所: docgen/models/config.py:107*
+*定義場所: docgen/models/config.py:113*
 
 ---
 
@@ -6297,7 +6917,7 @@ class ArchitectureJavascriptConfig:
 
 JavaScript architecture configuration.
 
-*定義場所: docgen/models/config.py:114*
+*定義場所: docgen/models/config.py:120*
 
 ---
 
@@ -6314,7 +6934,7 @@ class ArchitectureConfig:
 
 Architecture diagram generation configuration.
 
-*定義場所: docgen/models/config.py:120*
+*定義場所: docgen/models/config.py:126*
 
 ---
 
@@ -6331,7 +6951,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:131*
+*定義場所: docgen/models/config.py:137*
 
 ---
 

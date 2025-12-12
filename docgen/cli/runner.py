@@ -8,6 +8,7 @@ from pathlib import Path
 from ..utils.logger import get_logger
 from .commands import (
     BaseCommand,
+    BenchmarkCommand,
     BuildIndexCommand,
     GenerateCommand,
     HooksCommand,
@@ -27,6 +28,7 @@ class CommandRunner:
             "init": InitCommand,
             "build-index": BuildIndexCommand,
             "hooks": HooksCommand,
+            "benchmark": BenchmarkCommand,
             "commit-msg": self._create_commit_msg_handler(),
             "arch": self._create_arch_handler(),
         }

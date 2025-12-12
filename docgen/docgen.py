@@ -17,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # パッケージとしてインストールされた場合は相対インポートを使用
+from .benchmark import BenchmarkContext, BenchmarkRecorder
 from .cli import CommandRunner, create_parser
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator
@@ -74,8 +75,10 @@ class DocGen:
         Returns:
             検出された言語のリスト
         """
-        self.detected_languages = self.language_detector.detect_languages(use_parallel)
-        self.detected_package_managers = self.language_detector.detected_package_managers
+        benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
+        with BenchmarkContext("言語検出", enabled=benchmark_enabled):
+            self.detected_languages = self.language_detector.detect_languages(use_parallel)
+            self.detected_package_managers = self.language_detector.detected_package_managers
         return self.detected_languages
 
     def update_config(self, updates: dict[str, Any]) -> None:
@@ -95,17 +98,19 @@ class DocGen:
         Returns:
             成功したかどうか
         """
-        self.detect_languages()
-        logger.info(f"Detected languages: {self.detected_languages}")
+        benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
+        with BenchmarkContext("ドキュメント生成全体", enabled=benchmark_enabled):
+            self.detect_languages()
+            logger.info(f"Detected languages: {self.detected_languages}")
 
-        if not self.detected_languages:
-            logger.warning("サポートされている言語が検出されませんでした")
-            return False
+            if not self.detected_languages:
+                logger.warning("サポートされている言語が検出されませんでした")
+                return False
 
-        document_generator = DocumentGenerator(
-            self.project_root, self.detected_languages, self.config, self.detected_package_managers
-        )
-        return document_generator.generate_documents()
+            document_generator = DocumentGenerator(
+                self.project_root, self.detected_languages, self.config, self.detected_package_managers
+            )
+            return document_generator.generate_documents()
 
 
 def _check_and_auto_init(project_root: Path) -> int:

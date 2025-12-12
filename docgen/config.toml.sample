@@ -24,6 +24,9 @@ preserve_manual_sections = true
 [cache]
 enabled = true
 
+[benchmark]
+enabled = true
+
 # AGENTS.md生成設定
 [agents]
 llm_mode = "both"  # "api", "local", "both"

@@ -45,6 +45,12 @@ class CacheConfig(DocgenBaseModel):
     enabled: bool = True
 
 
+class BenchmarkConfig(DocgenBaseModel):
+    """Benchmark configuration model."""
+
+    enabled: bool = False
+
+
 class DebugConfig(DocgenBaseModel):
     """Debug configuration model."""
 
@@ -137,6 +143,7 @@ class DocgenConfig(DocgenBaseModel):
     agents: AgentsConfigSection = Field(default_factory=lambda: AgentsConfigSection())
     exclude: ExcludeConfig = Field(default_factory=ExcludeConfig)
     cache: CacheConfig = Field(default_factory=CacheConfig)
+    benchmark: BenchmarkConfig = Field(default_factory=BenchmarkConfig)
     debug: DebugConfig = Field(default_factory=DebugConfig)
     rag: RagConfig = Field(default_factory=RagConfig)
     architecture: ArchitectureConfig = Field(default_factory=ArchitectureConfig)

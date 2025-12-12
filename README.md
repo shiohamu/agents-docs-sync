@@ -8,38 +8,52 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-`agents-docs-sync` は、ソースコードをコミットするたびに自動で以下の三つのタスクを実行し、プロジェクト全体の品質とドキュメント整合性を保ちます。
+- **目的**  
+  `agents-docs-sync` は、リポジトリへコミットが入るたびに自動で以下の処理を実行する CI パイプラインです。  
 
-1. **テスト実行** – `pytest` とカバレッジツール（`pytest-cov`）を使用してユニット・統合テストを走らせる。失敗した場合は CI ビルドが停止し、エラー内容がすぐに確認できるようになっています。
-2. **ドキュメント生成** – コードベースから自動で API ドキュメント（Markdown 形式）や設定ファイルのサンプルを作成。`pyyaml` を利用して YAML 設定例をパースし、整形したテーブルとして出力します。
-3. **AGENTS.md の更新** – プロジェクト内にあるエージェント構成（例えば `agents.yaml`）から情報を抽出し、最新の状態で `AGENTS.md` を書き換えます。これによりドキュメントと実際の設定が常に同期します。
+  | 処理 | 内容 |
+  |------|-----|
+  | テスト実行 | `pytest`, `pytest-cov`, `pytest-mock` を用いてユニットテストとカバレッジ測定を行う。 |
+  | ドキュメント生成 | ソースコードから Markdown / HTML のドキュメント（例: MkDocs、Sphinx）へ変換し、最新の API リファレンスや使用方法を提供する。 |
+  | AGENTS.md 自動更新 | プロジェクト内に定義されたエージェント情報を YAML 等で管理し、コミット時に `AGENTS.md` を再生成して常に最新状態に保つ。 |
 
-### 主な技術スタック
-| カテゴリ | ツール/ライブラリ |
-|----------|------------------|
-| 言語 | Python 3.11+, Bash（シェルスクリプト） |
-| パッケージマネージャー | `uv` (Python) |
-| テストフレームワーク | `pytest`, `pytest-cov`, `pytest-mock` |
-| ドキュメント生成 | Python スクリプト + Markdown（標準ライブラリ） |
-| YAML 解析 | `pyyaml >=6.0.3` |
+- **構成**  
+  - 言語: Python（3.11+）とシェルスクリプト
+  - パッケージマネージャー: [uv](https://github.com/astral-sh/uv) を使用し、依存関係を高速に解決・インストール。  
+    ```bash
+    uv sync   # 必要なパッケージのインストール／更新
+    ```
+  - 主な Python ライブラリ（バージョン指定）: `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`  
+    他のユーティリティやテストヘルパーも同様に uv で管理される。  
 
-### 使用方法
-1. **依存関係をインストール**  
-   ```bash
-   uv sync --frozen
-   ```
-2. **パイプラインの手動実行（開発時に便利）**  
-   ```bash
-   ./scripts/run_pipeline.sh  # シェルスクリプトでテスト・ドキュメント生成・AGENTS.md 更新を順次呼び出す
-   ```
-3. **CI 設定例** – GitHub Actions や GitLab CI の `.yml` ファイルに `run_pipeline.sh` を実行させるだけです。
+- **ワークフロー**  
+  1. コミットがプッシュされると、GitHub Actions（または他 CI）から `ci/pipeline.sh` が起動。  
+  2. スクリプト内で以下を順に実行:  
+     - `uv sync --frozen`
+     - `pytest tests/ --cov=src --cov-report xml`
+     - ドキュメントビルド (`mkdocs build`, `sphinx-build` 等)
+     - AGENTS.md 生成スクリプト（例: `scripts/gen_agents_md.py`)  
+  3. 成功すれば成果物を GitHub に自動コミット／PRに反映、失敗した場合はログとエラー情報が通知される。  
 
-### 期待できるメリット
-- コミット単位での自動検証により、バグ混入リスクを低減します。  
-- ドキュメントとコードが常に同期しているため、新規開発者や外部コントリビューターへのハンドオフがスムーズになります。  
-- 依存関係管理は `uv` が高速かつ正確な解決を提供し、CI のビルド時間短縮にも寄与します。
+- **メリット**  
+  - コードベースの品質（テスト・カバレッジ）を常時確認でき、ドキュメントとのズレを防止。  
+  - AGENTS.md の手動更新作業が不要になり、人為的ミスや忘れ漏れリスクを低減。  
+  - `uv` による高速な依存解決で CI 実行時間の短縮に貢献。  
 
-このプロジェクトにより、コード品質と文書整合性の両立が実現できるため、大規模チームやオープンソース開発で特に有用です。<!-- MANUAL_START:architecture -->
+- **拡張性**  
+  新しいテストフレームワーク、ドキュメントツール、またはエージェント情報フォーマットを追加したい場合も、スクリプトと YAML 定義ファイルを編集するだけで簡単に対応可能。  
+
+- **利用例**  
+  ```bash
+  # 開発中のローカルテスト＆ドキュメント生成（CI と同じ手順）
+  uv sync --frozen
+  pytest tests/ --cov=src
+  mkdocs build   # または sphinx-build -b html docs src/_build/html
+
+  # AGENTS.md を最新化するだけで OK
+  python scripts/gen_agents_md.py
+  ```
+このプロジェクトにより、コミットごとに一貫した品質保証・ドキュメント管理が自動化されるため、開発者は実装やバグ修正に専念できるようになります。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -68,6 +82,7 @@ graph TB
                 docgen_archgen_generators["generators"]:::moduleStyle
             end
             class docgen_archgen moduleStyle
+            docgen_benchmark["benchmark"]:::moduleStyle
             docgen_detectors["detectors"]:::moduleStyle
             subgraph docgen_generators [generators]
                 direction TB
@@ -101,6 +116,8 @@ graph TB
     docgen_archgen --> docgen_utils
     docgen_archgen_detectors --> docgen_models
     docgen_archgen_generators --> docgen_models
+    docgen_benchmark --> docgen_models
+    docgen_benchmark --> docgen_utils
     docgen_detectors --> docgen_utils
     docgen_generators --> docgen_archgen
     docgen_generators --> docgen_collectors
@@ -124,7 +141,7 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
 ## 使用技術
 
@@ -219,4 +236,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-12 00:19:28*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-12 15:27:28*

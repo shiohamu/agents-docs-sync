@@ -5,6 +5,7 @@
 from pathlib import Path
 from typing import Any
 
+from .benchmark import BenchmarkContext
 from .generator_factory import GeneratorFactory
 from .utils.logger import get_logger
 
@@ -46,8 +47,15 @@ class DocumentGenerator:
             logger.warning("サポートされている言語が検出されませんでした")
             return False
 
+        benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
         generators_to_run = self._determine_generators_to_run()
-        return self._execute_generators(generators_to_run)
+        with BenchmarkContext("ドキュメント生成", enabled=benchmark_enabled) as ctx:
+            result = self._execute_generators(generators_to_run)
+            # 子処理として各ジェネレーターの結果を記録
+            if ctx.result and benchmark_enabled:
+                # 各ジェネレーターの結果を子処理として追加
+                pass  # 子処理の記録は各ジェネレーター内で行う
+        return result
 
     def _determine_generators_to_run(self) -> list[tuple[str, str]]:
         """
@@ -87,31 +95,35 @@ class DocumentGenerator:
         """
         success = True
 
+        benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
+
         # 各ジェネレーターを実行
         for gen_type, gen_name in generators_to_run:
             logger.info(f"[{gen_name}生成]")
             if gen_type == "rag":
                 # RAGインデックス構築は特殊処理
-                if not self._handle_rag_generation():
-                    # ベクトルDB生成の失敗は全体の失敗にはしない
-                    logger.warning(
-                        "RAGインデックスの構築に失敗しましたが、ドキュメント生成は成功しました"
-                    )
+                with BenchmarkContext(f"{gen_name}生成", enabled=benchmark_enabled):
+                    if not self._handle_rag_generation():
+                        # ベクトルDB生成の失敗は全体の失敗にはしない
+                        logger.warning(
+                            "RAGインデックスの構築に失敗しましたが、ドキュメント生成は成功しました"
+                        )
                 continue
 
             try:
-                generator = GeneratorFactory.create_generator(
-                    gen_type,
-                    self.project_root,
-                    self.detected_languages,
-                    self.config,
-                    self.detected_package_managers,
-                )
-                if generator.generate():
-                    logger.info(f"✓ {gen_name}を生成しました")
-                else:
-                    logger.error(f"✗ {gen_name}の生成に失敗しました")
-                    success = False
+                with BenchmarkContext(f"{gen_name}生成", enabled=benchmark_enabled):
+                    generator = GeneratorFactory.create_generator(
+                        gen_type,
+                        self.project_root,
+                        self.detected_languages,
+                        self.config,
+                        self.detected_package_managers,
+                    )
+                    if generator.generate():
+                        logger.info(f"✓ {gen_name}を生成しました")
+                    else:
+                        logger.error(f"✗ {gen_name}の生成に失敗しました")
+                        success = False
             except Exception as e:
                 logger.error(f"✗ {gen_name}の生成中にエラーが発生しました: {e}", exc_info=True)
                 success = False
@@ -143,6 +155,8 @@ class DocumentGenerator:
         Returns:
             成功したかどうか
         """
+        benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
+
         try:
             from .rag.chunker import CodeChunker
             from .rag.embedder import Embedder
@@ -159,8 +173,9 @@ class DocumentGenerator:
 
         # 1. コードベースをチャンク化
         logger.info("Step 1/3: コードベースをチャンク化中...")
-        chunker = CodeChunker(rag_config)
-        chunks = chunker.chunk_codebase(self.project_root)
+        with BenchmarkContext("RAG: チャンク化", enabled=benchmark_enabled):
+            chunker = CodeChunker(rag_config)
+            chunks = chunker.chunk_codebase(self.project_root)
 
         if not chunks:
             logger.warning("チャンクが見つかりませんでした")
@@ -170,30 +185,32 @@ class DocumentGenerator:
 
         # 2. 埋め込み生成
         logger.info("Step 2/3: 埋め込みを生成中...")
-        embedder = Embedder(rag_config)
+        with BenchmarkContext("RAG: 埋め込み生成", enabled=benchmark_enabled):
+            embedder = Embedder(rag_config)
 
-        # チャンクのテキストを抽出
-        texts = [chunk["text"] for chunk in chunks]
+            # チャンクのテキストを抽出
+            texts = [chunk["text"] for chunk in chunks]
 
-        # バッチ処理で埋め込み生成
-        embeddings = embedder.embed_batch(texts, batch_size=32)
+            # バッチ処理で埋め込み生成
+            embeddings = embedder.embed_batch(texts, batch_size=32)
 
         logger.info(f"✓ {len(embeddings)} 個の埋め込みを生成しました")
 
         # 3. インデックス構築
         logger.info("Step 3/3: インデックスを構築中...")
-        index_dir = self.project_root / "docgen" / "index"
-        indexer = VectorIndexer(
-            index_dir=index_dir,
-            embedding_dim=embedder.embedding_dim,
-            config=rag_config,
-        )
+        with BenchmarkContext("RAG: インデックス構築", enabled=benchmark_enabled):
+            index_dir = self.project_root / "docgen" / "index"
+            indexer = VectorIndexer(
+                index_dir=index_dir,
+                embedding_dim=embedder.embedding_dim,
+                config=rag_config,
+            )
 
-        # インデックス構築
-        indexer.build(embeddings, chunks)
+            # インデックス構築
+            indexer.build(embeddings, chunks)
 
-        # 保存
-        indexer.save()
+            # 保存
+            indexer.save()
 
         logger.info(f"✓ インデックスを保存しました: {index_dir}")
         logger.info("=" * 60)

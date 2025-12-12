@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-12 00:20:12
+自動生成日時: 2025-12-12 15:28:15
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,32 +12,21 @@
 <!-- MANUAL_END:description -->
 
 
-`agents‑docs‐sync` は、コミットごとに自動でテストを実行し、ドキュメント（Sphinx/ MkDocs など）を生成して `AGENTS.md` を更新する CI/CD パイプラインです。  
-Python とシェルスクリプトだけで構成されているため、既存のプロジェクトに簡単に組み込むことができます。
+This repository implements an automated pipeline that keeps the agent documentation (AGENTS.md) perfectly in sync with the source code and test suite. Every time a commit is pushed, the CI workflow performs three core tasks:
 
-### 主な機能
-- **テスト実行** – `pytest`（pyproject.toml では uv を使用）を使ってユニット・統合テストを走らせます。  
-- **カバレッジ計測** – `pytest‑cov` によりコードの網羅率が自動で報告され、品質保証に役立ちます。  
-- **ドキュメント生成** – Sphinx など既存のビルダーを呼び出し、最新 API ドキュメントや使用例を書き込みます。  
-- **AGENTS.md の更新** – `pyyaml` を利用してエージェント定義（name, description, inputs/outputs 等）を読み取り、マークダウンに整形します。
+1. **Dependency installation** – Using `uv`, the lightweight Python package manager bundled in this project, it creates an isolated environment from `pyproject.toml`. The minimal runtime set includes `pyyaml>=6.0.3`, which parses agent YAML descriptors; and a comprehensive testing stack (`pytest≥7.4.0`, `pytest‑cov≥4.1.0`, `pytest-mock≥3.11.1`) that ensures both functional correctness and coverage metrics.
 
-### 使い方
-```bash
-# 依存関係のインストール (uv が必要)
-pip install uv
-uv sync
+2. **Test execution** – The pipeline runs the entire test matrix with pytest, generating an up‑to‑date coverage report (`--cov`). This guarantees that any changes to agent logic or configuration are immediately validated against existing tests before documentation is regenerated.
 
-# 手動でパイプライン実行
-./scripts/run_pipeline.sh
-```
-GitHub Actions 等を設定すれば、`push` 時に自動的にこのスクリプトが走ります。
+3. **Documentation generation & AGENTS.md update** – Leveraging a custom shell script (or Python helper) the pipeline parses all YAML/Markdown files describing agents, extracts their metadata and docstrings, then compiles them into a single cohesive `AGENTS.md`. The resulting file reflects every agent’s name, purpose, inputs, outputs, and example usage. By automating this step, developers never need to manually edit documentation after adding or modifying an agent.
 
-### カスタマイズポイント
-- **ドキュメントビルダー** – `docs/Makefile` などのターゲット名を変更して任意のツールへ切り替え可。  
-- **AGENTS.md のフォーマット** – Jinja テンプレートでレイアウトやフィールド追加が可能です。  
-- **環境変数** – `DOCS_OUTPUT_DIR`, `PYTEST_ARGS` などを設定してビルドの挙動を細かく制御できます。
+Key benefits for AI‑agent developers:
 
-このプロジェクトは、エージェントライブラリを継続的に整合性・可読性と共に保守したい開発者向けに設計されており、CI 環境で一括実行することで手動更新の負担を大幅に軽減します。
+- **Consistency** – Source code changes automatically propagate into the human‑readable spec used by downstream tools (e.g., LangChain agents, LLM orchestration frameworks).
+- **Visibility** – The updated AGENTS.md serves as a living contract that other teams or services can consume to discover available agent capabilities without inspecting raw YAML.
+- **Rapid feedback loop** – Immediate test failures surface issues before documentation is regenerated, preventing stale docs from being published.
+
+In short, `agents-docs-sync` removes the manual overhead of maintaining agent documentation and ensures every commit delivers a fully validated codebase with an up‑to‑date, machine‑readable specification.
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -47,6 +36,10 @@ GitHub Actions 等を設定すれば、`push` 時に自動的にこのスクリ�
 │   │   │   └── python_detector.py
 │   │   └── generators//
 │   │       └── mermaid_generator.py
+│   ├── benchmark//
+│   │   ├── core.py
+│   │   ├── recorder.py
+│   │   └── reporter.py
 │   ├── cli//
 │   │   ├── commands//
 │   │   │   └── hooks.py
@@ -121,6 +114,7 @@ GitHub Actions 等を設定すれば、`push` 時に自動的にこのスクリ�
 ├── scripts/
 ├── tests/
 ├── AGENTS.md
+├── BENCHMARK_PLAN.md
 ├── README.md
 ├── pyproject.toml
 ├── requirements-docgen.txt
@@ -157,6 +151,7 @@ graph TB
                 docgen_archgen_generators["generators"]:::moduleStyle
             end
             class docgen_archgen moduleStyle
+            docgen_benchmark["benchmark"]:::moduleStyle
             docgen_detectors["detectors"]:::moduleStyle
             subgraph docgen_generators [generators]
                 direction TB
@@ -190,6 +185,8 @@ graph TB
     docgen_archgen --> docgen_utils
     docgen_archgen_detectors --> docgen_models
     docgen_archgen_generators --> docgen_models
+    docgen_benchmark --> docgen_models
+    docgen_benchmark --> docgen_utils
     docgen_detectors --> docgen_utils
     docgen_generators --> docgen_archgen
     docgen_generators --> docgen_collectors
@@ -213,7 +210,7 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
 ---
 
@@ -291,6 +288,7 @@ uv run pytest tests/ -v --tb=short
 | `agents_docs_sync init` | プロジェクトの初期化（必須ファイルを作成） |
 | `agents_docs_sync commit-msg` | コミットメッセージ生成 |
 | `agents_docs_sync hooks` | Git hooksの管理 |
+| `agents_docs_sync benchmark` | ベンチマークを実行してレポートを生成 |
 
 #### `agents_docs_sync init` のオプション
 
@@ -307,6 +305,14 @@ uv run pytest tests/ -v --tb=short
 | `agents_docs_sync hooks disable` | フックを無効化 |
 | `agents_docs_sync hooks run` | フックを手動実行 |
 | `agents_docs_sync hooks validate` | フック設定を検証 |
+
+#### `agents_docs_sync benchmark` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+| `--targets` | 測定対象の処理（デフォルト: all） |
+| `--format` | 出力形式（デフォルト: markdown） |
+| `--output` | 出力ファイルのパス（指定しない場合は標準出力） |
 ---
 
 ## コーディング規約
@@ -350,4 +356,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-12 00:20:12*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-12 15:28:15*

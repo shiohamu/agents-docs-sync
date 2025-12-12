@@ -23,6 +23,7 @@ graph TB
                 docgen_archgen_generators["generators"]:::moduleStyle
             end
             class docgen_archgen moduleStyle
+            docgen_benchmark["benchmark"]:::moduleStyle
             docgen_detectors["detectors"]:::moduleStyle
             subgraph docgen_generators [generators]
                 direction TB
@@ -56,6 +57,8 @@ graph TB
     docgen_archgen --> docgen_utils
     docgen_archgen_detectors --> docgen_models
     docgen_archgen_generators --> docgen_models
+    docgen_benchmark --> docgen_models
+    docgen_benchmark --> docgen_utils
     docgen_detectors --> docgen_utils
     docgen_generators --> docgen_archgen
     docgen_generators --> docgen_collectors

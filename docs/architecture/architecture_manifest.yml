@@ -13,6 +13,7 @@ services:
   - openai
   - outlines
   - pip-licenses
+  - psutil
   - pydantic
   - pytest
   - pytest-cov
@@ -111,6 +112,15 @@ services:
         dependencies:
         - models
         submodules: []
+    - name: benchmark
+      path: !!python/object/apply:pathlib.PosixPath
+      - docgen
+      - benchmark
+      is_package: true
+      dependencies:
+      - models
+      - utils
+      submodules: []
     - name: detectors
       path: !!python/object/apply:pathlib.PosixPath
       - docgen
