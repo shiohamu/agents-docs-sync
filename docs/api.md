@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 00:19:18
+自動生成日時: 2025-12-12 14:38:08
 
 ---
 
@@ -353,109 +353,6 @@ def scan(self) -> ArchitectureManifest:
 プロジェクトをスキャン
 
 *定義場所: docgen/archgen/scanner.py:22*
-
----
-
-
-## docgen/cli/base_command.py
-
-### BaseCommand
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class BaseCommand:
-```
-
-**説明**:
-
-CLIコマンドの基底クラス
-
-*定義場所: docgen/cli/base_command.py:12*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, project_root: Path):
-```
-
-**説明**:
-
-初期化
-
-Args:
-    project_root: プロジェクトのルートディレクトリ
-
-*定義場所: docgen/cli/base_command.py:15*
-
----
-
-### execute
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def execute(self, args: Any) -> int:
-```
-
-**説明**:
-
-コマンドを実行
-
-Args:
-    args: コマンドライン引数
-
-Returns:
-    終了コード（0: 成功, 1: 失敗）
-
-*定義場所: docgen/cli/base_command.py:25*
-
----
-
-### get_name
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_name(self) -> str:
-```
-
-**説明**:
-
-コマンド名を取得
-
-Returns:
-    コマンド名
-
-*定義場所: docgen/cli/base_command.py:38*
-
----
-
-### get_help
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def get_help(self) -> str:
-```
-
-**説明**:
-
-ヘルプメッセージを取得
-
-Returns:
-    ヘルプメッセージ
-
-*定義場所: docgen/cli/base_command.py:48*
 
 ---
 
@@ -1093,6 +990,65 @@ Detect programming language from configuration files.
 
 ---
 
+### TestingCommandScanner
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TestingCommandScanner:
+```
+
+**説明**:
+
+Test command scanner class
+
+*定義場所: docgen/collectors/collector_utils.py:203*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, package_managers: dict[str, str] | None, logger: Any | None):
+```
+
+**説明**:
+
+Initialize
+
+Args:
+    project_root: Project root directory
+    package_managers: Dictionary of detected package managers
+    logger: Logger instance
+
+*定義場所: docgen/collectors/collector_utils.py:212*
+
+---
+
+### collect_test_commands
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def collect_test_commands(self) -> list[str]:
+```
+
+**説明**:
+
+Collect test commands
+
+Returns:
+    List of test commands
+
+*定義場所: docgen/collectors/collector_utils.py:231*
+
+---
+
 
 ## docgen/collectors/command_help_extractor.py
 
@@ -1642,68 +1598,6 @@ Returns:
     プロジェクト構造の辞書
 
 *定義場所: docgen/collectors/structure_analyzer.py:143*
-
----
-
-
-## docgen/collectors/test_command_collector.py
-
-### TestingCommandScanner
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class TestingCommandScanner:
-```
-
-**説明**:
-
-Test command scanner class
-
-*定義場所: docgen/collectors/test_command_collector.py:14*
-
----
-
-### __init__
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def __init__(self, project_root: Path, package_managers: dict[str, str] | None, logger: Any | None):
-```
-
-**説明**:
-
-Initialize
-
-Args:
-    project_root: Project root directory
-    package_managers: Dictionary of detected package managers
-    logger: Logger instance
-
-*定義場所: docgen/collectors/test_command_collector.py:23*
-
----
-
-### collect_test_commands
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def collect_test_commands(self) -> list[str]:
-```
-
-**説明**:
-
-Collect test commands
-
-Returns:
-    List of test commands
-
-*定義場所: docgen/collectors/test_command_collector.py:42*
 
 ---
 
@@ -8875,7 +8769,7 @@ Args:
 Returns:
     Outlinesを使用するかどうか
 
-*定義場所: docgen/utils/outlines_utils.py:19*
+*定義場所: docgen/utils/outlines_utils.py:17*
 
 ---
 
@@ -8899,54 +8793,7 @@ Args:
 Returns:
     Outlinesモデルインスタンス（作成できない場合はNone）
 
-*定義場所: docgen/utils/outlines_utils.py:37*
-
----
-
-### get_llm_client_with_fallback
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def get_llm_client_with_fallback(config: dict[str, Any], agents_config: dict[str, Any]):
-```
-
-**説明**:
-
-LLMクライアントを取得（フォールバック付き）
-
-Args:
-    config: メイン設定
-    agents_config: AGENTS設定
-
-Returns:
-    LLMクライアントインスタンス
-
-*定義場所: docgen/utils/outlines_utils.py:84*
-
----
-
-### validate_output
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def validate_output(text: str) -> bool:
-```
-
-**説明**:
-
-LLMの出力を検証して、不適切な内容が含まれていないかチェック
-
-Args:
-    text: 検証するテキスト
-
-Returns:
-    検証に合格したかどうか
-
-*定義場所: docgen/utils/outlines_utils.py:103*
+*定義場所: docgen/utils/outlines_utils.py:35*
 
 ---
 
@@ -9084,23 +8931,5 @@ def main():
 メイン処理
 
 *定義場所: scripts/generate_requirements.py:74*
-
----
-
-
-## test_argparse_inspect.py
-
-### inspect_parser
-
-**型**: `function`
-
-**シグネチャ**:
-```
-def inspect_parser():
-```
-
-*説明なし*
-
-*定義場所: test_argparse_inspect.py:3*
 
 ---

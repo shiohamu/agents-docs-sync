@@ -80,7 +80,7 @@ class LLMService:
         Returns:
             Outlinesを使用するかどうか
         """
-        from docgen.generators.utils.outlines_utils import should_use_outlines
+        from docgen.utils.outlines_utils import should_use_outlines
 
         return should_use_outlines(self.agents_config)
 
@@ -94,7 +94,7 @@ class LLMService:
         Returns:
             Outlinesモデル（サポートされない場合はNone）
         """
-        from docgen.generators.utils.outlines_utils import create_outlines_model
+        from docgen.utils.outlines_utils import create_outlines_model
 
         return create_outlines_model(client)
 

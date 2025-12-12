@@ -43,7 +43,7 @@ class ProjectInfoCollector:
         from .dependency_collector import DependencyCollector
         from .language_info_collector import LanguageInfoCollector
         from .structure_analyzer import StructureAnalyzer
-        from .test_command_collector import TestingCommandScanner
+        from .collector_utils import TestingCommandScanner
 
         self.build_collector = BuildCommandCollector(project_root, package_managers)
         self.dependency_collector = DependencyCollector(project_root, logger=self.logger)
