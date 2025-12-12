@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 19:56:22
+自動生成日時: 2025-12-12 20:11:53
 
 ---
 
@@ -3460,7 +3460,7 @@ Args:
     max_file_size: スキップする最大ファイルサイズ（バイト、デフォルト: 10MB）
                   大きなファイルは検出対象外として扱う
 
-*定義場所: docgen/detectors/detector_patterns.py:297*
+*定義場所: docgen/detectors/detector_patterns.py:298*
 
 ---
 
@@ -3477,7 +3477,7 @@ def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
 
 Check if a path should be excluded from detection.
 
-*定義場所: docgen/detectors/detector_patterns.py:345*
+*定義場所: docgen/detectors/detector_patterns.py:346*
 
 ---
 
@@ -3501,7 +3501,7 @@ Args:
 Returns:
     Package manager name or None
 
-*定義場所: docgen/detectors/detector_patterns.py:355*
+*定義場所: docgen/detectors/detector_patterns.py:356*
 
 ---
 
@@ -3518,7 +3518,7 @@ def is_js_config_or_test(cls, file_path: Path) -> bool:
 
 Check if a file is likely a JavaScript config or test file.
 
-*定義場所: docgen/detectors/detector_patterns.py:376*
+*定義場所: docgen/detectors/detector_patterns.py:377*
 
 ---
 
@@ -3539,7 +3539,7 @@ Args:
     project_root: If provided, clear cache for this project only.
                  If None, clear all caches.
 
-*定義場所: docgen/detectors/detector_patterns.py:382*
+*定義場所: docgen/detectors/detector_patterns.py:383*
 
 ---
 
@@ -3556,7 +3556,7 @@ def detect_python_package_manager(cls, project_root: Path) -> str | None:
 
 Detect Python package manager with special handling for pyproject.toml.
 
-*定義場所: docgen/detectors/detector_patterns.py:399*
+*定義場所: docgen/detectors/detector_patterns.py:400*
 
 ---
 
@@ -7392,7 +7392,7 @@ def __init__(self, config: dict[str, Any] | None):
 Args:
     config: RAG設定（config.toml の rag セクション）
 
-*定義場所: docgen/rag/chunker.py:44*
+*定義場所: docgen/rag/chunker.py:48*
 
 ---
 
@@ -7415,7 +7415,7 @@ Args:
 Returns:
     処理すべき場合True
 
-*定義場所: docgen/rag/chunker.py:62*
+*定義場所: docgen/rag/chunker.py:74*
 
 ---
 
@@ -7439,7 +7439,7 @@ Args:
 Returns:
     チャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:130*
+*定義場所: docgen/rag/chunker.py:142*
 
 ---
 
@@ -7462,7 +7462,7 @@ Args:
 Returns:
     すべてのチャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:165*
+*定義場所: docgen/rag/chunker.py:177*
 
 ---
 
@@ -7575,7 +7575,7 @@ def embed_batch(self, texts: list[str], batch_size: int) -> np.ndarray:
 
 **説明**:
 
-複数のテキストをバッチ処理で埋め込み
+複数のテキストをバッチ処理で埋め込み（キャッシュ対応）
 
 Args:
     texts: 入力テキストのリスト
@@ -8819,6 +8819,156 @@ def __init__(self, message: str, template_name: str | None):
 *説明なし*
 
 *定義場所: docgen/utils/exceptions.py:174*
+
+---
+
+
+## docgen/utils/file_scanner.py
+
+### UnifiedFileScanner
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class UnifiedFileScanner:
+```
+
+**説明**:
+
+プロジェクト全体を一度だけ走査して、必要な情報を収集するクラス
+
+*定義場所: docgen/utils/file_scanner.py:16*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, exclude_dirs: set[str] | None, exclude_files: set[str] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    exclude_dirs: 除外するディレクトリ名のセット
+    exclude_files: 除外するファイル名のセット
+
+*定義場所: docgen/utils/file_scanner.py:19*
+
+---
+
+### scan_once
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def scan_once(self) -> dict[str, Any]:
+```
+
+**説明**:
+
+一度だけ走査して結果をキャッシュ
+
+Returns:
+    走査結果の辞書:
+    - 'files_by_extension': 拡張子ごとのファイルリスト
+    - 'all_files': すべてのファイルのリスト
+    - 'files_by_relative_path': 相対パス -> 絶対パスのマッピング
+
+*定義場所: docgen/utils/file_scanner.py:41*
+
+---
+
+### get_files_by_extensions
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_files_by_extensions(self, extensions: set[str] | list[str]) -> list[tuple[Path, Path]]:
+```
+
+**説明**:
+
+指定された拡張子のファイルを取得
+
+Args:
+    extensions: 拡張子のセットまたはリスト（例: {'.py', '.js'}）
+
+Returns:
+    (絶対パス, 相対パス) のタプルのリスト
+
+*定義場所: docgen/utils/file_scanner.py:138*
+
+---
+
+### get_all_files
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_all_files(self) -> list[tuple[Path, Path]]:
+```
+
+**説明**:
+
+すべてのファイルを取得
+
+Returns:
+    (絶対パス, 相対パス) のタプルのリスト
+
+*定義場所: docgen/utils/file_scanner.py:167*
+
+---
+
+### clear_cache
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def clear_cache(self):
+```
+
+**説明**:
+
+キャッシュをクリア（再スキャンが必要な場合）
+
+*定義場所: docgen/utils/file_scanner.py:187*
+
+---
+
+### get_unified_scanner
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def get_unified_scanner(project_root: Path, exclude_dirs: set[str] | None, exclude_files: set[str] | None) -> UnifiedFileScanner:
+```
+
+**説明**:
+
+統一ファイルスキャナーのインスタンスを取得（シングルトン的な動作）
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    exclude_dirs: 除外するディレクトリ名のセット
+    exclude_files: 除外するファイル名のセット
+
+Returns:
+    UnifiedFileScannerインスタンス
+
+*定義場所: docgen/utils/file_scanner.py:199*
 
 ---
 

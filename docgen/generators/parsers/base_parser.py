@@ -167,10 +167,12 @@ class BaseParser(ABC):
                         and not d.endswith(".egg-info")
                     ]
 
-                    # パスベースの除外チェック
+                    # パスベースの除外チェック（セット検索でO(1)）
                     try:
                         rel_path = root_path.relative_to(project_root_resolved)
-                        if any(excluded in rel_path.parts for excluded in exclude_dirs):
+                        # セットのintersectionを使用して高速チェック
+                        exclude_dirs_set = set(exclude_dirs)
+                        if exclude_dirs_set.intersection(rel_path.parts):
                             dirs[:] = []  # このディレクトリ以下をスキップ
                             continue
                         if any(part.endswith(".egg-info") for part in rel_path.parts):

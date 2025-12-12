@@ -258,11 +258,12 @@ class DetectorPatterns:
                     if d not in cls.EXCLUDE_DIRS and not d.startswith(".")
                 ]
 
-                # パスベースの除外チェック
+                # パスベースの除外チェック（セット検索でO(1)）
                 root_path = Path(root)
                 try:
                     rel_path = root_path.relative_to(project_root)
-                    if any(part in cls.EXCLUDE_DIRS for part in rel_path.parts):
+                    # セットのintersectionを使用して高速チェック
+                    if cls.EXCLUDE_DIRS.intersection(rel_path.parts):
                         dirs[:] = []  # このディレクトリ以下をスキップ
                         continue
                 except ValueError:

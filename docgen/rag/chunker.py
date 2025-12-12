@@ -26,7 +26,7 @@ class CodeChunker:
         r".*token.*\.json$",
     ]
 
-    # 無視すべきディレクトリ
+    # 無視すべきディレクトリ（セットで高速検索）
     IGNORE_DIRS = {
         ".git",
         ".venv",
@@ -40,6 +40,10 @@ class CodeChunker:
         "coverage",
         "docgen/index",  # インデックスディレクトリ自体を除外
     }
+
+    # 除外ディレクトリを分類（効率化のため）
+    _exact_dir_names: set[str] = set()  # 完全一致チェック用
+    _path_patterns: set[str] = set()  # パスパターンチェック用
 
     def __init__(self, config: dict[str, Any] | None = None):
         """
@@ -58,6 +62,14 @@ class CodeChunker:
 
         # 除外ファイル名リスト
         self.exclude_files = self.config.get("exclude_files", ["README.md", "AGENTS.md"])
+
+        # 除外ディレクトリを分類（効率化のため）
+        if not self._exact_dir_names:  # クラス変数の初期化（一度だけ）
+            for d in self.IGNORE_DIRS:
+                if "/" not in d:
+                    self._exact_dir_names.add(d)
+                else:
+                    self._path_patterns.add(d)
 
     def should_process_file(self, file_path: Path) -> bool:
         """
@@ -182,8 +194,11 @@ class CodeChunker:
             # 相対パスでチェックする必要があるため、少し工夫が必要
             # ここでは単純なディレクトリ名チェックと、パスチェックを行う
 
-            # 1. ディレクトリ名でフィルタリング
-            dirs[:] = [d for d in dirs if d not in self.IGNORE_DIRS and not d.startswith(".")]
+            # 1. ディレクトリ名でフィルタリング（O(1)のセット検索）
+            dirs[:] = [
+                d for d in dirs
+                if d not in self._exact_dir_names and not d.startswith(".")
+            ]
 
             # 2. パスベースのフィルタリング（docgen/indexのようなネストされたパス用）
             # os.walkのdirsはディレクトリ名のみなので、ここで削除するとその下には行かない
@@ -193,14 +208,23 @@ class CodeChunker:
             valid_dirs = []
             for d in dirs:
                 dir_path = Path(root) / d
-                rel_path = dir_path.relative_to(project_root)
-                if str(rel_path) in self.IGNORE_DIRS:
+                try:
+                    rel_path = dir_path.relative_to(project_root)
+                    rel_str = str(rel_path)
+
+                    # 完全一致チェック（O(1)）
+                    if rel_str in self.IGNORE_DIRS:
+                        continue
+
+                    # パスパターンチェック（必要な場合のみ）
+                    if self._path_patterns:
+                        for pattern in self._path_patterns:
+                            if rel_str.startswith(pattern):
+                                continue
+                except ValueError:
+                    # プロジェクトルート外の場合はスキップ
                     continue
-                # docgen/index のようなパスが含まれるかチェック
-                if any(
-                    str(rel_path).startswith(ignore) for ignore in self.IGNORE_DIRS if "/" in ignore
-                ):
-                    continue
+
                 valid_dirs.append(d)
             dirs[:] = valid_dirs
 

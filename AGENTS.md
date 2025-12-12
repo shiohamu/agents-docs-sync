@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-12 19:57:38
+自動生成日時: 2025-12-12 20:12:41
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,35 +12,20 @@
 <!-- MANUAL_END:description -->
 
 
-このリポジトリは、コミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md の更新を行うパイプラインです。  
-主な構成要素とフローは以下の通りです。
+agents-docs-sync は、コードベースに対する継続的な品質保証とドキュメント管理を自動化したパイプラインです。  
+リポジトリへのコミットが検知されるたびに以下の処理が順次実行されます。
 
-- **Python & Shell スクリプティング** – `agents-docs-sync/` 配下に、テスト実行 (`run_tests.py`) とドキュメント生成・AGENTS.md 更新処理(`update_agents_md.sh`) を担うスクリプトが置かれています。  
-- **パッケージ管理は uv** – ルートの `pyproject.toml` に依存関係を宣言し、CI/ローカル環境で `uv sync --dev` を実行して一括インストールします。主要ライブラリは次のとおりです  
-  - `pytest`, `pytest-cov`: テストスイートとカバレッジ計測  
-  - `pyyaml >=6.0.3`: AGENTS.md の自動生成に利用する YAML 設定ファイルをパース  
-- **CI/CD ワークフロー** – GitHub Actions が想定されており、`on: push` トリガーで以下のステップが走ります。  
-  1. `uv sync --dev` で環境構築  
-  2. `pytest --cov=agents_docs_sync tests/` によりテスト実行とカバレッジ取得（最低90% を満たさない場合は失敗）  
-  3. ドキュメント生成 (`mkdocs build` または Sphinx) – 必要に応じて `make docs` でビルド。  
-  4. `update_agents_md.sh` がプロジェクト内の YAML/Markdown をスキャンし、AGENTS.md の特定セクション（<!-- AGENT_START --> / <!-- AGENT_END -->）を差し替えて最新状態に保つ。  
+1. **テストスイート** – `pytest` を用いてユニット・統合テストを走らせ、コード変更によって既存機能が破壊されていないか確認します。  
+2. **カバレッジ計測** – `pytest-cov` によりコードの実行率を算出し、品質メトリクスとして報告します。  
+3. **モックテスト支援** – `pytest-mock` を利用して外部依存や副作用がある部分を安全に検証できます。  
+4. **ドキュメント生成** – ソースコードの docstring や YAML 設定から API ドキュメント（Sphinx/MkDocs 等）をビルドし、最新情報を反映させます。  
+5. **AGENTS.md の自動更新** – パイプライン内で解析された AI エージェント一覧や設定値を `AGENTS.md` に書き込み、新しいエージェントが追加・削除されてもドキュメントは常に同期します。
 
-- **ローカルでの実行** –  
-  ```bash
-  uv sync --dev          # 必要なパッケージをインストール
-  make all               # tests + docs + update_agents_md を一括実行
-  ```
-  `Makefile` は上記コマンドを簡易化しており、CI でも同じ手順が再現できます。  
+パッケージ管理には **uv** を採用し、以下の主要ライブラリで構成されています。  
+- `pyyaml>=6.0.3` – YAML 設定ファイル解析  
+- `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`
 
-- **ドキュメント生成の仕組み** – YAML 設定ファイル（例: `agents.yaml`）に各エージェントのメタ情報(名前・説明・使用ライブラリ)を記載し、Python スクリプトでそれらをパースして Markdown を作成します。これによりコードベースとドキュメントが一貫した形で同期されます。
-
-- **カバレッジ設定** – `pytest.ini` には `--cov-fail-under=90` が定義されており、テストの品質を保つため最低限度を設けています。  
-
-- **拡張性** –  
-  - 新しいエージェントが追加されたら YAML に記載し、同じく自動生成ロジックで AGENTS.md が更新されます。  
-  - `make docs` の実行ディレクトリや出力先は環境変数 (`DOCS_DIR`) で制御可能です。
-
-このパイプラインを利用することで、コード変更に伴うドキュメントの手動更新作業が不要になり、一貫性と品質保証（テスト・カバレッジ）が同時に確保されます。
+このプロジェクトは、Python で書かれたスクリプトとシェルコマンドを組み合わせており、CI/CD 環境（GitHub Actions 等）への統合が容易です。コミットごとの自動化により、人為的なドキュメント更新ミスやテスト抜け漏れのリスクを低減し、大規模開発でも一貫した品質と可視性を保つことができます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -117,6 +102,7 @@
 │   │   │   └── local_client.py
 │   │   ├── cache.py
 │   │   ├── exceptions.py
+│   │   ├── file_scanner.py
 │   │   ├── file_utils.py
 │   │   └── prompt_loader.py
 │   ├── config.toml
@@ -129,7 +115,9 @@
 ├── scripts/
 ├── tests/
 ├── AGENTS.md
+├── ALGORITHM_IMPROVEMENTS.md
 ├── BENCHMARK_PLAN.md
+├── IMPLEMENTATION_SUMMARY.md
 ├── README.md
 ├── benchmark.old.md
 ├── pyproject.toml
@@ -187,6 +175,7 @@ graph TB
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
+    docgen_utils --> docgen_detectors
     docgen_utils --> docgen_models
     docgen_utils_llm --> docgen_models
     docgen_cli --> docgen_archgen
@@ -374,4 +363,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-12 19:57:38*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-12 20:12:41*

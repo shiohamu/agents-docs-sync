@@ -87,7 +87,7 @@ class Embedder:
 
     def embed_batch(self, texts: list[str], batch_size: int = 32) -> np.ndarray:
         """
-        複数のテキストをバッチ処理で埋め込み
+        複数のテキストをバッチ処理で埋め込み（キャッシュ対応）
 
         Args:
             texts: 入力テキストのリスト
@@ -98,14 +98,48 @@ class Embedder:
         """
         self.logger.info(f"Embedding {len(texts)} texts with batch size {batch_size}")
 
-        embeddings = self.model.encode(
-            texts,
-            batch_size=batch_size,
-            show_progress_bar=True,
-            convert_to_numpy=True,
-        )
+        # キャッシュをチェック
+        embeddings_dict: dict[int, np.ndarray] = {}
+        texts_to_embed = []
+        indices_to_embed = []
 
-        return embeddings
+        for i, text in enumerate(texts):
+            cache_key = self._get_cache_key(text)
+            cached = self._get_from_cache(cache_key)
+            if cached is not None:
+                embeddings_dict[i] = cached
+            else:
+                texts_to_embed.append(text)
+                indices_to_embed.append(i)
+
+        # 未キャッシュのテキストのみバッチ処理
+        if texts_to_embed:
+            self.logger.debug(
+                f"Cache hit: {len(embeddings_dict)}/{len(texts)}, "
+                f"miss: {len(texts_to_embed)}/{len(texts)}"
+            )
+            new_embeddings = self.model.encode(
+                texts_to_embed,
+                batch_size=batch_size,
+                show_progress_bar=len(texts_to_embed) > batch_size,
+                convert_to_numpy=True,
+            )
+
+            # キャッシュに保存
+            for text, embedding in zip(texts_to_embed, new_embeddings, strict=True):
+                cache_key = self._get_cache_key(text)
+                self._save_to_cache(cache_key, embedding)
+
+            # インデックスと埋め込みをマッピング
+            for idx, emb in zip(indices_to_embed, new_embeddings, strict=True):
+                embeddings_dict[idx] = emb
+        else:
+            self.logger.debug(f"All {len(texts)} texts found in cache")
+
+        # インデックス順にソートして返す
+        sorted_indices = sorted(embeddings_dict.keys())
+        embeddings_list = [embeddings_dict[i] for i in sorted_indices]
+        return np.array(embeddings_list)
 
     def _get_cache_key(self, text: str) -> str:
         """テキストからキャッシュキーを生成"""

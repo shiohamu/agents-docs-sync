@@ -46,6 +46,7 @@ graph TB
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
+    docgen_utils --> docgen_detectors
     docgen_utils --> docgen_models
     docgen_utils_llm --> docgen_models
     docgen_cli --> docgen_archgen

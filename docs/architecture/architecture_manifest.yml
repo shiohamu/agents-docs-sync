@@ -44,6 +44,7 @@ services:
       - utils
       is_package: true
       dependencies:
+      - detectors
       - models
       submodules:
       - name: llm

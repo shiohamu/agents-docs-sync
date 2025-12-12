@@ -8,97 +8,40 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-このリポジトリは、**agents-docs-sync** という名前の自動化パイプラインを提供します。  
-コミットごとに以下の処理が実行されるよう設計されています。
+`agents-docs-sync` は、リポジトリにコミットがプッシュされるたびに自動で以下のタスクを実行するパイプラインです。
 
-- **テスト実行** – `pytest` を用いて単体・統合テストを走らせ、カバレッジは `coverage.py` で測定。
-- **ドキュメント生成** – ソースコードの docstring や Markdown ファイルから最新の API ドキュメント（Sphinx / MkDocs 等）をビルド。  
-- **AGENTS.md の更新** – プロジェクト内に存在するエージェント実装ファイル (`agents/*.py`) をスキャンし、名前・概要・使用方法などを抽出して `AGENTS.md` に自動反映。
+- **テスト実行**  
+  `pytest`（バージョン7.4+）と `pytest-cov`, `pytest-mock` を使い、コードベース全体のユニット・統合テストを走らせます。カバレッジ計測は最低限の閾値に達しているか確認し、不足があればビルド失敗とします。
 
-## 技術スタック
+- **ドキュメント生成**  
+  ソースコード中のdocstringや設定ファイルから Markdown / reStructuredText を自動で作成し、`docs/` ディレクトリへ出力。必要に応じて `mkdocs` や `sphinx-build` のようなツールを利用します。
 
-| カテゴリ | ツール / ライブラリ |
-|----------|--------------------|
-| **言語** | Python 3.11+, Bash (Shell) |
-| **パッケージ管理** | uv（Python の高速なインストーラ） |
-| **テスティング** | `pytest`、`pytest-cov`、`pytest-mock` |
-| **ドキュメント生成** | Sphinx / MkDocs など (設定は `docs/conf.py`) |
-| **CI/CD** | GitHub Actions（または任意の CI サーバ） |
+- **AGENTS.md 自動更新**  
+  エージェントの定義（名前・バージョン・依存関係など）が変更された際、専用スクリプトが走り最新情報に基づいて `AGENTS.md` を再生成。これによりドキュメントと実装コード間で整合性を保ちます。
 
-## 主な依存関係
+- **環境構築**  
+  Python は `uv`（パッケージマネージャ）で管理し、依存関係は `pyproject.toml` に記述します。主要ライブラリとして
+  - `pyyaml >=6.0.3`
+  - `pytest >=7.4.0`
+  - `pytest-cov >=4.1.0`
+  - `pytest-mock >=3.11.1`
 
-```toml
-[project]
-dependencies = [
-    "pyyaml>=6.0.3",
-    "pytest>=7.4.0",
-    "pytest-cov>=4.1.0",
-    "pytest-mock>=3.11.1",
-]
-```
+- **スクリプト構成**  
+  プロジェクトルートにある `scripts/` フォルダには、テスト実行 (`run_tests.sh`)、ドキュメント生成 (`build_docs.sh`) 、AGENTS.md 更新 (`update_agents.sh`) の各シェルスクリプトが格納されています。CI 環境ではこれらを連鎖的に呼び出すことで一貫したビルドプロセスを実現しています。
 
-## ワークフロー概要
+- **使い方**  
+  ```bash
+  # 開発環境のセットアップ（uv がインストールされている前提）
+  uv sync          # 必要なパッケージをインストール
 
-```text
-┌───────────────────────┐
-│ ① Git コミット (push) │
-├───────────────▲─────────┤
-│               │         │
-│   ──> CI パイプライン実行 │
-│               ▼         │
-├─────┬───────▼─────┬──────┘
-│     │             │     
-│ ② テスト      │ ③ ドキュメント生成  
-│     │             │     
-│   ──> 結果確認    │   └─→ docs/ に出力   
-├──────────────▲───────────────────────┤
-│              │                       │
-│          ④ AGENTS.md 更新            │
-│              ▼                       │
-└───────────────────────────────────────┘
-```
+  # 手動で全タスクを走らせる場合
+  ./scripts/run_tests.sh
+  ./scripts/build_docs.sh
+  ./scripts/update_agents.sh
+  ```
 
-1. **テスト**  
-   `pytest -q --cov=agents` を実行し、失敗があればビルドを停止。カバレッジは 80% 超であることを期待。
-
-2. **ドキュメント生成**  
-   Sphinx の場合: `make html`（または `sphinx-build -b html docs/ _build/html/`）  
-   MkDocs の場合: `mkdocs build`
-
-3. **AGENTS.md 更新**  
-   スクリプト `scripts/update_agents_md.py` がエージェントモジュールを走査し、最新情報でファイルを書き換える。変更があれば Git にコミットされる。
-
-## ローカル実行
-
-```bash
-# 依存関係のインストール（uv のみ）
-$ uv sync --dev
-
-# テストとカバレッジ確認
-$ uv run pytest -q --cov=agents tests/
-
-# ドキュメント生成 (Sphinx)
-$ cd docs && make html
-
-# AGENTS.md 更新
-$ python scripts/update_agents_md.py
-```
-
-## 使い方のヒント
-
-- **CI の設定**  
-  `workflow.yml` を作成し、上記ステップを順に呼び出すことで GitHub Actions 上で自動化できます。  
-
-- **ローカル開発時**  
-  コミット前に手動でパイプラインの各フェーズ（テスト・ドキュメント生成）を実行し、`AGENTS.md` が正しく更新されることを確認してから push。
-
-- **拡張性**  
-  `scripts/` 配下には新しいスクリプトやユーティリティを追加でき、必要に応じて他のドキュメントツール（MkDocs, Mkdocs Material）へ切り替えるだけで動作します。  
-
----
-
-このプロジェクトは、**コードベースとドキュメントが常に同期した状態を保つこと** を主眼として設計されました。  
-開発者の手間を最小化しながら品質保証（テスト）・情報共有（docs/AGENTS.md）の両立を実現しています。<!-- MANUAL_START:architecture -->
+- **CI / GitHub Actions**  
+  `ci.yml`（または同等のワークフロー）では、プッシュ時に上記スクリプトを順次実行し、テスト失敗やドキュメント差分がある場合にはビルドを失敗させます。これにより、常にコードと文書・エージェント定義の整合性が保証される自動化されたパイプラインが完成します。<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -147,6 +90,7 @@ graph TB
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
+    docgen_utils --> docgen_detectors
     docgen_utils --> docgen_models
     docgen_utils_llm --> docgen_models
     docgen_cli --> docgen_archgen
@@ -281,4 +225,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-12 19:56:31*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-12 20:12:02*
