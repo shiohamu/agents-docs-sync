@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-12 20:11:53
+自動生成日時: 2025-12-17 18:06:13
 
 ---
 
@@ -2989,6 +2989,21 @@ def languages_preferred(self) -> list[str]:
 
 ---
 
+### languages_ignored
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def languages_ignored(self) -> list[str]:
+```
+
+*説明なし*
+
+*定義場所: docgen/config/config_accessor.py:226*
+
+---
+
 
 ## docgen/config_manager.py
 
@@ -3369,7 +3384,7 @@ def get_package_files(cls, language: str) -> list[str]:
 
 Get package manager files for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:193*
+*定義場所: docgen/detectors/detector_patterns.py:196*
 
 ---
 
@@ -3386,7 +3401,7 @@ def get_source_extensions(cls, language: str) -> list[str]:
 
 Get source file extensions for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:198*
+*定義場所: docgen/detectors/detector_patterns.py:201*
 
 ---
 
@@ -3403,7 +3418,7 @@ def detect_by_package_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for package manager files.
 
-*定義場所: docgen/detectors/detector_patterns.py:203*
+*定義場所: docgen/detectors/detector_patterns.py:206*
 
 ---
 
@@ -3420,7 +3435,7 @@ def detect_by_source_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for source files.
 
-*定義場所: docgen/detectors/detector_patterns.py:209*
+*定義場所: docgen/detectors/detector_patterns.py:212*
 
 ---
 
@@ -3437,7 +3452,7 @@ def detect_by_source_files_with_exclusions(cls, project_root: Path, language: st
 
 Detect language by checking for source files, excluding common directories.
 
-*定義場所: docgen/detectors/detector_patterns.py:221*
+*定義場所: docgen/detectors/detector_patterns.py:224*
 
 ---
 
@@ -3460,7 +3475,7 @@ Args:
     max_file_size: スキップする最大ファイルサイズ（バイト、デフォルト: 10MB）
                   大きなファイルは検出対象外として扱う
 
-*定義場所: docgen/detectors/detector_patterns.py:298*
+*定義場所: docgen/detectors/detector_patterns.py:303*
 
 ---
 
@@ -3477,7 +3492,7 @@ def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
 
 Check if a path should be excluded from detection.
 
-*定義場所: docgen/detectors/detector_patterns.py:346*
+*定義場所: docgen/detectors/detector_patterns.py:351*
 
 ---
 
@@ -3501,7 +3516,7 @@ Args:
 Returns:
     Package manager name or None
 
-*定義場所: docgen/detectors/detector_patterns.py:356*
+*定義場所: docgen/detectors/detector_patterns.py:361*
 
 ---
 
@@ -3518,7 +3533,7 @@ def is_js_config_or_test(cls, file_path: Path) -> bool:
 
 Check if a file is likely a JavaScript config or test file.
 
-*定義場所: docgen/detectors/detector_patterns.py:377*
+*定義場所: docgen/detectors/detector_patterns.py:382*
 
 ---
 
@@ -3539,7 +3554,47 @@ Args:
     project_root: If provided, clear cache for this project only.
                  If None, clear all caches.
 
-*定義場所: docgen/detectors/detector_patterns.py:383*
+*定義場所: docgen/detectors/detector_patterns.py:388*
+
+---
+
+### set_custom_exclude_dirs
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def set_custom_exclude_dirs(cls, directories: list[str]) -> None:
+```
+
+**説明**:
+
+設定ファイルからのカスタム除外ディレクトリを設定.
+
+Args:
+    directories: 除外するディレクトリ名のリスト
+
+*定義場所: docgen/detectors/detector_patterns.py:406*
+
+---
+
+### get_all_exclude_dirs
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_all_exclude_dirs(cls) -> set[str]:
+```
+
+**説明**:
+
+デフォルトとカスタムの除外ディレクトリをマージして取得.
+
+Returns:
+    除外ディレクトリのセット
+
+*定義場所: docgen/detectors/detector_patterns.py:418*
 
 ---
 
@@ -3556,7 +3611,7 @@ def detect_python_package_manager(cls, project_root: Path) -> str | None:
 
 Detect Python package manager with special handling for pyproject.toml.
 
-*定義場所: docgen/detectors/detector_patterns.py:400*
+*定義場所: docgen/detectors/detector_patterns.py:427*
 
 ---
 
@@ -6488,7 +6543,7 @@ Args:
 Returns:
     検出された言語のリスト
 
-*定義場所: docgen/language_detector.py:56*
+*定義場所: docgen/language_detector.py:67*
 
 ---
 
@@ -6505,7 +6560,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語を取得
 
-*定義場所: docgen/language_detector.py:136*
+*定義場所: docgen/language_detector.py:160*
 
 ---
 
@@ -6522,7 +6577,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:140*
+*定義場所: docgen/language_detector.py:164*
 
 ---
 
@@ -6872,7 +6927,7 @@ class OutputConfig:
 
 Output configuration model.
 
-*定義場所: docgen/models/config.py:18*
+*定義場所: docgen/models/config.py:19*
 
 ---
 
@@ -6889,7 +6944,7 @@ class GenerationConfig:
 
 Generation configuration model.
 
-*定義場所: docgen/models/config.py:26*
+*定義場所: docgen/models/config.py:27*
 
 ---
 
@@ -6906,7 +6961,7 @@ class ExcludeConfig:
 
 Exclude configuration model.
 
-*定義場所: docgen/models/config.py:35*
+*定義場所: docgen/models/config.py:36*
 
 ---
 
@@ -6923,7 +6978,7 @@ class CacheConfig:
 
 Cache configuration model.
 
-*定義場所: docgen/models/config.py:42*
+*定義場所: docgen/models/config.py:43*
 
 ---
 
@@ -6940,7 +6995,7 @@ class BenchmarkConfig:
 
 Benchmark configuration model.
 
-*定義場所: docgen/models/config.py:48*
+*定義場所: docgen/models/config.py:49*
 
 ---
 
@@ -6957,7 +7012,7 @@ class DebugConfig:
 
 Debug configuration model.
 
-*定義場所: docgen/models/config.py:54*
+*定義場所: docgen/models/config.py:55*
 
 ---
 
@@ -6974,7 +7029,7 @@ class EmbeddingConfig:
 
 Embedding configuration model.
 
-*定義場所: docgen/models/config.py:60*
+*定義場所: docgen/models/config.py:61*
 
 ---
 
@@ -6991,7 +7046,7 @@ class IndexConfig:
 
 Index configuration model.
 
-*定義場所: docgen/models/config.py:67*
+*定義場所: docgen/models/config.py:68*
 
 ---
 
@@ -7008,7 +7063,7 @@ class RetrievalConfig:
 
 Retrieval configuration model.
 
-*定義場所: docgen/models/config.py:75*
+*定義場所: docgen/models/config.py:76*
 
 ---
 
@@ -7025,7 +7080,7 @@ class ChunkingConfig:
 
 Chunking configuration model.
 
-*定義場所: docgen/models/config.py:82*
+*定義場所: docgen/models/config.py:83*
 
 ---
 
@@ -7040,7 +7095,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:89*
+*定義場所: docgen/models/config.py:90*
 
 ---
 
@@ -7057,7 +7112,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:101*
+*定義場所: docgen/models/config.py:102*
 
 ---
 
@@ -7074,7 +7129,7 @@ class ArchitecturePythonConfig:
 
 Python architecture configuration.
 
-*定義場所: docgen/models/config.py:113*
+*定義場所: docgen/models/config.py:114*
 
 ---
 
@@ -7091,7 +7146,7 @@ class ArchitectureJavascriptConfig:
 
 JavaScript architecture configuration.
 
-*定義場所: docgen/models/config.py:120*
+*定義場所: docgen/models/config.py:121*
 
 ---
 
@@ -7108,7 +7163,7 @@ class ArchitectureConfig:
 
 Architecture diagram generation configuration.
 
-*定義場所: docgen/models/config.py:126*
+*定義場所: docgen/models/config.py:127*
 
 ---
 
@@ -7125,7 +7180,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:137*
+*定義場所: docgen/models/config.py:138*
 
 ---
 
