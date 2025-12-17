@@ -6,6 +6,7 @@ graph TB
 
     subgraph agents_docs_sync [fa:fa-python agents-docs-sync]
         direction TB
+        exclude_test_dir["exclude_test_dir"]:::moduleStyle
         subgraph docgen [docgen]
             direction TB
             docgen_collectors["collectors"]:::moduleStyle

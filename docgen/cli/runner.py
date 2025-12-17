@@ -123,9 +123,24 @@ class CommandRunner:
 
         def arch_handler(args: Namespace, project_root: Path) -> int:
             from ..archgen.cli import generate_architecture
+            from .. import DocGen
 
-            output_dir = project_root / "docs" / "architecture"
-            success = generate_architecture(project_root, output_dir)
+            # DocGenを初期化して設定をロード
+            docgen = DocGen(project_root=project_root, config_path=getattr(args, "config", None))
+
+            # 設定から出力ディレクトリを取得
+            arch_config = docgen.config.get("architecture", {})
+            output_dir_str = arch_config.get("output_dir", "docs/architecture")
+            output_dir = project_root / output_dir_str
+
+            # 設定から除外ディレクトリを取得
+            exclude_dirs = docgen.config.get("exclude", {}).get("directories", [])
+
+            success = generate_architecture(
+                project_root,
+                output_dir,
+                exclude_directories=exclude_dirs
+            )
             return 0 if success else 1
 
         return arch_handler

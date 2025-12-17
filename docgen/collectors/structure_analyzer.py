@@ -15,8 +15,8 @@ from .base_collector import BaseCollector
 class StructureAnalyzer(BaseCollector[dict[str, Any]]):
     """プロジェクト構造分析クラス"""
 
-    # 除外するディレクトリ
-    IGNORE_DIRS = {
+    # デフォルトの除外ディレクトリ
+    DEFAULT_IGNORE_DIRS = {
         ".git",
         ".venv",
         "venv",
@@ -47,6 +47,26 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
 
     # 構造に含める設定ファイルの拡張子
     CONFIG_EXTENSIONS = {".md", ".yaml", ".yml", ".toml", ".json", ".txt", ".sh"}
+
+    def __init__(
+        self,
+        project_root: Path,
+        logger: Any | None = None,
+        exclude_directories: list[str] | None = None,
+    ):
+        """
+        初期化
+
+        Args:
+            project_root: プロジェクトのルートディレクトリ
+            logger: ロガーインスタンス
+            exclude_directories: 除外するディレクトリのリスト（追加分）
+        """
+        super().__init__(project_root, logger)
+        # カスタム除外ディレクトリをデフォルトに追加
+        self.ignore_dirs = self.DEFAULT_IGNORE_DIRS.copy()
+        if exclude_directories:
+            self.ignore_dirs.update(exclude_directories)
 
     def collect(self, max_depth: int = 3) -> dict[str, Any]:
         """
@@ -110,7 +130,7 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
             items = sorted(directory.iterdir(), key=lambda x: (not x.is_dir(), x.name))
 
             for item in items:
-                if item.name in self.IGNORE_DIRS or item.name.startswith("."):
+                if item.name in self.ignore_dirs or item.name.startswith("."):
                     continue
 
                 if item.is_dir():
@@ -156,7 +176,7 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
             items = sorted(self.project_root.iterdir(), key=lambda x: (not x.is_dir(), x.name))
 
             for item in items:
-                if item.name in self.IGNORE_DIRS or item.name.startswith("."):
+                if item.name in self.ignore_dirs or item.name.startswith("."):
                     continue
 
                 if item.is_dir():

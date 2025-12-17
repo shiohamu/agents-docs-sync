@@ -25,6 +25,7 @@ class ProjectInfoCollector:
         project_root: Path,
         package_managers: dict[str, str] | None = None,
         logger: Any | None = None,
+        exclude_directories: list[str] | None = None,
     ):
         """
         初期化
@@ -33,6 +34,7 @@ class ProjectInfoCollector:
             project_root: プロジェクトのルートディレクトリ
             package_managers: 言語ごとのパッケージマネージャ辞書
             logger: ロガーインスタンス
+            exclude_directories: 除外するディレクトリのリスト
         """
         self.project_root: Path = project_root
         self.package_managers = package_managers or {}
@@ -40,10 +42,10 @@ class ProjectInfoCollector:
 
         # Initialize sub-collectors
         from .coding_standards_collector import CodingStandardsCollector
+        from .collector_utils import TestingCommandScanner
         from .dependency_collector import DependencyCollector
         from .language_info_collector import LanguageInfoCollector
         from .structure_analyzer import StructureAnalyzer
-        from .collector_utils import TestingCommandScanner
 
         self.build_collector = BuildCommandCollector(project_root, package_managers)
         self.dependency_collector = DependencyCollector(project_root, logger=self.logger)
@@ -51,7 +53,9 @@ class ProjectInfoCollector:
             project_root, package_managers, logger=self.logger
         )
         self.coding_standards_collector = CodingStandardsCollector(project_root, logger=self.logger)
-        self.structure_analyzer = StructureAnalyzer(project_root, logger=self.logger)
+        self.structure_analyzer = StructureAnalyzer(
+            project_root, logger=self.logger, exclude_directories=exclude_directories
+        )
         self.language_info_collector = LanguageInfoCollector(project_root, logger=self.logger)
 
     def collect_all(self) -> ProjectInfo:

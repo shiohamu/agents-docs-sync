@@ -23,6 +23,12 @@ services:
   - sentence-transformers
   - torch
   modules:
+  - name: exclude_test_dir
+    path: !!python/object/apply:pathlib.PosixPath
+    - exclude_test_dir
+    is_package: true
+    dependencies: []
+    submodules: []
   - name: docgen
     path: !!python/object/apply:pathlib.PosixPath
     - docgen
@@ -186,5 +192,5 @@ services:
       dependencies: []
       submodules: []
   metadata:
-    version: 0.1.6
+    version: 0.1.7
 metadata: {}

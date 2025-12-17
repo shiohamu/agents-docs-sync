@@ -11,6 +11,14 @@ from ..models import Module, Service
 class PythonDetector:
     """Python プロジェクトを検出"""
 
+    # デフォルトの除外ディレクトリ
+    DEFAULT_EXCLUDE_DIRS = {"tests", "docs", "venv", ".git", "__pycache__"}
+
+    def __init__(self, exclude_directories: list[str] | None = None):
+        self.exclude_dirs = self.DEFAULT_EXCLUDE_DIRS.copy()
+        if exclude_directories:
+            self.exclude_dirs.update(exclude_directories)
+
     def detect(self, project_root: Path) -> list[Service]:
         services = []
 
@@ -42,8 +50,8 @@ class PythonDetector:
         # プロジェクトルート直下のディレクトリを探索（パッケージのみ）
         for path in project_root.iterdir():
             if path.is_dir() and (path / "__init__.py").exists():
-                # 除外ディレクトリのチェック（簡易的）
-                if path.name.startswith(".") or path.name in ["tests", "docs", "venv"]:
+                # 除外ディレクトリのチェック
+                if path.name.startswith(".") or path.name in self.exclude_dirs:
                     continue
 
                 module = self._scan_package(path, project_root)

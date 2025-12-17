@@ -12,10 +12,10 @@ from .models import ArchitectureManifest
 class ProjectScanner:
     """プロジェクトをスキャンしてアーキテクチャを抽出"""
 
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path, exclude_directories: list[str] | None = None):
         self.project_root = project_root
         self.detectors = [
-            PythonDetector(),
+            PythonDetector(exclude_directories=exclude_directories),
             DockerDetector(),
         ]
 

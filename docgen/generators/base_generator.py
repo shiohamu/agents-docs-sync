@@ -241,7 +241,8 @@ class BaseGenerator(ABC):
             output_dir = self.project_root / output_dir_str
 
             # スキャナーとレンダラーの初期化
-            scanner = ProjectScanner(self.project_root)
+            exclude_dirs = self.config.get("exclude", {}).get("directories", [])
+            scanner = ProjectScanner(self.project_root, exclude_directories=exclude_dirs)
             manifest = scanner.scan()
             self.logger.info(
                 f"Architecture scan result: {len(manifest.services)} services detected"

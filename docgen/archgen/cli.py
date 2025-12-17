@@ -15,16 +15,18 @@ logger = get_logger("archgen")
 def generate_architecture(
     project_root: Path,
     output_dir: Path,
+    exclude_directories: list[str] | None = None,
 ) -> bool:
     """アーキテクチャを生成
 
     Args:
         project_root: プロジェクトルート
         output_dir: 出力ディレクトリ
+        exclude_directories: スキャンから除外するディレクトリのリスト
     """
     try:
         logger.info(f"プロジェクトをスキャン中: {project_root}")
-        scanner = ProjectScanner(project_root)
+        scanner = ProjectScanner(project_root, exclude_directories=exclude_directories)
         manifest = scanner.scan()
 
         logger.info(f"検出されたサービス: {len(manifest.services)}")
