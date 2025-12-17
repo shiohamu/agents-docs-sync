@@ -6,6 +6,9 @@
 auto_detect = true
 # 優先する言語（auto_detectで複数検出された場合の優先順位）
 preferred = []
+# 無視する言語（検出されてもドキュメント生成の対象外にする）
+# 例: このツール自体をPythonプロジェクトで使用している場合に自言語を除外
+ignored = []
 
 # 出力設定
 [output]
@@ -116,7 +119,8 @@ output_dir = "docs/architecture"
 generator = "mermaid"  # "mermaid", "blockdiag", "matplotlib"
 image_formats = ["png"]  # blockdiag/matplotlib 使用時の画像形式
 
-# 除外設定
+# 除外設定（言語検出およびファイルスキャン時に適用）
+# これらのディレクトリは言語検出の対象から除外されます
 [exclude]
 directories = [
     ".venv",

@@ -14,6 +14,9 @@ class DetectorPatterns:
     # 統合ファイル検索結果のキャッシュ（一度の走査で全言語を検出）
     _unified_scan_cache: dict[Path, dict[str, bool]] = {}
 
+    # カスタム除外ディレクトリ（設定ファイルから読み込まれる）
+    _custom_exclude_dirs: set[str] = set()
+
     # Package manager detection patterns: list of (file_patterns, manager_name)
     # file_patterns can be str or tuple of str (all must exist)
     # Order matters - more specific/priority files first
@@ -250,12 +253,14 @@ class DetectorPatterns:
         detected_languages: dict[str, bool] = {lang: False for lang in cls.SOURCE_EXTENSIONS.keys()}
 
         # os.walkで一度だけ走査（除外ディレクトリを早期にスキップ）
+        # カスタム除外ディレクトリも含めた全除外ディレクトリを取得
+        all_exclude_dirs = cls.get_all_exclude_dirs()
         try:
             for root, dirs, files in os.walk(project_root, followlinks=False):
                 # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
                 dirs[:] = [
                     d for d in dirs
-                    if d not in cls.EXCLUDE_DIRS and not d.startswith(".")
+                    if d not in all_exclude_dirs and not d.startswith(".")
                 ]
 
                 # パスベースの除外チェック（セット検索でO(1)）
@@ -263,7 +268,7 @@ class DetectorPatterns:
                 try:
                     rel_path = root_path.relative_to(project_root)
                     # セットのintersectionを使用して高速チェック
-                    if cls.EXCLUDE_DIRS.intersection(rel_path.parts):
+                    if all_exclude_dirs.intersection(rel_path.parts):
                         dirs[:] = []  # このディレクトリ以下をスキップ
                         continue
                 except ValueError:
@@ -390,11 +395,33 @@ class DetectorPatterns:
         if project_root is None:
             cls._file_cache.clear()
             cls._unified_scan_cache.clear()
+            cls._custom_exclude_dirs.clear()
         else:
             if project_root in cls._file_cache:
                 del cls._file_cache[project_root]
             if project_root in cls._unified_scan_cache:
                 del cls._unified_scan_cache[project_root]
+
+    @classmethod
+    def set_custom_exclude_dirs(cls, directories: list[str]) -> None:
+        """設定ファイルからのカスタム除外ディレクトリを設定.
+
+        Args:
+            directories: 除外するディレクトリ名のリスト
+        """
+        cls._custom_exclude_dirs = set(directories)
+        # 除外ディレクトリが変更された場合、キャッシュをクリア
+        cls._file_cache.clear()
+        cls._unified_scan_cache.clear()
+
+    @classmethod
+    def get_all_exclude_dirs(cls) -> set[str]:
+        """デフォルトとカスタムの除外ディレクトリをマージして取得.
+
+        Returns:
+            除外ディレクトリのセット
+        """
+        return cls.EXCLUDE_DIRS | cls._custom_exclude_dirs
 
     @classmethod
     def detect_python_package_manager(cls, project_root: Path) -> str | None:

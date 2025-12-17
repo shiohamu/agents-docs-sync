@@ -221,3 +221,7 @@ class ConfigAccessor:
     @property
     def languages_preferred(self) -> list[str]:
         return self.languages.get("preferred", [])
+
+    @property
+    def languages_ignored(self) -> list[str]:
+        return self.languages.get("ignored", [])

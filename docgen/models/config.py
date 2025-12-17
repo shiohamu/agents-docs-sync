@@ -13,6 +13,7 @@ class LanguagesConfig(DocgenBaseModel):
 
     auto_detect: bool = True
     preferred: list[str] = Field(default_factory=list)
+    ignored: list[str] = Field(default_factory=list)
 
 
 class OutputConfig(DocgenBaseModel):

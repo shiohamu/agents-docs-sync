@@ -45,6 +45,17 @@ class LanguageDetector:
         user_configs = self.config_manager.load_detector_user_overrides()
         self.configs = self.config_manager.merge_detector_configs(self.configs, user_configs)
 
+        # 設定からexclude.directoriesを取得し、DetectorPatternsに適用
+        exclude_directories = self.config_manager.accessor.exclude_directories
+        if exclude_directories:
+            DetectorPatterns.set_custom_exclude_dirs(exclude_directories)
+            logger.debug(f"カスタム除外ディレクトリを設定: {exclude_directories}")
+
+        # 設定からlanguages.ignoredを取得
+        self._ignored_languages = set(self.config_manager.accessor.languages_ignored)
+        if self._ignored_languages:
+            logger.debug(f"無視する言語を設定: {self._ignored_languages}")
+
         # プラグインの発見
         self.plugin_registry.discover_plugins(project_root)
 
@@ -123,6 +134,19 @@ class LanguageDetector:
                     logger.warning(
                         f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
                     )
+
+        # languages.ignoredで指定された言語をフィルタリング
+        if self._ignored_languages:
+            ignored_count = 0
+            for lang in list(detected):
+                if lang in self._ignored_languages:
+                    detected.remove(lang)
+                    if lang in package_managers:
+                        del package_managers[lang]
+                    ignored_count += 1
+                    logger.info(f"× 無視: {lang} (languages.ignoredで設定)")
+            if ignored_count > 0:
+                logger.debug(f"{ignored_count}個の言語を無視しました")
 
         self.detected_languages = detected
         self.detected_package_managers = package_managers
