@@ -70,22 +70,31 @@ class RAGService:
             description = project_info.get("description")
 
         if description and description.strip():
-            # 説明がテンプレートのデフォルトメッセージでない場合のみ追加
-            if "このプロジェクトの説明をここに記述してください" not in description:
+            # 説明がテンプレートのデフォルトメッセージでない場合のみ追加（多言語対応）
+            from docgen.utils.config_utils import get_message
+
+            default_message = get_message(self._config, "default_description")
+            if default_message not in description:
                 # 説明を強調（曖昧な名前の場合は特に重要）
                 desc_text = description[:300]  # より多くの文字を使用
                 if is_ambiguous:
                     # 曖昧な名前の場合は説明を最優先で強調
                     query_parts.append(f"IMPORTANT: This project is about: {desc_text.strip()}")
-                    query_parts.append(f"Project name '{project_name}' refers to: {desc_text.strip()}")
+                    query_parts.append(
+                        f"Project name '{project_name}' refers to: {desc_text.strip()}"
+                    )
                 else:
                     query_parts.append(f"Project description: {desc_text.strip()}")
                     query_parts.append(f"Project name: {project_name}")
 
                 # 地理情報関連の誤認を防ぐための明示的な否定（Locusの場合）
                 if project_name.lower() == "locus":
-                    query_parts.append("NOT about: geographic location, GPS, mapping, coordinates, geography")
-                    query_parts.append("IS about: RSS feeds, knowledge management, PKM, personal knowledge")
+                    query_parts.append(
+                        "NOT about: geographic location, GPS, mapping, coordinates, geography"
+                    )
+                    query_parts.append(
+                        "IS about: RSS feeds, knowledge management, PKM, personal knowledge"
+                    )
             else:
                 # 説明がない場合はプロジェクト名のみ
                 query_parts.append(f"Project: {project_name}")
@@ -166,10 +175,13 @@ class RAGService:
                 self.build_enhanced_query(base_query, project_name, languages, project_info),
             ]
 
-            # プロジェクト説明がある場合は、説明ベースのクエリを追加
+            # プロジェクト説明がある場合は、説明ベースのクエリを追加（多言語対応）
             if project_info and project_info.get("description"):
+                from docgen.utils.config_utils import get_message
+
                 desc = project_info.get("description", "")
-                if desc and "このプロジェクトの説明をここに記述してください" not in desc:
+                default_message = get_message(self._config, "default_description")
+                if desc and default_message not in desc:
                     # 説明から重要なキーワードを抽出（より多くの文字を使用）
                     desc_snippet = desc[:200]  # より多くの情報を含める
                     queries.append(f"{desc_snippet} architecture and implementation")

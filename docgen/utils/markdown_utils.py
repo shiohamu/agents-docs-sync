@@ -39,6 +39,7 @@ def extract_project_description(
     project_root: Path,
     project_info_description: str | None,
     exclude_readme_path: Path | None = None,
+    config: dict[str, Any] | None = None,
 ) -> str:
     """
     Extract project description from README.md or project info.
@@ -47,10 +48,16 @@ def extract_project_description(
         project_root: Project root directory
         project_info_description: Description from project info (fallback)
         exclude_readme_path: README path to exclude (to prevent circular reference)
+        config: Configuration dictionary (for multilingual messages)
 
     Returns:
         Project description text
     """
+    from .config_utils import get_message
+
+    # デフォルトメッセージを取得（多言語対応）
+    default_message = get_message(config, "default_description")
+
     readme_path = project_root / "README.md"
 
     # Try to extract from README first (if not excluded)
@@ -64,16 +71,16 @@ def extract_project_description(
                 and not line_stripped.startswith("#")
                 and not line_stripped.startswith("<!--")
             ):
-                # Skip generic template text
-                if "このプロジェクトの説明をここに記述してください" not in line_stripped:
+                # Skip generic template text (多言語対応)
+                if default_message not in line_stripped:
                     return line_stripped
 
     # Fallback to project info
     if project_info_description:
         return project_info_description
 
-    # Default message
-    return "このプロジェクトの説明をここに記述してください。"
+    # Default message (多言語対応)
+    return default_message
 
 
 def clean_llm_output_advanced(text: str) -> str:

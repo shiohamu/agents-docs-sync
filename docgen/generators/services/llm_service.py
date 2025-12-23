@@ -178,6 +178,7 @@ class LLMService:
                 prompt = PromptLoader.load_prompt(
                     prompt_file,
                     f"{prompt_name}_with_rag",
+                    config=self._config,
                     project_info=project_info_str,
                     rag_context=rag_context,
                 )
@@ -185,6 +186,7 @@ class LLMService:
                 prompt = PromptLoader.load_prompt(
                     prompt_file,
                     prompt_name,
+                    config=self._config,
                     project_info=project_info_str,
                 )
 

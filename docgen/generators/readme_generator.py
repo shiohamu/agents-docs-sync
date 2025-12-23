@@ -196,6 +196,7 @@ class ReadmeGenerator(BaseGenerator):
             return PromptLoader.load_prompt(
                 "readme_prompts.toml",
                 "full_with_rag",
+                config=self.config,
                 project_info=self._format_project_info_for_prompt(project_info),
                 rag_context=rag_context,
             )
@@ -203,6 +204,7 @@ class ReadmeGenerator(BaseGenerator):
             return PromptLoader.load_prompt(
                 "readme_prompts.toml",
                 "full",
+                config=self.config,
                 project_info=self._format_project_info_for_prompt(project_info),
             )
 
@@ -221,7 +223,9 @@ class ReadmeGenerator(BaseGenerator):
         """プロジェクト説明を収集"""
         from ..utils.markdown_utils import extract_project_description
 
-        return extract_project_description(self.project_root, "", self.readme_path)
+        return extract_project_description(
+            self.project_root, "", self.readme_path, config=self.config
+        )
 
     def _generate_setup_from_project_info(self, project_info: ProjectInfo) -> str:
         """プロジェクト情報からセットアップセクションを生成"""
@@ -331,6 +335,7 @@ class ReadmeGenerator(BaseGenerator):
         return PromptLoader.load_prompt(
             "readme_prompts.toml",
             "overview",
+            config=self.config,
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,
             rag_context=rag_context,

@@ -213,7 +213,10 @@ class LanguageInfoCollector(BaseCollector):
                             and not line_stripped.startswith("|")  # テーブル行をスキップ
                         ):
                             # テンプレートのデフォルトメッセージをスキップ
-                            if "このプロジェクトの説明をここに記述してください" not in line_stripped:
+                            if (
+                                "このプロジェクトの説明をここに記述してください"
+                                not in line_stripped
+                            ):
                                 description_lines.append(line_stripped)
                                 # 段落の終わり（空行）または3行に達したら終了
                                 if len(description_lines) >= 3:

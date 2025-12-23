@@ -69,6 +69,7 @@ class AgentsGenerator(BaseGenerator):
         return PromptLoader.load_prompt(
             "agents_prompts.toml",
             "overview",
+            config=self.config,
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,
             rag_context=rag_context,
@@ -103,6 +104,7 @@ class AgentsGenerator(BaseGenerator):
             return PromptLoader.load_prompt(
                 "agents_prompts.toml",
                 "full_with_rag",
+                config=self.config,
                 project_info=self._format_project_info_for_prompt(project_info),
                 rag_context=rag_context,
             )
@@ -110,6 +112,7 @@ class AgentsGenerator(BaseGenerator):
             return PromptLoader.load_prompt(
                 "agents_prompts.toml",
                 "full",
+                config=self.config,
                 project_info=self._format_project_info_for_prompt(project_info),
             )
 

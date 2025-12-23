@@ -15,8 +15,8 @@ logger = get_logger(__name__)
 class DocumentValidator:
     """ドキュメント検証クラス"""
 
-    # 技術的な主張を示すキーワード
-    TECHNICAL_KEYWORDS = [
+    # デフォルトの技術的な主張を示すキーワード（英語）
+    DEFAULT_TECHNICAL_KEYWORDS = [
         "function",
         "class",
         "method",
@@ -33,15 +33,13 @@ class DocumentValidator:
         "defined",
         "located",
         "configured",
-        "설정",  # 日本語も追加可能
-        "関数",
-        "クラス",
-        "メソッド",
-        "モジュール",
-        "パッケージ",
-        "実装",
-        "定義",
     ]
+
+    # デフォルトの言語ごとのキーワード
+    DEFAULT_LANGUAGE_KEYWORDS: dict[str, list[str]] = {
+        "ja": ["関数", "クラス", "メソッド", "モジュール", "パッケージ", "実装", "定義"],
+        "ko": ["함수", "클래스", "메서드", "모듈", "패키지", "구현", "정의"],
+    }
 
     # 機密情報のパターン
     SECRET_PATTERNS = [
@@ -53,14 +51,50 @@ class DocumentValidator:
         r"[a-f0-9]{64}",  # SHA256ハッシュ (tokenの可能性)
     ]
 
-    def __init__(self, project_root: Path | None = None):
+    def __init__(self, project_root: Path | None = None, config: dict[str, Any] | None = None):
         """
         初期化
 
         Args:
             project_root: プロジェクトルート
+            config: 設定辞書（技術キーワードの設定を含む）
         """
         self.project_root = project_root or Path.cwd()
+        self.config = config or {}
+
+        # 設定から技術キーワードを読み込む
+        self.TECHNICAL_KEYWORDS = self._load_technical_keywords()
+
+    def _load_technical_keywords(self) -> list[str]:
+        """
+        設定から技術キーワードを読み込む
+
+        Returns:
+            技術キーワードのリスト
+        """
+        keywords = []
+
+        # デフォルトキーワードを取得
+        keyword_config = self.config.get("validator", {}).get("technical_keywords", {})
+        default_keywords = keyword_config.get("default", [])
+
+        if default_keywords:
+            keywords.extend(default_keywords)
+        else:
+            # 設定がない場合はデフォルト値を使用
+            keywords.extend(self.DEFAULT_TECHNICAL_KEYWORDS)
+
+        # 言語ごとのキーワードを追加
+        language = self.config.get("general", {}).get("default_language", "en")
+        language_keywords_config = keyword_config.get("languages", {})
+
+        if language in language_keywords_config:
+            keywords.extend(language_keywords_config[language])
+        elif language in self.DEFAULT_LANGUAGE_KEYWORDS:
+            # 設定がない場合はデフォルト値を使用
+            keywords.extend(self.DEFAULT_LANGUAGE_KEYWORDS[language])
+
+        return keywords
 
     def validate_citations(self, document: str, strict: bool = False) -> list[str]:
         """

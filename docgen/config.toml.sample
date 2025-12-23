@@ -1,6 +1,45 @@
 # 汎用ドキュメント自動生成システム 設定ファイル
 # 詳細な設定ガイドは docs/CONFIG_GUIDE.md を参照してください
 
+# 一般設定
+[general]
+# デフォルト言語（"en", "ja", "ko" など）
+default_language = "en"
+
+# メッセージ設定（多言語対応）
+[messages]
+# デフォルトのプロジェクト説明メッセージ
+default_description = { en = "Please describe this project here.", ja = "このプロジェクトの説明をここに記述してください。", ko = "여기에 프로젝트 설명을 작성하세요." }
+
+# 検証設定
+[validator]
+# 技術キーワード設定（多言語対応）
+[validator.technical_keywords]
+# デフォルトのキーワード（英語）
+default = [
+    "function",
+    "class",
+    "method",
+    "module",
+    "package",
+    "import",
+    "export",
+    "implements",
+    "extends",
+    "returns",
+    "parameter",
+    "argument",
+    "type",
+    "defined",
+    "located",
+    "configured",
+]
+
+# 言語ごとの追加キーワード
+[validator.technical_keywords.languages]
+ja = ["関数", "クラス", "メソッド", "モジュール", "パッケージ", "実装", "定義"]
+ko = ["함수", "클래스", "메서드", "모듈", "패키지", "구현", "정의"]
+
 # 言語設定
 [languages]
 auto_detect = true

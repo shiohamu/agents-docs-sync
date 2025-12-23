@@ -35,12 +35,48 @@ class PromptLoader:
         return Path(__file__).parent.parent / "prompts"
 
     @classmethod
-    def _load_toml_file(cls, file_name: str) -> dict[str, Any]:
+    def _get_language_specific_file_name(cls, base_name: str, language: str | None = None, config: dict[str, Any] | None = None) -> str:
         """
-        TOMLファイルを読み込む（キャッシュ付き）
+        言語固有のファイル名を取得
+
+        Args:
+            base_name: ベースファイル名（例: 'readme_prompts.toml', 'agents_prompts.toml'）
+            language: 言語コード（Noneの場合は設定から取得）
+            config: 設定辞書
+
+        Returns:
+            言語固有のファイル名（例: 'readme_prompts_en.toml'）
+        """
+        # 言語を決定
+        if language is None:
+            if config:
+                language = config.get("general", {}).get("default_language", "en")
+            else:
+                language = "en"
+
+        # ファイル名から拡張子を分離
+        if base_name.endswith(".toml"):
+            name_without_ext = base_name[:-5]
+            ext = ".toml"
+        elif base_name.endswith(".yaml"):
+            name_without_ext = base_name[:-5]
+            ext = ".yaml"
+        else:
+            # 拡張子がない場合はそのまま
+            return f"{base_name}_{language}.toml"
+
+        # 言語サフィックスを追加
+        return f"{name_without_ext}_{language}{ext}"
+
+    @classmethod
+    def _load_toml_file(cls, file_name: str, language: str | None = None, config: dict[str, Any] | None = None) -> dict[str, Any]:
+        """
+        TOMLファイルを読み込む（キャッシュ付き、多言語対応）
 
         Args:
             file_name: TOMLファイル名（例: 'agents_prompts.toml'）
+            language: 言語コード（Noneの場合は設定から取得）
+            config: 設定辞書
 
         Returns:
             TOMLファイルの内容
@@ -49,11 +85,26 @@ class PromptLoader:
             FileNotFoundError: ファイルが見つからない場合
             Exception: TOML解析エラーの場合
         """
-        if file_name in cls._cache:
-            return cls._cache[file_name]
+        # 言語固有のファイル名を取得
+        language_file_name = cls._get_language_specific_file_name(file_name, language, config)
+        cache_key = language_file_name
+
+        if cache_key in cls._cache:
+            return cls._cache[cache_key]
 
         prompts_dir = cls._get_prompts_dir()
-        file_path = prompts_dir / file_name
+        file_path = prompts_dir / language_file_name
+
+        # 言語固有ファイルが存在しない場合、後方互換性のために元のファイル名を試す
+        if not file_path.exists():
+            original_file_path = prompts_dir / file_name
+            if original_file_path.exists():
+                cls._logger.debug(
+                    f"Language-specific file not found: {language_file_name}, "
+                    f"falling back to: {file_name}"
+                )
+                file_path = original_file_path
+                cache_key = file_name
 
         # TOML ファイルが存在しない場合、YAML フォールバックを試みる
         if not file_path.exists():
@@ -87,21 +138,23 @@ class PromptLoader:
         try:
             with open(file_path, "rb") as f:
                 data = tomllib.load(f)
-                cls._cache[file_name] = data
-                cls._logger.debug(f"プロンプトファイルを読み込みました: {file_name}")
+                cls._cache[cache_key] = data
+                cls._logger.debug(f"プロンプトファイルを読み込みました: {cache_key}")
                 return data
         except Exception as e:
             cls._logger.error(f"TOML解析エラー: {file_name}, {e}")
             raise
 
     @classmethod
-    def load_prompt(cls, file_name: str, key: str, **kwargs) -> str:
+    def load_prompt(cls, file_name: str, key: str, language: str | None = None, config: dict[str, Any] | None = None, **kwargs) -> str:
         """
-        プロンプトを読み込む
+        プロンプトを読み込む（多言語対応）
 
         Args:
             file_name: TOMLファイル名（例: 'agents_prompts.toml'）
             key: プロンプトのキー（例: 'overview', 'full'）
+            language: 言語コード（Noneの場合は設定から取得）
+            config: 設定辞書
             **kwargs: テンプレート変数の置換用パラメータ
 
         Returns:
@@ -111,7 +164,7 @@ class PromptLoader:
             FileNotFoundError: ファイルが見つからない場合
             KeyError: 指定されたキーが見つからない場合
         """
-        data = cls._load_toml_file(file_name)
+        data = cls._load_toml_file(file_name, language, config)
 
         if "prompts" not in data:
             cls._logger.error(f"'prompts'キーが見つかりません: {file_name}")
@@ -130,23 +183,25 @@ class PromptLoader:
         return prompt
 
     @classmethod
-    def load_system_prompt(cls, file_name: str, key: str, **kwargs) -> str:
+    def load_system_prompt(cls, file_name: str, key: str, language: str | None = None, config: dict[str, Any] | None = None, **kwargs) -> str:
         """
-        システムプロンプトを読み込む
+        システムプロンプトを読み込む（多言語対応）
 
         Args:
             file_name: TOMLファイル名（例: 'agents_prompts.toml'）
             key: システムプロンプトのキー（例: 'overview', 'generate'）
+            language: 言語コード（Noneの場合は設定から取得）
+            config: 設定辞書
             **kwargs: テンプレート変数の置換用パラメータ
 
         Returns:
             読み込んだシステムプロンプト文字列（テンプレート変数が置換済み）
 
         Raises:
-            FileNotFoundError: ファイルが見つかりません場合
+            FileNotFoundError: ファイルが見つからない場合
             KeyError: 指定されたキーが見つからない場合
         """
-        data = cls._load_toml_file(file_name)
+        data = cls._load_toml_file(file_name, language, config)
 
         if "system_prompts" not in data:
             cls._logger.error(f"'system_prompts'キーが見つかりません: {file_name}")

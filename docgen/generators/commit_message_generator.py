@@ -61,7 +61,7 @@ class CommitMessageGenerator:
 
             # システムプロンプト
             system_prompt = PromptLoader.load_system_prompt(
-                "commit_message_prompts.toml", "generate"
+                "commit_message_prompts.toml", "generate", config=self.config
             )
 
             # LLMで生成
@@ -139,5 +139,5 @@ class CommitMessageGenerator:
             プロンプト文字列
         """
         return PromptLoader.load_prompt(
-            "commit_message_prompts.toml", "generate", staged_changes=staged_changes
+            "commit_message_prompts.toml", "generate", config=self.config, staged_changes=staged_changes
         )
