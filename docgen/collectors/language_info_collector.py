@@ -142,10 +142,48 @@ class LanguageInfoCollector(BaseCollector):
         """
         プロジェクトの説明を収集
 
+        優先順位:
+        1. package.json (JavaScript/TypeScript プロジェクト)
+        2. pyproject.toml (Python プロジェクト)
+        3. setup.py (古いPythonプロジェクト)
+        4. README.md (上記が存在しない場合のみ)
+
         Returns:
             プロジェクトの説明文（見つからない場合はNone）
         """
-        # 1. pyproject.toml
+        # デフォルトメッセージのパターン（検証用）
+        default_patterns = [
+            "このプロジェクトの説明をここに記述してください",
+            "Add your description here",
+            "Add your description",
+            "プロジェクトの説明",
+        ]
+
+        def is_valid_description(desc: str | None) -> bool:
+            """説明が有効かどうかを検証"""
+            if not desc or not desc.strip():
+                return False
+            desc_stripped = desc.strip()
+            # デフォルトメッセージやテンプレートテキストを除外
+            for pattern in default_patterns:
+                if pattern in desc_stripped:
+                    return False
+            return True
+
+        # 1. package.json を最優先（JavaScript/TypeScript プロジェクト）
+        package_json = self.project_root / self.PACKAGE_JSON
+        if package_json.exists():
+            try:
+                with open(package_json, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if "description" in data:
+                        desc = data["description"]
+                        if is_valid_description(desc):
+                            return desc.strip()
+            except Exception:
+                pass
+
+        # 2. pyproject.toml (Python プロジェクト)
         pyproject = self.project_root / self.PYPROJECT_TOML
         if pyproject.exists():
             try:
@@ -153,46 +191,45 @@ class LanguageInfoCollector(BaseCollector):
 
                 with open(pyproject, "rb") as f:
                     data = tomllib.load(f)
+                # project.description
                 if "project" in data and "description" in data["project"]:
-                    return data["project"]["description"]
+                    desc = data["project"]["description"]
+                    if is_valid_description(desc):
+                        return desc.strip()
+                # tool.poetry.description
                 if (
                     "tool" in data
                     and "poetry" in data["tool"]
                     and "description" in data["tool"]["poetry"]
                 ):
-                    return data["tool"]["poetry"]["description"]
+                    desc = data["tool"]["poetry"]["description"]
+                    if is_valid_description(desc):
+                        return desc.strip()
             except Exception:
                 try:
                     content = pyproject.read_text(encoding="utf-8")
                     desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
                     if desc_match:
-                        return desc_match.group(1)
+                        desc = desc_match.group(1)
+                        if is_valid_description(desc):
+                            return desc.strip()
                 except Exception:
                     pass
 
-        # 2. package.json
-        package_json = self.project_root / self.PACKAGE_JSON
-        if package_json.exists():
-            try:
-                with open(package_json, encoding="utf-8") as f:
-                    data = json.load(f)
-                    if "description" in data:
-                        return data["description"]
-            except Exception:
-                pass
-
-        # 3. setup.py
+        # 3. setup.py (古いPythonプロジェクト)
         setup_py = self.project_root / self.SETUP_PY
         if setup_py.exists():
             try:
                 content = setup_py.read_text(encoding="utf-8")
                 desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
                 if desc_match:
-                    return desc_match.group(1)
+                    desc = desc_match.group(1)
+                    if is_valid_description(desc):
+                        return desc.strip()
             except Exception:
                 pass
 
-        # 4. README
+        # 4. README (上記が存在しない場合のみ)
         for readme_file in self.README_FILES:
             readme_path = self.project_root / readme_file
             if readme_path.exists():
@@ -213,10 +250,10 @@ class LanguageInfoCollector(BaseCollector):
                             and not line_stripped.startswith("|")  # テーブル行をスキップ
                         ):
                             # テンプレートのデフォルトメッセージをスキップ
-                            if (
-                                "このプロジェクトの説明をここに記述してください"
-                                not in line_stripped
-                            ):
+                            is_default = any(
+                                pattern in line_stripped for pattern in default_patterns
+                            )
+                            if not is_default:
                                 description_lines.append(line_stripped)
                                 # 段落の終わり（空行）または3行に達したら終了
                                 if len(description_lines) >= 3:
@@ -230,7 +267,8 @@ class LanguageInfoCollector(BaseCollector):
                         description = " ".join(description_lines)
                         if len(description) > 200:
                             description = description[:200] + "..."
-                        return description
+                        if is_valid_description(description):
+                            return description
                 except Exception:
                     pass
 

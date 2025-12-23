@@ -43,44 +43,119 @@ def extract_project_description(
     config: dict[str, Any] | None = None,
 ) -> str:
     """
-    Extract project description from README.md or project info.
+    Extract project description from package manager files or README.md.
+
+    Priority order:
+    1. package.json (if exists)
+    2. pyproject.toml (if exists)
+    3. setup.py (if exists)
+    4. project_info_description (from LanguageInfoCollector)
+    5. README.md (if not excluded)
+    6. Default message
 
     Args:
         project_root: Project root directory
-        project_info_description: Description from project info (fallback)
+        project_info_description: Description from project info (already prioritized by package manager)
         exclude_readme_path: README path to exclude (to prevent circular reference)
         config: Configuration dictionary (for multilingual messages)
 
     Returns:
         Project description text
     """
+    import json
+    import re
+
     from .config_utils import get_message
 
     # デフォルトメッセージを取得（多言語対応）
     default_message = get_message(config, "default_description")
 
-    readme_path = project_root / "README.md"
+    # 1. package.json を優先（JavaScript/TypeScript プロジェクト）
+    package_json = project_root / "package.json"
+    if package_json.exists():
+        try:
+            with open(package_json, encoding="utf-8") as f:
+                data = json.load(f)
+                if "description" in data and data["description"]:
+                    desc = data["description"].strip()
+                    # デフォルトメッセージやテンプレートテキストを除外
+                    if desc and default_message not in desc:
+                        return desc
+        except Exception:
+            pass
 
-    # Try to extract from README first (if not excluded)
-    if readme_path.exists() and readme_path != exclude_readme_path:
-        readme_content = readme_path.read_text(encoding="utf-8")
-        # Extract first meaningful paragraph
-        for line in readme_content.split("\n"):
-            line_stripped = line.strip()
+    # 2. pyproject.toml を優先（Python プロジェクト）
+    pyproject = project_root / "pyproject.toml"
+    if pyproject.exists():
+        try:
+            import tomllib
+
+            with open(pyproject, "rb") as f:
+                data = tomllib.load(f)
+            # project.description
+            if "project" in data and "description" in data["project"]:
+                desc = data["project"]["description"].strip()
+                if desc and default_message not in desc:
+                    return desc
+            # tool.poetry.description
             if (
-                line_stripped
-                and not line_stripped.startswith("#")
-                and not line_stripped.startswith("<!--")
+                "tool" in data
+                and "poetry" in data["tool"]
+                and "description" in data["tool"]["poetry"]
             ):
-                # Skip generic template text (多言語対応)
-                if default_message not in line_stripped:
-                    return line_stripped
+                desc = data["tool"]["poetry"]["description"].strip()
+                if desc and default_message not in desc:
+                    return desc
+        except Exception:
+            try:
+                content = pyproject.read_text(encoding="utf-8")
+                desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
+                if desc_match:
+                    desc = desc_match.group(1).strip()
+                    if desc and default_message not in desc:
+                        return desc
+            except Exception:
+                pass
 
-    # Fallback to project info
+    # 3. setup.py を優先（古いPythonプロジェクト）
+    setup_py = project_root / "setup.py"
+    if setup_py.exists():
+        try:
+            content = setup_py.read_text(encoding="utf-8")
+            desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
+            if desc_match:
+                desc = desc_match.group(1).strip()
+                if desc and default_message not in desc:
+                    return desc
+        except Exception:
+            pass
+
+    # 4. project_info_description を使用（LanguageInfoCollectorから取得済み、既に優先順位が適用されている）
     if project_info_description:
-        return project_info_description
+        desc = project_info_description.strip()
+        if desc and default_message not in desc:
+            return desc
 
-    # Default message (多言語対応)
+    # 5. README.md をフォールバック（上記が存在しない場合のみ）
+    readme_path = project_root / "README.md"
+    if readme_path.exists() and readme_path != exclude_readme_path:
+        try:
+            readme_content = readme_path.read_text(encoding="utf-8")
+            # Extract first meaningful paragraph
+            for line in readme_content.split("\n"):
+                line_stripped = line.strip()
+                if (
+                    line_stripped
+                    and not line_stripped.startswith("#")
+                    and not line_stripped.startswith("<!--")
+                ):
+                    # Skip generic template text (多言語対応)
+                    if default_message not in line_stripped:
+                        return line_stripped
+        except Exception:
+            pass
+
+    # 6. Default message (多言語対応)
     return default_message
 
 

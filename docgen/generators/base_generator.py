@@ -276,7 +276,9 @@ class BaseGenerator(ABC):
 
             # スキャナーとレンダラーの初期化
             exclude_dirs = self.config.get("exclude", {}).get("directories", [])
-            scanner = ProjectScanner(self.project_root, exclude_directories=exclude_dirs)
+            scanner = ProjectScanner(
+                self.project_root, exclude_directories=exclude_dirs, config=self.config
+            )
             manifest = scanner.scan()
             self.logger.info(
                 f"Architecture scan result: {len(manifest.services)} services detected"
@@ -297,9 +299,13 @@ class BaseGenerator(ABC):
                 # Markdownファイルの内容を読み込む
                 content = markdown_path.read_text(encoding="utf-8")
 
-                # 最初のH1見出し（# で始まる行）を除去して返す
+                # Servicesセクションのみを抽出
+                services_section = self._extract_services_section(content)
+                if services_section:
+                    return services_section
+
+                # フォールバック: 最初のH1見出しを除去して返す（後方互換性）
                 lines = content.splitlines()
-                # 最初の # で始まる行を見つけてスキップ
                 filtered_lines = []
                 found_title = False
                 for line in lines:
@@ -417,3 +423,62 @@ class BaseGenerator(ABC):
         # サブクラスで実装される想定だが、デフォルト実装を提供
         self.logger.warning(f"_generate_hybrid is not implemented in {self.__class__.__name__}")
         return self._generate_template(project_info)
+
+    def _extract_services_section(self, content: str) -> str | None:
+        """
+        アーキテクチャ図のMarkdownからServicesセクションのみを抽出
+
+        Args:
+            content: Markdownファイルの内容
+
+        Returns:
+            Servicesセクションの内容（見つからない場合はNone）
+        """
+        lines = content.splitlines()
+        services_start = None
+        services_end = None
+        in_code_block = False
+
+        # Servicesセクションの開始位置を探す
+        for i, line in enumerate(lines):
+            # コードブロックの開始/終了を検出
+            if line.strip().startswith("```"):
+                in_code_block = not in_code_block
+                continue
+
+            # コードブロック内はスキップ
+            if in_code_block:
+                continue
+
+            # Servicesセクションの開始（## Services または ## サービス）
+            if line.strip().startswith("## ") and ("Services" in line or "サービス" in line):
+                services_start = i
+                break
+
+        if services_start is None:
+            return None
+
+        # Servicesセクションの終了位置を探す（次の## セクションまたはファイル終端）
+        for i in range(services_start + 1, len(lines)):
+            line = lines[i]
+            # コードブロックの開始/終了を検出
+            if line.strip().startswith("```"):
+                in_code_block = not in_code_block
+                continue
+
+            # コードブロック内は含める
+            if in_code_block:
+                continue
+
+            # 次のセクション（## で始まる）が見つかったら終了
+            if line.strip().startswith("## "):
+                services_end = i
+                break
+
+        # Servicesセクションを抽出
+        if services_end is not None:
+            services_lines = lines[services_start:services_end]
+        else:
+            services_lines = lines[services_start:]
+
+        return "\n".join(services_lines).strip()

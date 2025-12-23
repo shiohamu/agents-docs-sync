@@ -13,10 +13,22 @@ from ..models import Module, Service
 class GenericDetector:
     """様々なプログラミング言語のプロジェクトを検出"""
 
-    def __init__(self, exclude_directories: list[str] | None = None):
+    def __init__(
+        self,
+        exclude_directories: list[str] | None = None,
+        exclude_patterns: set[str] | None = None,
+    ):
+        """
+        初期化
+
+        Args:
+            exclude_directories: 除外するディレクトリのリスト
+            exclude_patterns: 依存関係から除外するパターンのセット
+        """
         self.exclude_dirs = set(exclude_directories) if exclude_directories else set()
         # DetectorPatternsからデフォルトの除外ディレクトリも取得
         self.exclude_dirs.update(DetectorPatterns.EXCLUDE_DIRS)
+        self.exclude_patterns = exclude_patterns or set()
 
     def detect(self, project_root: Path) -> list[Service]:
         """プロジェクトをスキャンしてサービスを検出"""
@@ -112,16 +124,23 @@ class GenericDetector:
         # モジュール構造をスキャン
         modules = self._scan_js_modules(project_root, lang_type)
 
+        # 依存関係をフィルタリング
+        filtered_dependencies = self._filter_dependencies(dependencies)
+
+        # 説明を取得（検証と改善を含む）
+        description = package_data.get("description", f"{lang_type.capitalize()} project")
+        description = self._validate_and_improve_description(description, package_data)
+
         return Service(
             name=package_data.get("name", project_root.name),
             type=lang_type,
-            description=package_data.get("description", f"{lang_type.capitalize()} project"),
+            description=description,
             metadata={
                 "version": package_data.get("version", "0.0.0"),
                 "main": package_data.get("main"),
                 "entry_file": "package.json",
             },
-            dependencies=sorted(set(dependencies)),
+            dependencies=sorted(set(filtered_dependencies)),
             modules=modules,
         )
 
@@ -226,3 +245,82 @@ class GenericDetector:
             path=rel_path,
             submodules=submodules,
         )
+
+    def _filter_dependencies(self, dependencies: list[str]) -> list[str]:
+        """
+        依存関係から除外パターンに一致するものを除去
+
+        Args:
+            dependencies: 依存関係のリスト
+
+        Returns:
+            フィルタリング後の依存関係のリスト
+        """
+        if not self.exclude_patterns:
+            return dependencies
+
+        filtered = []
+        for dep in dependencies:
+            # パッケージ名の正規化（ハイフン/アンダースコアを統一）
+            dep_normalized = dep.lower().replace("-", "_")
+            dep_normalized_alt = dep.lower().replace("_", "-")
+
+            # 除外パターンに一致するかチェック
+            should_exclude = False
+            for pattern in self.exclude_patterns:
+                pattern_normalized = pattern.lower().replace("-", "_")
+                pattern_normalized_alt = pattern.lower().replace("_", "-")
+
+                # 完全一致または部分一致をチェック
+                if (
+                    dep.lower() == pattern.lower()
+                    or dep_normalized == pattern_normalized
+                    or dep_normalized_alt == pattern_normalized_alt
+                    or dep.lower().startswith(pattern.lower() + "-")
+                    or dep.lower().startswith(pattern.lower() + "_")
+                ):
+                    should_exclude = True
+                    break
+
+            if not should_exclude:
+                filtered.append(dep)
+
+        return filtered
+
+    def _validate_and_improve_description(self, description: str, package_data: dict) -> str:
+        """
+        サービス説明を検証し、必要に応じて改善
+
+        Args:
+            description: 現在の説明
+            package_data: package.jsonのデータ
+
+        Returns:
+            検証・改善後の説明
+        """
+        # デフォルト説明のパターン
+        default_patterns = [
+            "Add your description here",
+            "Add your description",
+            "プロジェクトの説明をここに記述してください",
+            "このプロジェクトの説明をここに記述してください",
+        ]
+
+        # デフォルト説明が検出された場合、または説明が空の場合
+        is_default = (
+            not description
+            or description.strip() in default_patterns
+            or any(pattern in description for pattern in default_patterns)
+        )
+
+        if is_default:
+            # package.jsonから説明を再取得を試みる
+            if "description" in package_data and package_data["description"]:
+                desc = package_data["description"].strip()
+                if desc and desc not in default_patterns:
+                    return desc
+
+            # 説明が見つからない場合は空文字列を返す
+            return ""
+
+        return description

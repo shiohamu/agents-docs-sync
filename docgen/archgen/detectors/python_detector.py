@@ -14,10 +14,22 @@ class PythonDetector:
     # デフォルトの除外ディレクトリ
     DEFAULT_EXCLUDE_DIRS = {"tests", "docs", "venv", ".git", "__pycache__"}
 
-    def __init__(self, exclude_directories: list[str] | None = None):
+    def __init__(
+        self,
+        exclude_directories: list[str] | None = None,
+        exclude_patterns: set[str] | None = None,
+    ):
+        """
+        初期化
+
+        Args:
+            exclude_directories: 除外するディレクトリのリスト
+            exclude_patterns: 依存関係から除外するパターンのセット
+        """
         self.exclude_dirs = self.DEFAULT_EXCLUDE_DIRS.copy()
         if exclude_directories:
             self.exclude_dirs.update(exclude_directories)
+        self.exclude_patterns = exclude_patterns or set()
 
     def detect(self, project_root: Path) -> list[Service]:
         services = []
@@ -40,8 +52,51 @@ class PythonDetector:
         # 重複を除去
         if services:
             services[0].dependencies = sorted(set(services[0].dependencies))
+            # 依存関係をフィルタリング
+            services[0].dependencies = self._filter_dependencies(services[0].dependencies)
 
         return services
+
+    def _filter_dependencies(self, dependencies: list[str]) -> list[str]:
+        """
+        依存関係から除外パターンに一致するものを除去
+
+        Args:
+            dependencies: 依存関係のリスト
+
+        Returns:
+            フィルタリング後の依存関係のリスト
+        """
+        if not self.exclude_patterns:
+            return dependencies
+
+        filtered = []
+        for dep in dependencies:
+            # パッケージ名の正規化（ハイフン/アンダースコアを統一）
+            dep_normalized = dep.lower().replace("-", "_")
+            dep_normalized_alt = dep.lower().replace("_", "-")
+
+            # 除外パターンに一致するかチェック
+            should_exclude = False
+            for pattern in self.exclude_patterns:
+                pattern_normalized = pattern.lower().replace("-", "_")
+                pattern_normalized_alt = pattern.lower().replace("_", "-")
+
+                # 完全一致または部分一致をチェック
+                if (
+                    dep.lower() == pattern.lower()
+                    or dep_normalized == pattern_normalized
+                    or dep_normalized_alt == pattern_normalized_alt
+                    or dep.lower().startswith(pattern.lower() + "-")
+                    or dep.lower().startswith(pattern.lower() + "_")
+                ):
+                    should_exclude = True
+                    break
+
+            if not should_exclude:
+                filtered.append(dep)
+
+        return filtered
 
     def _scan_modules(self, project_root: Path) -> list[Module]:
         """プロジェクト内のモジュールをスキャン"""
@@ -189,15 +244,67 @@ class PythonDetector:
             if poetry_deps:
                 dependencies.extend(poetry_deps.keys())
 
+            # 説明を取得（検証と改善を含む）
+            description = project.get("description", "")
+            description = self._validate_and_improve_description(description, project, data)
+
             return Service(
                 name=project.get("name", "unknown"),
                 type="python",
-                description=project.get("description", ""),
+                description=description,
                 metadata={"version": project.get("version", "0.0.0")},
                 dependencies=dependencies,
             )
         except Exception:
             return None
+
+    def _validate_and_improve_description(self, description: str, project: dict, data: dict) -> str:
+        """
+        サービス説明を検証し、必要に応じて改善
+
+        Args:
+            description: 現在の説明
+            project: projectセクションのデータ
+            data: pyproject.toml全体のデータ
+
+        Returns:
+            検証・改善後の説明
+        """
+        # デフォルト説明のパターン
+        default_patterns = [
+            "Add your description here",
+            "Add your description",
+            "プロジェクトの説明をここに記述してください",
+            "このプロジェクトの説明をここに記述してください",
+            "",
+        ]
+
+        # デフォルト説明が検出された場合、または説明が空の場合
+        is_default = (
+            not description
+            or description.strip() in default_patterns
+            or any(pattern in description for pattern in default_patterns)
+        )
+
+        if is_default:
+            # pyproject.tomlから説明を再取得を試みる
+            # project.description
+            if "description" in project and project["description"]:
+                desc = project["description"].strip()
+                if desc and desc not in default_patterns:
+                    return desc
+
+            # tool.poetry.description
+            poetry = data.get("tool", {}).get("poetry", {})
+            if "description" in poetry and poetry["description"]:
+                desc = poetry["description"].strip()
+                if desc and desc not in default_patterns:
+                    return desc
+
+            # 説明が見つからない場合は空文字列を返す（Noneではなく）
+            return ""
+
+        return description
 
     def _parse_requirements(self, path: Path) -> list[str]:
         """requirements.txt から依存パッケージを抽出"""
