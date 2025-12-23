@@ -3,12 +3,11 @@
 """
 
 import csv
-import json
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Any
 
-from .models import BenchmarkResult, BenchmarkSummary
 from .recorder import BenchmarkRecorder
 from .utils import format_duration, format_memory
 
@@ -93,7 +92,11 @@ class BenchmarkReporter:
             for i, bottleneck_name in enumerate(summary.bottlenecks, 1):
                 result = next((r for r in results if r.name == bottleneck_name), None)
                 if result:
-                    percentage = (result.duration / summary.total_duration * 100) if summary.total_duration > 0 else 0
+                    percentage = (
+                        (result.duration / summary.total_duration * 100)
+                        if summary.total_duration > 0
+                        else 0
+                    )
                     lines.extend(
                         [
                             f"{i}. **{bottleneck_name}** ({format_duration(result.duration)}, {percentage:.1f}%)",
@@ -230,4 +233,3 @@ class BenchmarkReporter:
 
         threshold = summary.total_duration * (threshold_percent / 100.0)
         return [r.name for r in summary.results if r.duration >= threshold]
-

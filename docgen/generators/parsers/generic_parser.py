@@ -7,11 +7,16 @@ from pathlib import Path
 import re
 
 from ...models import APIInfo
+from ...utils.logger import get_logger
 from .base_parser import BaseParser
+
+logger = get_logger("generic_parser")
 
 
 class GenericParser(BaseParser):
     """汎用コード解析クラス"""
+
+    PARSER_TYPE: str = "generic"
 
     # 言語別のコメントパターン
     COMMENT_PATTERNS = {
@@ -38,6 +43,8 @@ class GenericParser(BaseParser):
         """
         super().__init__(project_root)
         self.language = language
+        # 言語名をPARSER_TYPEとして使用（ログなどで識別しやすくするため）
+        self.PARSER_TYPE = language
 
     def _parse_to_ast(self, content: str, file_path: Path) -> str:
         """ASTにパース（正規表現ベースなのでコンテンツをそのまま返す）"""
@@ -56,51 +63,69 @@ class GenericParser(BaseParser):
                 r"(\w+)\s*\([^)]*\)",
                 r"class\s+(\w+)|struct\s+(\w+)",
             )
+            logger.debug(
+                f"[{self.language}] カスタムパターンが見つかりませんでした。"
+                f"デフォルトパターンを使用します: {file_path.name}"
+            )
 
         comment_pattern, func_pattern, class_pattern = patterns
 
-        # コメント付き関数を抽出
-        for match in re.finditer(comment_pattern, content, re.DOTALL):
-            docstring = match.group(1).strip()
-            start_pos = match.end()
+        try:
+            # コメント付き関数を抽出
+            for match in re.finditer(comment_pattern, content, re.DOTALL):
+                docstring = match.group(1).strip()
+                start_pos = match.end()
 
-            # 次の関数定義を探す
-            func_match = re.search(func_pattern, content[start_pos : start_pos + 200])
-            if func_match:
-                name = func_match.group(1)
-                line_num = content[: start_pos + func_match.start()].count("\n") + 1
-                signature = self._extract_signature(
-                    content, start_pos + func_match.start(), name, "function"
-                )
+                # 次の関数定義を探す
+                func_match = re.search(func_pattern, content[start_pos : start_pos + 200])
+                if func_match:
+                    name = func_match.group(1)
+                    line_num = content[: start_pos + func_match.start()].count("\n") + 1
+                    signature = self._extract_signature(
+                        content, start_pos + func_match.start(), name, "function"
+                    )
 
-                apis.append(
-                    {
-                        "name": name,
-                        "type": "function",
-                        "signature": signature,
-                        "docstring": self._clean_docstring(docstring),
-                        "line": line_num,
-                        "file": str(file_path.relative_to(self.project_root)),
-                    }
-                )
+                    apis.append(
+                        {
+                            "name": name,
+                            "type": "function",
+                            "signature": signature,
+                            "docstring": self._clean_docstring(docstring),
+                            "line": line_num,
+                            "file": str(file_path.relative_to(self.project_root)),
+                        }
+                    )
 
-        # クラス定義を抽出
-        for match in re.finditer(class_pattern, content):
-            name = match.group(1) or match.group(2) if match.lastindex else None
-            if name:
-                line_num = content[: match.start()].count("\n") + 1
-                signature = f"class {name}" if "class" in match.group(0) else f"struct {name}"
+            # クラス定義を抽出
+            for match in re.finditer(class_pattern, content):
+                name = match.group(1) or match.group(2) if match.lastindex else None
+                if name:
+                    line_num = content[: match.start()].count("\n") + 1
+                    signature = f"class {name}" if "class" in match.group(0) else f"struct {name}"
 
-                apis.append(
-                    {
-                        "name": name,
-                        "type": "class",
-                        "signature": signature,
-                        "docstring": "",
-                        "line": line_num,
-                        "file": str(file_path.relative_to(self.project_root)),
-                    }
-                )
+                    apis.append(
+                        {
+                            "name": name,
+                            "type": "class",
+                            "signature": signature,
+                            "docstring": "",
+                            "line": line_num,
+                            "file": str(file_path.relative_to(self.project_root)),
+                        }
+                    )
+        except re.error as e:
+            logger.warning(
+                f"[{self.language}] {file_path.name} の正規表現パターンでエラーが発生しました: {e}"
+            )
+            # エラーが発生しても空のリストを返して処理を続行
+            return []
+        except Exception as e:
+            logger.warning(
+                f"[{self.language}] {file_path.name} の要素抽出でエラーが発生しました: {e}",
+                exc_info=logger.isEnabledFor(10),  # DEBUGレベルでスタックトレースを表示
+            )
+            # エラーが発生しても空のリストを返して処理を続行
+            return []
 
         return apis
 
@@ -143,26 +168,19 @@ class GenericParser(BaseParser):
     def get_supported_extensions(self) -> list[str]:
         """
         サポートする拡張子を返す
+        DetectorPatternsから拡張子を取得して一元管理
 
         Returns:
             言語に応じた拡張子のリスト
         """
-        extension_map = {
-            "rust": [".rs"],
-            "java": [".java"],
-            "kotlin": [".kt", ".kts"],
-            "scala": [".scala"],
-            "ruby": [".rb"],
-            "php": [".php"],
-            "c": [".c", ".h"],
-            "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".hxx"],
-            "csharp": [".cs"],
-            "swift": [".swift"],
-            "dart": [".dart"],
-            "r": [".r", ".R"],
-            "lua": [".lua"],
-            "perl": [".pl", ".pm"],
-            "go": [".go"],
-        }
+        from ...detectors.detector_patterns import DetectorPatterns
 
-        return extension_map.get(self.language, [".txt"])
+        # DetectorPatternsから拡張子を取得（一元管理）
+        extensions = DetectorPatterns.get_source_extensions(self.language)
+
+        # 拡張子が取得できた場合はそれを返す
+        if extensions:
+            return extensions
+
+        # フォールバック: 言語が定義されていない場合
+        return [".txt"]

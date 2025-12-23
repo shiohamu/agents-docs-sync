@@ -122,8 +122,8 @@ class CommandRunner:
         """Create a handler function for architecture generation"""
 
         def arch_handler(args: Namespace, project_root: Path) -> int:
-            from ..archgen.cli import generate_architecture
             from .. import DocGen
+            from ..archgen.cli import generate_architecture
 
             # DocGenを初期化して設定をロード
             docgen = DocGen(project_root=project_root, config_path=getattr(args, "config", None))
@@ -137,9 +137,7 @@ class CommandRunner:
             exclude_dirs = docgen.config.get("exclude", {}).get("directories", [])
 
             success = generate_architecture(
-                project_root,
-                output_dir,
-                exclude_directories=exclude_dirs
+                project_root, output_dir, exclude_directories=exclude_dirs
             )
             return 0 if success else 1
 

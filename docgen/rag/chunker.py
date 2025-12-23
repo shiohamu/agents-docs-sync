@@ -130,11 +130,17 @@ class CodeChunker:
                 return False
 
         # テストファイルを除外
-        if file_path.name.lower().startswith("test_") or file_path.name.lower().endswith(
-            "_test.py"
+        name_lower = file_path.name.lower()
+        if (
+            name_lower.startswith("test_")
+            or name_lower.endswith("_test.py")
+            or ".test." in name_lower
+            or ".spec." in name_lower
+            or name_lower.startswith("test.")
+            or name_lower.startswith("spec.")
         ):
             return False
-        if "tests" in path_parts:
+        if "tests" in path_parts or "test" in path_parts or "__tests__" in path_parts:
             return False
 
         return True
@@ -160,26 +166,40 @@ class CodeChunker:
             return []
 
         # Initialize strategies
+        from docgen.detectors.detector_patterns import DetectorPatterns
+
         from .strategies import CodeChunkStrategy, MarkdownChunkStrategy, TextChunkStrategy
 
         code_strategy = CodeChunkStrategy(project_root)
         markdown_strategy = MarkdownChunkStrategy(project_root)
         text_strategy = TextChunkStrategy(project_root)
 
+        # 全言語の拡張子セットを取得
+        code_extensions = set()
+        for exts in DetectorPatterns.SOURCE_EXTENSIONS.values():
+            code_extensions.update(exts)
+
         # Dispatch to appropriate strategy
-        if file_path.suffix in {".py", ".yaml", ".yml", ".toml"}:
+        if file_path.suffix.lower() in code_extensions or file_path.suffix.lower() in {
+            ".yaml",
+            ".yml",
+            ".toml",
+        }:
             return code_strategy.chunk(content, file_path)
-        elif file_path.suffix == ".md":
+        elif file_path.suffix.lower() == ".md":
             return markdown_strategy.chunk(content, file_path)
         else:
             return text_strategy.chunk(content, file_path)
 
-    def chunk_codebase(self, project_root: Path) -> list[dict[str, Any]]:
+    def chunk_codebase(
+        self, project_root: Path, allowed_patterns: list[str] | None = None
+    ) -> list[dict[str, Any]]:
         """
         プロジェクト全体をチャンク化
 
         Args:
             project_root: プロジェクトルート
+            allowed_patterns: 許可するファイルパターンのリスト（Noneの場合はすべて許可/設定依存）
 
         Returns:
             すべてのチャンクのリスト
@@ -195,10 +215,7 @@ class CodeChunker:
             # ここでは単純なディレクトリ名チェックと、パスチェックを行う
 
             # 1. ディレクトリ名でフィルタリング（O(1)のセット検索）
-            dirs[:] = [
-                d for d in dirs
-                if d not in self._exact_dir_names and not d.startswith(".")
-            ]
+            dirs[:] = [d for d in dirs if d not in self._exact_dir_names and not d.startswith(".")]
 
             # 2. パスベースのフィルタリング（docgen/indexのようなネストされたパス用）
             # os.walkのdirsはディレクトリ名のみなので、ここで削除するとその下には行かない
@@ -231,6 +248,16 @@ class CodeChunker:
             for file_name in files:
                 file_path = Path(root) / file_name
                 if self.should_process_file(file_path):
+                    # パターンフィルタリング（指定されている場合）
+                    if allowed_patterns:
+                        try:
+                            # pathlib.matchはglobパターンを使用
+                            # 再帰的なパターンやディレクトリを含まない場合はファイル名に対してマッチ
+                            if not any(file_path.match(p) for p in allowed_patterns):
+                                continue
+                        except Exception:
+                            continue
+
                     chunks = self.chunk_file(file_path, project_root)
                     all_chunks.extend(chunks)
 

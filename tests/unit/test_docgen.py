@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.docgen import DocGen
+from docgen.models import DetectedLanguage
 
 
 class TestDocGen:
@@ -55,8 +56,9 @@ class TestDocGen:
         # モックの設定
         mock_python = MagicMock()
         mock_python.detect.return_value = True
-        mock_python.get_language.return_value = "python"
-        mock_python.detect_package_manager.return_value = "pip"
+        mock_python.get_detected_language_object.return_value = DetectedLanguage(
+            name="python", package_manager="pip"
+        )
 
         mock_js = MagicMock()
         mock_js.detect.return_value = False
@@ -64,20 +66,22 @@ class TestDocGen:
 
         mock_go = MagicMock()
         mock_go.detect.return_value = True
-        mock_go.get_language.return_value = "go"
-        mock_go.detect_package_manager.return_value = "go"
+        mock_go.get_detected_language_object.return_value = DetectedLanguage(
+            name="go", package_manager="go"
+        )
 
         # create_all_detectorsがこれらのモックを返すように設定
         mock_factory.create_all_detectors.return_value = [mock_python, mock_js, mock_go]
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=True)
+        lang_names = [l.name for l in languages]
 
-        assert "python" in languages
-        assert "go" in languages
-        assert "javascript" not in languages
+        assert "python" in lang_names
+        assert "go" in lang_names
+        assert "javascript" not in lang_names
         # 順序は保証されないため、セットで比較するか、含まれていることを確認
-        assert set(docgen.detected_languages) == {"python", "go"}
+        assert {l.name for l in docgen.detected_languages} == {"python", "go"}
         assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
     @patch("docgen.detectors.unified_detector.UnifiedDetectorFactory")
@@ -86,8 +90,9 @@ class TestDocGen:
         # モックの設定
         mock_python = MagicMock()
         mock_python.detect.return_value = True
-        mock_python.get_language.return_value = "python"
-        mock_python.detect_package_manager.return_value = "pip"
+        mock_python.get_detected_language_object.return_value = DetectedLanguage(
+            name="python", package_manager="pip"
+        )
 
         mock_js = MagicMock()
         mock_js.detect.return_value = False
@@ -95,18 +100,20 @@ class TestDocGen:
 
         mock_go = MagicMock()
         mock_go.detect.return_value = True
-        mock_go.get_language.return_value = "go"
-        mock_go.detect_package_manager.return_value = "go"
+        mock_go.get_detected_language_object.return_value = DetectedLanguage(
+            name="go", package_manager="go"
+        )
 
         # create_all_detectorsがこれらのモックを返すように設定
         mock_factory.create_all_detectors.return_value = [mock_python, mock_js, mock_go]
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=False)
+        lang_names = [l.name for l in languages]
 
-        assert "python" in languages
-        assert "go" in languages
-        assert "javascript" not in languages
+        assert "python" in lang_names
+        assert "go" in lang_names
+        assert "javascript" not in lang_names
         assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
     @patch("docgen.generators.api_generator.APIGenerator")
@@ -118,7 +125,9 @@ class TestDocGen:
     ):
         """ドキュメント生成成功テスト"""
         # モックの設定
-        mock_language_detector.return_value.detect_languages.return_value = ["python"]
+        mock_language_detector.return_value.detect_languages.return_value = [
+            DetectedLanguage(name="python")
+        ]
         mock_language_detector.return_value.detected_package_managers = {}
         mock_api.return_value.generate.return_value = True
         mock_readme.return_value.generate.return_value = True
@@ -146,7 +155,7 @@ class TestDocGen:
         mock_agents.return_value.generate.return_value = True
 
         docgen = DocGen(project_root=temp_project)
-        docgen.language_detector.detected_languages = ["python"]
+        docgen.language_detector.detected_languages = [DetectedLanguage(name="python")]
 
         result = docgen.generate_documents()
 
@@ -183,9 +192,12 @@ class TestDocGen:
     def test_main_detect_only(self, temp_project, caplog):
         """detect-onlyオプションのテスト"""
         with patch("sys.argv", ["docgen.py", "--detect-only"]):
-            with patch("docgen.docgen.DocGen") as mock_docgen_class:
+            with patch("docgen.DocGen") as mock_docgen_class:
                 mock_docgen = MagicMock()
-                mock_docgen.detect_languages.return_value = ["python", "javascript"]
+                mock_docgen.detect_languages.return_value = [
+                    DetectedLanguage(name="python"),
+                    DetectedLanguage(name="javascript"),
+                ]
                 mock_docgen_class.return_value = mock_docgen
 
                 with patch("sys.exit") as mock_exit:

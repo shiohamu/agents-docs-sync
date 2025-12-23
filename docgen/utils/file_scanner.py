@@ -125,8 +125,7 @@ class UnifiedFileScanner:
         self._scanned = True
 
         logger.debug(
-            f"Scanned {len(self._all_files)} files, "
-            f"{len(self._files_by_extension)} extensions"
+            f"Scanned {len(self._all_files)} files, {len(self._files_by_extension)} extensions"
         )
 
         return {
@@ -135,9 +134,7 @@ class UnifiedFileScanner:
             "files_by_relative_path": self._files_by_relative_path,
         }
 
-    def get_files_by_extensions(
-        self, extensions: set[str] | list[str]
-    ) -> list[tuple[Path, Path]]:
+    def get_files_by_extensions(self, extensions: set[str] | list[str]) -> list[tuple[Path, Path]]:
         """
         指定された拡張子のファイルを取得
 
@@ -150,7 +147,9 @@ class UnifiedFileScanner:
         if not self._scanned:
             self.scan_once()
 
-        extensions_set = {ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in extensions}
+        extensions_set = {
+            ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in extensions
+        }
         result = []
 
         for ext in extensions_set:
@@ -238,4 +237,3 @@ def get_unified_scanner(
     _scanner_cache[project_root_resolved] = scanner
 
     return scanner
-

@@ -2,10 +2,6 @@
 ベンチマーク機能の統合テスト
 """
 
-from pathlib import Path
-
-import pytest
-
 from docgen.benchmark import BenchmarkRecorder, BenchmarkReporter
 from docgen.docgen import DocGen
 
@@ -201,6 +197,3 @@ enabled = false
         # ベンチマーク結果が記録されていないことを確認
         results = recorder.get_results()
         assert len(results) == 0
-
-
-

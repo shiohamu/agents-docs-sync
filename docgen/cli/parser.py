@@ -76,7 +76,9 @@ def create_parser() -> argparse.ArgumentParser:
     hooks_subparsers.add_parser("validate", help="フック設定を検証")
 
     # benchmark subcommand
-    benchmark_parser = subparsers.add_parser("benchmark", help="ベンチマークを実行してレポートを生成")
+    benchmark_parser = subparsers.add_parser(
+        "benchmark", help="ベンチマークを実行してレポートを生成"
+    )
     benchmark_parser.add_argument(
         "--targets",
         nargs="+",
@@ -90,7 +92,9 @@ def create_parser() -> argparse.ArgumentParser:
         default="markdown",
         help="出力形式（デフォルト: markdown）",
     )
-    benchmark_parser.add_argument("--output", type=Path, help="出力ファイルのパス（指定しない場合は標準出力）")
+    benchmark_parser.add_argument(
+        "--output", type=Path, help="出力ファイルのパス（指定しない場合は標準出力）"
+    )
     benchmark_parser.add_argument("--verbose", action="store_true", help="詳細情報を表示")
     benchmark_parser.add_argument(
         "--compare",

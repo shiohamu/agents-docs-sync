@@ -17,11 +17,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 # パッケージとしてインストールされた場合は相対インポートを使用
-from .benchmark import BenchmarkContext, BenchmarkRecorder
+from .benchmark import BenchmarkContext
 from .cli import CommandRunner, create_parser
 from .config_manager import ConfigManager
 from .document_generator import DocumentGenerator
 from .language_detector import LanguageDetector
+from .models import DetectedLanguage
 from .utils.logger import get_logger
 
 # ロガーの初期化
@@ -61,11 +62,12 @@ class DocGen:
             self.project_root, self.docgen_dir, self.config_path, package_config_sample
         )
         self.config = self.config_manager.get_config()
+        self.config = self.config_manager.get_config()
         self.language_detector = LanguageDetector(self.project_root, self.config_manager)
-        self.detected_languages = []
+        self.detected_languages: list[DetectedLanguage] = []
         self.detected_package_managers = {}
 
-    def detect_languages(self, use_parallel: bool = True) -> list[str]:
+    def detect_languages(self, use_parallel: bool = True) -> list[DetectedLanguage]:
         """
         プロジェクトの使用言語を自動検出
 
@@ -73,7 +75,7 @@ class DocGen:
             use_parallel: 並列処理を使用するかどうか（デフォルト: True）
 
         Returns:
-            検出された言語のリスト
+            検出された言語オブジェクトのリスト
         """
         benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
         with BenchmarkContext("言語検出", enabled=benchmark_enabled):
@@ -101,14 +103,17 @@ class DocGen:
         benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
         with BenchmarkContext("ドキュメント生成全体", enabled=benchmark_enabled):
             self.detect_languages()
-            logger.info(f"Detected languages: {self.detected_languages}")
+            logger.info(f"Detected languages: {[l.name for l in self.detected_languages]}")
 
             if not self.detected_languages:
                 logger.warning("サポートされている言語が検出されませんでした")
                 return False
 
             document_generator = DocumentGenerator(
-                self.project_root, self.detected_languages, self.config, self.detected_package_managers
+                self.project_root,
+                self.detected_languages,
+                self.config,
+                self.detected_package_managers,
             )
             return document_generator.generate_documents()
 

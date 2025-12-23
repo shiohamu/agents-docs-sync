@@ -5,6 +5,7 @@
 from pathlib import Path
 
 from .detectors.docker_detector import DockerDetector
+from .detectors.generic_detector import GenericDetector
 from .detectors.python_detector import PythonDetector
 from .models import ArchitectureManifest
 
@@ -16,6 +17,7 @@ class ProjectScanner:
         self.project_root = project_root
         self.detectors = [
             PythonDetector(exclude_directories=exclude_directories),
+            GenericDetector(exclude_directories=exclude_directories),
             DockerDetector(),
         ]
 

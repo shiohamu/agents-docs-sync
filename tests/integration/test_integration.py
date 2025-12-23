@@ -170,9 +170,10 @@ agents_doc = "AGENTS.md"
         languages = docgen.detect_languages()
 
         # 検出された言語を確認
-        assert "python" in languages
-        assert "javascript" in languages
-        assert "go" in languages
+        lang_names = [l.name for l in languages]
+        assert "python" in lang_names
+        assert "javascript" in lang_names
+        assert "go" in lang_names
 
         # ログを確認
         assert "✓ 検出: python" in caplog.text

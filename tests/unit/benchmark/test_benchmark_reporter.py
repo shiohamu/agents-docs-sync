@@ -89,4 +89,3 @@ class TestBenchmarkReporter:
 
         assert "bottleneck" in bottlenecks
         assert "normal" not in bottlenecks
-

@@ -2,7 +2,7 @@
 言語検出モジュールのテスト
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from docgen.detectors.detector_patterns import DetectorPatterns
 from docgen.language_detector import LanguageDetector
@@ -25,9 +25,10 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path)
         languages = detector.detect_languages(use_parallel=False)
+        language_names = [l.name for l in languages]
 
-        assert "python" in languages
-        assert detector.get_detected_languages() == languages
+        assert "python" in language_names
+        assert detector.get_detected_languages() == language_names
 
     def test_get_detected_package_managers(self, tmp_path):
         """パッケージマネージャ取得テスト"""
@@ -49,9 +50,10 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path, config_manager=mock_config_manager)
         languages = detector.detect_languages(use_parallel=False)
+        language_names = [l.name for l in languages]
 
         # Pythonは検出されるが、ignoredで除外される
-        assert "python" not in languages
+        assert "python" not in language_names
 
     def test_exclude_directories_applied_to_detection(self, tmp_path):
         """exclude.directoriesが言語検出に適用されるテスト"""
@@ -73,9 +75,10 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path, config_manager=mock_config_manager)
         languages = detector.detect_languages(use_parallel=False)
+        language_names = [l.name for l in languages]
 
         # 除外ディレクトリ内のPythonファイルは検出されない
-        assert "python" not in languages
+        assert "python" not in language_names
 
         # キャッシュをクリア（他のテストに影響しないように）
         DetectorPatterns.clear_cache()
@@ -100,9 +103,10 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path, config_manager=mock_config_manager)
         languages = detector.detect_languages(use_parallel=False)
+        language_names = [l.name for l in languages]
 
         # 非除外ディレクトリ内のPythonファイルは検出される
-        assert "python" in languages
+        assert "python" in language_names
 
         # キャッシュをクリア（他のテストに影響しないように）
         DetectorPatterns.clear_cache()

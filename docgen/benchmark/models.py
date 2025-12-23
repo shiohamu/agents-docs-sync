@@ -42,4 +42,3 @@ class BenchmarkSummary(BaseModel):
     cpu_avg: float = Field(..., description="平均CPU使用率（%）")
     results: list[BenchmarkResult] = Field(default_factory=list, description="測定結果のリスト")
     bottlenecks: list[str] = Field(default_factory=list, description="ボトルネックのリスト")
-

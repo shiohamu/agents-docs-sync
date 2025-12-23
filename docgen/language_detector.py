@@ -2,12 +2,13 @@
 言語検出モジュール
 """
 
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 from pathlib import Path
 
 from .detectors.detector_patterns import DetectorPatterns
 from .detectors.plugin_registry import PluginRegistry
+from .models import DetectedLanguage
 from .utils.logger import get_logger
 
 logger = get_logger("language_detector")
@@ -25,7 +26,7 @@ class LanguageDetector:
             config_manager: 設定マネージャー（Noneの場合は新規作成）
         """
         self.project_root = project_root
-        self.detected_languages = []
+        self.detected_languages: list[DetectedLanguage] = []
         self.detected_package_managers = {}
 
         # 設定マネージャーの初期化
@@ -64,7 +65,7 @@ class LanguageDetector:
             f"{len(self.plugin_registry.get_all_languages())} plugins"
         )
 
-    def detect_languages(self, use_parallel: bool = True) -> list[str]:
+    def detect_languages(self, use_parallel: bool = True) -> list[DetectedLanguage]:
         """
         プロジェクトの使用言語を自動検出
 
@@ -72,7 +73,7 @@ class LanguageDetector:
             use_parallel: 並列処理を使用するかどうか（デフォルト: True）
 
         Returns:
-            検出された言語のリスト
+            検出された言語オブジェクトのリスト
         """
         from .detectors.unified_detector import UnifiedDetectorFactory
 
@@ -101,16 +102,32 @@ class LanguageDetector:
                     detector = future_to_detector[future]
                     try:
                         if future.result():
-                            lang = detector.get_language()
-                            if lang not in detected:
-                                detected.append(lang)
-                                logger.info(f"✓ 検出: {lang}")
-
-                                # パッケージマネージャも同時に取得
+                            # UnifiedDetectorならオブジェクト取得可能
+                            if hasattr(detector, "get_detected_language_object"):
+                                lang_obj = detector.get_detected_language_object()
+                            else:
+                                # プラグイン等のフォールバック
+                                lang_name = detector.get_language()
                                 pm = detector.detect_package_manager()
-                                if pm:
-                                    package_managers[lang] = pm
-                                    logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
+                                lang_obj = DetectedLanguage(
+                                    name=lang_name,
+                                    package_manager=pm,
+                                    source_extensions=DetectorPatterns.get_source_extensions(
+                                        lang_name
+                                    ),
+                                )
+
+                            # 名前で重複チェック
+                            if not any(lang.name == lang_obj.name for lang in detected):
+                                detected.append(lang_obj)
+                                logger.info(f"✓ 検出: {lang_obj.name}")
+
+                                # パッケージマネージャ情報の更新（後方互換性のため）
+                                if lang_obj.package_manager:
+                                    package_managers[lang_obj.name] = lang_obj.package_manager
+                                    logger.info(
+                                        f"✓ パッケージマネージャ検出: {lang_obj.name} -> {lang_obj.package_manager}"
+                                    )
                     except Exception as e:
                         logger.warning(
                             f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
@@ -120,16 +137,30 @@ class LanguageDetector:
             for detector in detectors:
                 try:
                     if detector.detect():
-                        lang = detector.get_language()
-                        if lang not in detected:
-                            detected.append(lang)
-                            logger.info(f"✓ 検出: {lang}")
-
-                            # パッケージマネージャも同時に取得
+                        # UnifiedDetectorならオブジェクト取得可能
+                        if hasattr(detector, "get_detected_language_object"):
+                            lang_obj = detector.get_detected_language_object()
+                        else:
+                            # プラグイン等のフォールバック
+                            lang_name = detector.get_language()
                             pm = detector.detect_package_manager()
-                            if pm:
-                                package_managers[lang] = pm
-                                logger.info(f"✓ パッケージマネージャ検出: {lang} -> {pm}")
+                            lang_obj = DetectedLanguage(
+                                name=lang_name,
+                                package_manager=pm,
+                                source_extensions=DetectorPatterns.get_source_extensions(lang_name),
+                            )
+
+                        # 名前で重複チェック
+                        if not any(lang.name == lang_obj.name for lang in detected):
+                            detected.append(lang_obj)
+                            logger.info(f"✓ 検出: {lang_obj.name}")
+
+                            # パッケージマネージャ情報の更新（後方互換性のため）
+                            if lang_obj.package_manager:
+                                package_managers[lang_obj.name] = lang_obj.package_manager
+                                logger.info(
+                                    f"✓ パッケージマネージャ検出: {lang_obj.name} -> {lang_obj.package_manager}"
+                                )
                 except Exception as e:
                     logger.warning(
                         f"言語検出中にエラーが発生しました ({detector.__class__.__name__}): {e}"
@@ -138,13 +169,13 @@ class LanguageDetector:
         # languages.ignoredで指定された言語をフィルタリング
         if self._ignored_languages:
             ignored_count = 0
-            for lang in list(detected):
-                if lang in self._ignored_languages:
-                    detected.remove(lang)
-                    if lang in package_managers:
-                        del package_managers[lang]
+            for lang_obj in list(detected):
+                if lang_obj.name in self._ignored_languages:
+                    detected.remove(lang_obj)
+                    if lang_obj.name in package_managers:
+                        del package_managers[lang_obj.name]
                     ignored_count += 1
-                    logger.info(f"× 無視: {lang} (languages.ignoredで設定)")
+                    logger.info(f"× 無視: {lang_obj.name} (languages.ignoredで設定)")
             if ignored_count > 0:
                 logger.debug(f"{ignored_count}個の言語を無視しました")
 
@@ -158,7 +189,11 @@ class LanguageDetector:
         return detected
 
     def get_detected_languages(self) -> list[str]:
-        """検出された言語を取得"""
+        """検出された言語名のリストを取得（後方互換性用）"""
+        return [lang.name for lang in self.detected_languages]
+
+    def get_detected_language_objects(self) -> list[DetectedLanguage]:
+        """検出された言語オブジェクトのリストを取得"""
         return self.detected_languages
 
     def get_detected_package_managers(self) -> dict[str, str]:

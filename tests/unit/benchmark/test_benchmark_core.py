@@ -4,8 +4,6 @@
 
 import time
 
-import pytest
-
 from docgen.benchmark import BenchmarkContext, BenchmarkRecorder, benchmark
 
 
@@ -126,4 +124,3 @@ class TestBenchmarkRecorder:
         recorder3 = BenchmarkRecorder.get_global()
 
         assert recorder3 is not recorder1
-

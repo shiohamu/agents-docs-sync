@@ -98,4 +98,3 @@ class BenchmarkRecorder:
         """
         summary = self.get_summary()
         return summary.model_dump(mode="json")
-

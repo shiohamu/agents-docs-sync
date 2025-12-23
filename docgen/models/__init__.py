@@ -25,6 +25,7 @@ from .config import (
     LanguagesConfig,
     OutputConfig,
 )
+from .detected_language import DetectedLanguage
 from .detector import LanguageConfig, PackageManagerRule
 from .llm import LLMClientConfig
 from .project import ProjectInfo
@@ -71,4 +72,5 @@ __all__ = [
     # Detector
     "LanguageConfig",
     "PackageManagerRule",
+    "DetectedLanguage",
 ]

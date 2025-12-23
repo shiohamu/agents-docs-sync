@@ -7,6 +7,7 @@ from typing import Any
 
 from .benchmark import BenchmarkContext
 from .generator_factory import GeneratorFactory
+from .models import DetectedLanguage
 from .utils.logger import get_logger
 
 logger = get_logger("document_generator")
@@ -18,7 +19,7 @@ class DocumentGenerator:
     def __init__(
         self,
         project_root: Path,
-        detected_languages: list[str],
+        detected_languages: list[DetectedLanguage],
         config: dict[str, Any],
         detected_package_managers: dict[str, str] | None = None,
     ):
@@ -115,7 +116,7 @@ class DocumentGenerator:
                     generator = GeneratorFactory.create_generator(
                         gen_type,
                         self.project_root,
-                        self.detected_languages,
+                        [l.name for l in self.detected_languages],  # 文字列のリストを渡す
                         self.config,
                         self.detected_package_managers,
                     )
@@ -174,8 +175,19 @@ class DocumentGenerator:
         # 1. コードベースをチャンク化
         logger.info("Step 1/3: コードベースをチャンク化中...")
         with BenchmarkContext("RAG: チャンク化", enabled=benchmark_enabled):
+            # 言語ごとのパターンを収集
+            allowed_patterns = []
+            for lang in self.detected_languages:
+                if lang.rag_enabled:
+                    allowed_patterns.extend(lang.get_rag_patterns())
+
+            if allowed_patterns:
+                logger.info(f"RAG対象パターン: {allowed_patterns}")
+
             chunker = CodeChunker(rag_config)
-            chunks = chunker.chunk_codebase(self.project_root)
+            chunks = chunker.chunk_codebase(
+                self.project_root, allowed_patterns=allowed_patterns if allowed_patterns else None
+            )
 
         if not chunks:
             logger.warning("チャンクが見つかりませんでした")

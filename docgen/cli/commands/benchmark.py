@@ -57,7 +57,9 @@ class BenchmarkCommand(BaseCommand):
                 logger.info("ドキュメント生成のベンチマークを実行中...")
                 success = docgen.generate_documents()
                 if not success:
-                    logger.warning("ドキュメント生成中にエラーが発生しましたが、ベンチマークは続行します")
+                    logger.warning(
+                        "ドキュメント生成中にエラーが発生しましたが、ベンチマークは続行します"
+                    )
 
             # 結果の取得
             results = recorder.get_results()
@@ -152,7 +154,9 @@ class BenchmarkCommand(BaseCommand):
             # パフォーマンス回帰がある場合は警告
             comparison = comparator.compare()
             if comparison["regressions"]:
-                logger.warning(f"\n⚠️  {len(comparison['regressions'])} 件のパフォーマンス回帰が検出されました")
+                logger.warning(
+                    f"\n⚠️  {len(comparison['regressions'])} 件のパフォーマンス回帰が検出されました"
+                )
                 return 1
 
             return 0
@@ -160,4 +164,3 @@ class BenchmarkCommand(BaseCommand):
         except Exception as e:
             logger.error(f"比較処理中にエラーが発生しました: {e}", exc_info=True)
             return 1
-

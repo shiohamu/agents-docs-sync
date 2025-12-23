@@ -327,6 +327,7 @@ class CommandHelpExtractor:
             if hasattr(module, "create_parser"):
                 try:
                     import argparse
+
                     parser = module.create_parser()
                     if isinstance(parser, argparse.ArgumentParser):
                         return CommandHelpExtractor._extract_from_parser_object(parser)

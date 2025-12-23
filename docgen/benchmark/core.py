@@ -4,10 +4,11 @@
 デコレータとコンテキストマネージャーを提供します。
 """
 
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 import functools
 import time
-from contextlib import contextmanager
-from typing import Any, Callable, Generator
+from typing import Any
 
 import psutil
 
@@ -112,7 +113,9 @@ def benchmark(name: str | None = None, enabled: bool = True) -> Callable:
 
 
 @contextmanager
-def benchmark_context(name: str, recorder: BenchmarkRecorder | None = None, enabled: bool = True) -> Generator[BenchmarkContext, None, None]:
+def benchmark_context(
+    name: str, recorder: BenchmarkRecorder | None = None, enabled: bool = True
+) -> Generator[BenchmarkContext, None, None]:
     """
     ベンチマークコンテキストマネージャー（関数形式）
 
@@ -131,4 +134,3 @@ def benchmark_context(name: str, recorder: BenchmarkRecorder | None = None, enab
     """
     with BenchmarkContext(name, recorder=recorder, enabled=enabled) as ctx:
         yield ctx
-

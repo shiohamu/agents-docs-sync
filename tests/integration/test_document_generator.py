@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.document_generator import DocumentGenerator
+from docgen.models import DetectedLanguage
 
 
 class TestDocumentGenerator:
@@ -22,10 +23,11 @@ class TestDocumentGenerator:
         """DocumentGeneratorの初期化テスト"""
         config = {"generation": {"generate_api_doc": True}}
 
-        generator = DocumentGenerator(temp_project, ["python"], config)
+        generator = DocumentGenerator(temp_project, [DetectedLanguage(name="python")], config)
 
         assert generator.project_root == temp_project
-        assert generator.detected_languages == ["python"]
+        assert len(generator.detected_languages) == 1
+        assert generator.detected_languages[0].name == "python"
         assert generator.config == config
 
     def test_generate_documents_no_languages(self, temp_project, caplog):
@@ -54,7 +56,7 @@ class TestDocumentGenerator:
         mock_generator.generate.return_value = True
         mock_factory.create_generator.return_value = mock_generator
 
-        generator = DocumentGenerator(temp_project, ["python"], config)
+        generator = DocumentGenerator(temp_project, [DetectedLanguage(name="python")], config)
         result = generator.generate_documents()
 
         assert result is True
@@ -79,7 +81,7 @@ class TestDocumentGenerator:
 
         mock_factory.create_generator.side_effect = side_effect
 
-        generator = DocumentGenerator(temp_project, ["python"], config)
+        generator = DocumentGenerator(temp_project, [DetectedLanguage(name="python")], config)
         result = generator.generate_documents()
 
         assert result is False  # 1つでも失敗したらFalse
@@ -94,7 +96,7 @@ class TestDocumentGenerator:
         # 例外を発生させる
         mock_factory.create_generator.side_effect = Exception("Test error")
 
-        generator = DocumentGenerator(temp_project, ["python"], config)
+        generator = DocumentGenerator(temp_project, [DetectedLanguage(name="python")], config)
         result = generator.generate_documents()
 
         assert result is False
@@ -111,7 +113,7 @@ class TestDocumentGenerator:
             }
         }
 
-        generator = DocumentGenerator(temp_project, ["python"], config)
+        generator = DocumentGenerator(temp_project, [DetectedLanguage(name="python")], config)
         result = generator.generate_documents()
 
         assert result is True  # 何も実行しないので成功
@@ -132,7 +134,7 @@ class TestDocumentGenerator:
         mock_generator.generate.return_value = True
         mock_factory.create_generator.return_value = mock_generator
 
-        generator = DocumentGenerator(temp_project, ["python"], config)
+        generator = DocumentGenerator(temp_project, [DetectedLanguage(name="python")], config)
         result = generator.generate_documents()
 
         assert result is True

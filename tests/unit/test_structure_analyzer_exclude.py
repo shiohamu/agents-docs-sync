@@ -1,8 +1,7 @@
-
 import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch
+
 from docgen.collectors.structure_analyzer import StructureAnalyzer
+
 
 class TestStructureAnalyzerExclude:
     """StructureAnalyzerのexclude機能のテスト"""
@@ -24,13 +23,19 @@ class TestStructureAnalyzerExclude:
         root.mkdir()
 
         (root / "src").mkdir()
-        (root / "src" / "main.py").write_text("class Main:\n    def m1(self): pass\n    def m2(self): pass\n    def m3(self): pass\n    def m4(self): pass\n    def m5(self): pass\n    def m6(self): pass")
+        (root / "src" / "main.py").write_text(
+            "class Main:\n    def m1(self): pass\n    def m2(self): pass\n    def m3(self): pass\n    def m4(self): pass\n    def m5(self): pass\n    def m6(self): pass"
+        )
 
         (root / "exclude_me").mkdir()
-        (root / "exclude_me" / "secret.py").write_text("class Secret:\n    def s1(self): pass\n    def s2(self): pass\n    def s3(self): pass\n    def s4(self): pass\n    def s5(self): pass\n    def s6(self): pass")
+        (root / "exclude_me" / "secret.py").write_text(
+            "class Secret:\n    def s1(self): pass\n    def s2(self): pass\n    def s3(self): pass\n    def s4(self): pass\n    def s5(self): pass\n    def s6(self): pass"
+        )
 
         (root / "keep_me").mkdir()
-        (root / "keep_me" / "visible.py").write_text("class Visible:\n    def v1(self): pass\n    def v2(self): pass\n    def v3(self): pass\n    def v4(self): pass\n    def v5(self): pass\n    def v6(self): pass")
+        (root / "keep_me" / "visible.py").write_text(
+            "class Visible:\n    def v1(self): pass\n    def v2(self): pass\n    def v3(self): pass\n    def v4(self): pass\n    def v5(self): pass\n    def v6(self): pass"
+        )
 
         (root / "config.json").write_text("{}")
 

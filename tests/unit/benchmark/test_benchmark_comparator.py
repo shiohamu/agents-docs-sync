@@ -3,10 +3,8 @@
 """
 
 import json
-import tempfile
 from pathlib import Path
-
-import pytest
+import tempfile
 
 from docgen.benchmark import BenchmarkComparator
 from docgen.benchmark.models import BenchmarkResult, BenchmarkSummary
@@ -199,6 +197,3 @@ class TestBenchmarkComparator:
             assert "ベンチマーク比較レポート" in report
             assert "test1" in report
             assert "regression" in report or "stable" in report
-
-
-

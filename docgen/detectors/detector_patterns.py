@@ -2,7 +2,6 @@
 
 import os
 from pathlib import Path
-from typing import Optional
 
 
 class DetectorPatterns:
@@ -250,7 +249,7 @@ class DetectorPatterns:
                 ext_to_languages[ext].append(lang)
 
         # 検出結果を初期化
-        detected_languages: dict[str, bool] = {lang: False for lang in cls.SOURCE_EXTENSIONS.keys()}
+        detected_languages: dict[str, bool] = dict.fromkeys(cls.SOURCE_EXTENSIONS.keys(), False)
 
         # os.walkで一度だけ走査（除外ディレクトリを早期にスキップ）
         # カスタム除外ディレクトリも含めた全除外ディレクトリを取得
@@ -258,10 +257,7 @@ class DetectorPatterns:
         try:
             for root, dirs, files in os.walk(project_root, followlinks=False):
                 # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
-                dirs[:] = [
-                    d for d in dirs
-                    if d not in all_exclude_dirs and not d.startswith(".")
-                ]
+                dirs[:] = [d for d in dirs if d not in all_exclude_dirs and not d.startswith(".")]
 
                 # パスベースの除外チェック（セット検索でO(1)）
                 root_path = Path(root)
@@ -385,7 +381,7 @@ class DetectorPatterns:
         return any(pattern in name for pattern in cls.EXCLUDE_JS_FILES)
 
     @classmethod
-    def clear_cache(cls, project_root: Optional[Path] = None) -> None:
+    def clear_cache(cls, project_root: Path | None = None) -> None:
         """Clear file detection cache.
 
         Args:
@@ -446,9 +442,10 @@ class DetectorPatterns:
                     content = f.read(MAX_READ_SIZE)
                     # 文字列検索で高速に判定（バイト列で検索）
                     # [tool.poetry]が見つかった場合のみ、ファイル全体を読み込んで正確に判定
-                    if b"[tool.poetry]" in content or b'[tool.poetry]' in content:
+                    if b"[tool.poetry]" in content or b"[tool.poetry]" in content:
                         try:
                             import tomllib
+
                             f.seek(0)
                             data = tomllib.load(f)
                             if "tool" in data and "poetry" in data["tool"]:

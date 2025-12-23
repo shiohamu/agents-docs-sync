@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from .models import BenchmarkResult, BenchmarkSummary
+from .models import BenchmarkSummary
 from .utils import format_duration, format_memory
 
 
@@ -96,16 +96,26 @@ class BenchmarkComparator:
                 # 両方に存在する処理
                 duration_diff = current_result.duration - baseline_result.duration
                 duration_diff_percent = (
-                    (duration_diff / baseline_result.duration * 100) if baseline_result.duration > 0 else 0.0
+                    (duration_diff / baseline_result.duration * 100)
+                    if baseline_result.duration > 0
+                    else 0.0
                 )
 
                 memory_diff = current_result.memory_peak - baseline_result.memory_peak
                 memory_diff_percent = (
-                    (memory_diff / baseline_result.memory_peak * 100) if baseline_result.memory_peak > 0 else 0.0
+                    (memory_diff / baseline_result.memory_peak * 100)
+                    if baseline_result.memory_peak > 0
+                    else 0.0
                 )
 
                 # パフォーマンス回帰の判定（10%以上の悪化）
-                status = "regression" if duration_diff_percent > 10.0 else "improved" if duration_diff_percent < -10.0 else "stable"
+                status = (
+                    "regression"
+                    if duration_diff_percent > 10.0
+                    else "improved"
+                    if duration_diff_percent < -10.0
+                    else "stable"
+                )
 
                 comparisons.append(
                     {
@@ -177,10 +187,18 @@ class BenchmarkComparator:
 
         for comp in comparison["comparisons"]:
             baseline_str = (
-                format_duration(comp["baseline_duration"]) if comp["baseline_duration"] is not None else "-"
+                format_duration(comp["baseline_duration"])
+                if comp["baseline_duration"] is not None
+                else "-"
             )
-            current_str = format_duration(comp["current_duration"]) if comp["current_duration"] is not None else "-"
-            diff_str = format_duration(comp["duration_diff"]) if comp["duration_diff"] != 0 else "0s"
+            current_str = (
+                format_duration(comp["current_duration"])
+                if comp["current_duration"] is not None
+                else "-"
+            )
+            diff_str = (
+                format_duration(comp["duration_diff"]) if comp["duration_diff"] != 0 else "0s"
+            )
             diff_percent_str = f"{comp['duration_diff_percent']:+.1f}%"
 
             # ステータス表示
@@ -241,4 +259,3 @@ class BenchmarkComparator:
         """
         content = self.generate_comparison_report()
         path.write_text(content, encoding="utf-8")
-

@@ -197,10 +197,14 @@ class BaseParser(ABC):
 
                             # プロジェクトルート外へのアクセスを防止
                             try:
-                                file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                                file_path_relative = file_path_resolved.relative_to(
+                                    project_root_resolved
+                                )
                             except ValueError:
                                 # プロジェクトルート外のファイルはスキップ
-                                logger.debug(f"プロジェクトルート外のファイルをスキップ: {file_path}")
+                                logger.debug(
+                                    f"プロジェクトルート外のファイルをスキップ: {file_path}"
+                                )
                                 continue
 
                             # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
@@ -242,16 +246,41 @@ class BaseParser(ABC):
                     for file_path, file_path_relative in files_to_parse
                 }
 
+                # エラー統計情報
+                error_count = 0
+                success_count = 0
+                parser_type = self.get_parser_type()
+
                 for future in as_completed(future_to_file):
                     file_path, file_path_relative = future_to_file[future]
                     try:
                         apis = future.result()
                         if apis:
                             all_apis.extend(apis)
+                            success_count += 1
+                        else:
+                            # 空の結果（警告のみ、エラーではない）
+                            logger.debug(
+                                f"[{parser_type}] {file_path_relative}: API要素が見つかりませんでした"
+                            )
+                            success_count += 1
                     except Exception as e:
-                        logger.warning(f"{file_path} の解析に失敗しました: {e}")
+                        error_count += 1
+                        logger.warning(
+                            f"[{parser_type}] {file_path_relative} の解析に失敗しました: {e}",
+                            exc_info=logger.isEnabledFor(10),  # DEBUGレベルでスタックトレースを表示
+                        )
+
+                # 統計情報をログ出力
+                if error_count > 0 or success_count > 0:
+                    logger.info(
+                        f"[{parser_type}] 解析完了: 成功 {success_count}件, 失敗 {error_count}件"
+                    )
         else:
             # 逐次処理
+            error_count = 0
+            success_count = 0
+
             for file_path, file_path_relative in files_to_parse:
                 try:
                     apis = self._parse_file_safe(
@@ -262,9 +291,26 @@ class BaseParser(ABC):
                     )
                     if apis:
                         all_apis.extend(apis)
+                        success_count += 1
+                    else:
+                        # 空の結果（警告のみ、エラーではない）
+                        logger.debug(
+                            f"[{parser_type}] {file_path_relative}: API要素が見つかりませんでした"
+                        )
+                        success_count += 1
                 except Exception as e:
-                    logger.warning(f"{file_path} の解析に失敗しました: {e}")
+                    error_count += 1
+                    logger.warning(
+                        f"[{parser_type}] {file_path_relative} の解析に失敗しました: {e}",
+                        exc_info=logger.isEnabledFor(10),  # DEBUGレベルでスタックトレースを表示
+                    )
                     continue
+
+            # 統計情報をログ出力
+            if error_count > 0 or success_count > 0:
+                logger.info(
+                    f"[{parser_type}] 解析完了: 成功 {success_count}件, 失敗 {error_count}件"
+                )
 
         # キャッシュを保存（skip_cache_saveがFalseの場合のみ）
         if effective_use_cache and cache_manager and not skip_cache_save:
@@ -322,5 +368,9 @@ class BaseParser(ABC):
 
             return apis
         except Exception as e:
-            logger.warning(f"{file_path} の解析に失敗しました: {e}")
+            parser_type = parser_type or self.get_parser_type()
+            logger.warning(
+                f"[{parser_type}] {file_path} の解析に失敗しました: {type(e).__name__}: {e}",
+                exc_info=logger.isEnabledFor(10),  # DEBUGレベルでスタックトレースを表示
+            )
             return []

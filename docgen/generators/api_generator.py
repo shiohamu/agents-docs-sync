@@ -16,9 +16,7 @@ from ..utils.markdown_utils import (
     get_current_timestamp,
 )
 from .base_generator import BaseGenerator
-from .parsers.generic_parser import GenericParser
-from .parsers.js_parser import JSParser
-from .parsers.python_parser import PythonParser
+from .parsers.parser_factory import ParserFactory
 
 if TYPE_CHECKING:
     from .parsers.base_parser import BaseParser
@@ -119,18 +117,46 @@ class APIGenerator(BaseGenerator):
         )
 
         # 各パーサーで解析（ファイルスキャン結果を共有）
+        parser_stats = {}  # パーサーごとの統計情報
+
         for i, parser in enumerate(parsers):
+            parser_type = parser.get_parser_type()
+            parser_language = getattr(parser, "language", parser_type)
+
             # 最後のパーサー以外はキャッシュ保存をスキップ（最後に一度だけ保存）
             skip_cache_save = i < len(parsers) - 1
 
-            apis = parser.parse_project(
-                exclude_dirs=exclude_dirs,
-                use_cache=use_cache,
-                cache_manager=self.cache_manager,
-                files_to_parse=shared_files_to_parse,
-                skip_cache_save=skip_cache_save,
-            )
-            all_apis.extend(apis)
+            try:
+                self.logger.info(
+                    f"[API生成] {parser_language} ({parser_type}) パーサーで解析を開始..."
+                )
+                apis = parser.parse_project(
+                    exclude_dirs=exclude_dirs,
+                    use_cache=use_cache,
+                    cache_manager=self.cache_manager,
+                    files_to_parse=shared_files_to_parse,
+                    skip_cache_save=skip_cache_save,
+                )
+                all_apis.extend(apis)
+                parser_stats[parser_language] = {
+                    "type": parser_type,
+                    "api_count": len(apis),
+                    "status": "success",
+                }
+                self.logger.info(
+                    f"[API生成] {parser_language} ({parser_type}): {len(apis)}件のAPI要素を抽出しました"
+                )
+            except Exception as e:
+                self.logger.error(
+                    f"[API生成] {parser_language} ({parser_type}) パーサーでエラーが発生しました: {e}",
+                    exc_info=True,
+                )
+                parser_stats[parser_language] = {
+                    "type": parser_type,
+                    "api_count": 0,
+                    "status": "error",
+                    "error": str(e),
+                }
 
         # すべてのパーサー実行後に一度だけキャッシュを保存
         if use_cache and self.cache_manager:
@@ -211,21 +237,12 @@ class APIGenerator(BaseGenerator):
     def _get_parsers(self) -> list["BaseParser"]:
         """
         言語に応じたパーサーのリストを取得
+        パーサーファクトリーを使用してパーサーを生成
 
         Returns:
             パーサーのリスト
         """
-        parsers = []
-
-        for lang in self.languages:
-            if lang == "python":
-                parsers.append(PythonParser(self.project_root))
-            elif lang in ["javascript", "typescript"]:
-                parsers.append(JSParser(self.project_root))
-            else:
-                parsers.append(GenericParser(self.project_root, language=lang))
-
-        return parsers
+        return ParserFactory.create_parsers(self.project_root, self.languages)
 
     def _scan_project_files(
         self, exclude_dirs: list[str], extensions: set[str]
@@ -285,7 +302,9 @@ class APIGenerator(BaseGenerator):
 
                         # プロジェクトルート外へのアクセスを防止
                         try:
-                            file_path_relative = file_path_resolved.relative_to(project_root_resolved)
+                            file_path_relative = file_path_resolved.relative_to(
+                                project_root_resolved
+                            )
                         except ValueError:
                             # プロジェクトルート外のファイルはスキップ
                             continue

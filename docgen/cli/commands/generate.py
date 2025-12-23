@@ -34,7 +34,8 @@ class GenerateCommand(BaseCommand):
         # Handle detect-only mode
         if getattr(args, "detect_only", False):
             languages = docgen.detect_languages()
-            logger.info(f"\n検出された言語: {', '.join(languages) if languages else 'なし'}")
+            lang_names = [l.name for l in languages]
+            logger.info(f"\n検出された言語: {', '.join(lang_names) if lang_names else 'なし'}")
             return 0
 
         # Update configuration based on arguments

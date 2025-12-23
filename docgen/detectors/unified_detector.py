@@ -7,6 +7,7 @@
 
 from pathlib import Path
 
+from ..models import DetectedLanguage
 from .base_detector import BaseDetector
 from .detector_patterns import DetectorPatterns
 
@@ -82,6 +83,21 @@ class UnifiedDetector(BaseDetector):
                 return all((self.project_root / p).exists() for p in patterns)
 
         return DetectorPatterns.detect_package_manager(self.language, file_exists_func)
+
+    def get_detected_language_object(self) -> DetectedLanguage:
+        """
+        検出された言語のオブジェクトを返す
+
+        Returns:
+            DetectedLanguage オブジェクト
+        """
+        pm = self.detect_package_manager()
+        extensions = DetectorPatterns.get_source_extensions(self.language)
+        return DetectedLanguage(
+            name=self.language,
+            package_manager=pm,
+            source_extensions=extensions,
+        )
 
 
 class UnifiedDetectorFactory:
