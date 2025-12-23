@@ -131,9 +131,12 @@ class LLMService:
 
         if project_info.dependencies:
             deps = []
-            if "python" in project_info.dependencies:
+            # ignored言語の依存関係は含めない
+            if "python" in project_info.dependencies and "python" in languages:
                 deps.extend(project_info.dependencies["python"])
-            if "nodejs" in project_info.dependencies:
+            if "nodejs" in project_info.dependencies and (
+                "javascript" in languages or "typescript" in languages
+            ):
                 deps.extend(project_info.dependencies["nodejs"])
             if deps:
                 info_parts.append(f"Dependencies: {', '.join(deps[:20])}...")

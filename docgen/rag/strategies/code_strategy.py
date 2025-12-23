@@ -76,15 +76,32 @@ class CodeChunkStrategy(BaseChunkStrategy):
                 # Extract node content
                 chunk_text = "\n".join(lines[start_line:end_line])
 
+                # Extract docstring and add to chunk text for better semantic search
+                docstring = ast.get_docstring(node)
+                enhanced_text = chunk_text
+
+                if docstring:
+                    # docstringをテキストの前に追加して、意味的検索を改善
+                    enhanced_text = f"# {node.name}: {docstring}\n{chunk_text}"
+
+                # 直前のコメントも含める（最大3行）
+                comment_lines = []
+                for i in range(max(0, start_line - 3), start_line):
+                    line = lines[i].strip()
+                    if line.startswith("#"):
+                        comment_lines.append(lines[i])
+                if comment_lines:
+                    enhanced_text = "\n".join(comment_lines) + "\n" + enhanced_text
+
                 chunks.append(
                     {
                         "file": str(file_path.relative_to(self.project_root)),
                         "type": node.__class__.__name__,
                         "name": node.name,
-                        "text": chunk_text,
+                        "text": enhanced_text,
                         "start_line": start_line + 1,  # 1-indexed for display
                         "end_line": end_line,
-                        "hash": self._hash_text(chunk_text),
+                        "hash": self._hash_text(enhanced_text),
                     }
                 )
 

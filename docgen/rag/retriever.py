@@ -37,7 +37,8 @@ class DocumentRetriever:
         # 検索設定
         retrieval_config = self.rag_config.get("retrieval", {})
         self.default_top_k = retrieval_config.get("top_k", 6)
-        self.score_threshold = retrieval_config.get("score_threshold", 0.3)
+        # デフォルト閾値を0.2に下げて、より多くの関連チャンクを取得
+        self.score_threshold = retrieval_config.get("score_threshold", 0.2)
 
         # インデックスディレクトリ
         self.index_dir = self.project_root / "docgen" / "index"
@@ -116,23 +117,55 @@ class DocumentRetriever:
         # ただし、top_kの結果が少ない場合は閾値を緩和
         filtered_results = [chunk for chunk, score in results if score >= self.score_threshold]
 
-        # 閾値でフィルタリングした結果が少ない場合（top_kの20%未満）、
-        # 閾値を下げて再フィルタリング（最低でもtop_kの30%は取得する）
-        if len(filtered_results) < max(1, int(k * 0.2)) and results:
-            # 動的に閾値を調整（最低スコアから少し上）
-            scores = [score for _, score in results]
-            min_score = min(scores)
-            # 最低スコアの80%を新しい閾値とする（ただし元の閾値より低い場合のみ）
-            adjusted_threshold = min(self.score_threshold, max(0.15, min_score * 0.8))
+        # 閾値でフィルタリングした結果が少ない場合（top_kの30%未満）、
+        # 閾値を下げて再フィルタリング（最低でもtop_kの50%は取得する）
+        min_required = max(1, int(k * 0.3))  # 最低30%は取得
+        target_ratio = 0.5  # 目標は50%
 
-            if adjusted_threshold < self.score_threshold:
-                self.logger.debug(
-                    f"Adjusted threshold from {self.score_threshold:.3f} to {adjusted_threshold:.3f} "
-                    f"to retrieve more relevant chunks"
-                )
-                filtered_results = [
-                    chunk for chunk, score in results if score >= adjusted_threshold
+        if len(filtered_results) < min_required and results:
+            # 動的に閾値を調整
+            scores = [score for _, score in results]
+            if scores:
+                min_score = min(scores)
+                max_score = max(scores)
+                avg_score = sum(scores) / len(scores)
+
+                # より積極的な閾値調整
+                # 1. 平均スコアの70%を試す
+                # 2. 最低スコアの90%を試す
+                # 3. 最低でも0.15は維持
+                candidate_thresholds = [
+                    avg_score * 0.7,
+                    min_score * 0.9,
+                    0.15,
                 ]
+                adjusted_threshold = min(
+                    self.score_threshold,
+                    max(0.1, max(candidate_thresholds)),  # 最低0.1は維持
+                )
+
+                if adjusted_threshold < self.score_threshold:
+                    self.logger.debug(
+                        f"Adjusted threshold from {self.score_threshold:.3f} to {adjusted_threshold:.3f} "
+                        f"(min={min_score:.3f}, max={max_score:.3f}, avg={avg_score:.3f}) "
+                        f"to retrieve more relevant chunks"
+                    )
+                    filtered_results = [
+                        chunk for chunk, score in results if score >= adjusted_threshold
+                    ]
+
+                    # それでも少ない場合は、さらに緩和（最低でもtop_kの30%は取得）
+                    if len(filtered_results) < min_required:
+                        # 最低スコアの少し上を閾値とする
+                        final_threshold = max(0.1, min_score * 0.95)
+                        if final_threshold < adjusted_threshold:
+                            self.logger.debug(
+                                f"Further adjusted threshold to {final_threshold:.3f} "
+                                f"to meet minimum requirement ({min_required} chunks)"
+                            )
+                            filtered_results = [
+                                chunk for chunk, score in results if score >= final_threshold
+                            ]
 
         # スコアをメタデータに追加
         # resultsからfiltered_resultsに含まれるチャンクのスコアを追加

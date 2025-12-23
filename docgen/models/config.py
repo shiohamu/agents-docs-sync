@@ -77,7 +77,8 @@ class RetrievalConfig(DocgenBaseModel):
     """Retrieval configuration model."""
 
     top_k: int = 6
-    score_threshold: float = 0.3
+    # デフォルト閾値を0.2に下げて、より多くの関連チャンクを取得
+    score_threshold: float = 0.2
 
 
 class ChunkingConfig(DocgenBaseModel):

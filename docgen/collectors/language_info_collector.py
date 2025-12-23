@@ -199,6 +199,9 @@ class LanguageInfoCollector(BaseCollector):
                 try:
                     content = readme_path.read_text(encoding="utf-8")
                     lines = content.split("\n")
+
+                    # 最初の意味のある段落を取得（最大3行または最初の段落）
+                    description_lines = []
                     for line in lines:
                         line_stripped = line.strip()
                         if (
@@ -206,8 +209,25 @@ class LanguageInfoCollector(BaseCollector):
                             and not line_stripped.startswith("#")
                             and not line_stripped.startswith("<!--")
                             and not line_stripped.startswith(">")
+                            and not line_stripped.startswith("```")
+                            and not line_stripped.startswith("|")  # テーブル行をスキップ
                         ):
-                            return line_stripped
+                            # テンプレートのデフォルトメッセージをスキップ
+                            if "このプロジェクトの説明をここに記述してください" not in line_stripped:
+                                description_lines.append(line_stripped)
+                                # 段落の終わり（空行）または3行に達したら終了
+                                if len(description_lines) >= 3:
+                                    break
+                            elif description_lines:
+                                # デフォルトメッセージの前に有効な行があれば終了
+                                break
+
+                    if description_lines:
+                        # 複数行を結合（最大200文字）
+                        description = " ".join(description_lines)
+                        if len(description) > 200:
+                            description = description[:200] + "..."
+                        return description
                 except Exception:
                     pass
 

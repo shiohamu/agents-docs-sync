@@ -103,10 +103,13 @@ class ReadmeGenerator(BaseGenerator):
             return ""
 
         lines = []
-        if dependencies.python:
+        # ignored言語の依存関係は表示しない
+        if dependencies.python and "python" in self.languages:
             lines.append("### Python")
             lines.extend([f"- {dep}" for dep in dependencies.python])
-        if dependencies.nodejs:
+        if dependencies.nodejs and (
+            "javascript" in self.languages or "typescript" in self.languages
+        ):
             lines.append("### Node.js")
             lines.extend([f"- {dep}" for dep in dependencies.nodejs])
         if dependencies.other:
@@ -388,11 +391,23 @@ class ReadmeGenerator(BaseGenerator):
         """LLMを使用してコンテンツを生成"""
         project_info_str = self._format_project_info_for_prompt(project_info)
 
-        # RAGコンテキスト取得
+        # RAGコンテキスト取得（改善されたクエリを使用）
         rag_context = ""
         if self.config.get("rag", {}).get("enabled", False):
             query = f"{prompt_name} for {self.project_root.name}"
-            rag_context = self.rag_service.get_context(query)
+            # プロジェクト情報を辞書形式で準備（説明を含める）
+            project_info_dict = {
+                "description": project_info.description,
+                "key_features": project_info.key_features,
+                "dependencies": project_info.dependencies,
+            }
+            rag_context = self.rag_service.get_context(
+                query,
+                use_enhanced_query=True,
+                project_name=self.project_root.name,
+                languages=self.languages,
+                project_info=project_info_dict,
+            )
 
         content = self.llm_service.generate_content(
             prompt_file, prompt_name, project_info_str, rag_context
@@ -408,11 +423,22 @@ class ReadmeGenerator(BaseGenerator):
                 if client:
                     outlines_model = self.llm_service.create_outlines_model(client)
                     if outlines_model:
-                        # RAGコンテキスト
+                        # RAGコンテキスト（改善されたクエリを使用）
                         rag_context = ""
                         if self.config.get("rag", {}).get("enabled", False):
                             query = f"full documentation context for {self.project_root.name}"
-                            rag_context = self.rag_service.get_context(query)
+                            project_info_dict = {
+                                "description": project_info.description,
+                                "key_features": project_info.key_features,
+                                "dependencies": project_info.dependencies,
+                            }
+                            rag_context = self.rag_service.get_context(
+                                query,
+                                use_enhanced_query=True,
+                                project_name=self.project_root.name,
+                                languages=self.languages,
+                                project_info=project_info_dict,
+                            )
 
                         # プロンプト作成
                         prompt = self._create_llm_prompt(project_info, rag_context=rag_context)
@@ -445,11 +471,21 @@ class ReadmeGenerator(BaseGenerator):
             # 既存の概要を取得（テンプレート生成されたもの）
             existing_overview = self._get_project_overview_section(content)
 
-            # RAGコンテキスト
+            # RAGコンテキスト（改善されたクエリを使用）
             rag_context = ""
             if self.config.get("rag", {}).get("enabled", False):
                 query = f"project overview for {self.project_root.name}"
-                rag_context = self.rag_service.get_context(query)
+                project_info_dict = {
+                    "key_features": project_info.key_features,
+                    "dependencies": project_info.dependencies,
+                }
+                rag_context = self.rag_service.get_context(
+                    query,
+                    use_enhanced_query=True,
+                    project_name=self.project_root.name,
+                    languages=self.languages,
+                    project_info=project_info_dict,
+                )
 
             # プロンプト作成
             prompt = self._create_overview_prompt(project_info, existing_overview, rag_context)
