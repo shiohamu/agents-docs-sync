@@ -55,17 +55,51 @@ class BaseGenerator(ABC):
             manual_section_service: 手動セクションサービス（DI）
         """
         self.project_root: Path = project_root
-        self.languages: list[str] = languages
         self.config: dict[str, Any] = config
         self.package_managers: dict[str, str] = package_managers or {}
         self.output_path: Path = self._get_output_path(config)
         self.logger = get_logger(self.__class__.__name__.lower())
 
+        # 言語設定を適用（ignoredとpreferred）
+        languages_config = config.get("languages", {})
+        ignored_languages = set(languages_config.get("ignored", []))
+        preferred_languages = languages_config.get("preferred", [])
+
+        # ignored言語をフィルタリング
+        filtered_languages = [lang for lang in languages if lang not in ignored_languages]
+
+        # preferred言語に基づいて並び替え
+        if preferred_languages:
+
+            def sort_key(lang: str) -> tuple[int, str]:
+                try:
+                    index = preferred_languages.index(lang)
+                    return (0, str(index))  # preferredに含まれる場合は(0, index)
+                except ValueError:
+                    return (1, lang)  # preferredに含まれない場合は(1, name)
+
+            filtered_languages.sort(key=sort_key)
+            if ignored_languages or preferred_languages:
+                self.logger.debug(
+                    f"言語設定を適用: ignored={ignored_languages}, "
+                    f"preferred={preferred_languages}, "
+                    f"結果={filtered_languages}"
+                )
+
+        self.languages: list[str] = filtered_languages
+
         # プロジェクト情報収集器
         from ..collectors.project_info_collector import ProjectInfoCollector
 
+        # exclude設定を取得してProjectInfoCollectorに渡す
+        exclude_config = config.get("exclude", {})
+        exclude_directories = exclude_config.get("directories", [])
+
         self.collector: ProjectInfoCollector = ProjectInfoCollector(
-            project_root, package_managers, logger=self.logger
+            project_root,
+            package_managers,
+            logger=self.logger,
+            exclude_directories=exclude_directories,
         )
 
         # AGENTS設定

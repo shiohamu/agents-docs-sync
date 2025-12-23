@@ -57,6 +57,11 @@ class LanguageDetector:
         if self._ignored_languages:
             logger.debug(f"無視する言語を設定: {self._ignored_languages}")
 
+        # 設定からlanguages.preferredを取得
+        self._preferred_languages = self.config_manager.accessor.languages_preferred
+        if self._preferred_languages:
+            logger.debug(f"優先する言語を設定: {self._preferred_languages}")
+
         # プラグインの発見
         self.plugin_registry.discover_plugins(project_root)
 
@@ -178,6 +183,23 @@ class LanguageDetector:
                     logger.info(f"× 無視: {lang_obj.name} (languages.ignoredで設定)")
             if ignored_count > 0:
                 logger.debug(f"{ignored_count}個の言語を無視しました")
+
+        # languages.preferredで指定された言語を優先順位に基づいて並び替え
+        if self._preferred_languages:
+            # preferredリストの順序に基づいてソート
+            # preferredに含まれる言語を先頭に、含まれない言語を後ろに配置
+            def sort_key(lang_obj: DetectedLanguage) -> tuple[int, str]:
+                try:
+                    # preferredリスト内のインデックスを取得（小さいほど優先）
+                    index = self._preferred_languages.index(lang_obj.name)
+                    return (0, str(index))  # preferredに含まれる場合は(0, index)
+                except ValueError:
+                    return (1, lang_obj.name)  # preferredに含まれない場合は(1, name)
+
+            detected.sort(key=sort_key)
+            logger.debug(
+                f"言語を優先順位に基づいて並び替えました: {[lang.name for lang in detected]}"
+            )
 
         self.detected_languages = detected
         self.detected_package_managers = package_managers

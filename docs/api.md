@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-23 16:07:25
+自動生成日時: 2025-12-23 16:26:30
 
 ---
 
@@ -2436,7 +2436,7 @@ Args:
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/structure_analyzer.py:163*
+*定義場所: docgen/collectors/structure_analyzer.py:168*
 
 ---
 
@@ -4479,7 +4479,7 @@ def generate(self) -> bool:
 Returns:
     生成に成功した場合True
 
-*定義場所: docgen/generators/base_generator.py:182*
+*定義場所: docgen/generators/base_generator.py:216*
 
 ---
 
@@ -6811,7 +6811,7 @@ Args:
 Returns:
     検出された言語オブジェクトのリスト
 
-*定義場所: docgen/language_detector.py:68*
+*定義場所: docgen/language_detector.py:73*
 
 ---
 
@@ -6828,7 +6828,7 @@ def get_detected_languages(self) -> list[str]:
 
 検出された言語名のリストを取得（後方互換性用）
 
-*定義場所: docgen/language_detector.py:191*
+*定義場所: docgen/language_detector.py:213*
 
 ---
 
@@ -6845,7 +6845,7 @@ def get_detected_language_objects(self) -> list[DetectedLanguage]:
 
 検出された言語オブジェクトのリストを取得
 
-*定義場所: docgen/language_detector.py:195*
+*定義場所: docgen/language_detector.py:217*
 
 ---
 
@@ -6862,7 +6862,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:199*
+*定義場所: docgen/language_detector.py:221*
 
 ---
 

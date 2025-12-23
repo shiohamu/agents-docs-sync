@@ -481,6 +481,7 @@ class ReadmeGenerator(BaseGenerator):
             if self.config.get("rag", {}).get("enabled", False):
                 query = f"project overview for {self.project_root.name}"
                 project_info_dict = {
+                    "description": project_info.description,  # descriptionを追加
                     "key_features": project_info.key_features,
                     "dependencies": project_info.dependencies,
                 }

@@ -8,22 +8,92 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-本プロジェクトは、コードベースに対する変更がコミットされるたびに自動的にテストを実行し、ドキュメント（Sphinx/Markdown 等）を生成・更新するとともに、AGENTS.md の内容も同期させます。これにより、人手でのビルド作業や文書管理が不要になり、CI/CD パイプライン内で常に最新かつ正確な情報が保たれます。
+本プロジェクトは、ソースコードに対して **コミットごとに自動的に** 以下のタスクを実行するパイプラインです。
 
-主な特徴  
-- **自動化**: GitHub Actions などを利用して `git push` 時点で全てのタスク（テスト・カバレッジ計測、ドキュメント生成）を実行。エラー時はコミットをブロックし品質保証に貢献します。  
-- **多言語サポート**: Python だけではなくシェルスクリプトで補助タスク（例：AGENTS.md のパース・更新）も処理可能です。  
-- **軽量依存関係管理**: `uv` を用いた高速なビルドと環境構築を実現し、Python 3.10+ に対応した `pyyaml`, `pytest`, `pytest-cov`, `pytest-mock` 等のテスト関連ライブラリのみで運営します。  
-- **文書一元管理**: AGENTS.md はプロジェクト内に記載されているエージェント仕様を自動抽出し、最新情報へ更新。ドキュメントと実装がずれることなく同期できます。
+- **テストの実行**  
+  `pytest` を用いてユニット・統合テストを走らせます。カバレッジ計測は `pytest-cov` が担当し、結果は HTML と XML の両形式で出力されます。
+- **ドキュメント生成**  
+  ソースコードの docstring やコメントから Sphinx（または MkDocs）を利用して API ドキュメント・ガイドラインを自動的に作成します。`pyyaml` を使って設定ファイルやメタデータを読み込み、必要な静的リソースも一括管理。
+- **AGENTS.md の更新**  
+  `agents/` ディレクトリ内の各エージェントクラス（またはスクリプト）から情報を抽出し、Markdown テンプレートに埋め込んで AGENTS.md を再生成します。これによりドキュメントと実装が常に同期した状態になります。
 
-開発フローは次のようになります  
-1. コードやテストを書き `git commit` します。  
-2. CI がトリガーされ、`pytest` とカバレッジ計測を行います。  
-3. 成功したら Sphinx 等でドキュメントがビルドされます。  
-4. AGENTS.md を自動更新スクリプト（Python）により再生成します。  
-5. すべての成果物は GitHub のアーティファクトとして保存、また必要ならば `gh-pages` ブランチへデプロイ。
+## 主要コンポーネント
 
-このワークフローを導入することで、人為的なミスやドキュメントと実装間の不整合を最小化し、継続的に高品質で最新状態のリポジトリ運営が可能になります。<!-- MANUAL_START:architecture -->
+| コンポーネント | 概要 |
+|-----------------|------|
+| **`scripts/ci.sh`** | CI 環境で呼び出すエントリポイント。テスト・ドキュメント生成・AGENTS.md 更新を順に実行します。 |
+| **`docs/gen_docs.py`** | Sphinx/MkDocs のビルドプロセスをラップし、必要な設定ファイル (`conf.py`, `mkdocs.yml`) を自動で作成/更新します。 |
+| **`agents/update_agents_md.py`** | エージェント情報（名前・概要・引数）をパースして Markdown テンプレートに挿入します。 |
+
+## 開発環境のセットアップ
+
+```bash
+# uv が未インストールの場合は公式手順で取得
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 依存関係を同期（python パッケージのみ）
+uv sync --dev
+```
+
+`requirements.txt` は自動生成されるため、直接編集しなくて済みます。  
+開発中にテストだけ走らせたい場合は:
+
+```bash
+pytest -q
+```
+
+## 手動でパイプラインを実行する
+
+CI のフローと同じ手順をローカルでも再現したい際には、以下のスクリプトが役立ちます。
+
+```bash
+# 全タスクを一括実行（テスト→ドキュメント生成→AGENTS.md 更新）
+./scripts/ci.sh
+
+# 個別に実行する場合は各サブコマンドを呼び出せるようになっています。
+# 例: ドキュメントだけ
+python docs/gen_docs.py --output ./docs/_build/html
+```
+
+## CI の設定例（GitHub Actions）
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run CI pipeline
+        run: ./scripts/ci.sh
+```
+
+## 依存関係
+
+| ライブラリ | バージョン |
+|------------|-----------|
+| `pyyaml`   | ≥6.0.3     |
+| `pytest`   | ≥7.4.0     |
+| `pytest-cov` | ≥4.1.0   |
+| `pytest-mock` | ≥3.11.1  |
+
+これらはすべて **uv** を介してインストールされ、プロジェクトの `pyproject.toml` に明示的に宣言されています。  
+
+---
+
+このパイプラインを導入することで、コミットごとに品質保証・ドキュメント整合性が自動化できるため、開発者はコードへの集中力を高めつつ、最新の情報提供状態を保てます。<!-- MANUAL_START:architecture -->
+
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -226,4 +296,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-23 16:07:36*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-23 16:26:40*

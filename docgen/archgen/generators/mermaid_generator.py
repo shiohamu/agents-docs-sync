@@ -223,9 +223,31 @@ class MermaidGenerator:
         return sanitized
 
     def _generate_service_list(self, manifest: ArchitectureManifest) -> str:
-        """サービスリストを生成"""
+        """サービスリストを生成（重複を除去）"""
         lines = []
+        # サービス名とタイプの組み合わせで重複をチェック
+        seen_services: dict[tuple[str, str], Any] = {}
+
         for service in manifest.services:
+            key = (service.name, service.type)
+            # 既に同じ名前とタイプのサービスがある場合は、より詳細な情報を持つ方を優先
+            if key in seen_services:
+                existing = seen_services[key]
+                # 既存のサービスにより詳細な情報がある場合はスキップ
+                # 依存関係やモジュールがある方を優先
+                if existing.dependencies or (hasattr(existing, "modules") and existing.modules):
+                    continue
+                # 新しいサービスの方が詳細な場合は置き換え
+                if service.dependencies or (hasattr(service, "modules") and service.modules):
+                    seen_services[key] = service
+                    continue
+                # どちらも同じ詳細度の場合は最初のものを保持
+                continue
+
+            seen_services[key] = service
+
+        # 重複除去後のサービスを出力
+        for service in seen_services.values():
             lines.append(f"### {service.name}")
             lines.append(f"- **Type**: {service.type}")
             if service.description:

@@ -120,6 +120,10 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
         if current_depth >= max_depth:
             return {}
 
+        # exclude設定を最優先でチェック
+        if directory.name in self.ignore_dirs:
+            return {}
+
         # ネストしないディレクトリの場合は中身を展開しない
         if directory.name in self.NO_NEST_DIRS:
             return "directory"
@@ -130,11 +134,12 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
             items = sorted(directory.iterdir(), key=lambda x: (not x.is_dir(), x.name))
 
             for item in items:
+                # exclude設定を最優先でチェック
                 if item.name in self.ignore_dirs or item.name.startswith("."):
                     continue
 
                 if item.is_dir():
-                    # ネストしないディレクトリかチェック
+                    # ネストしないディレクトリかチェック（exclude設定の後でチェック）
                     if item.name in self.NO_NEST_DIRS:
                         result[f"{item.name}/"] = "directory"
                     else:
@@ -176,11 +181,12 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
             items = sorted(self.project_root.iterdir(), key=lambda x: (not x.is_dir(), x.name))
 
             for item in items:
+                # exclude設定を最優先でチェック
                 if item.name in self.ignore_dirs or item.name.startswith("."):
                     continue
 
                 if item.is_dir():
-                    # ネストしないディレクトリかチェック
+                    # ネストしないディレクトリかチェック（exclude設定の後でチェック）
                     if item.name in self.NO_NEST_DIRS:
                         structure[f"{item.name}/"] = "directory"
                     else:

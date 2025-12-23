@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-23 16:08:12
+自動生成日時: 2025-12-23 16:27:43
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,18 +12,29 @@
 <!-- MANUAL_END:description -->
 
 
-This repository implements an automated sync workflow for AI‑agent projects. Every time a commit lands on the main branch it triggers a pipeline that:
+`agents-docs-sync` は、AI エージェントのドキュメント管理を自動化するパイプラインです。  
+リポジトリにコミットが入るたびに以下の処理を実行します。
 
-1. **Runs unit and integration tests** – using `pytest` with coverage (`pytest-cov`) to guarantee new changes do not break existing agent behaviour.
-2. **Generates documentation artifacts** – YAML files, Markdown snippets or other formats are produced from source code annotations or configuration files through the `pyyaml` library, ensuring that user‑facing docs reflect the latest implementation state.
-3. **Updates the central `AGENTS.md` file automatically** – a lightweight shell script parses test results and generated doc fragments to rebuild the master reference document, keeping it in sync with both code changes and documentation outputs.
+1. **テスト実行** – `pytest`, `pytest-cov` を使ってコードベース全体の単体・統合テストとカバレッジ測定を行い、品質保証を自動化。  
+2. **ドキュメント生成** – エージェントごとの説明やインターフェイス（入力/出力仕様）を YAML 形式で記述したファイルから `pyyaml` を利用してパースし、統一フォーマットの Markdown ドキュメントに変換。  
+3. **AGENTS.md の自動更新** – 上記生成結果をもとに `AGENTS.md` 内の指定セクション（例：`<!-- AGENT_DOCS_START --> … <!-- AGENT_DOCS_END -->`) を差し替え、最新情報が常に反映されるようにします。
 
-The stack is deliberately minimal: Python 3.x scripts orchestrated by simple Bash wrappers, all dependencies managed via `uv`. The key libraries are:
+## 主な特徴
 
-- **`pyyaml>=6.0.3`** – for reading/writing YAML agent configurations.
-- **`pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`** – to provide a robust, mock‑friendly testing environment and coverage reporting.
+- **CI/CD 連携** – GitHub Actions 等でワークフローを構成すれば、プッシュ時・PR 時点で自動実行。  
+- **軽量スクリプト** – Python とシェルのハイブリッドにより高速かつメンテナンス容易。  
+- **依存管理は `uv` に任せる** – 速いインストールと一貫したバージョニングで開発環境を統制。  
+- **拡張性** – エージェントの定義ファイル（YAML/JSON）に新フィールドを追加するだけで、ドキュメントやテストケースも自動生成されます。
 
-By integrating tests, docs generation, and automatic AGENTS.md updates into one CI pipeline, the project guarantees that agents’ behaviour, configuration metadata, and public documentation remain consistent across all commits—an essential invariant for reliable AI agent development.
+## 開発者向けヒント
+
+| タスク | コマンド例 |
+|--------|------------|
+| 依存パッケージのインストール | `uv sync` |
+| ローカルでテストとレポートを確認 | `pytest --cov=agents -v` |
+| ドキュメント生成（手動） | `bash scripts/generate_docs.sh` |
+
+このプロジェクトにより、AI エージェントの仕様変更がコードベース内で完結し、ドキュメンテーションは常時同期された状態を保つことができます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -122,7 +133,6 @@ By integrating tests, docs generation, and automatic AGENTS.md updates into one 
 │   └── language_detector.py
 ├── docs/
 ├── scripts/
-├── tests/
 ├── AGENTS.md
 ├── ARCHITECTURE_DETECTOR_FIX.md
 ├── BENCHMARK_PLAN.md
@@ -140,6 +150,7 @@ By integrating tests, docs generation, and automatic AGENTS.md updates into one 
 ## アーキテクチャ
 
 <!-- MANUAL_START:architecture -->
+
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -429,4 +440,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-23 16:08:12*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-23 16:27:43*

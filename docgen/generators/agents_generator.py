@@ -133,6 +133,9 @@ class AgentsGenerator(BaseGenerator):
         except (FileNotFoundError, OSError):
             manual_sections = {}
 
+        # default_language設定を取得
+        default_language = self.config.get("general", {}).get("default_language", "en")
+
         # コンテキストの準備
         context = {
             "timestamp": get_current_timestamp(),
@@ -159,6 +162,9 @@ class AgentsGenerator(BaseGenerator):
             "architecture": self._generate_architecture(project_info),
             "troubleshooting": "",
             "scripts": project_info.scripts,
+            # default_languageをテンプレートに渡す（将来の多言語対応のため）
+            "default_language": default_language,
+            "is_japanese": default_language == "ja",
         }
 
         # Jinja2テンプレートでレンダリング
@@ -173,16 +179,35 @@ class AgentsGenerator(BaseGenerator):
         else:
             # デフォルトの説明を生成
             description = self._collect_project_description()
-            if description:
-                return f"## 概要\n\n{description}"
+
+            # default_language設定に基づいてセクションタイトルを決定
+            default_language = self.config.get("general", {}).get("default_language", "en")
+            if default_language == "ja":
+                section_title = "## 概要"
             else:
-                return "## 概要\n\nPlease describe this project here."
+                section_title = "## Overview"
+
+            if description:
+                return f"{section_title}\n\n{description}"
+            else:
+                # messages.default_descriptionを使用
+                from ..utils.config_utils import get_message
+
+                default_description = get_message(self.config, "default_description")
+                return f"{section_title}\n\n{default_description}"
 
     def _collect_project_description(self) -> str:
         """プロジェクトの説明を収集（MarkdownMixinから移行）"""
-        # ここでは簡易的に実装。必要に応じてFormattingServiceに移動を検討
-        # プロジェクトルートのREADMEなどから抽出するロジックがあればここに実装
-        return ""
+        from ..utils.markdown_utils import extract_project_description
+
+        # extract_project_descriptionを使用してプロジェクト説明を取得
+        # これにより、messages.default_descriptionが適用される
+        return extract_project_description(
+            self.project_root,
+            None,  # project_info_descriptionは後で取得
+            exclude_readme_path=None,
+            config=self.config,
+        )
 
     def _generate_custom_instructions_content(self) -> str:
         """カスタム指示の内容を生成"""
