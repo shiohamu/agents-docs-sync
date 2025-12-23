@@ -187,12 +187,5 @@ services:
       dependencies: []
       submodules: []
   metadata:
-    version: 0.1.8
-- name: agents-docs-sync
-  type: shell
-  description: Shell project detected by source files
-  ports: []
-  dependencies: []
-  modules: []
-  metadata: {}
+    version: 0.2.0
 metadata: {}

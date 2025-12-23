@@ -299,10 +299,10 @@ class BaseGenerator(ABC):
                 # Markdownファイルの内容を読み込む
                 content = markdown_path.read_text(encoding="utf-8")
 
-                # Servicesセクションのみを抽出
-                services_section = self._extract_services_section(content)
-                if services_section:
-                    return services_section
+                # Mermaid図とServicesセクションを含むコンテンツを抽出
+                architecture_content = self._extract_architecture_content(content)
+                if architecture_content:
+                    return architecture_content
 
                 # フォールバック: 最初のH1見出しを除去して返す（後方互換性）
                 lines = content.splitlines()
@@ -424,61 +424,45 @@ class BaseGenerator(ABC):
         self.logger.warning(f"_generate_hybrid is not implemented in {self.__class__.__name__}")
         return self._generate_template(project_info)
 
-    def _extract_services_section(self, content: str) -> str | None:
+    def _extract_architecture_content(self, content: str) -> str | None:
         """
-        アーキテクチャ図のMarkdownからServicesセクションのみを抽出
+        アーキテクチャ図のMarkdownからMermaid図とServicesセクションを抽出
+
+        H1見出しを除外し、Mermaid図のコードブロックとServicesセクションを含む。
 
         Args:
             content: Markdownファイルの内容
 
         Returns:
-            Servicesセクションの内容（見つからない場合はNone）
+            Mermaid図とServicesセクションを含むコンテンツ（見つからない場合はNone）
         """
         lines = content.splitlines()
-        services_start = None
-        services_end = None
-        in_code_block = False
+        filtered_lines = []
+        skip_h1 = True
+        found_content = False
 
-        # Servicesセクションの開始位置を探す
-        for i, line in enumerate(lines):
-            # コードブロックの開始/終了を検出
-            if line.strip().startswith("```"):
-                in_code_block = not in_code_block
+        for line in lines:
+            stripped = line.strip()
+
+            # H1見出し（# で始まる行、## ではない）をスキップ
+            if skip_h1 and stripped.startswith("# ") and not stripped.startswith("## "):
+                skip_h1 = False
                 continue
 
-            # コードブロック内はスキップ
-            if in_code_block:
-                continue
+            # H1見出しをスキップした後は、すべてのコンテンツを含める
+            # ただし、次のH1見出し（# で始まる行、## ではない）が現れたら終了
+            if not skip_h1:
+                if stripped.startswith("# ") and not stripped.startswith("## "):
+                    # 次のH1見出しが見つかったら終了
+                    break
 
-            # Servicesセクションの開始（## Services または ## サービス）
-            if line.strip().startswith("## ") and ("Services" in line or "サービス" in line):
-                services_start = i
-                break
+                # コンテンツを含める
+                filtered_lines.append(line)
+                if stripped:  # 空行以外のコンテンツが見つかった
+                    found_content = True
 
-        if services_start is None:
-            return None
+        # コンテンツが見つかった場合のみ返す
+        if found_content:
+            return "\n".join(filtered_lines).strip()
 
-        # Servicesセクションの終了位置を探す（次の## セクションまたはファイル終端）
-        for i in range(services_start + 1, len(lines)):
-            line = lines[i]
-            # コードブロックの開始/終了を検出
-            if line.strip().startswith("```"):
-                in_code_block = not in_code_block
-                continue
-
-            # コードブロック内は含める
-            if in_code_block:
-                continue
-
-            # 次のセクション（## で始まる）が見つかったら終了
-            if line.strip().startswith("## "):
-                services_end = i
-                break
-
-        # Servicesセクションを抽出
-        if services_end is not None:
-            services_lines = lines[services_start:services_end]
-        else:
-            services_lines = lines[services_start:]
-
-        return "\n".join(services_lines).strip()
+        return None

@@ -43,7 +43,6 @@ graph TB
         end
         class docgen moduleStyle
     end
-    agents_docs_sync["fa:fa-cube agents-docs-sync"]
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
@@ -89,8 +88,4 @@ graph TB
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 - **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
-
-### agents-docs-sync
-- **Type**: shell
-- **Description**: Shell project detected by source files
 

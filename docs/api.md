@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-23 16:26:30
+自動生成日時: 2025-12-24 05:48:38
 
 ---
 
@@ -106,10 +106,16 @@ class GenericDetector:
 
 **シグネチャ**:
 ```
-def __init__(self, exclude_directories: list[str] | None):
+def __init__(self, exclude_directories: list[str] | None, exclude_patterns: set[str] | None):
 ```
 
-*説明なし*
+**説明**:
+
+初期化
+
+Args:
+    exclude_directories: 除外するディレクトリのリスト
+    exclude_patterns: 依存関係から除外するパターンのセット
 
 *定義場所: docgen/archgen/detectors/generic_detector.py:16*
 
@@ -128,7 +134,7 @@ def detect(self, project_root: Path) -> list[Service]:
 
 プロジェクトをスキャンしてサービスを検出
 
-*定義場所: docgen/archgen/detectors/generic_detector.py:21*
+*定義場所: docgen/archgen/detectors/generic_detector.py:33*
 
 ---
 
@@ -158,10 +164,16 @@ Python プロジェクトを検出
 
 **シグネチャ**:
 ```
-def __init__(self, exclude_directories: list[str] | None):
+def __init__(self, exclude_directories: list[str] | None, exclude_patterns: set[str] | None):
 ```
 
-*説明なし*
+**説明**:
+
+初期化
+
+Args:
+    exclude_directories: 除外するディレクトリのリスト
+    exclude_patterns: 依存関係から除外するパターンのセット
 
 *定義場所: docgen/archgen/detectors/python_detector.py:17*
 
@@ -178,7 +190,7 @@ def detect(self, project_root: Path) -> list[Service]:
 
 *説明なし*
 
-*定義場所: docgen/archgen/detectors/python_detector.py:22*
+*定義場所: docgen/archgen/detectors/python_detector.py:34*
 
 ---
 
@@ -307,6 +319,29 @@ YAML形式から読み込み
 
 ---
 
+### deduplicate_services
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def deduplicate_services(self, preferred_languages: list[str] | None) -> 'ArchitectureManifest':
+```
+
+**説明**:
+
+サービス重複除去と優先順位付け
+
+Args:
+    preferred_languages: 優先する言語のリスト（languages.preferred設定）
+
+Returns:
+    重複除去後のArchitectureManifest（selfを変更）
+
+*定義場所: docgen/archgen/models.py:55*
+
+---
+
 
 ## docgen/archgen/renderer.py
 
@@ -388,7 +423,7 @@ class ProjectScanner:
 
 プロジェクトをスキャンしてアーキテクチャを抽出
 
-*定義場所: docgen/archgen/scanner.py:13*
+*定義場所: docgen/archgen/scanner.py:14*
 
 ---
 
@@ -398,12 +433,19 @@ class ProjectScanner:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, exclude_directories: list[str] | None):
+def __init__(self, project_root: Path, exclude_directories: list[str] | None, config: dict[str, Any] | None):
 ```
 
-*説明なし*
+**説明**:
 
-*定義場所: docgen/archgen/scanner.py:16*
+初期化
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    exclude_directories: 除外するディレクトリのリスト
+    config: 設定辞書（依存関係フィルタリング用）
+
+*定義場所: docgen/archgen/scanner.py:17*
 
 ---
 
@@ -420,7 +462,10 @@ def scan(self) -> ArchitectureManifest:
 
 プロジェクトをスキャン
 
-*定義場所: docgen/archgen/scanner.py:24*
+Returns:
+    アーキテクチャマニフェスト（サービス重複除去済み）
+
+*定義場所: docgen/archgen/scanner.py:100*
 
 ---
 
@@ -2109,6 +2154,12 @@ def collect_project_description(self) -> str | None:
 **説明**:
 
 プロジェクトの説明を収集
+
+優先順位:
+1. package.json (JavaScript/TypeScript プロジェクト)
+2. pyproject.toml (Python プロジェクト)
+3. setup.py (古いPythonプロジェクト)
+4. README.md (上記が存在しない場合のみ)
 
 Returns:
     プロジェクトの説明文（見つからない場合はNone）
@@ -10249,11 +10300,19 @@ def extract_project_description(project_root: Path, project_info_description: st
 
 **説明**:
 
-Extract project description from README.md or project info.
+Extract project description from package manager files or README.md.
+
+Priority order:
+1. package.json (if exists)
+2. pyproject.toml (if exists)
+3. setup.py (if exists)
+4. project_info_description (from LanguageInfoCollector)
+5. README.md (if not excluded)
+6. Default message
 
 Args:
     project_root: Project root directory
-    project_info_description: Description from project info (fallback)
+    project_info_description: Description from project info (already prioritized by package manager)
     exclude_readme_path: README path to exclude (to prevent circular reference)
     config: Configuration dictionary (for multilingual messages)
 
@@ -10283,7 +10342,7 @@ Args:
 Returns:
     Cleaned text with thinking processes removed
 
-*定義場所: docgen/utils/markdown_utils.py:87*
+*定義場所: docgen/utils/markdown_utils.py:162*
 
 ---
 

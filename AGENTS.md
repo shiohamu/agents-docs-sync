@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-23 16:27:43
+自動生成日時: 2025-12-24 05:49:43
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,29 +12,28 @@
 <!-- MANUAL_END:description -->
 
 
-`agents-docs-sync` は、AI エージェントのドキュメント管理を自動化するパイプラインです。  
-リポジトリにコミットが入るたびに以下の処理を実行します。
+agents-docs-sync は、コードベースに対する変更がコミットされるたびに自動でテスト実行・ドキュメント生成をトリガーし、AGENTS.md の内容を最新の状態へ更新します。Python とシェルスクリプトだけで構成された軽量な CI パイプラインは `uv` で管理される仮想環境内にインストールした `pytest`, `pyyaml`, `coverage`, `mock` を用いて単体テストとコードカバレッジを測定し、失敗時にはビルドを中断します。Docstring と外部 YAML 設計ファイルから Markdown ドキュメントが自動生成されるため、開発者は手作業での更新を不要にしています。また `AGENTS.md` はプロジェクト内のエージェント定義（Python クラス/関数）の署名と簡易説明を抽出して書き換えるスクリプトが付属し、ドキュメント整合性を保ちます。  
 
-1. **テスト実行** – `pytest`, `pytest-cov` を使ってコードベース全体の単体・統合テストとカバレッジ測定を行い、品質保証を自動化。  
-2. **ドキュメント生成** – エージェントごとの説明やインターフェイス（入力/出力仕様）を YAML 形式で記述したファイルから `pyyaml` を利用してパースし、統一フォーマットの Markdown ドキュメントに変換。  
-3. **AGENTS.md の自動更新** – 上記生成結果をもとに `AGENTS.md` 内の指定セクション（例：`<!-- AGENT_DOCS_START --> … <!-- AGENT_DOCS_END -->`) を差し替え、最新情報が常に反映されるようにします。
+## 使い方
 
-## 主な特徴
+1. **依存パッケージの同期**  
+   ```bash
+   uv sync
+   ```
+2. **テスト実行とカバレッジ測定**  
+   ```bash
+   pytest --cov=agents_doc_sync tests/
+   ```
+3. **ドキュメント生成**（`mkdocs build` などを想定）  
+   ```bash
+   mkdocs build -d docs/_site
+   ```
+4. **AGENTS.md の自動更新スクリプト実行**  
+   ```bash
+   ./scripts/update_agents_md.sh
+   ```
 
-- **CI/CD 連携** – GitHub Actions 等でワークフローを構成すれば、プッシュ時・PR 時点で自動実行。  
-- **軽量スクリプト** – Python とシェルのハイブリッドにより高速かつメンテナンス容易。  
-- **依存管理は `uv` に任せる** – 速いインストールと一貫したバージョニングで開発環境を統制。  
-- **拡張性** – エージェントの定義ファイル（YAML/JSON）に新フィールドを追加するだけで、ドキュメントやテストケースも自動生成されます。
-
-## 開発者向けヒント
-
-| タスク | コマンド例 |
-|--------|------------|
-| 依存パッケージのインストール | `uv sync` |
-| ローカルでテストとレポートを確認 | `pytest --cov=agents -v` |
-| ドキュメント生成（手動） | `bash scripts/generate_docs.sh` |
-
-このプロジェクトにより、AI エージェントの仕様変更がコードベース内で完結し、ドキュメンテーションは常時同期された状態を保つことができます。
+これらのステップは GitHub Actions など CI 環境で `on: push` トリガーとして設定されており、コミットごとに一連の処理が自動的に走ります。結果としてテスト失敗時にはビルドを停止し、成功した場合のみ最新ドキュメントと AGENTS.md がレポジトリへ反映されます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -43,8 +42,9 @@
 │   │   ├── detectors//
 │   │   │   ├── generic_detector.py
 │   │   │   └── python_detector.py
-│   │   └── generators//
-│   │       └── mermaid_generator.py
+│   │   ├── generators//
+│   │   │   └── mermaid_generator.py
+│   │   └── models.py
 │   ├── benchmark//
 │   │   ├── comparator.py
 │   │   ├── core.py
@@ -57,6 +57,7 @@
 │   ├── collectors//
 │   │   ├── collector_utils.py
 │   │   ├── command_help_extractor.py
+│   │   ├── language_info_collector.py
 │   │   ├── project_info_collector.py
 │   │   └── structure_analyzer.py
 │   ├── config//
@@ -134,14 +135,6 @@
 ├── docs/
 ├── scripts/
 ├── AGENTS.md
-├── ARCHITECTURE_DETECTOR_FIX.md
-├── BENCHMARK_PLAN.md
-├── BUGFIX_SUMMARY.md
-├── CHANGELOG_IMPROVEMENTS.md
-├── GENERALIZATION_PLAN.md
-├── IMPROVEMENT_PLAN.md
-├── RAG_CHUNKER_FIX.md
-├── RAG_RELEVANCE_LOGIC.md
 ├── README.md
 ├── pyproject.toml
 ├── requirements-docgen.txt
@@ -195,7 +188,6 @@ graph TB
         end
         class docgen moduleStyle
     end
-    agents_docs_sync["fa:fa-cube agents-docs-sync"]
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
@@ -241,10 +233,6 @@ graph TB
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 - **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
-
-### agents-docs-sync
-- **Type**: shell
-- **Description**: Shell project detected by source files
 
 ---
 
@@ -440,4 +428,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-23 16:27:43*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-24 05:49:43*
