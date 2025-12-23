@@ -102,42 +102,41 @@ def get_message(
     config: dict[str, Any] | None, message_key: str, language: str | None = None
 ) -> str:
     """
-    多言語対応メッセージを取得
+    メッセージを取得
 
     Args:
         config: 設定辞書（Noneの場合はデフォルト値を使用）
         message_key: メッセージキー（例: "default_description"）
-        language: 言語コード（Noneの場合は設定から取得、それもなければ"en"）
+        language: 言語コード（互換性のため残しているが、現在は使用されない）
 
     Returns:
         メッセージ文字列
     """
-    # デフォルトメッセージ（英語）
-    default_messages: dict[str, dict[str, str]] = {
-        "default_description": {
-            "en": "Please describe this project here.",
-            "ja": "このプロジェクトの説明をここに記述してください。",
-            "ko": "여기에 프로젝트 설명을 작성하세요.",
-        }
+    # デフォルトメッセージ
+    default_messages: dict[str, str] = {
+        "default_description": "Please describe this project here.",
     }
-
-    # 言語を決定
-    if language is None:
-        if config:
-            language = config.get("general", {}).get("default_language", "en")
-        else:
-            language = "en"
 
     # 設定からメッセージを取得
     if config:
         messages = config.get("messages", {})
-        message_dict = messages.get(message_key, {})
-        if isinstance(message_dict, dict) and language in message_dict:
-            return message_dict[language]
+        message_value = messages.get(message_key)
+        if message_value is not None:
+            # 文字列の場合はそのまま返す（新しい形式）
+            if isinstance(message_value, str):
+                return message_value
+            # 辞書の場合は従来通り言語に応じて取得（後方互換性）
+            if isinstance(message_value, dict):
+                if language is None:
+                    language = config.get("general", {}).get("default_language", "en")
+                if language in message_value:
+                    return message_value[language]
+                # フォールバック: 英語または最初の値
+                return message_value.get("en", next(iter(message_value.values()), ""))
 
     # デフォルトメッセージから取得
     if message_key in default_messages:
-        return default_messages[message_key].get(language, default_messages[message_key]["en"])
+        return default_messages[message_key]
 
     # フォールバック
     return ""

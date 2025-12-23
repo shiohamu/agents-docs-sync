@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-23 15:50:44
+自動生成日時: 2025-12-23 16:08:12
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,70 +12,18 @@
 <!-- MANUAL_END:description -->
 
 
-このプロジェクトは、リポジトリにコミットがあるたびに自動的にテストを実行し、ドキュメント（主に Markdown 形式）と **AGENTS.md** を最新状態へ更新する CI パイプラインです。  
-- **Python / Shell の組み合わせで構成されており**, `uv` がパッケージ管理・ビルドツールとして使用されています。  
-- テストは **pytest**、カバレッジ計測は **pytest‑cov** で実行し、その結果を HTML/Markdown レポートにまとめます。  
-- ドキュメント生成はコード内の docstring や YAML メタデータから自動的に Markdown ファイルへ変換される仕組み（例: `mkdocs`、Sphinx の拡張）で行われ、パッケージ全体の API 仕様が一元管理できます。  
-- **AGENTS.md** はプロジェクト内の AI エージェントモジュールを走査し、それぞれに付与されたメタ情報（名前・バージョン・概要など）を抽出してファイルへ書き込みます。これにより、エージェントが追加／更新されるたびに手動でドキュメントを書き換える必要はありません。
+This repository implements an automated sync workflow for AI‑agent projects. Every time a commit lands on the main branch it triggers a pipeline that:
 
-### 主要な機能
-| 機能 | 内容 |
-|------|-------|
-| **自動テスト実行** | `pytest` + `pytest-mock`, `pyyaml` を利用し、ユニット・統合テストをすべて走らせます。失敗したケースはコミット時に即座にフィードバックされます。 |
-| **カバレッジ報告** | `coverage.xml` 生成後、HTML/Markdown レポートへ変換し、PR のコメントや GitHub Actions に埋め込み可能です。 |
-| **ドキュメント自動生成** | YAML 設定ファイル (`docs/config.yaml`) を参照して、API ドキュメントとエージェント固有の説明を Markdown へ変換します。 |
-| **AGENTS.md の同期更新** | `agents/` ディレクトリ内の Python ファイルから `@agent_info(...)` デコレーターで取得した情報を集計し、既存のファイルに差分を書き込みます。 |
+1. **Runs unit and integration tests** – using `pytest` with coverage (`pytest-cov`) to guarantee new changes do not break existing agent behaviour.
+2. **Generates documentation artifacts** – YAML files, Markdown snippets or other formats are produced from source code annotations or configuration files through the `pyyaml` library, ensuring that user‑facing docs reflect the latest implementation state.
+3. **Updates the central `AGENTS.md` file automatically** – a lightweight shell script parses test results and generated doc fragments to rebuild the master reference document, keeping it in sync with both code changes and documentation outputs.
 
-### 使い方
-1. **ローカル環境構築**  
-   ```bash
-   # uv が未インストールの場合は公式サイトから入手
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+The stack is deliberately minimal: Python 3.x scripts orchestrated by simple Bash wrappers, all dependencies managed via `uv`. The key libraries are:
 
-   # 必要パッケージをインストール（依存関係は pyproject.toml で管理）
-   uv sync --dev
-   ```
-2. **ローカル実行**  
-   ```bash
-   ./scripts/run_pipeline.sh
-   ```
-3. **GitHub Actions の設定例**  
-   `ci.yml` に以下を追加し、push 時に自動化します。  
+- **`pyyaml>=6.0.3`** – for reading/writing YAML agent configurations.
+- **`pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1`** – to provide a robust, mock‑friendly testing environment and coverage reporting.
 
-```yaml
-jobs:
-  sync-docs-agents:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - run: uv sync --dev
-      - run: ./scripts/run_pipeline.sh
-```
-
-### AI エージェント開発者向けのポイント  
-- **エージェント登録**は `agents/` フォルダ内に Python ファイルを作成し、以下のようなデコレーターでメタ情報を付与します。  
-  ```python
-  from agents import agent_info
-
-  @agent_info(name="WeatherBot", version="1.0", description="天気予報取得エージェント")
-  class WeatherAgent:
-      ...
-  ```
-- このファイルがコミットされると、パイプラインは自動的に `AGENTS.md` を更新し、新しいエージェントの概要をドキュメント化します。  
-- テストケースも同時に追加しておくことで、CI が失敗した際には即座に修正箇所が分かります。
-
-### まとめ
-* **継続的インテグレーション**でコードと文書の整合性を保ちつつ  
-* AI エージェント開発者はメタデータだけを書けば、ドキュメント更新やカバレッジ報告まで自動化されます。  
-* 依存関係管理からテスト実行・成果物生成まで一括で処理できるため、プロジェクトの品質向上と開発スピードが大幅に改善します。
+By integrating tests, docs generation, and automatic AGENTS.md updates into one CI pipeline, the project guarantees that agents’ behaviour, configuration metadata, and public documentation remain consistent across all commits—an essential invariant for reliable AI agent development.
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -192,7 +140,6 @@ jobs:
 ## アーキテクチャ
 
 <!-- MANUAL_START:architecture -->
-
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -482,4 +429,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-23 15:50:44*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-23 16:08:12*

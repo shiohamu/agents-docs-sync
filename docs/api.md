@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-23 15:49:39
+自動生成日時: 2025-12-23 16:07:25
 
 ---
 
@@ -3128,7 +3128,7 @@ class ConfigManager:
 
 設定ファイルの管理クラス
 
-*定義場所: docgen/config_manager.py:44*
+*定義場所: docgen/config_manager.py:45*
 
 ---
 
@@ -3151,7 +3151,7 @@ Args:
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
     package_config_sample: パッケージ内のサンプル設定ファイルパス
 
-*定義場所: docgen/config_manager.py:47*
+*定義場所: docgen/config_manager.py:48*
 
 ---
 
@@ -3168,7 +3168,7 @@ def get_config(self) -> dict[str, Any]:
 
 現在の設定を取得
 
-*定義場所: docgen/config_manager.py:123*
+*定義場所: docgen/config_manager.py:172*
 
 ---
 
@@ -3185,7 +3185,7 @@ def accessor(self) -> ConfigAccessor:
 
 型安全な設定アクセサを取得（遅延初期化）
 
-*定義場所: docgen/config_manager.py:128*
+*定義場所: docgen/config_manager.py:177*
 
 ---
 
@@ -3205,7 +3205,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/config_manager.py:162*
+*定義場所: docgen/config_manager.py:211*
 
 ---
 
@@ -3222,7 +3222,7 @@ def load_detector_defaults(self) -> dict[str, Any]:
 
 Detectorのデフォルト設定を読み込み
 
-*定義場所: docgen/config_manager.py:187*
+*定義場所: docgen/config_manager.py:236*
 
 ---
 
@@ -3239,7 +3239,7 @@ def load_detector_user_overrides(self) -> dict[str, Any]:
 
 ユーザー設定ファイルを読み込み
 
-*定義場所: docgen/config_manager.py:191*
+*定義場所: docgen/config_manager.py:240*
 
 ---
 
@@ -3256,7 +3256,7 @@ def merge_detector_configs(self, defaults: dict[str, Any], overrides: dict[str, 
 
 Detectorのデフォルト設定とユーザー設定をマージ
 
-*定義場所: docgen/config_manager.py:195*
+*定義場所: docgen/config_manager.py:244*
 
 ---
 
@@ -7210,7 +7210,7 @@ class MessagesConfig:
 
 **説明**:
 
-Messages configuration model for multilingual support.
+Messages configuration model.
 
 *定義場所: docgen/models/config.py:17*
 
@@ -7229,7 +7229,7 @@ class TechnicalKeywordsConfig:
 
 Technical keywords configuration model.
 
-*定義場所: docgen/models/config.py:29*
+*定義場所: docgen/models/config.py:23*
 
 ---
 
@@ -7246,7 +7246,7 @@ class ValidatorConfig:
 
 Validator configuration model.
 
-*定義場所: docgen/models/config.py:60*
+*定義場所: docgen/models/config.py:54*
 
 ---
 
@@ -7263,7 +7263,7 @@ class LanguagesConfig:
 
 Languages configuration model.
 
-*定義場所: docgen/models/config.py:66*
+*定義場所: docgen/models/config.py:60*
 
 ---
 
@@ -7280,7 +7280,7 @@ class OutputConfig:
 
 Output configuration model.
 
-*定義場所: docgen/models/config.py:74*
+*定義場所: docgen/models/config.py:68*
 
 ---
 
@@ -7297,7 +7297,7 @@ class GenerationConfig:
 
 Generation configuration model.
 
-*定義場所: docgen/models/config.py:82*
+*定義場所: docgen/models/config.py:76*
 
 ---
 
@@ -7314,7 +7314,7 @@ class ExcludeConfig:
 
 Exclude configuration model.
 
-*定義場所: docgen/models/config.py:91*
+*定義場所: docgen/models/config.py:85*
 
 ---
 
@@ -7331,7 +7331,7 @@ class CacheConfig:
 
 Cache configuration model.
 
-*定義場所: docgen/models/config.py:99*
+*定義場所: docgen/models/config.py:93*
 
 ---
 
@@ -7348,7 +7348,7 @@ class BenchmarkConfig:
 
 Benchmark configuration model.
 
-*定義場所: docgen/models/config.py:105*
+*定義場所: docgen/models/config.py:99*
 
 ---
 
@@ -7365,7 +7365,7 @@ class DebugConfig:
 
 Debug configuration model.
 
-*定義場所: docgen/models/config.py:111*
+*定義場所: docgen/models/config.py:105*
 
 ---
 
@@ -7382,7 +7382,7 @@ class EmbeddingConfig:
 
 Embedding configuration model.
 
-*定義場所: docgen/models/config.py:117*
+*定義場所: docgen/models/config.py:111*
 
 ---
 
@@ -7399,7 +7399,7 @@ class IndexConfig:
 
 Index configuration model.
 
-*定義場所: docgen/models/config.py:124*
+*定義場所: docgen/models/config.py:118*
 
 ---
 
@@ -7416,7 +7416,7 @@ class RetrievalConfig:
 
 Retrieval configuration model.
 
-*定義場所: docgen/models/config.py:132*
+*定義場所: docgen/models/config.py:126*
 
 ---
 
@@ -7433,7 +7433,7 @@ class ChunkingConfig:
 
 Chunking configuration model.
 
-*定義場所: docgen/models/config.py:140*
+*定義場所: docgen/models/config.py:134*
 
 ---
 
@@ -7448,7 +7448,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:147*
+*定義場所: docgen/models/config.py:141*
 
 ---
 
@@ -7465,7 +7465,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:159*
+*定義場所: docgen/models/config.py:153*
 
 ---
 
@@ -7482,7 +7482,7 @@ class ArchitecturePythonConfig:
 
 Python architecture configuration.
 
-*定義場所: docgen/models/config.py:171*
+*定義場所: docgen/models/config.py:165*
 
 ---
 
@@ -7499,7 +7499,7 @@ class ArchitectureJavascriptConfig:
 
 JavaScript architecture configuration.
 
-*定義場所: docgen/models/config.py:178*
+*定義場所: docgen/models/config.py:172*
 
 ---
 
@@ -7516,7 +7516,7 @@ class ArchitectureConfig:
 
 Architecture diagram generation configuration.
 
-*定義場所: docgen/models/config.py:184*
+*定義場所: docgen/models/config.py:178*
 
 ---
 
@@ -7533,7 +7533,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:195*
+*定義場所: docgen/models/config.py:189*
 
 ---
 
@@ -8304,7 +8304,7 @@ Args:
 Returns:
     フォーマット済みのコンテキスト文字列
 
-*定義場所: docgen/rag/retriever.py:185*
+*定義場所: docgen/rag/retriever.py:184*
 
 ---
 
@@ -8329,7 +8329,7 @@ Args:
 Returns:
     再ランク済みのチャンクのリスト
 
-*定義場所: docgen/rag/retriever.py:217*
+*定義場所: docgen/rag/retriever.py:216*
 
 ---
 
@@ -8965,12 +8965,12 @@ def get_message(config: dict[str, Any] | None, message_key: str, language: str |
 
 **説明**:
 
-多言語対応メッセージを取得
+メッセージを取得
 
 Args:
     config: 設定辞書（Noneの場合はデフォルト値を使用）
     message_key: メッセージキー（例: "default_description"）
-    language: 言語コード（Noneの場合は設定から取得、それもなければ"en"）
+    language: 言語コード（互換性のため残しているが、現在は使用されない）
 
 Returns:
     メッセージ文字列
@@ -9642,6 +9642,9 @@ Args:
 
 Returns:
     パースされたTOMLデータ。失敗時はNone
+
+Raises:
+    tomllib.TOMLDecodeError: TOMLパースエラーが発生した場合（詳細なエラー情報を含む）
 
 *定義場所: docgen/utils/file_utils.py:157*
 

@@ -6,14 +6,10 @@
 # デフォルト言語（"en", "ja", "ko" など）
 default_language = "en"
 
-# メッセージ設定（多言語対応）
+# メッセージ設定
 [messages]
 # デフォルトのプロジェクト説明メッセージ
-default_description = {
-    en = "Please describe this project here.",
-    ja = "このプロジェクトの説明をここに記述してください。",
-    ko = "여기에 프로젝트 설명을 작성하세요."
-}
+default_description = "Please describe this project here."
 
 # 検証設定
 [validator]

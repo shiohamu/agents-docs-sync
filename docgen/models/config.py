@@ -15,15 +15,9 @@ class GeneralConfig(DocgenBaseModel):
 
 
 class MessagesConfig(DocgenBaseModel):
-    """Messages configuration model for multilingual support."""
+    """Messages configuration model."""
 
-    default_description: dict[str, str] = Field(
-        default_factory=lambda: {
-            "en": "Please describe this project here.",
-            "ja": "このプロジェクトの説明をここに記述してください。",
-            "ko": "여기에 프로젝트 설명을 작성하세요.",
-        }
-    )
+    default_description: str = "Please describe this project here."
 
 
 class TechnicalKeywordsConfig(DocgenBaseModel):
