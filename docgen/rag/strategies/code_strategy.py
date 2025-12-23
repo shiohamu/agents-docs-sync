@@ -4,6 +4,7 @@ Code chunking strategy.
 
 import ast
 from pathlib import Path
+import re
 from typing import Any
 
 from ...utils.logger import get_logger
@@ -13,25 +14,35 @@ logger = get_logger(__name__)
 
 
 class CodeChunkStrategy(BaseChunkStrategy):
-    """Strategy for chunking code files (Python, YAML, TOML)."""
+    """Strategy for chunking code files (Python, JavaScript/TypeScript, YAML, TOML)."""
 
     def chunk(self, content: str, file_path: Path) -> list[dict[str, Any]]:
         """
         Chunk code content based on file extension.
         """
-        if file_path.suffix == ".py":
+        suffix = file_path.suffix.lower()
+        if suffix == ".py":
             return self._chunk_python(content, file_path)
-        elif file_path.suffix in {".yaml", ".yml"}:
+        elif suffix in {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".d.ts"}:
+            return self._chunk_javascript(content, file_path)
+        elif suffix in {".yaml", ".yml"}:
             return self._chunk_yaml(content, file_path)
-        elif file_path.suffix == ".toml":
+        elif suffix == ".toml":
             return self._chunk_toml(content, file_path)
         else:
-            # Fallback to generic chunking if extension not explicitly handled but passed to this strategy
-            # Ideally, this shouldn't happen if the dispatcher is correct, but good for safety.
-            # However, since we have TextChunkStrategy, maybe we should return empty or raise error?
-            # For now, let's return empty list or handle it if we want to support other code files generically?
-            # But generic chunking is in TextChunkStrategy.
-            return []
+            # Fallback to generic chunking for other code files
+            # Return as a single chunk to ensure content is indexed
+            return [
+                {
+                    "file": str(file_path.relative_to(self.project_root)),
+                    "type": "File",
+                    "name": file_path.name,
+                    "text": content,
+                    "start_line": 1,
+                    "end_line": len(content.splitlines()),
+                    "hash": self._hash_text(content),
+                }
+            ]
 
     def _chunk_python(self, content: str, file_path: Path) -> list[dict[str, Any]]:
         """Chunk Python files by function and class."""
@@ -76,6 +87,141 @@ class CodeChunkStrategy(BaseChunkStrategy):
                         "hash": self._hash_text(chunk_text),
                     }
                 )
+
+        return chunks
+
+    def _chunk_javascript(self, content: str, file_path: Path) -> list[dict[str, Any]]:
+        """Chunk JavaScript/TypeScript files by function, class, and interface."""
+        chunks = []
+        lines = content.splitlines()
+
+        # 関数定義のパターン（関数宣言、アロー関数、メソッド）
+        function_patterns = [
+            r"(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(",
+            r"(?:export\s+)?(?:async\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>",
+            r"(?:export\s+)?(?:async\s+)?(\w+)\s*:\s*(?:async\s+)?\([^)]*\)\s*=>",
+            r"(?:export\s+)?(?:async\s+)?(\w+)\s*\([^)]*\)\s*\{",
+        ]
+
+        # クラス定義のパターン
+        class_pattern = r"(?:export\s+)?class\s+(\w+)"
+
+        # インターフェース/型定義のパターン（TypeScript）
+        interface_pattern = r"(?:export\s+)?(?:interface|type)\s+(\w+)"
+
+        # 関数とクラスを抽出
+        found_elements = []
+
+        # クラス定義を抽出
+        for match in re.finditer(class_pattern, content, re.MULTILINE):
+            name = match.group(1)
+            start_line = content[: match.start()].count("\n") + 1
+            # 対応する}を見つける
+            brace_count = 0
+            end_pos = match.end()
+            for i, char in enumerate(content[end_pos:], end_pos):
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end_line = content[: i + 1].count("\n") + 1
+                        found_elements.append(
+                            {
+                                "type": "ClassDef",
+                                "name": name,
+                                "start_line": start_line,
+                                "end_line": end_line,
+                            }
+                        )
+                        break
+
+        # 関数定義を抽出
+        for pattern in function_patterns:
+            for match in re.finditer(pattern, content, re.MULTILINE):
+                name = match.group(1)
+                if name:
+                    start_line = content[: match.start()].count("\n") + 1
+                    # 対応する}を見つける
+                    brace_count = 0
+                    end_pos = match.end()
+                    for i, char in enumerate(content[end_pos:], end_pos):
+                        if char == "{":
+                            brace_count += 1
+                        elif char == "}":
+                            brace_count -= 1
+                            if brace_count == 0:
+                                end_line = content[: i + 1].count("\n") + 1
+                                # 既に追加されていないかチェック
+                                if not any(
+                                    e["name"] == name and e["start_line"] == start_line
+                                    for e in found_elements
+                                ):
+                                    found_elements.append(
+                                        {
+                                            "type": "FunctionDef",
+                                            "name": name,
+                                            "start_line": start_line,
+                                            "end_line": end_line,
+                                        }
+                                    )
+                                break
+
+        # インターフェース/型定義を抽出（TypeScript）
+        for match in re.finditer(interface_pattern, content, re.MULTILINE):
+            name = match.group(1)
+            start_line = content[: match.start()].count("\n") + 1
+            # 対応する}を見つける
+            brace_count = 0
+            end_pos = match.end()
+            for i, char in enumerate(content[end_pos:], end_pos):
+                if char == "{":
+                    brace_count += 1
+                elif char == "}":
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end_line = content[: i + 1].count("\n") + 1
+                        found_elements.append(
+                            {
+                                "type": "InterfaceDef",
+                                "name": name,
+                                "start_line": start_line,
+                                "end_line": end_line,
+                            }
+                        )
+                        break
+
+        # チャンクを作成
+        for elem in found_elements:
+            start_idx = elem["start_line"] - 1  # 0-indexed
+            end_idx = elem["end_line"]
+            chunk_text = "\n".join(lines[start_idx:end_idx])
+
+            chunks.append(
+                {
+                    "file": str(file_path.relative_to(self.project_root)),
+                    "type": elem["type"],
+                    "name": elem["name"],
+                    "text": chunk_text,
+                    "start_line": elem["start_line"],
+                    "end_line": elem["end_line"],
+                    "hash": self._hash_text(chunk_text),
+                }
+            )
+
+        # 要素が見つからない場合はファイル全体を1つのチャンクとして返す
+        if not chunks:
+            return [
+                {
+                    "file": str(file_path.relative_to(self.project_root)),
+                    "type": "File",
+                    "name": file_path.name,
+                    "text": content,
+                    "start_line": 1,
+                    "end_line": len(lines),
+                    "hash": self._hash_text(content),
+                }
+            ]
 
         return chunks
 

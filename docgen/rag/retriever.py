@@ -101,16 +101,50 @@ class DocumentRetriever:
         # 検索実行
         results = self.indexer.search(query_embedding, k=k)
 
+        # スコアの統計情報をログ出力（デバッグ用）
+        if results:
+            scores = [score for _, score in results]
+            max_score = max(scores)
+            min_score = min(scores)
+            avg_score = sum(scores) / len(scores)
+            self.logger.debug(
+                f"Score statistics: min={min_score:.3f}, max={max_score:.3f}, "
+                f"avg={avg_score:.3f}, threshold={self.score_threshold}"
+            )
+
         # スコア閾値でフィルタリング
+        # ただし、top_kの結果が少ない場合は閾値を緩和
         filtered_results = [chunk for chunk, score in results if score >= self.score_threshold]
 
+        # 閾値でフィルタリングした結果が少ない場合（top_kの20%未満）、
+        # 閾値を下げて再フィルタリング（最低でもtop_kの30%は取得する）
+        if len(filtered_results) < max(1, int(k * 0.2)) and results:
+            # 動的に閾値を調整（最低スコアから少し上）
+            scores = [score for _, score in results]
+            min_score = min(scores)
+            # 最低スコアの80%を新しい閾値とする（ただし元の閾値より低い場合のみ）
+            adjusted_threshold = min(self.score_threshold, max(0.15, min_score * 0.8))
+
+            if adjusted_threshold < self.score_threshold:
+                self.logger.debug(
+                    f"Adjusted threshold from {self.score_threshold:.3f} to {adjusted_threshold:.3f} "
+                    f"to retrieve more relevant chunks"
+                )
+                filtered_results = [
+                    chunk for chunk, score in results if score >= adjusted_threshold
+                ]
+
         # スコアをメタデータに追加
-        for i, (_chunk, score) in enumerate(results):
-            if i < len(filtered_results):
-                filtered_results[i]["similarity_score"] = score
+        # resultsからfiltered_resultsに含まれるチャンクのスコアを追加
+        # チャンクを識別するためにhashを使用
+        filtered_hashes = {chunk.get("hash") for chunk in filtered_results if chunk.get("hash")}
+        for chunk, score in results:
+            if chunk.get("hash") in filtered_hashes:
+                chunk["similarity_score"] = score
 
         self.logger.info(
-            f"Retrieved {len(filtered_results)} chunks (threshold: {self.score_threshold})"
+            f"Retrieved {len(filtered_results)} chunks (threshold: {self.score_threshold:.3f}, "
+            f"top_k: {k}, total results: {len(results)})"
         )
 
         return filtered_results
