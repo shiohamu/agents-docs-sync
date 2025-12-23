@@ -34,6 +34,7 @@ graph TB
                 docgen_generators_parsers["parsers"]:::moduleStyle
             end
             class docgen_generators moduleStyle
+            docgen_validators["validators"]:::moduleStyle
             subgraph docgen_rag [rag]
                 direction TB
                 docgen_rag_strategies["strategies"]:::moduleStyle
@@ -73,6 +74,10 @@ graph TB
     docgen_generators_parsers --> docgen_detectors
     docgen_generators_parsers --> docgen_models
     docgen_generators_parsers --> docgen_utils
+    docgen_validators --> docgen_detectors
+    docgen_validators --> docgen_generators
+    docgen_validators --> docgen_models
+    docgen_validators --> docgen_utils
     docgen_rag --> docgen_utils
     docgen_rag_strategies --> docgen_utils
 

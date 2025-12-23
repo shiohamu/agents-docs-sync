@@ -57,6 +57,28 @@ class ValidatorConfig(DocgenBaseModel):
     technical_keywords: TechnicalKeywordsConfig = Field(default_factory=TechnicalKeywordsConfig)
 
 
+class ImplementationValidationConfig(DocgenBaseModel):
+    """Implementation validation configuration model."""
+
+    exclude_patterns: list[str] = Field(
+        default_factory=lambda: ["test_", "_test", "mock_"]
+    )
+    include_private: bool = False
+
+
+class ValidationConfig(DocgenBaseModel):
+    """Validation configuration model."""
+
+    enabled: bool = True
+    strict: bool = False
+    check_implementation: bool = True
+    check_citations: bool = True
+    warn_on_missing: bool = True
+    implementation: ImplementationValidationConfig = Field(
+        default_factory=ImplementationValidationConfig
+    )
+
+
 class LanguagesConfig(DocgenBaseModel):
     """Languages configuration model."""
 
@@ -192,6 +214,7 @@ class DocgenConfig(DocgenBaseModel):
     general: GeneralConfig = Field(default_factory=GeneralConfig)
     messages: MessagesConfig = Field(default_factory=MessagesConfig)
     validator: ValidatorConfig = Field(default_factory=ValidatorConfig)
+    validation: ValidationConfig = Field(default_factory=ValidationConfig)
     languages: LanguagesConfig = Field(default_factory=LanguagesConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)

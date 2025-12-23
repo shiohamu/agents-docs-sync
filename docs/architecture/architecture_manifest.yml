@@ -162,6 +162,17 @@ services:
         - models
         - utils
         submodules: []
+    - name: validators
+      path: !!python/object/apply:pathlib.PosixPath
+      - docgen
+      - validators
+      is_package: true
+      dependencies:
+      - detectors
+      - generators
+      - models
+      - utils
+      submodules: []
     - name: rag
       path: !!python/object/apply:pathlib.PosixPath
       - docgen

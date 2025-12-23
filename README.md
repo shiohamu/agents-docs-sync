@@ -8,68 +8,14 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-`agents-docs-sync` は、ソースコードのコミットごとに自動的に以下を実行するパイプラインです。
+agents-docs-sync は、ソースコードをコミットするたびに自動的にテストの実行・ドキュメント生成・AGENTS.md の更新を行う CI パイプラインです。  
+- **継続的検証**：`pytest`, `pytest-cov`, `pytest-mock` を使用してコードベース全体でユニット／統合テストが走り、失敗した変更は即座にフィードバックされます。  
+- **ドキュメント自動生成**：Python ソースや YAML 設定ファイルから API ドキュメントを抽出し、Markdown 形式の `docs/` ディレクトリへ書き込みます。これにより手作業で更新する必要がなくなります。  
+- **AGENTS.md の自動同期**：プロジェクト内のエージェント定義（Python クラスや YAML ファイル）を解析し、最新状態を `AGENTS.md` に反映させます。CI 失敗時に差分だけがコミットされるため、ドキュメントと実装が常に整合します。  
+- **技術スタック**：Python（3.11+）＋シェルスクリプトで構成し、依存管理は `uv` を利用しています。主要ライブラリとして `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` などを使用します。  
+- **導入の簡便さ**：プロジェクトルートに `.github/workflows/agents-sync.yml` を置くだけで GitHub Actions に統合でき、ローカルでは `uv run agents-docs-sync` コマンドで同等機能が実行可能です。  
 
-* **テスト実行** – `pytest` を使って単体・統合テストを走らせます。カバレッジは `pytest-cov` で測定し、結果が失敗した場合はコミットをブロックします。
-* **ドキュメント生成** – プロジェクト内の Markdown / reStructuredText を収集・整形して最新の API ドキュメント（例：Sphinx の `docs/` ディレクトリ）へ書き出し、GitHub Actions などで自動公開されます。
-* **AGENTS.md 自動更新** – YAML 設定ファイルからエージェント情報を抽出し、プロジェクトのルートにある `AGENTS.md` を再生成します。これによりドキュメントと実装が常に同期した状態になります。
-
-## 主な特徴
-
-| 機能 | 詳細 |
-|------|------|
-| **Python + Shell** | パイプラインロジックはシェルスクリプトで書かれ、Python ランタイム（`uv` で管理）を呼び出します。 |
-| **依存関係の宣言** | `pyproject.toml` に `pyyaml`, `pytest`, `pytest-cov`, `pytest-mock` 等が列挙されており、CI 環境でも安定してインストール可能です。 |
-| **高速な環境構築** | `uv install --no-dev` で依存のみを解決し、開発時は `--dev` を付けることでテスト用パッケージも取得します。 |
-| **柔軟な設定** | `.agents.yaml`（または同等の名前）にエージェントごとのメタデータを書き込み、スクリプトが自動で `AGENTS.md` を更新できます。 |
-
-## 使い方
-
-```bash
-# 開発環境をセットアップ
-uv sync --dev          # 必要なパッケージ（テスト含む）をインストール
-
-# パイプライン手動実行例
-./scripts/run_pipeline.sh   # テスト → ドキュメント生成 → AGENTS.md 更新
-
-# CI での利用は以下のように YAML に記述します。
-# .github/workflows/pipeline.yml
-name: Agents Docs Sync
-on:
-  push:
-    branches: [ main ]
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install uv
-        run: curl https://astral.sh/uv/install.sh | sh && echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-      - name: Sync pipeline
-        run: ./scripts/run_pipeline.sh
-```
-
-## 開発フロー
-
-1. **コード変更** – `src/...` 内で機能追加・修正を行う。  
-2. **ローカルテスト & ドキュメント確認** – 上記シェルスクリプトで実行し、生成されたドキュメントや `AGENTS.md` を確認する。  
-3. **コミット & プッシュ** – コミット時に GitHub Actions が自動的にパイプラインを走らせます。失敗した場合は PR のマージがブロックされ、品質保証になります。
-
-## 依存関係の概要
-
-| パッケージ | バージョン |
-|------------|-----------|
-| `pyyaml`   | ≥6.0.3    |
-| `pytest`   | ≥7.4.0    |
-| `pytest-cov` | ≥4.1.0  |
-| `pytest-mock` | ≥3.11.1 |
-
-これらはすべて Python の仮想環境内で管理され、CI では `uv lock` によって固定化されています。
-
----
-
-このプロジェクトにより、エージェントの実装とドキュメントが常に同期し、開発者間で最新情報を共有できるようになります。ぜひローカル環境や CI パイプラインへ組み込んでご活用ください。<!-- MANUAL_START:architecture -->
-
+このパイプラインを活用することで、開発サイクル中に常に正確なテスト結果と最新のドキュメント・エージェント一覧を保持できるため、品質保証とメンテナンスコストの低減が実現します。<!-- MANUAL_START:architecture -->
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -105,6 +51,7 @@ graph TB
                 docgen_generators_parsers["parsers"]:::moduleStyle
             end
             class docgen_generators moduleStyle
+            docgen_validators["validators"]:::moduleStyle
             subgraph docgen_rag [rag]
                 direction TB
                 docgen_rag_strategies["strategies"]:::moduleStyle
@@ -144,6 +91,10 @@ graph TB
     docgen_generators_parsers --> docgen_detectors
     docgen_generators_parsers --> docgen_models
     docgen_generators_parsers --> docgen_utils
+    docgen_validators --> docgen_detectors
+    docgen_validators --> docgen_generators
+    docgen_validators --> docgen_models
+    docgen_validators --> docgen_utils
     docgen_rag --> docgen_utils
     docgen_rag_strategies --> docgen_utils
 
@@ -267,4 +218,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-24 05:48:47*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-24 06:57:14*

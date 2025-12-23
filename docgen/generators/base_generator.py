@@ -245,6 +245,16 @@ class BaseGenerator(ABC):
                 self.logger.error("生成されたドキュメントが無効です")
                 return False
 
+            # 実装検証（設定が有効な場合）
+            validation_result = self._validate_generated_document(markdown)
+            if validation_result and not validation_result["valid"]:
+                self.logger.error("生成されたドキュメントの検証に失敗しました")
+                if self.config.get("validation", {}).get("strict", False):
+                    return False
+                else:
+                    self.logger.warning("警告モード: 検証エラーがあっても続行します")
+                    self._print_validation_report(validation_result)
+
             # ファイルに書き込み
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
             self.output_path.write_text(markdown, encoding="utf-8")
@@ -257,6 +267,63 @@ class BaseGenerator(ABC):
                 f"{self._get_document_type()}生成中にエラーが発生しました: {e}", exc_info=True
             )
             return False
+
+    def _validate_generated_document(self, document: str) -> dict[str, Any] | None:
+        """
+        生成されたドキュメントを検証
+
+        Args:
+            document: 検証対象のドキュメント
+
+        Returns:
+            検証結果の辞書（検証が無効な場合はNone）
+        """
+        validation_config = self.config.get("validation", {})
+        if not validation_config.get("enabled", True):
+            return None
+
+        if not validation_config.get("check_implementation", True):
+            return None
+
+        try:
+            from ..validators.implementation_validator import ImplementationValidator
+
+            validator = ImplementationValidator(
+                project_root=self.project_root,
+                languages=self.languages,
+                config=self.config,
+            )
+
+            validation_result = validator.validate_implementation(document)
+
+            return {
+                "valid": validation_result.valid,
+                "errors": validation_result.errors,
+                "warnings": validation_result.warnings,
+                "missing_entities": [
+                    {"name": e.name, "type": e.entity_type, "line": e.line_number}
+                    for e in validation_result.missing_entities
+                ],
+                "found_entities": [
+                    {"name": e.name, "type": e.entity_type, "line": e.line_number}
+                    for e in validation_result.found_entities
+                ],
+            }
+        except Exception as e:
+            self.logger.warning(f"実装検証中にエラーが発生しました: {e}")
+            return None
+
+    def _print_validation_report(self, validation_result: dict[str, Any]):
+        """検証結果をログに出力"""
+        if validation_result.get("errors"):
+            self.logger.error(f"検証エラー: {len(validation_result['errors'])}件")
+            for error in validation_result["errors"][:10]:  # 最初の10件のみ
+                self.logger.error(f"  {error}")
+
+        if validation_result.get("warnings"):
+            self.logger.warning(f"検証警告: {len(validation_result['warnings'])}件")
+            for warning in validation_result["warnings"][:10]:  # 最初の10件のみ
+                self.logger.warning(f"  {warning}")
 
     def _get_architecture_diagram_content(self) -> str:
         """アーキテクチャ図のコンテンツを取得"""

@@ -40,6 +40,9 @@ class AgentsGenerator(BaseGenerator):
         """
         super().__init__(project_root, languages, config, package_managers, **kwargs)
 
+        # 実装検証モジュールの初期化（遅延初期化）
+        self._implementation_validator = None
+
     @property
     def agents_path(self):
         return self.output_path
@@ -66,6 +69,9 @@ class AgentsGenerator(BaseGenerator):
         概要生成用のLLMプロンプトを作成（BaseGeneratorのオーバーライド）
         AGENTS.md専用のプロンプトを提供
         """
+        # 実装済みAPI情報を取得
+        implemented_apis = self._get_implemented_api_info(project_info)
+
         return PromptLoader.load_prompt(
             "agents_prompts.toml",
             "overview",
@@ -73,6 +79,7 @@ class AgentsGenerator(BaseGenerator):
             project_info=self._format_project_info_for_prompt(project_info),
             existing_overview=existing_overview,
             rag_context=rag_context,
+            implemented_apis=implemented_apis,
         )
 
     def _replace_overview_section(self, content: str, new_overview: str) -> str:
@@ -100,6 +107,9 @@ class AgentsGenerator(BaseGenerator):
         return updated_content
 
     def _create_llm_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
+        # 実装済みAPI情報を取得
+        implemented_apis = self._get_implemented_api_info(project_info)
+
         if rag_context:
             return PromptLoader.load_prompt(
                 "agents_prompts.toml",
@@ -107,6 +117,7 @@ class AgentsGenerator(BaseGenerator):
                 config=self.config,
                 project_info=self._format_project_info_for_prompt(project_info),
                 rag_context=rag_context,
+                implemented_apis=implemented_apis,
             )
         else:
             return PromptLoader.load_prompt(
@@ -114,6 +125,7 @@ class AgentsGenerator(BaseGenerator):
                 "full",
                 config=self.config,
                 project_info=self._format_project_info_for_prompt(project_info),
+                implemented_apis=implemented_apis,
             )
 
     def _generate_template(self, project_info: ProjectInfo) -> str:
@@ -344,6 +356,44 @@ class AgentsGenerator(BaseGenerator):
             project_info, self.languages, self.package_managers
         )
         return f"Project Name: {self.project_root.name}\n{base_info}"
+
+    def _get_implementation_validator(self):
+        """実装検証モジュールを取得（遅延初期化）"""
+        if self._implementation_validator is None:
+            from ..validators.implementation_validator import ImplementationValidator
+
+            self._implementation_validator = ImplementationValidator(
+                project_root=self.project_root,
+                languages=self.languages,
+                config=self.config,
+            )
+        return self._implementation_validator
+
+    def _get_implemented_api_info(self, project_info: ProjectInfo) -> str:
+        """
+        実装済みAPI情報を取得（LLMプロンプト用）
+
+        Args:
+            project_info: プロジェクト情報
+
+        Returns:
+            実装済みAPI情報のサマリーテキスト（空の場合は空文字列）
+        """
+        # 検証が有効な場合のみ実装情報を取得
+        validation_config = self.config.get("validation", {})
+        if not validation_config.get("check_implementation", True):
+            return ""
+
+        try:
+            validator = self._get_implementation_validator()
+            summary = validator.get_implemented_api_summary()
+            # 空の場合は空文字列を返す（プロンプトテンプレートで空行が残らないように）
+            if not summary or summary.strip() == "実装済みAPI情報:":
+                return ""
+            return summary
+        except Exception as e:
+            self.logger.warning(f"実装情報の取得に失敗しました: {e}")
+            return ""
 
     def _generate_content_with_llm(
         self, prompt_file: str, prompt_name: str, project_info: ProjectInfo

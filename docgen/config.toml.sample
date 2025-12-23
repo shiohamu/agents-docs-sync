@@ -40,6 +40,26 @@ default = [
 ja = ["関数", "クラス", "メソッド", "モジュール", "パッケージ", "実装", "定義"]
 ko = ["함수", "클래스", "메서드", "모듈", "패키지", "구현", "정의"]
 
+# 実装検証設定
+[validation]
+# 検証を有効化
+enabled = true
+# 厳格モード（検証失敗時に生成を中断）
+strict = false
+# 実装検証を有効化
+check_implementation = true
+# 出典検証を有効化
+check_citations = true
+# 実装されていない参照を警告
+warn_on_missing = true
+
+# 実装検証の詳細設定
+[validation.implementation]
+# 除外パターン（これらのパターンを含む名前は検証対象外）
+exclude_patterns = ["test_", "_test", "mock_"]
+# プライベートメソッドを含めるか
+include_private = false
+
 # 言語設定
 [languages]
 auto_detect = true

@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-24 05:48:38
+自動生成日時: 2025-12-24 06:58:48
 
 ---
 
@@ -4417,7 +4417,7 @@ def agents_path(self):
 
 *説明なし*
 
-*定義場所: docgen/generators/agents_generator.py:44*
+*定義場所: docgen/generators/agents_generator.py:47*
 
 ---
 
@@ -7301,6 +7301,40 @@ Validator configuration model.
 
 ---
 
+### ImplementationValidationConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ImplementationValidationConfig:
+```
+
+**説明**:
+
+Implementation validation configuration model.
+
+*定義場所: docgen/models/config.py:60*
+
+---
+
+### ValidationConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ValidationConfig:
+```
+
+**説明**:
+
+Validation configuration model.
+
+*定義場所: docgen/models/config.py:69*
+
+---
+
 ### LanguagesConfig
 
 **型**: `class`
@@ -7314,7 +7348,7 @@ class LanguagesConfig:
 
 Languages configuration model.
 
-*定義場所: docgen/models/config.py:60*
+*定義場所: docgen/models/config.py:82*
 
 ---
 
@@ -7331,7 +7365,7 @@ class OutputConfig:
 
 Output configuration model.
 
-*定義場所: docgen/models/config.py:68*
+*定義場所: docgen/models/config.py:90*
 
 ---
 
@@ -7348,7 +7382,7 @@ class GenerationConfig:
 
 Generation configuration model.
 
-*定義場所: docgen/models/config.py:76*
+*定義場所: docgen/models/config.py:98*
 
 ---
 
@@ -7365,7 +7399,7 @@ class ExcludeConfig:
 
 Exclude configuration model.
 
-*定義場所: docgen/models/config.py:85*
+*定義場所: docgen/models/config.py:107*
 
 ---
 
@@ -7382,7 +7416,7 @@ class CacheConfig:
 
 Cache configuration model.
 
-*定義場所: docgen/models/config.py:93*
+*定義場所: docgen/models/config.py:115*
 
 ---
 
@@ -7399,7 +7433,7 @@ class BenchmarkConfig:
 
 Benchmark configuration model.
 
-*定義場所: docgen/models/config.py:99*
+*定義場所: docgen/models/config.py:121*
 
 ---
 
@@ -7416,7 +7450,7 @@ class DebugConfig:
 
 Debug configuration model.
 
-*定義場所: docgen/models/config.py:105*
+*定義場所: docgen/models/config.py:127*
 
 ---
 
@@ -7433,7 +7467,7 @@ class EmbeddingConfig:
 
 Embedding configuration model.
 
-*定義場所: docgen/models/config.py:111*
+*定義場所: docgen/models/config.py:133*
 
 ---
 
@@ -7450,7 +7484,7 @@ class IndexConfig:
 
 Index configuration model.
 
-*定義場所: docgen/models/config.py:118*
+*定義場所: docgen/models/config.py:140*
 
 ---
 
@@ -7467,7 +7501,7 @@ class RetrievalConfig:
 
 Retrieval configuration model.
 
-*定義場所: docgen/models/config.py:126*
+*定義場所: docgen/models/config.py:148*
 
 ---
 
@@ -7484,7 +7518,7 @@ class ChunkingConfig:
 
 Chunking configuration model.
 
-*定義場所: docgen/models/config.py:134*
+*定義場所: docgen/models/config.py:156*
 
 ---
 
@@ -7499,7 +7533,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:141*
+*定義場所: docgen/models/config.py:163*
 
 ---
 
@@ -7516,7 +7550,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:153*
+*定義場所: docgen/models/config.py:175*
 
 ---
 
@@ -7533,7 +7567,7 @@ class ArchitecturePythonConfig:
 
 Python architecture configuration.
 
-*定義場所: docgen/models/config.py:165*
+*定義場所: docgen/models/config.py:187*
 
 ---
 
@@ -7550,7 +7584,7 @@ class ArchitectureJavascriptConfig:
 
 JavaScript architecture configuration.
 
-*定義場所: docgen/models/config.py:172*
+*定義場所: docgen/models/config.py:194*
 
 ---
 
@@ -7567,7 +7601,7 @@ class ArchitectureConfig:
 
 Architecture diagram generation configuration.
 
-*定義場所: docgen/models/config.py:178*
+*定義場所: docgen/models/config.py:200*
 
 ---
 
@@ -7584,7 +7618,7 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:189*
+*定義場所: docgen/models/config.py:211*
 
 ---
 
@@ -10492,6 +10526,189 @@ def clear_cache(cls):
 キャッシュをクリア（主にテスト用）
 
 *定義場所: docgen/utils/prompt_loader.py:241*
+
+---
+
+
+## docgen/validators/implementation_validator.py
+
+### EntityReference
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class EntityReference:
+```
+
+**説明**:
+
+ドキュメント内で参照されているエンティティ
+
+*定義場所: docgen/validators/implementation_validator.py:24*
+
+---
+
+### ValidationResult
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ValidationResult:
+```
+
+**説明**:
+
+検証結果
+
+*定義場所: docgen/validators/implementation_validator.py:35*
+
+---
+
+### ImplementationValidator
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ImplementationValidator:
+```
+
+**説明**:
+
+実装検証クラス
+
+ドキュメント内で言及されている関数、クラス、メソッドが
+実際のコードベースに存在するかを検証します。
+
+*定義場所: docgen/validators/implementation_validator.py:45*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, languages: list[str] | None, parsers: list[BaseParser] | None, config: dict[str, Any] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    languages: 検出された言語のリスト（Noneの場合は自動検出）
+    parsers: パーサーのリスト（Noneの場合は自動生成）
+    config: 設定辞書
+
+*定義場所: docgen/validators/implementation_validator.py:84*
+
+---
+
+### build_api_index
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def build_api_index(self) -> dict[str, set[str]]:
+```
+
+**説明**:
+
+実装済みAPIのインデックスを構築
+
+Returns:
+    {entity_type: {name1, name2, ...}} の形式の辞書
+
+*定義場所: docgen/validators/implementation_validator.py:130*
+
+---
+
+### extract_referenced_entities
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def extract_referenced_entities(self, document: str) -> list[EntityReference]:
+```
+
+**説明**:
+
+ドキュメントから参照されているエンティティを抽出
+
+Args:
+    document: 検証対象のドキュメント（Markdown形式）
+
+Returns:
+    参照されているエンティティのリスト
+
+*定義場所: docgen/validators/implementation_validator.py:292*
+
+---
+
+### validate_implementation
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def validate_implementation(self, document: str) -> ValidationResult:
+```
+
+**説明**:
+
+実装の存在を検証
+
+Args:
+    document: 検証対象のドキュメント
+
+Returns:
+    検証結果
+
+*定義場所: docgen/validators/implementation_validator.py:375*
+
+---
+
+### get_implemented_api_summary
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_implemented_api_summary(self) -> str:
+```
+
+**説明**:
+
+実装済みAPIのサマリーを取得（LLMプロンプト用）
+
+Returns:
+    実装済みAPIのサマリーテキスト
+
+*定義場所: docgen/validators/implementation_validator.py:451*
+
+---
+
+### print_report
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def print_report(self, validation_result: ValidationResult):
+```
+
+**説明**:
+
+検証結果をコンソールに出力
+
+*定義場所: docgen/validators/implementation_validator.py:492*
 
 ---
 

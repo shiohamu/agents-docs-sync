@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-24 05:49:43
+自動生成日時: 2025-12-24 06:57:47
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,28 +12,47 @@
 <!-- MANUAL_END:description -->
 
 
-agents-docs-sync は、コードベースに対する変更がコミットされるたびに自動でテスト実行・ドキュメント生成をトリガーし、AGENTS.md の内容を最新の状態へ更新します。Python とシェルスクリプトだけで構成された軽量な CI パイプラインは `uv` で管理される仮想環境内にインストールした `pytest`, `pyyaml`, `coverage`, `mock` を用いて単体テストとコードカバレッジを測定し、失敗時にはビルドを中断します。Docstring と外部 YAML 設計ファイルから Markdown ドキュメントが自動生成されるため、開発者は手作業での更新を不要にしています。また `AGENTS.md` はプロジェクト内のエージェント定義（Python クラス/関数）の署名と簡易説明を抽出して書き換えるスクリプトが付属し、ドキュメント整合性を保ちます。  
+本プロジェクトは、ソースコードのコミットごとに自動的にテストを実行し、ドキュメント（Sphinx / MkDocs など）を生成した上で `AGENTS.md` を最新状態へ更新するパイプラインです。  
+主なフローは以下の通りです。
 
-## 使い方
+- **コミットトリガー**：GitHub Actions またはローカルの pre‑push フックから呼び出されます。
+- **環境構築**  
+  - `uv` を使用して依存関係をインストール（Python ランタイム＋パッケージマネージャ）  
+    ```bash
+    uv sync --frozen
+    ```
+- **テスト実行**  
+  - `pytest`, `pytest-cov`, `pytest-mock` 等でユニット・統合テストを走らせ、カバレッジは `.coverage` に保存。  
+  - テスト結果が失敗した場合はパイプライン全体が停止し、ドキュメント更新も行われません。
+- **ドキュメント生成**  
+  - ソースコードの docstring を元に Sphinx/MkDocs がビルドされます（`docs/` 配下）。  
+  - ビルド後は `build/html/index.html` 等が最新化。  
+- **AGENTS.md の自動更新**  
+  - プロジェクト内のエージェント定義ファイルをパースし、各クラス名・概要・使用方法などを抽出して Markdown テーブルに整形します。  
+  - `pyyaml` を利用した設定読み込み (`agents.yaml`) により、カスタムメタ情報（例：優先度や依存関係）も埋め込むことが可能です。
 
-1. **依存パッケージの同期**  
+### AI エージェント向けの実装ポイント
+
+| 機能 | 具体的なコード/ファイル |
+|------|------------------------|
+| **パイプライン呼び出し** | `.github/workflows/sync.yml`（GitHub Actions）または `scripts/pre-commit.sh` |
+| **テストカバレッジ集計** | `pytest --cov=agents -q` → 生成される XML/JSON を CI のステータスに反映 |
+| **ドキュメントビルド** | `make html`（Sphinx）または `mkdocs build` |
+| **AGENTS.md 更新ロジック** | `scripts/update_agents_md.py`：YAML から読み込んだ情報を Markdown に変換し、ファイルに書き込み |
+
+### カスタマイズ方法
+
+1. **エージェントメタデータ追加**  
+   - `agents.yaml` 内で各クラスの属性（例: `role`, `description`, `dependencies`）を書いておくと、自動生成時に反映されます。  
+2. **CI の拡張**  
+   - 必要なら別ブランチ向けにステージング用ドキュメントを作成し、PR 時だけ更新するよう設定できます（環境変数 `STAGING` を利用）。  
+3. **ローカル実行テスト**  
    ```bash
-   uv sync
-   ```
-2. **テスト実行とカバレッジ測定**  
-   ```bash
-   pytest --cov=agents_doc_sync tests/
-   ```
-3. **ドキュメント生成**（`mkdocs build` などを想定）  
-   ```bash
-   mkdocs build -d docs/_site
-   ```
-4. **AGENTS.md の自動更新スクリプト実行**  
-   ```bash
-   ./scripts/update_agents_md.sh
+   uv run scripts/run_pipeline.sh  # テスト・ビルド・MD 更新一括実行
    ```
 
-これらのステップは GitHub Actions など CI 環境で `on: push` トリガーとして設定されており、コミットごとに一連の処理が自動的に走ります。結果としてテスト失敗時にはビルドを停止し、成功した場合のみ最新ドキュメントと AGENTS.md がレポジトリへ反映されます。
+この構成により、AI エージェントの開発者はコードをコミットするだけで、最新のユニットテスト結果と整形されたドキュメント、および `AGENTS.md` の更新が保証されます。  
+パイプライン全体をスクリプト化しているため、新しいエージェントクラスやメタ情報を追加する際は、設定ファイルだけを書き換えるか必要に応じて小さな修正で済みます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -125,6 +144,8 @@ agents-docs-sync は、コードベースに対する変更がコミットされ
 │   │   ├── file_utils.py
 │   │   ├── gitignore_parser.py
 │   │   └── prompt_loader.py
+│   ├── validators//
+│   │   └── implementation_validator.py
 │   ├── config.toml
 │   ├── config_manager.py
 │   ├── detector_config_loader.py
@@ -143,7 +164,6 @@ agents-docs-sync は、コードベースに対する変更がコミットされ
 ## アーキテクチャ
 
 <!-- MANUAL_START:architecture -->
-
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -179,6 +199,7 @@ graph TB
                 docgen_generators_parsers["parsers"]:::moduleStyle
             end
             class docgen_generators moduleStyle
+            docgen_validators["validators"]:::moduleStyle
             subgraph docgen_rag [rag]
                 direction TB
                 docgen_rag_strategies["strategies"]:::moduleStyle
@@ -218,6 +239,10 @@ graph TB
     docgen_generators_parsers --> docgen_detectors
     docgen_generators_parsers --> docgen_models
     docgen_generators_parsers --> docgen_utils
+    docgen_validators --> docgen_detectors
+    docgen_validators --> docgen_generators
+    docgen_validators --> docgen_models
+    docgen_validators --> docgen_utils
     docgen_rag --> docgen_utils
     docgen_rag_strategies --> docgen_utils
 
@@ -428,4 +453,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-24 05:49:43*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-24 06:57:47*
