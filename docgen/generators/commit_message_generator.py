@@ -139,5 +139,8 @@ class CommitMessageGenerator:
             プロンプト文字列
         """
         return PromptLoader.load_prompt(
-            "commit_message_prompts.toml", "generate", config=self.config, staged_changes=staged_changes
+            "commit_message_prompts.toml",
+            "generate",
+            config=self.config,
+            staged_changes=staged_changes,
         )

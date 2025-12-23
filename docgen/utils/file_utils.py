@@ -163,6 +163,9 @@ def safe_read_toml(file_path: Path) -> Any | None:
 
     Returns:
         パースされたTOMLデータ。失敗時はNone
+
+    Raises:
+        tomllib.TOMLDecodeError: TOMLパースエラーが発生した場合（詳細なエラー情報を含む）
     """
     if tomllib is None:
         return None
@@ -173,3 +176,7 @@ def safe_read_toml(file_path: Path) -> Any | None:
             return tomllib.load(f)
     except OSError:
         return None
+    except Exception:
+        # TOMLDecodeErrorを含むすべての例外を再発生させる
+        # 呼び出し側で適切に処理できるようにする
+        raise

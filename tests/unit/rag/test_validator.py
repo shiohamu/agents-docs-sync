@@ -78,9 +78,10 @@ class TestDocumentValidator:
 
     def test_validate_citations_strict_mode(self, validator, sample_project):
         """厳格モードで技術的主張に出典がない場合に警告を返すことを確認"""
+        # 英語の技術キーワード（function, class, defined）を含む文を使用
         doc = """
-        この関数はFooクラスで定義されています。
-        Pythonで実装されています。
+        This function is defined in the Foo class.
+        The module implements the feature.
         """
 
         errors = validator.validate_citations(doc, strict=True)

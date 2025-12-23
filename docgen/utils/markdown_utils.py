@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+from typing import Any
 
 # Manual section markers
 MANUAL_START_PREFIX = "<!-- MANUAL_START:"

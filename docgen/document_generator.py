@@ -116,7 +116,7 @@ class DocumentGenerator:
                     generator = GeneratorFactory.create_generator(
                         gen_type,
                         self.project_root,
-                        [l.name for l in self.detected_languages],  # 文字列のリストを渡す
+                        [lang.name for lang in self.detected_languages],  # 文字列のリストを渡す
                         self.config,
                         self.detected_package_managers,
                     )

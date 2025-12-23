@@ -4,6 +4,7 @@
 
 import logging
 from pathlib import Path
+import re
 import shutil
 from typing import Any
 
@@ -74,19 +75,61 @@ class ConfigManager:
         logger.info(f"Loading config from: {self.config_path}")
         if self.config_path.exists():
             logger.info("Config file exists, reading...")
-            if self.config_path.suffix == ".toml":
-                config = safe_read_toml(self.config_path)
-            else:
-                config = safe_read_yaml(self.config_path)
-            if config is not None:
-                logger.info("Config loaded successfully")
-                # デバッグ設定に基づいてログレベルを設定
-                debug_enabled = config.get("debug", {}).get("enabled", False)
-                _configure_logging_level(debug_enabled)
-                logger.debug(f"Debug mode: {debug_enabled}")
-                return config
-            else:
-                logger.warning(ErrorMessages.CONFIG_LOAD_FAILED)
+            try:
+                if self.config_path.suffix == ".toml":
+                    config = safe_read_toml(self.config_path)
+                else:
+                    config = safe_read_yaml(self.config_path)
+                if config is not None:
+                    logger.info("Config loaded successfully")
+                    # デバッグ設定に基づいてログレベルを設定
+                    debug_enabled = config.get("debug", {}).get("enabled", False)
+                    _configure_logging_level(debug_enabled)
+                    logger.debug(f"Debug mode: {debug_enabled}")
+                    return config
+                else:
+                    logger.warning(ErrorMessages.CONFIG_LOAD_FAILED)
+                    logger.info("デフォルト設定を使用します。")
+                    return self._get_default_config()
+            except Exception as e:
+                # TOMLパースエラーなどの詳細なエラー情報を表示
+                error_msg = str(e)
+                logger.error(f"設定ファイルの読み込みエラー ({self.config_path}): {error_msg}")
+
+                # エラーメッセージから行番号と列番号を抽出
+                line_match = re.search(r"at line (\d+)", error_msg, re.IGNORECASE)
+                col_match = re.search(r"column (\d+)", error_msg, re.IGNORECASE)
+
+                line_num = int(line_match.group(1)) if line_match else None
+                col_num = int(col_match.group(1)) if col_match else None
+
+                error_display = "\n❌ 設定ファイルのパースエラーが発生しました:\n"
+                error_display += f"   ファイル: {self.config_path}\n"
+                if line_num:
+                    error_display += f"   行: {line_num}"
+                    if col_num:
+                        error_display += f", 列: {col_num}"
+                    error_display += "\n"
+
+                    # 該当行の内容を表示
+                    try:
+                        with open(self.config_path, encoding="utf-8") as f:
+                            lines = f.readlines()
+                            if 1 <= line_num <= len(lines):
+                                error_line = lines[line_num - 1].rstrip("\n")
+                                error_display += f"   該当行: {error_line}\n"
+                                if col_num:
+                                    # エラー位置を示す矢印を表示
+                                    indicator = " " * (col_num - 1) + "^"
+                                    error_display += f"            {indicator}\n"
+                    except Exception:
+                        pass  # ファイル読み込みに失敗した場合はスキップ
+
+                error_display += f"   エラー: {error_msg}\n"
+                error_display += "\n   設定ファイルの構文を確認してください。\n"
+                error_display += "   デフォルト設定を使用して続行します。\n"
+
+                print(error_display)
                 logger.info("デフォルト設定を使用します。")
                 return self._get_default_config()
         else:
@@ -98,8 +141,14 @@ class ConfigManager:
         sample_path = self.docgen_dir / "config.toml.sample"
         if sample_path.exists():
             if self._copy_sample_config(sample_path):
-                config = safe_read_toml(self.config_path)
-                return config if config is not None else self._get_default_config()
+                try:
+                    config = safe_read_toml(self.config_path)
+                    return config if config is not None else self._get_default_config()
+                except Exception as e:
+                    # サンプルファイルからコピーしたファイルでもパースエラーが発生する可能性がある
+                    logger.error(f"サンプル設定ファイルのパースエラー: {e}")
+                    logger.info("デフォルト設定を使用します。")
+                    return self._get_default_config()
 
         logger.warning(ErrorMessages.CONFIG_NOT_FOUND.format(path=self.config_path))
         logger.info("デフォルト設定を使用します。")

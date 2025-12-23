@@ -17,6 +17,7 @@ from ...utils.logger import get_logger
 
 if TYPE_CHECKING:
     from ...utils.cache import CacheManager
+    from ...utils.gitignore_parser import GitIgnoreMatcher
 
 logger = get_logger("parser")
 
@@ -117,6 +118,7 @@ class BaseParser(ABC):
         cache_manager: "CacheManager | None" = None,
         files_to_parse: list[tuple[Path, Path]] | None = None,
         skip_cache_save: bool = False,
+        gitignore_matcher: "GitIgnoreMatcher | None" = None,
     ) -> list[APIInfo]:
         """
         プロジェクト全体を解析
@@ -129,6 +131,7 @@ class BaseParser(ABC):
             cache_manager: キャッシュマネージャー（Noneの場合はキャッシュを使用しない）
             files_to_parse: 既にスキャン済みのファイルリスト（Noneの場合は新規スキャン）
             skip_cache_save: キャッシュ保存をスキップするか（デフォルト: False）
+            gitignore_matcher: .gitignoreマッチャー（Noneの場合は.gitignoreを適用しない）
 
         Returns:
             全API情報のリスト
@@ -159,13 +162,20 @@ class BaseParser(ABC):
                     root_path = Path(root)
 
                     # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
-                    dirs[:] = [
-                        d
-                        for d in dirs
-                        if d not in exclude_dirs
-                        and not d.startswith(".")
-                        and not d.endswith(".egg-info")
-                    ]
+                    dirs_to_remove = []
+                    for d in dirs:
+                        dir_path = root_path / d
+                        # 既存の除外チェック
+                        if d in exclude_dirs or d.startswith(".") or d.endswith(".egg-info"):
+                            dirs_to_remove.append(d)
+                            continue
+                        # .gitignoreチェック
+                        if gitignore_matcher and gitignore_matcher.should_exclude_dir(dir_path):
+                            dirs_to_remove.append(d)
+                            continue
+
+                    for d in dirs_to_remove:
+                        dirs.remove(d)
 
                     # パスベースの除外チェック（セット検索でO(1)）
                     try:
@@ -178,6 +188,10 @@ class BaseParser(ABC):
                         if any(part.endswith(".egg-info") for part in rel_path.parts):
                             dirs[:] = []  # egg-infoディレクトリ以下をスキップ
                             continue
+                        # .gitignoreチェック（ディレクトリ全体）
+                        if gitignore_matcher and gitignore_matcher.should_exclude_dir(root_path):
+                            dirs[:] = []  # このディレクトリ以下をスキップ
+                            continue
                     except ValueError:
                         # プロジェクトルート外の場合はスキップ
                         continue
@@ -185,6 +199,10 @@ class BaseParser(ABC):
                     # ファイルをチェック
                     for file_name in files:
                         file_path = root_path / file_name
+
+                        # .gitignoreチェック
+                        if gitignore_matcher and gitignore_matcher.is_ignored(file_path):
+                            continue
 
                         # 拡張子をチェック
                         ext = file_path.suffix.lower()

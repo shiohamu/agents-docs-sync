@@ -90,10 +90,11 @@ class TestDocumentRetriever:
 
         mock_indexer = Mock()
         # スコアが異なる結果を返す（閾値0.3を基準）
+        # hashを含めることでsimilarity_scoreが追加される
         mock_indexer.search.return_value = [
-            ({"file": "test1.py", "name": "high_score"}, 0.8),  # 閾値以上
-            ({"file": "test2.py", "name": "medium_score"}, 0.5),  # 閾値以上
-            ({"file": "test3.py", "name": "low_score"}, 0.2),  # 閾値未満
+            ({"file": "test1.py", "name": "high_score", "hash": "hash1"}, 0.8),  # 閾値以上
+            ({"file": "test2.py", "name": "medium_score", "hash": "hash2"}, 0.5),  # 閾値以上
+            ({"file": "test3.py", "name": "low_score", "hash": "hash3"}, 0.2),  # 閾値未満
         ]
         mock_indexer_class.return_value = mock_indexer
 

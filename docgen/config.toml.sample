@@ -9,7 +9,11 @@ default_language = "en"
 # メッセージ設定（多言語対応）
 [messages]
 # デフォルトのプロジェクト説明メッセージ
-default_description = { en = "Please describe this project here.", ja = "このプロジェクトの説明をここに記述してください。", ko = "여기에 프로젝트 설명을 작성하세요." }
+default_description = {
+    en = "Please describe this project here.",
+    ja = "このプロジェクトの説明をここに記述してください。",
+    ko = "여기에 프로젝트 설명을 작성하세요."
+}
 
 # 検証設定
 [validator]
@@ -161,6 +165,9 @@ image_formats = ["png"]  # blockdiag/matplotlib 使用時の画像形式
 # 除外設定（言語検出およびファイルスキャン時に適用）
 # これらのディレクトリは言語検出の対象から除外されます
 [exclude]
+# .gitignoreファイルを適用するかどうか（デフォルト: true）
+use_gitignore = true
+
 directories = [
     ".venv",
     "venv",

@@ -170,7 +170,7 @@ agents_doc = "AGENTS.md"
         languages = docgen.detect_languages()
 
         # 検出された言語を確認
-        lang_names = [l.name for l in languages]
+        lang_names = [lang.name for lang in languages]
         assert "python" in lang_names
         assert "javascript" in lang_names
         assert "go" in lang_names

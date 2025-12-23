@@ -196,6 +196,11 @@ class ConfigAccessor:
     def exclude_patterns(self) -> list[str]:
         return self.exclude.get("patterns", [])
 
+    @property
+    def use_gitignore(self) -> bool:
+        """`.gitignore`を適用するかどうか"""
+        return self.exclude.get("use_gitignore", True)
+
     # ─────────────────────────────────────────────────────────────────
     # Hooks Settings
     # ─────────────────────────────────────────────────────────────────

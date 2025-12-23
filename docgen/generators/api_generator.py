@@ -105,6 +105,14 @@ class APIGenerator(BaseGenerator):
         # キャッシュの使用設定
         use_cache = self.config.get("cache", {}).get("enabled", True)
 
+        # .gitignoreマッチャーを作成
+        gitignore_matcher = None
+        use_gitignore = self.config.get("exclude", {}).get("use_gitignore", True)
+        if use_gitignore:
+            from ..utils.gitignore_parser import load_gitignore_patterns
+
+            gitignore_matcher = load_gitignore_patterns(self.project_root)
+
         # 一度だけファイルスキャンを行い、結果を各パーサーに共有（重複スキャンを避ける）
         # すべてのパーサーの拡張子を集めて一度だけスキャン
         all_extensions = set()
@@ -136,6 +144,7 @@ class APIGenerator(BaseGenerator):
                     cache_manager=self.cache_manager,
                     files_to_parse=shared_files_to_parse,
                     skip_cache_save=skip_cache_save,
+                    gitignore_matcher=gitignore_matcher,
                 )
                 all_apis.extend(apis)
                 parser_stats[parser_language] = {
@@ -261,18 +270,33 @@ class APIGenerator(BaseGenerator):
         project_root_resolved = self.project_root.resolve()
         extensions_set = {ext.lower() for ext in extensions}
 
+        # .gitignoreマッチャーを作成
+        gitignore_matcher = None
+        use_gitignore = self.config.get("exclude", {}).get("use_gitignore", True)
+        if use_gitignore:
+            from ..utils.gitignore_parser import load_gitignore_patterns
+
+            gitignore_matcher = load_gitignore_patterns(self.project_root)
+
         try:
             for root, dirs, files in os.walk(self.project_root, followlinks=False):
                 root_path = Path(root)
 
                 # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
-                dirs[:] = [
-                    d
-                    for d in dirs
-                    if d not in exclude_dirs
-                    and not d.startswith(".")
-                    and not d.endswith(".egg-info")
-                ]
+                dirs_to_remove = []
+                for d in dirs:
+                    dir_path = root_path / d
+                    # 既存の除外チェック
+                    if d in exclude_dirs or d.startswith(".") or d.endswith(".egg-info"):
+                        dirs_to_remove.append(d)
+                        continue
+                    # .gitignoreチェック
+                    if gitignore_matcher and gitignore_matcher.should_exclude_dir(dir_path):
+                        dirs_to_remove.append(d)
+                        continue
+
+                for d in dirs_to_remove:
+                    dirs.remove(d)
 
                 # パスベースの除外チェック
                 try:
@@ -283,6 +307,10 @@ class APIGenerator(BaseGenerator):
                     if any(part.endswith(".egg-info") for part in rel_path.parts):
                         dirs[:] = []  # egg-infoディレクトリ以下をスキップ
                         continue
+                    # .gitignoreチェック（ディレクトリ全体）
+                    if gitignore_matcher and gitignore_matcher.should_exclude_dir(root_path):
+                        dirs[:] = []  # このディレクトリ以下をスキップ
+                        continue
                 except ValueError:
                     # プロジェクトルート外の場合はスキップ
                     continue
@@ -290,6 +318,10 @@ class APIGenerator(BaseGenerator):
                 # ファイルをチェック
                 for file_name in files:
                     file_path = root_path / file_name
+
+                    # .gitignoreチェック
+                    if gitignore_matcher and gitignore_matcher.is_ignored(file_path):
+                        continue
 
                     # 拡張子をチェック
                     ext = file_path.suffix.lower()

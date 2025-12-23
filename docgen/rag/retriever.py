@@ -120,7 +120,6 @@ class DocumentRetriever:
         # 閾値でフィルタリングした結果が少ない場合（top_kの30%未満）、
         # 閾値を下げて再フィルタリング（最低でもtop_kの50%は取得する）
         min_required = max(1, int(k * 0.3))  # 最低30%は取得
-        target_ratio = 0.5  # 目標は50%
 
         if len(filtered_results) < min_required and results:
             # 動的に閾値を調整

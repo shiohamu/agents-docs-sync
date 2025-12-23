@@ -35,7 +35,9 @@ class PromptLoader:
         return Path(__file__).parent.parent / "prompts"
 
     @classmethod
-    def _get_language_specific_file_name(cls, base_name: str, language: str | None = None, config: dict[str, Any] | None = None) -> str:
+    def _get_language_specific_file_name(
+        cls, base_name: str, language: str | None = None, config: dict[str, Any] | None = None
+    ) -> str:
         """
         言語固有のファイル名を取得
 
@@ -69,7 +71,9 @@ class PromptLoader:
         return f"{name_without_ext}_{language}{ext}"
 
     @classmethod
-    def _load_toml_file(cls, file_name: str, language: str | None = None, config: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _load_toml_file(
+        cls, file_name: str, language: str | None = None, config: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """
         TOMLファイルを読み込む（キャッシュ付き、多言語対応）
 
@@ -146,7 +150,14 @@ class PromptLoader:
             raise
 
     @classmethod
-    def load_prompt(cls, file_name: str, key: str, language: str | None = None, config: dict[str, Any] | None = None, **kwargs) -> str:
+    def load_prompt(
+        cls,
+        file_name: str,
+        key: str,
+        language: str | None = None,
+        config: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> str:
         """
         プロンプトを読み込む（多言語対応）
 
@@ -183,7 +194,14 @@ class PromptLoader:
         return prompt
 
     @classmethod
-    def load_system_prompt(cls, file_name: str, key: str, language: str | None = None, config: dict[str, Any] | None = None, **kwargs) -> str:
+    def load_system_prompt(
+        cls,
+        file_name: str,
+        key: str,
+        language: str | None = None,
+        config: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> str:
         """
         システムプロンプトを読み込む（多言語対応）
 

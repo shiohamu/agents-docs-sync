@@ -103,7 +103,7 @@ class DocGen:
         benchmark_enabled = self.config.get("benchmark", {}).get("enabled", False)
         with BenchmarkContext("ドキュメント生成全体", enabled=benchmark_enabled):
             self.detect_languages()
-            logger.info(f"Detected languages: {[l.name for l in self.detected_languages]}")
+            logger.info(f"Detected languages: {[lang.name for lang in self.detected_languages]}")
 
             if not self.detected_languages:
                 logger.warning("サポートされている言語が検出されませんでした")

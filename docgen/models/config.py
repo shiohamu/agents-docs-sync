@@ -8,6 +8,61 @@ from .agents import AgentsConfigSection
 from .base import DocgenBaseModel
 
 
+class GeneralConfig(DocgenBaseModel):
+    """General configuration model."""
+
+    default_language: str = "en"
+
+
+class MessagesConfig(DocgenBaseModel):
+    """Messages configuration model for multilingual support."""
+
+    default_description: dict[str, str] = Field(
+        default_factory=lambda: {
+            "en": "Please describe this project here.",
+            "ja": "このプロジェクトの説明をここに記述してください。",
+            "ko": "여기에 프로젝트 설명을 작성하세요.",
+        }
+    )
+
+
+class TechnicalKeywordsConfig(DocgenBaseModel):
+    """Technical keywords configuration model."""
+
+    default: list[str] = Field(
+        default_factory=lambda: [
+            "function",
+            "class",
+            "method",
+            "module",
+            "package",
+            "import",
+            "export",
+            "implements",
+            "extends",
+            "returns",
+            "parameter",
+            "argument",
+            "type",
+            "defined",
+            "located",
+            "configured",
+        ]
+    )
+    languages: dict[str, list[str]] = Field(
+        default_factory=lambda: {
+            "ja": ["関数", "クラス", "メソッド", "モジュール", "パッケージ", "実装", "定義"],
+            "ko": ["함수", "클래스", "메서드", "모듈", "패키지", "구현", "정의"],
+        }
+    )
+
+
+class ValidatorConfig(DocgenBaseModel):
+    """Validator configuration model."""
+
+    technical_keywords: TechnicalKeywordsConfig = Field(default_factory=TechnicalKeywordsConfig)
+
+
 class LanguagesConfig(DocgenBaseModel):
     """Languages configuration model."""
 
@@ -38,6 +93,7 @@ class ExcludeConfig(DocgenBaseModel):
 
     directories: list[str] = Field(default_factory=list)
     patterns: list[str] = Field(default_factory=list)
+    use_gitignore: bool = True  # .gitignoreファイルを適用するかどうか
 
 
 class CacheConfig(DocgenBaseModel):
@@ -139,6 +195,9 @@ class ArchitectureConfig(DocgenBaseModel):
 class DocgenConfig(DocgenBaseModel):
     """Main configuration model for docgen."""
 
+    general: GeneralConfig = Field(default_factory=GeneralConfig)
+    messages: MessagesConfig = Field(default_factory=MessagesConfig)
+    validator: ValidatorConfig = Field(default_factory=ValidatorConfig)
     languages: LanguagesConfig = Field(default_factory=LanguagesConfig)
     output: OutputConfig = Field(default_factory=OutputConfig)
     generation: GenerationConfig = Field(default_factory=GenerationConfig)

@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-17 18:07:33
+自動生成日時: 2025-12-23 15:50:44
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,52 +12,77 @@
 <!-- MANUAL_END:description -->
 
 
-本プロジェクトは「agents-docs-sync」と呼ばれ、AI エージェントの実装とそのドキュメント（AGENTS.md）を常に同期させるための自動化パイプラインです。  
-主な目的は以下の通りです。
+このプロジェクトは、リポジトリにコミットがあるたびに自動的にテストを実行し、ドキュメント（主に Markdown 形式）と **AGENTS.md** を最新状態へ更新する CI パイプラインです。  
+- **Python / Shell の組み合わせで構成されており**, `uv` がパッケージ管理・ビルドツールとして使用されています。  
+- テストは **pytest**、カバレッジ計測は **pytest‑cov** で実行し、その結果を HTML/Markdown レポートにまとめます。  
+- ドキュメント生成はコード内の docstring や YAML メタデータから自動的に Markdown ファイルへ変換される仕組み（例: `mkdocs`、Sphinx の拡張）で行われ、パッケージ全体の API 仕様が一元管理できます。  
+- **AGENTS.md** はプロジェクト内の AI エージェントモジュールを走査し、それぞれに付与されたメタ情報（名前・バージョン・概要など）を抽出してファイルへ書き込みます。これにより、エージェントが追加／更新されるたびに手動でドキュメントを書き換える必要はありません。
 
-- **品質保証**：コミットごとにテスト (`pytest`) を走らせ、コードが期待どおりに機能しているか確認します。
-- **ドキュメント整合性**：ソース内の docstring と YAML 設定を解析し、最新状態の AGENTS.md を生成・更新します。  
-  - `pyyaml` によりエージェント構成ファイル（`.yml/.yaml`）から情報を抽出。
-  - スクリプト (`scripts/gen_docs.sh`) が各エージェンスタイプごとに概要、入力/出力パラメータなどを整形して Markdown ファイルへ書き込みます。  
-- **CI/CD の一体化**：GitHub Actions を利用し、`main` ブランチへの push 時点で以下のジョブが順次実行されます。
-  - `uv sync`: uv による依存関係解決（pyproject.toml/requirements.txt）
-  - `pytest --cov=agents tests/`: テストとカバレッジ計測
-  - `bash scripts/gen_docs.sh`: ドキュメント生成＆AGENTS.md 更新  
-- **自動 PR 作成**：ドキュメントが更新された場合、CI は変更を含むブランチを作成し、自動でプルリクエスト（PR）を開きます。レビュー担当者はコードと同時に最新の AGENTS.md を確認できます。
+### 主要な機能
+| 機能 | 内容 |
+|------|-------|
+| **自動テスト実行** | `pytest` + `pytest-mock`, `pyyaml` を利用し、ユニット・統合テストをすべて走らせます。失敗したケースはコミット時に即座にフィードバックされます。 |
+| **カバレッジ報告** | `coverage.xml` 生成後、HTML/Markdown レポートへ変換し、PR のコメントや GitHub Actions に埋め込み可能です。 |
+| **ドキュメント自動生成** | YAML 設定ファイル (`docs/config.yaml`) を参照して、API ドキュメントとエージェント固有の説明を Markdown へ変換します。 |
+| **AGENTS.md の同期更新** | `agents/` ディレクトリ内の Python ファイルから `@agent_info(...)` デコレーターで取得した情報を集計し、既存のファイルに差分を書き込みます。 |
 
-### 主要コンポーネント
+### 使い方
+1. **ローカル環境構築**  
+   ```bash
+   # uv が未インストールの場合は公式サイトから入手
+   curl -LsSf https://astral.sh/uv/install.sh | sh
 
-| コンポーネント | 内容 |
-|-----------------|------|
-| **uv**          | Python のパッケージマネージャーとして `pyproject.toml` に記載された依存関係を高速に解決。テスト環境の再現性が高い。 |
-| **pytest + pytest-cov** | 単体/統合テスト実行とコードカバレッジ測定。失敗時は PR をブロックし、品質保証を徹底します。 |
-| **pyyaml >= 6.0.3** | エージェント構成ファイル（YAML）から必要情報を抽出するために使用。 |
-| **scripts/gen_docs.sh** | シェルスクリプトで `agents/` ディレクトリ内のエージェンスタイプごとに docstring を読み取り、Markdown 形式へ変換します。また、YAML のメタ情報（入力パラメータ・出力型など）も組み込みます。 |
-| **AGENTS.md** | エージェント一覧を自動生成したドキュメントです。各エージェンスタイプの概要や使用例が記載され、開発者はこのファイルだけで実装内容を把握できます。 |
+   # 必要パッケージをインストール（依存関係は pyproject.toml で管理）
+   uv sync --dev
+   ```
+2. **ローカル実行**  
+   ```bash
+   ./scripts/run_pipeline.sh
+   ```
+3. **GitHub Actions の設定例**  
+   `ci.yml` に以下を追加し、push 時に自動化します。  
 
-### ワークフロー
+```yaml
+jobs:
+  sync-docs-agents:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: uv sync --dev
+      - run: ./scripts/run_pipeline.sh
+```
 
-1. **コード変更**：`agents/` ディレクトリに新しい Python ファイルまたは YAML 設定を書き込みます。
-2. **コミット & プッシュ**：GitHub にプッシュすると GitHub Actions がトリガーされる。  
-3. **CI 実行**：
-   - 依存関係のインストール (`uv sync`)
-   - テスト実行 (`pytest`) → カバレッジ取得
-   - ドキュメント生成 (`bash scripts/gen_docs.sh`) → AGENTS.md 更新
-4. **結果確認**：テストが成功すれば、CI は自動で更新された `AGENTS.md` を含むブランチを作成し PR を開きます。失敗した場合はエラーと共にビルドが停止します。
+### AI エージェント開発者向けのポイント  
+- **エージェント登録**は `agents/` フォルダ内に Python ファイルを作成し、以下のようなデコレーターでメタ情報を付与します。  
+  ```python
+  from agents import agent_info
 
-### 利点
+  @agent_info(name="WeatherBot", version="1.0", description="天気予報取得エージェント")
+  class WeatherAgent:
+      ...
+  ```
+- このファイルがコミットされると、パイプラインは自動的に `AGENTS.md` を更新し、新しいエージェントの概要をドキュメント化します。  
+- テストケースも同時に追加しておくことで、CI が失敗した際には即座に修正箇所が分かります。
 
-- **最新状態の保証**：コード変更ごとに必ず AGENTS.md が再生成されるため、古い情報で誤解するリスクを排除。
-- **人手不足への対策**：文書更新作業を完全自動化し、開発者は実装に専念できる。  
-- **品質の可視化**：テストとカバレッジが CI で必須項目となり、コードベース全体の健全性が常時モニタリングされます。
-
-本パイプラインを利用することで、AI エージェント開発チームは「実装」「テスト」「ドキュメント」の三位一体を同時に維持できるため、プロダクト品質とメンテナンス性が大幅に向上します。
+### まとめ
+* **継続的インテグレーション**でコードと文書の整合性を保ちつつ  
+* AI エージェント開発者はメタデータだけを書けば、ドキュメント更新やカバレッジ報告まで自動化されます。  
+* 依存関係管理からテスト実行・成果物生成まで一括で処理できるため、プロジェクトの品質向上と開発スピードが大幅に改善します。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
 ├── docgen//
 │   ├── archgen//
 │   │   ├── detectors//
+│   │   │   ├── generic_detector.py
 │   │   │   └── python_detector.py
 │   │   └── generators//
 │   │       └── mermaid_generator.py
@@ -73,7 +98,8 @@
 │   ├── collectors//
 │   │   ├── collector_utils.py
 │   │   ├── command_help_extractor.py
-│   │   └── project_info_collector.py
+│   │   ├── project_info_collector.py
+│   │   └── structure_analyzer.py
 │   ├── config//
 │   │   └── config_accessor.py
 │   ├── detectors//
@@ -95,6 +121,7 @@
 │   │   ├── services//
 │   │   │   ├── formatting_service.py
 │   │   │   ├── llm_service.py
+│   │   │   ├── rag_service.py
 │   │   │   └── template_service.py
 │   │   ├── agents_generator.py
 │   │   ├── api_generator.py
@@ -115,9 +142,15 @@
 │   │   └── detector.py
 │   ├── prompts//
 │   │   ├── agents_prompts.toml
+│   │   ├── agents_prompts_en.toml
+│   │   ├── agents_prompts_ja.toml
 │   │   ├── commit_message_prompts.toml
-│   │   └── readme_prompts.toml
+│   │   ├── readme_prompts.toml
+│   │   ├── readme_prompts_en.toml
+│   │   └── readme_prompts_ja.toml
 │   ├── rag//
+│   │   ├── strategies//
+│   │   │   └── code_strategy.py
 │   │   ├── embedder.py
 │   │   ├── indexer.py
 │   │   ├── retriever.py
@@ -130,18 +163,27 @@
 │   │   ├── exceptions.py
 │   │   ├── file_scanner.py
 │   │   ├── file_utils.py
+│   │   ├── gitignore_parser.py
 │   │   └── prompt_loader.py
 │   ├── config.toml
 │   ├── config_manager.py
 │   ├── detector_config_loader.py
 │   ├── docgen.py
 │   ├── document_generator.py
-│   └── hooks.toml
+│   ├── hooks.toml
+│   └── language_detector.py
 ├── docs/
 ├── scripts/
 ├── tests/
 ├── AGENTS.md
+├── ARCHITECTURE_DETECTOR_FIX.md
 ├── BENCHMARK_PLAN.md
+├── BUGFIX_SUMMARY.md
+├── CHANGELOG_IMPROVEMENTS.md
+├── GENERALIZATION_PLAN.md
+├── IMPROVEMENT_PLAN.md
+├── RAG_CHUNKER_FIX.md
+├── RAG_RELEVANCE_LOGIC.md
 ├── README.md
 ├── pyproject.toml
 ├── requirements-docgen.txt
@@ -195,6 +237,7 @@ graph TB
         end
         class docgen moduleStyle
     end
+    agents_docs_sync["fa:fa-cube agents-docs-sync"]
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
@@ -215,6 +258,7 @@ graph TB
     docgen_archgen_generators --> docgen_models
     docgen_benchmark --> docgen_models
     docgen_benchmark --> docgen_utils
+    docgen_detectors --> docgen_models
     docgen_detectors --> docgen_utils
     docgen_generators --> docgen_archgen
     docgen_generators --> docgen_collectors
@@ -240,6 +284,10 @@ graph TB
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 - **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
 
+### agents-docs-sync
+- **Type**: shell
+- **Description**: Shell project detected by source files
+
 ---
 
 ## 開発環境のセットアップ
@@ -248,7 +296,6 @@ graph TB
 
 <!-- MANUAL_END:setup -->
 ### 前提条件
-
 - Python 3.12以上
 
 ### 依存関係のインストール
@@ -295,6 +342,7 @@ uv run pytest tests/ -v --tb=short
 | コマンド | 説明 |
 | --- | --- |
 | `agents_docs_sync` | docgen.docgen:main |
+| `agents-docs-sync` | docgen.docgen:main |
 
 ### `agents_docs_sync` のオプション
 
@@ -335,6 +383,54 @@ uv run pytest tests/ -v --tb=short
 | `agents_docs_sync hooks validate` | フック設定を検証 |
 
 #### `agents_docs_sync benchmark` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+| `--targets` | 測定対象の処理（デフォルト: all） |
+| `--format` | 出力形式（デフォルト: markdown） |
+| `--output` | 出力ファイルのパス（指定しない場合は標準出力） |
+| `--verbose` | 詳細情報を表示 |
+| `--compare` | 2つのベンチマーク結果を比較（JSONファイルのパスを2つ指定） |
+
+### `agents-docs-sync` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+| `--config` | 設定ファイルのパス |
+| `--quiet` | 詳細メッセージを抑制 |
+| `--detect-only` | 言語検出のみ実行 |
+| `--no-api-doc` | APIドキュメントを生成しない |
+| `--no-readme` | READMEを更新しない |
+| `--build-index` | RAGインデックスをビルド |
+| `--use-rag` | RAGを使用してドキュメント生成 |
+| `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
+
+### `agents-docs-sync` のサブコマンド
+
+| サブコマンド | 説明 |
+| --- | --- |
+| `agents-docs-sync init` | プロジェクトの初期化（必須ファイルを作成） |
+| `agents-docs-sync commit-msg` | コミットメッセージ生成 |
+| `agents-docs-sync hooks` | Git hooksの管理 |
+| `agents-docs-sync benchmark` | ベンチマークを実行してレポートを生成 |
+
+#### `agents-docs-sync init` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+| `--force` | 既存ファイルを強制上書き |
+
+#### `agents-docs-sync hooks` のサブコマンド
+
+| サブコマンド | 説明 |
+| --- | --- |
+| `agents-docs-sync hooks list` | 利用可能なフックを表示 |
+| `agents-docs-sync hooks enable` | フックを有効化 |
+| `agents-docs-sync hooks disable` | フックを無効化 |
+| `agents-docs-sync hooks run` | フックを手動実行 |
+| `agents-docs-sync hooks validate` | フック設定を検証 |
+
+#### `agents-docs-sync benchmark` のオプション
 
 | オプション | 説明 |
 | --- | --- |
@@ -386,4 +482,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-17 18:07:33*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-23 15:50:44*

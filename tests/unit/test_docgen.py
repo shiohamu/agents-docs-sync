@@ -75,13 +75,13 @@ class TestDocGen:
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=True)
-        lang_names = [l.name for l in languages]
+        lang_names = [lang.name for lang in languages]
 
         assert "python" in lang_names
         assert "go" in lang_names
         assert "javascript" not in lang_names
         # 順序は保証されないため、セットで比較するか、含まれていることを確認
-        assert {l.name for l in docgen.detected_languages} == {"python", "go"}
+        assert {lang.name for lang in docgen.detected_languages} == {"python", "go"}
         assert docgen.detected_package_managers == {"python": "pip", "go": "go"}
 
     @patch("docgen.detectors.unified_detector.UnifiedDetectorFactory")
@@ -109,7 +109,7 @@ class TestDocGen:
 
         docgen = DocGen(project_root=temp_project)
         languages = docgen.detect_languages(use_parallel=False)
-        lang_names = [l.name for l in languages]
+        lang_names = [lang.name for lang in languages]
 
         assert "python" in lang_names
         assert "go" in lang_names

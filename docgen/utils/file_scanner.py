@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from .gitignore_parser import GitIgnoreMatcher
 from .logger import get_logger
 
 logger = get_logger(__name__)
@@ -21,6 +22,7 @@ class UnifiedFileScanner:
         project_root: Path,
         exclude_dirs: set[str] | None = None,
         exclude_files: set[str] | None = None,
+        gitignore_matcher: GitIgnoreMatcher | None = None,
     ):
         """
         初期化
@@ -29,10 +31,12 @@ class UnifiedFileScanner:
             project_root: プロジェクトルートディレクトリ
             exclude_dirs: 除外するディレクトリ名のセット
             exclude_files: 除外するファイル名のセット
+            gitignore_matcher: .gitignoreマッチャー（Noneの場合は.gitignoreを読み込まない）
         """
         self.project_root = Path(project_root).resolve()
         self.exclude_dirs = exclude_dirs or set()
         self.exclude_files = exclude_files or set()
+        self.gitignore_matcher = gitignore_matcher
         self._scanned = False
         self._files_by_extension: dict[str, list[Path]] = {}
         self._all_files: list[Path] = []
@@ -62,13 +66,22 @@ class UnifiedFileScanner:
                 root_path = Path(root)
 
                 # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
-                dirs[:] = [
-                    d
-                    for d in dirs
-                    if d not in self.exclude_dirs
-                    and not d.startswith(".")
-                    and not d.endswith(".egg-info")
-                ]
+                dirs_to_remove = []
+                for d in dirs:
+                    dir_path = root_path / d
+                    # 既存の除外チェック
+                    if d in self.exclude_dirs or d.startswith(".") or d.endswith(".egg-info"):
+                        dirs_to_remove.append(d)
+                        continue
+                    # .gitignoreチェック
+                    if self.gitignore_matcher and self.gitignore_matcher.should_exclude_dir(
+                        dir_path
+                    ):
+                        dirs_to_remove.append(d)
+                        continue
+
+                for d in dirs_to_remove:
+                    dirs.remove(d)
 
                 # パスベースの除外チェック
                 try:
@@ -78,6 +91,12 @@ class UnifiedFileScanner:
                         continue
                     if any(part.endswith(".egg-info") for part in rel_path.parts):
                         dirs[:] = []  # egg-infoディレクトリ以下をスキップ
+                        continue
+                    # .gitignoreチェック（ディレクトリ全体）
+                    if self.gitignore_matcher and self.gitignore_matcher.should_exclude_dir(
+                        root_path
+                    ):
+                        dirs[:] = []  # このディレクトリ以下をスキップ
                         continue
                 except ValueError:
                     # プロジェクトルート外の場合はスキップ
@@ -100,6 +119,12 @@ class UnifiedFileScanner:
                             file_path_relative = file_path_resolved.relative_to(self.project_root)
                         except ValueError:
                             # プロジェクトルート外のファイルはスキップ
+                            continue
+
+                        # .gitignoreチェック
+                        if self.gitignore_matcher and self.gitignore_matcher.is_ignored(
+                            file_path_resolved
+                        ):
                             continue
 
                         # シンボリックリンクのチェック（オプション: シンボリックリンクをスキップする場合）
@@ -199,6 +224,7 @@ def get_unified_scanner(
     project_root: Path,
     exclude_dirs: set[str] | None = None,
     exclude_files: set[str] | None = None,
+    use_gitignore: bool = True,
 ) -> UnifiedFileScanner:
     """
     統一ファイルスキャナーのインスタンスを取得（シングルトン的な動作）
@@ -207,18 +233,28 @@ def get_unified_scanner(
         project_root: プロジェクトルートディレクトリ
         exclude_dirs: 除外するディレクトリ名のセット
         exclude_files: 除外するファイル名のセット
+        use_gitignore: .gitignoreを適用するかどうか
 
     Returns:
         UnifiedFileScannerインスタンス
     """
     project_root_resolved = Path(project_root).resolve()
 
+    # .gitignoreマッチャーを作成
+    gitignore_matcher = None
+    if use_gitignore:
+        from .gitignore_parser import load_gitignore_patterns
+
+        gitignore_matcher = load_gitignore_patterns(project_root_resolved)
+
     # 既存のスキャナーがある場合は再利用
     if project_root_resolved in _scanner_cache:
         scanner = _scanner_cache[project_root_resolved]
         # 除外設定が変更された場合は新しいスキャナーを作成
-        if scanner.exclude_dirs == (exclude_dirs or set()) and scanner.exclude_files == (
-            exclude_files or set()
+        if (
+            scanner.exclude_dirs == (exclude_dirs or set())
+            and scanner.exclude_files == (exclude_files or set())
+            and scanner.gitignore_matcher == gitignore_matcher
         ):
             return scanner
 
@@ -233,6 +269,7 @@ def get_unified_scanner(
         project_root=project_root_resolved,
         exclude_dirs=default_exclude_dirs,
         exclude_files=exclude_files or set(),
+        gitignore_matcher=gitignore_matcher,
     )
     _scanner_cache[project_root_resolved] = scanner
 

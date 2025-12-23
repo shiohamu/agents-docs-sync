@@ -25,7 +25,7 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path)
         languages = detector.detect_languages(use_parallel=False)
-        language_names = [l.name for l in languages]
+        language_names = [lang.name for lang in languages]
 
         assert "python" in language_names
         assert detector.get_detected_languages() == language_names
@@ -50,7 +50,7 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path, config_manager=mock_config_manager)
         languages = detector.detect_languages(use_parallel=False)
-        language_names = [l.name for l in languages]
+        language_names = [lang.name for lang in languages]
 
         # Pythonは検出されるが、ignoredで除外される
         assert "python" not in language_names
@@ -75,7 +75,7 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path, config_manager=mock_config_manager)
         languages = detector.detect_languages(use_parallel=False)
-        language_names = [l.name for l in languages]
+        language_names = [lang.name for lang in languages]
 
         # 除外ディレクトリ内のPythonファイルは検出されない
         assert "python" not in language_names
@@ -103,7 +103,7 @@ class TestLanguageDetector:
 
         detector = LanguageDetector(tmp_path, config_manager=mock_config_manager)
         languages = detector.detect_languages(use_parallel=False)
-        language_names = [l.name for l in languages]
+        language_names = [lang.name for lang in languages]
 
         # 非除外ディレクトリ内のPythonファイルは検出される
         assert "python" in language_names

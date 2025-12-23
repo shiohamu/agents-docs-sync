@@ -57,7 +57,7 @@ class GenericDetector:
 
         # パッケージマネージャーファイルが見つからない場合、ソースファイルの存在を確認
         if not services:
-            for lang, exts in DetectorPatterns.SOURCE_EXTENSIONS.items():
+            for lang, _exts in DetectorPatterns.SOURCE_EXTENSIONS.items():
                 if lang in ("python", "javascript", "typescript"):
                     continue
 

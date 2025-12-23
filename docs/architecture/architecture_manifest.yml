@@ -23,12 +23,6 @@ services:
   - sentence-transformers
   - torch
   modules:
-  - name: exclude_test_dir
-    path: !!python/object/apply:pathlib.PosixPath
-    - exclude_test_dir
-    is_package: true
-    dependencies: []
-    submodules: []
   - name: docgen
     path: !!python/object/apply:pathlib.PosixPath
     - docgen
@@ -134,6 +128,7 @@ services:
       - detectors
       is_package: true
       dependencies:
+      - models
       - utils
       submodules: []
     - name: generators
@@ -192,5 +187,12 @@ services:
       dependencies: []
       submodules: []
   metadata:
-    version: 0.1.7
+    version: 0.1.8
+- name: agents-docs-sync
+  type: shell
+  description: Shell project detected by source files
+  ports: []
+  dependencies: []
+  modules: []
+  metadata: {}
 metadata: {}

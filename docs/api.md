@@ -1,6 +1,6 @@
 # API ドキュメント
 
-自動生成日時: 2025-12-17 18:06:13
+自動生成日時: 2025-12-23 15:49:39
 
 ---
 
@@ -12,7 +12,7 @@
 
 **シグネチャ**:
 ```
-def generate_architecture(project_root: Path, output_dir: Path) -> bool:
+def generate_architecture(project_root: Path, output_dir: Path, exclude_directories: list[str] | None) -> bool:
 ```
 
 **説明**:
@@ -22,6 +22,7 @@ def generate_architecture(project_root: Path, output_dir: Path) -> bool:
 Args:
     project_root: プロジェクトルート
     output_dir: 出力ディレクトリ
+    exclude_directories: スキャンから除外するディレクトリのリスト
 
 *定義場所: docgen/archgen/cli.py:15*
 
@@ -40,7 +41,7 @@ def main():
 
 CLI エントリポイント
 
-*定義場所: docgen/archgen/cli.py:52*
+*定義場所: docgen/archgen/cli.py:54*
 
 ---
 
@@ -80,6 +81,58 @@ def detect(self, project_root: Path) -> list[Service]:
 ---
 
 
+## docgen/archgen/detectors/generic_detector.py
+
+### GenericDetector
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class GenericDetector:
+```
+
+**説明**:
+
+様々なプログラミング言語のプロジェクトを検出
+
+*定義場所: docgen/archgen/detectors/generic_detector.py:13*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, exclude_directories: list[str] | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/archgen/detectors/generic_detector.py:16*
+
+---
+
+### detect
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def detect(self, project_root: Path) -> list[Service]:
+```
+
+**説明**:
+
+プロジェクトをスキャンしてサービスを検出
+
+*定義場所: docgen/archgen/detectors/generic_detector.py:21*
+
+---
+
+
 ## docgen/archgen/detectors/python_detector.py
 
 ### PythonDetector
@@ -99,6 +152,21 @@ Python プロジェクトを検出
 
 ---
 
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, exclude_directories: list[str] | None):
+```
+
+*説明なし*
+
+*定義場所: docgen/archgen/detectors/python_detector.py:17*
+
+---
+
 ### detect
 
 **型**: `method`
@@ -110,7 +178,7 @@ def detect(self, project_root: Path) -> list[Service]:
 
 *説明なし*
 
-*定義場所: docgen/archgen/detectors/python_detector.py:14*
+*定義場所: docgen/archgen/detectors/python_detector.py:22*
 
 ---
 
@@ -320,7 +388,7 @@ class ProjectScanner:
 
 プロジェクトをスキャンしてアーキテクチャを抽出
 
-*定義場所: docgen/archgen/scanner.py:12*
+*定義場所: docgen/archgen/scanner.py:13*
 
 ---
 
@@ -330,12 +398,12 @@ class ProjectScanner:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path):
+def __init__(self, project_root: Path, exclude_directories: list[str] | None):
 ```
 
 *説明なし*
 
-*定義場所: docgen/archgen/scanner.py:15*
+*定義場所: docgen/archgen/scanner.py:16*
 
 ---
 
@@ -352,7 +420,7 @@ def scan(self) -> ArchitectureManifest:
 
 プロジェクトをスキャン
 
-*定義場所: docgen/archgen/scanner.py:22*
+*定義場所: docgen/archgen/scanner.py:24*
 
 ---
 
@@ -433,7 +501,7 @@ def generate_comparison_report(self) -> str:
 Returns:
     Markdown形式のレポート
 
-*定義場所: docgen/benchmark/comparator.py:150*
+*定義場所: docgen/benchmark/comparator.py:160*
 
 ---
 
@@ -453,7 +521,7 @@ def save_comparison_report(self, path: Path) -> None:
 Args:
     path: 保存先のパス
 
-*定義場所: docgen/benchmark/comparator.py:235*
+*定義場所: docgen/benchmark/comparator.py:253*
 
 ---
 
@@ -473,7 +541,7 @@ class BenchmarkContext:
 
 ベンチマーク測定用のコンテキストマネージャー
 
-*定義場所: docgen/benchmark/core.py:19*
+*定義場所: docgen/benchmark/core.py:20*
 
 ---
 
@@ -495,7 +563,7 @@ Args:
     recorder: ベンチマークレコーダー（Noneの場合はグローバルレコーダーを使用）
     enabled: 測定を有効にするかどうか
 
-*定義場所: docgen/benchmark/core.py:22*
+*定義場所: docgen/benchmark/core.py:23*
 
 ---
 
@@ -512,7 +580,7 @@ def __enter__(self) -> 'BenchmarkContext':
 
 測定開始
 
-*定義場所: docgen/benchmark/core.py:39*
+*定義場所: docgen/benchmark/core.py:40*
 
 ---
 
@@ -529,7 +597,7 @@ def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
 
 測定終了と結果記録
 
-*定義場所: docgen/benchmark/core.py:50*
+*定義場所: docgen/benchmark/core.py:51*
 
 ---
 
@@ -559,7 +627,7 @@ Example:
         # 処理
         pass
 
-*定義場所: docgen/benchmark/core.py:83*
+*定義場所: docgen/benchmark/core.py:84*
 
 ---
 
@@ -589,7 +657,7 @@ Example:
         # 処理
         pass
 
-*定義場所: docgen/benchmark/core.py:115*
+*定義場所: docgen/benchmark/core.py:116*
 
 ---
 
@@ -817,7 +885,7 @@ class BenchmarkReporter:
 
 ベンチマーク結果のレポート生成クラス
 
-*定義場所: docgen/benchmark/reporter.py:16*
+*定義場所: docgen/benchmark/reporter.py:15*
 
 ---
 
@@ -837,7 +905,7 @@ def __init__(self, recorder: BenchmarkRecorder | None):
 Args:
     recorder: ベンチマークレコーダー（Noneの場合はグローバルレコーダーを使用）
 
-*定義場所: docgen/benchmark/reporter.py:19*
+*定義場所: docgen/benchmark/reporter.py:18*
 
 ---
 
@@ -860,7 +928,7 @@ Args:
 Returns:
     Markdown形式のレポート
 
-*定義場所: docgen/benchmark/reporter.py:28*
+*定義場所: docgen/benchmark/reporter.py:27*
 
 ---
 
@@ -880,7 +948,7 @@ JSON形式のレポートを生成
 Returns:
     JSON形式の辞書
 
-*定義場所: docgen/benchmark/reporter.py:108*
+*定義場所: docgen/benchmark/reporter.py:111*
 
 ---
 
@@ -900,7 +968,7 @@ Markdownレポートをファイルに保存
 Args:
     path: 保存先のパス
 
-*定義場所: docgen/benchmark/reporter.py:117*
+*定義場所: docgen/benchmark/reporter.py:120*
 
 ---
 
@@ -920,7 +988,7 @@ JSONレポートをファイルに保存
 Args:
     path: 保存先のパス
 
-*定義場所: docgen/benchmark/reporter.py:127*
+*定義場所: docgen/benchmark/reporter.py:130*
 
 ---
 
@@ -943,7 +1011,7 @@ Args:
 Returns:
     CSV形式の文字列
 
-*定義場所: docgen/benchmark/reporter.py:137*
+*定義場所: docgen/benchmark/reporter.py:140*
 
 ---
 
@@ -964,7 +1032,7 @@ Args:
     path: 保存先のパス
     include_children: 子処理の結果を含めるかどうか
 
-*定義場所: docgen/benchmark/reporter.py:206*
+*定義場所: docgen/benchmark/reporter.py:209*
 
 ---
 
@@ -987,7 +1055,7 @@ Args:
 Returns:
     ボトルネックの処理名のリスト
 
-*定義場所: docgen/benchmark/reporter.py:217*
+*定義場所: docgen/benchmark/reporter.py:220*
 
 ---
 
@@ -2077,7 +2145,7 @@ class ProjectInfoCollector:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, package_managers: dict[str, str] | None, logger: Any | None):
+def __init__(self, project_root: Path, package_managers: dict[str, str] | None, logger: Any | None, exclude_directories: list[str] | None):
 ```
 
 **説明**:
@@ -2088,6 +2156,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     package_managers: 言語ごとのパッケージマネージャ辞書
     logger: ロガーインスタンス
+    exclude_directories: 除外するディレクトリのリスト
 
 *定義場所: docgen/collectors/project_info_collector.py:23*
 
@@ -2109,7 +2178,7 @@ def collect_all(self) -> ProjectInfo:
 Returns:
     プロジェクト情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:57*
+*定義場所: docgen/collectors/project_info_collector.py:61*
 
 ---
 
@@ -2129,7 +2198,7 @@ def collect_key_features(self) -> list[str]:
 Returns:
     主要機能のリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:93*
+*定義場所: docgen/collectors/project_info_collector.py:97*
 
 ---
 
@@ -2149,7 +2218,7 @@ def collect_test_commands(self) -> list[str]:
 Returns:
     テストコマンドのリスト
 
-*定義場所: docgen/collectors/project_info_collector.py:103*
+*定義場所: docgen/collectors/project_info_collector.py:107*
 
 ---
 
@@ -2169,7 +2238,7 @@ def collect_dependencies(self) -> dict[str, list[str]]:
 Returns:
     依存関係の辞書（言語ごと）
 
-*定義場所: docgen/collectors/project_info_collector.py:112*
+*定義場所: docgen/collectors/project_info_collector.py:116*
 
 ---
 
@@ -2189,7 +2258,7 @@ def collect_coding_standards(self) -> dict[str, str | dict[str, Any] | bool]:
 Returns:
     コーディング規約の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:121*
+*定義場所: docgen/collectors/project_info_collector.py:125*
 
 ---
 
@@ -2209,7 +2278,7 @@ CI/CD情報を収集
 Returns:
     CI/CD情報の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:130*
+*定義場所: docgen/collectors/project_info_collector.py:134*
 
 ---
 
@@ -2231,7 +2300,7 @@ StructureAnalyzerに委譲して詳細な構造分析を実行
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/project_info_collector.py:151*
+*定義場所: docgen/collectors/project_info_collector.py:155*
 
 ---
 
@@ -2255,6 +2324,28 @@ class StructureAnalyzer:
 
 ---
 
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, logger: Any | None, exclude_directories: list[str] | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    logger: ロガーインスタンス
+    exclude_directories: 除外するディレクトリのリスト（追加分）
+
+*定義場所: docgen/collectors/structure_analyzer.py:51*
+
+---
+
 ### collect
 
 **型**: `method`
@@ -2274,7 +2365,7 @@ Args:
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/structure_analyzer.py:51*
+*定義場所: docgen/collectors/structure_analyzer.py:71*
 
 ---
 
@@ -2297,7 +2388,7 @@ Args:
 Returns:
     シンボル数（クラス、関数、非同期関数の合計）
 
-*定義場所: docgen/collectors/structure_analyzer.py:63*
+*定義場所: docgen/collectors/structure_analyzer.py:83*
 
 ---
 
@@ -2322,7 +2413,7 @@ Args:
 Returns:
     ディレクトリ構造の辞書、またはネストしないディレクトリの場合は "directory"
 
-*定義場所: docgen/collectors/structure_analyzer.py:86*
+*定義場所: docgen/collectors/structure_analyzer.py:106*
 
 ---
 
@@ -2345,7 +2436,7 @@ Args:
 Returns:
     プロジェクト構造の辞書
 
-*定義場所: docgen/collectors/structure_analyzer.py:143*
+*定義場所: docgen/collectors/structure_analyzer.py:163*
 
 ---
 
@@ -2914,6 +3005,23 @@ def exclude_patterns(self) -> list[str]:
 
 ---
 
+### use_gitignore
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def use_gitignore(self) -> bool:
+```
+
+**説明**:
+
+`.gitignore`を適用するかどうか
+
+*定義場所: docgen/config/config_accessor.py:200*
+
+---
+
 ### hooks
 
 **型**: `method`
@@ -2925,7 +3033,7 @@ def hooks(self) -> dict[str, Any]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:203*
+*定義場所: docgen/config/config_accessor.py:208*
 
 ---
 
@@ -2940,7 +3048,7 @@ def hooks_enabled(self) -> bool:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:207*
+*定義場所: docgen/config/config_accessor.py:212*
 
 ---
 
@@ -2955,7 +3063,7 @@ def languages(self) -> dict[str, Any]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:214*
+*定義場所: docgen/config/config_accessor.py:219*
 
 ---
 
@@ -2970,7 +3078,7 @@ def languages_auto_detect(self) -> bool:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:218*
+*定義場所: docgen/config/config_accessor.py:223*
 
 ---
 
@@ -2985,7 +3093,7 @@ def languages_preferred(self) -> list[str]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:222*
+*定義場所: docgen/config/config_accessor.py:227*
 
 ---
 
@@ -3000,7 +3108,7 @@ def languages_ignored(self) -> list[str]:
 
 *説明なし*
 
-*定義場所: docgen/config/config_accessor.py:226*
+*定義場所: docgen/config/config_accessor.py:231*
 
 ---
 
@@ -3367,7 +3475,7 @@ class DetectorPatterns:
 
 Common file detection patterns used by language detectors.
 
-*定義場所: docgen/detectors/detector_patterns.py:8*
+*定義場所: docgen/detectors/detector_patterns.py:7*
 
 ---
 
@@ -3384,7 +3492,7 @@ def get_package_files(cls, language: str) -> list[str]:
 
 Get package manager files for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:196*
+*定義場所: docgen/detectors/detector_patterns.py:195*
 
 ---
 
@@ -3401,7 +3509,7 @@ def get_source_extensions(cls, language: str) -> list[str]:
 
 Get source file extensions for a language.
 
-*定義場所: docgen/detectors/detector_patterns.py:201*
+*定義場所: docgen/detectors/detector_patterns.py:200*
 
 ---
 
@@ -3418,7 +3526,7 @@ def detect_by_package_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for package manager files.
 
-*定義場所: docgen/detectors/detector_patterns.py:206*
+*定義場所: docgen/detectors/detector_patterns.py:205*
 
 ---
 
@@ -3435,7 +3543,7 @@ def detect_by_source_files(cls, project_root: Path, language: str) -> bool:
 
 Detect language by checking for source files.
 
-*定義場所: docgen/detectors/detector_patterns.py:212*
+*定義場所: docgen/detectors/detector_patterns.py:211*
 
 ---
 
@@ -3452,7 +3560,7 @@ def detect_by_source_files_with_exclusions(cls, project_root: Path, language: st
 
 Detect language by checking for source files, excluding common directories.
 
-*定義場所: docgen/detectors/detector_patterns.py:224*
+*定義場所: docgen/detectors/detector_patterns.py:223*
 
 ---
 
@@ -3475,7 +3583,7 @@ Args:
     max_file_size: スキップする最大ファイルサイズ（バイト、デフォルト: 10MB）
                   大きなファイルは検出対象外として扱う
 
-*定義場所: docgen/detectors/detector_patterns.py:303*
+*定義場所: docgen/detectors/detector_patterns.py:299*
 
 ---
 
@@ -3492,7 +3600,7 @@ def is_excluded_path(cls, path: Path, project_root: Path) -> bool:
 
 Check if a path should be excluded from detection.
 
-*定義場所: docgen/detectors/detector_patterns.py:351*
+*定義場所: docgen/detectors/detector_patterns.py:347*
 
 ---
 
@@ -3516,7 +3624,7 @@ Args:
 Returns:
     Package manager name or None
 
-*定義場所: docgen/detectors/detector_patterns.py:361*
+*定義場所: docgen/detectors/detector_patterns.py:357*
 
 ---
 
@@ -3533,7 +3641,7 @@ def is_js_config_or_test(cls, file_path: Path) -> bool:
 
 Check if a file is likely a JavaScript config or test file.
 
-*定義場所: docgen/detectors/detector_patterns.py:382*
+*定義場所: docgen/detectors/detector_patterns.py:378*
 
 ---
 
@@ -3543,7 +3651,7 @@ Check if a file is likely a JavaScript config or test file.
 
 **シグネチャ**:
 ```
-def clear_cache(cls, project_root: Optional[Path]) -> None:
+def clear_cache(cls, project_root: Path | None) -> None:
 ```
 
 **説明**:
@@ -3554,7 +3662,7 @@ Args:
     project_root: If provided, clear cache for this project only.
                  If None, clear all caches.
 
-*定義場所: docgen/detectors/detector_patterns.py:388*
+*定義場所: docgen/detectors/detector_patterns.py:384*
 
 ---
 
@@ -3574,7 +3682,7 @@ def set_custom_exclude_dirs(cls, directories: list[str]) -> None:
 Args:
     directories: 除外するディレクトリ名のリスト
 
-*定義場所: docgen/detectors/detector_patterns.py:406*
+*定義場所: docgen/detectors/detector_patterns.py:402*
 
 ---
 
@@ -3594,7 +3702,7 @@ def get_all_exclude_dirs(cls) -> set[str]:
 Returns:
     除外ディレクトリのセット
 
-*定義場所: docgen/detectors/detector_patterns.py:418*
+*定義場所: docgen/detectors/detector_patterns.py:414*
 
 ---
 
@@ -3611,7 +3719,7 @@ def detect_python_package_manager(cls, project_root: Path) -> str | None:
 
 Detect Python package manager with special handling for pyproject.toml.
 
-*定義場所: docgen/detectors/detector_patterns.py:427*
+*定義場所: docgen/detectors/detector_patterns.py:423*
 
 ---
 
@@ -3754,7 +3862,7 @@ class UnifiedDetector:
 
 DetectorPatterns で定義されたすべての言語を検出します。
 
-*定義場所: docgen/detectors/unified_detector.py:14*
+*定義場所: docgen/detectors/unified_detector.py:15*
 
 ---
 
@@ -3775,7 +3883,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     language: 検出対象の言語名
 
-*定義場所: docgen/detectors/unified_detector.py:20*
+*定義場所: docgen/detectors/unified_detector.py:21*
 
 ---
 
@@ -3795,7 +3903,7 @@ def detect(self) -> bool:
 Returns:
     検出された場合True
 
-*定義場所: docgen/detectors/unified_detector.py:32*
+*定義場所: docgen/detectors/unified_detector.py:33*
 
 ---
 
@@ -3815,7 +3923,7 @@ def get_language(self) -> str:
 Returns:
     言語名（例: 'python', 'javascript'）
 
-*定義場所: docgen/detectors/unified_detector.py:55*
+*定義場所: docgen/detectors/unified_detector.py:56*
 
 ---
 
@@ -3835,7 +3943,27 @@ def detect_package_manager(self) -> str | None:
 Returns:
     パッケージマネージャ名（例: 'pip', 'npm', 'yarn'）またはNone
 
-*定義場所: docgen/detectors/unified_detector.py:64*
+*定義場所: docgen/detectors/unified_detector.py:65*
+
+---
+
+### get_detected_language_object
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_detected_language_object(self) -> DetectedLanguage:
+```
+
+**説明**:
+
+検出された言語のオブジェクトを返す
+
+Returns:
+    DetectedLanguage オブジェクト
+
+*定義場所: docgen/detectors/unified_detector.py:87*
 
 ---
 
@@ -3854,7 +3982,7 @@ UnifiedDetector のファクトリークラス
 
 サポートされているすべての言語の detector を生成します。
 
-*定義場所: docgen/detectors/unified_detector.py:87*
+*定義場所: docgen/detectors/unified_detector.py:103*
 
 ---
 
@@ -3874,7 +4002,7 @@ def get_all_languages(cls) -> list[str]:
 Returns:
     言語名のリスト（よく使われる言語を優先）
 
-*定義場所: docgen/detectors/unified_detector.py:94*
+*定義場所: docgen/detectors/unified_detector.py:110*
 
 ---
 
@@ -3898,7 +4026,7 @@ Args:
 Returns:
     UnifiedDetector インスタンス
 
-*定義場所: docgen/detectors/unified_detector.py:120*
+*定義場所: docgen/detectors/unified_detector.py:136*
 
 ---
 
@@ -3921,7 +4049,7 @@ Args:
 Returns:
     UnifiedDetector インスタンスのリスト
 
-*定義場所: docgen/detectors/unified_detector.py:134*
+*定義場所: docgen/detectors/unified_detector.py:150*
 
 ---
 
@@ -3941,7 +4069,7 @@ class DocGen:
 
 ドキュメント自動生成メインクラス
 
-*定義場所: docgen/docgen.py:31*
+*定義場所: docgen/docgen.py:32*
 
 ---
 
@@ -3962,7 +4090,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ（Noneの場合は現在の作業ディレクトリ）
     config_path: 設定ファイルのパス（Noneの場合はデフォルト）
 
-*定義場所: docgen/docgen.py:34*
+*定義場所: docgen/docgen.py:35*
 
 ---
 
@@ -3972,7 +4100,7 @@ Args:
 
 **シグネチャ**:
 ```
-def detect_languages(self, use_parallel: bool) -> list[str]:
+def detect_languages(self, use_parallel: bool) -> list[DetectedLanguage]:
 ```
 
 **説明**:
@@ -3983,9 +4111,9 @@ Args:
     use_parallel: 並列処理を使用するかどうか（デフォルト: True）
 
 Returns:
-    検出された言語のリスト
+    検出された言語オブジェクトのリスト
 
-*定義場所: docgen/docgen.py:68*
+*定義場所: docgen/docgen.py:70*
 
 ---
 
@@ -4005,7 +4133,7 @@ def update_config(self, updates: dict[str, Any]) -> None:
 Args:
     updates: 更新する設定辞書（ドット記法対応、例: {'generation.update_readme': False}）
 
-*定義場所: docgen/docgen.py:84*
+*定義場所: docgen/docgen.py:86*
 
 ---
 
@@ -4025,7 +4153,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/docgen.py:94*
+*定義場所: docgen/docgen.py:96*
 
 ---
 
@@ -4045,7 +4173,7 @@ Run the command line interface
 Returns:
     Exit code
 
-*定義場所: docgen/docgen.py:147*
+*定義場所: docgen/docgen.py:152*
 
 ---
 
@@ -4062,7 +4190,7 @@ def main():
 
 メインエントリーポイント
 
-*定義場所: docgen/docgen.py:172*
+*定義場所: docgen/docgen.py:177*
 
 ---
 
@@ -4082,7 +4210,7 @@ class DocumentGenerator:
 
 ドキュメント生成クラス
 
-*定義場所: docgen/document_generator.py:15*
+*定義場所: docgen/document_generator.py:16*
 
 ---
 
@@ -4092,7 +4220,7 @@ class DocumentGenerator:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, detected_languages: list[str], config: dict[str, Any], detected_package_managers: dict[str, str] | None):
+def __init__(self, project_root: Path, detected_languages: list[DetectedLanguage], config: dict[str, Any], detected_package_managers: dict[str, str] | None):
 ```
 
 **説明**:
@@ -4105,7 +4233,7 @@ Args:
     config: 設定辞書
     detected_package_managers: 検出されたパッケージマネージャ辞書
 
-*定義場所: docgen/document_generator.py:18*
+*定義場所: docgen/document_generator.py:19*
 
 ---
 
@@ -4125,7 +4253,7 @@ def generate_documents(self) -> bool:
 Returns:
     成功したかどうか
 
-*定義場所: docgen/document_generator.py:39*
+*定義場所: docgen/document_generator.py:40*
 
 ---
 
@@ -4258,7 +4386,7 @@ class APIGenerator:
 
 APIドキュメント生成クラス
 
-*定義場所: docgen/generators/api_generator.py:27*
+*定義場所: docgen/generators/api_generator.py:25*
 
 ---
 
@@ -4281,7 +4409,7 @@ Args:
     config: 設定辞書
     package_managers: 検出されたパッケージマネージャの辞書
 
-*定義場所: docgen/generators/api_generator.py:30*
+*定義場所: docgen/generators/api_generator.py:28*
 
 ---
 
@@ -4461,7 +4589,7 @@ Template Methodパターンにより、解析フローの共通部分を定義�
 Attributes:
     PARSER_TYPE: パーサーの種類を示すクラス変数
 
-*定義場所: docgen/generators/parsers/base_parser.py:24*
+*定義場所: docgen/generators/parsers/base_parser.py:25*
 
 ---
 
@@ -4481,7 +4609,7 @@ def __init__(self, project_root: Path):
 Args:
     project_root: プロジェクトのルートディレクトリ
 
-*定義場所: docgen/generators/parsers/base_parser.py:39*
+*定義場所: docgen/generators/parsers/base_parser.py:40*
 
 ---
 
@@ -4504,7 +4632,7 @@ Args:
 Returns:
     API情報のリスト
 
-*定義場所: docgen/generators/parsers/base_parser.py:48*
+*定義場所: docgen/generators/parsers/base_parser.py:49*
 
 ---
 
@@ -4524,7 +4652,7 @@ def get_supported_extensions(self) -> list[str]:
 Returns:
     拡張子のリスト（例: ['.py', '.pyw']）
 
-*定義場所: docgen/generators/parsers/base_parser.py:93*
+*定義場所: docgen/generators/parsers/base_parser.py:94*
 
 ---
 
@@ -4544,7 +4672,7 @@ def get_parser_type(self) -> str:
 Returns:
     パーサーの種類（例: 'python', 'javascript'）
 
-*定義場所: docgen/generators/parsers/base_parser.py:102*
+*定義場所: docgen/generators/parsers/base_parser.py:103*
 
 ---
 
@@ -4554,7 +4682,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def parse_project(self, exclude_dirs: list[str] | None, use_parallel: bool, max_workers: int | None, use_cache: bool, cache_manager: 'CacheManager | None', files_to_parse: list[tuple[Path, Path]] | None, skip_cache_save: bool) -> list[APIInfo]:
+def parse_project(self, exclude_dirs: list[str] | None, use_parallel: bool, max_workers: int | None, use_cache: bool, cache_manager: 'CacheManager | None', files_to_parse: list[tuple[Path, Path]] | None, skip_cache_save: bool, gitignore_matcher: 'GitIgnoreMatcher | None') -> list[APIInfo]:
 ```
 
 **説明**:
@@ -4569,11 +4697,12 @@ Args:
     cache_manager: キャッシュマネージャー（Noneの場合はキャッシュを使用しない）
     files_to_parse: 既にスキャン済みのファイルリスト（Noneの場合は新規スキャン）
     skip_cache_save: キャッシュ保存をスキップするか（デフォルト: False）
+    gitignore_matcher: .gitignoreマッチャー（Noneの場合は.gitignoreを適用しない）
 
 Returns:
     全API情報のリスト
 
-*定義場所: docgen/generators/parsers/base_parser.py:111*
+*定義場所: docgen/generators/parsers/base_parser.py:112*
 
 ---
 
@@ -4593,7 +4722,7 @@ class GenericParser:
 
 汎用コード解析クラス
 
-*定義場所: docgen/generators/parsers/generic_parser.py:13*
+*定義場所: docgen/generators/parsers/generic_parser.py:16*
 
 ---
 
@@ -4614,7 +4743,7 @@ Args:
     project_root: プロジェクトのルートディレクトリ
     language: 言語名（'rust', 'java', 'c', 'cpp', 'go', 'ruby', 'php'など）
 
-*定義場所: docgen/generators/parsers/generic_parser.py:31*
+*定義場所: docgen/generators/parsers/generic_parser.py:36*
 
 ---
 
@@ -4630,11 +4759,12 @@ def get_supported_extensions(self) -> list[str]:
 **説明**:
 
 サポートする拡張子を返す
+DetectorPatternsから拡張子を取得して一元管理
 
 Returns:
     言語に応じた拡張子のリスト
 
-*定義場所: docgen/generators/parsers/generic_parser.py:143*
+*定義場所: docgen/generators/parsers/generic_parser.py:168*
 
 ---
 
@@ -4672,6 +4802,122 @@ def get_supported_extensions(self) -> list[str]:
 サポートする拡張子を返す
 
 *定義場所: docgen/generators/parsers/js_parser.py:212*
+
+---
+
+
+## docgen/generators/parsers/parser_factory.py
+
+### ParserFactory
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ParserFactory:
+```
+
+**説明**:
+
+パーサーファクトリークラス
+
+言語名から適切なパーサーを選択して生成します。
+
+*定義場所: docgen/generators/parsers/parser_factory.py:22*
+
+---
+
+### create_parser
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_parser(cls, project_root: Path, language: str) -> BaseParser:
+```
+
+**説明**:
+
+指定された言語のパーサーを作成
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    language: 言語名（例: 'python', 'javascript', 'go'）
+
+Returns:
+    パーサーインスタンス
+
+Raises:
+    ValueError: サポートされていない言語が指定された場合
+
+*定義場所: docgen/generators/parsers/parser_factory.py:36*
+
+---
+
+### create_parsers
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def create_parsers(cls, project_root: Path, languages: list[str]) -> list[BaseParser]:
+```
+
+**説明**:
+
+複数の言語のパーサーを作成
+
+Args:
+    project_root: プロジェクトのルートディレクトリ
+    languages: 言語名のリスト
+
+Returns:
+    パーサーインスタンスのリスト
+
+*定義場所: docgen/generators/parsers/parser_factory.py:59*
+
+---
+
+### get_supported_languages
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_supported_languages(cls) -> list[str]:
+```
+
+**説明**:
+
+サポートされている言語のリストを取得
+
+Returns:
+    言語名のリスト
+
+*定義場所: docgen/generators/parsers/parser_factory.py:85*
+
+---
+
+### is_language_supported
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def is_language_supported(cls, language: str) -> bool:
+```
+
+**説明**:
+
+指定された言語がサポートされているかチェック
+
+Args:
+    language: 言語名
+
+Returns:
+    サポートされている場合True
+
+*定義場所: docgen/generators/parsers/parser_factory.py:101*
 
 ---
 
@@ -5500,7 +5746,7 @@ Args:
 Returns:
     生成されたコンテンツ
 
-*定義場所: docgen/generators/services/llm_service.py:143*
+*定義場所: docgen/generators/services/llm_service.py:146*
 
 ---
 
@@ -5630,13 +5876,66 @@ RAGが有効かどうか
 
 ---
 
+### build_enhanced_query
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def build_enhanced_query(self, prompt_name: str, project_name: str, languages: list[str] | None, project_info: dict[str, Any] | None) -> str:
+```
+
+**説明**:
+
+プロジェクト情報を含む詳細なクエリを生成
+
+Args:
+    prompt_name: プロンプト名（例: "project overview", "key_features"）
+    project_name: プロジェクト名
+    languages: 検出された言語のリスト
+    project_info: プロジェクト情報の辞書（オプション）
+
+Returns:
+    改善されたクエリ文字列
+
+*定義場所: docgen/generators/services/rag_service.py:41*
+
+---
+
+### get_context_with_multi_query
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_context_with_multi_query(self, base_query: str, project_name: str, languages: list[str] | None, project_info: dict[str, Any] | None, top_k: int | None) -> str:
+```
+
+**説明**:
+
+マルチクエリ検索を使用してRAGコンテキストを取得
+
+Args:
+    base_query: ベースクエリ
+    project_name: プロジェクト名
+    languages: 検出された言語のリスト
+    project_info: プロジェクト情報の辞書
+    top_k: 取得するチャンク数
+
+Returns:
+    フォーマット済みのコンテキスト文字列
+
+*定義場所: docgen/generators/services/rag_service.py:140*
+
+---
+
 ### get_context
 
 **型**: `method`
 
 **シグネチャ**:
 ```
-def get_context(self, query: str, top_k: int | None) -> str:
+def get_context(self, query: str, top_k: int | None, use_enhanced_query: bool, project_name: str | None, languages: list[str] | None, project_info: dict[str, Any] | None) -> str:
 ```
 
 **説明**:
@@ -5646,11 +5945,15 @@ RAGコンテキストを取得してフォーマット
 Args:
     query: 検索クエリ
     top_k: 取得するチャンク数（Noneの場合は設定ファイルから読み取る）
+    use_enhanced_query: 改善されたクエリを使用するかどうか
+    project_name: プロジェクト名（改善されたクエリを使用する場合）
+    languages: 検出された言語のリスト（改善されたクエリを使用する場合）
+    project_info: プロジェクト情報の辞書（改善されたクエリを使用する場合）
 
 Returns:
     フォーマット済みのコンテキスト文字列（RAG無効時は空文字列）
 
-*定義場所: docgen/generators/services/rag_service.py:41*
+*定義場所: docgen/generators/services/rag_service.py:240*
 
 ---
 
@@ -6343,41 +6646,6 @@ def run(self, context: HookContext) -> TaskResult:
 ---
 
 
-## docgen/hooks/tasks/test_runner.py
-
-### TestRunnerTask
-
-**型**: `class`
-
-**シグネチャ**:
-```
-class TestRunnerTask:
-```
-
-**説明**:
-
-テスト実行タスク
-
-*定義場所: docgen/hooks/tasks/test_runner.py:9*
-
----
-
-### run
-
-**型**: `method`
-
-**シグネチャ**:
-```
-def run(self, context: HookContext) -> TaskResult:
-```
-
-*説明なし*
-
-*定義場所: docgen/hooks/tasks/test_runner.py:12*
-
----
-
-
 ## docgen/hooks/tasks/version_checker.py
 
 ### VersionCheckerTask
@@ -6499,7 +6767,7 @@ class LanguageDetector:
 
 言語検出クラス
 
-*定義場所: docgen/language_detector.py:16*
+*定義場所: docgen/language_detector.py:17*
 
 ---
 
@@ -6520,7 +6788,7 @@ Args:
     project_root: プロジェクトルートパス
     config_manager: 設定マネージャー（Noneの場合は新規作成）
 
-*定義場所: docgen/language_detector.py:19*
+*定義場所: docgen/language_detector.py:20*
 
 ---
 
@@ -6530,7 +6798,7 @@ Args:
 
 **シグネチャ**:
 ```
-def detect_languages(self, use_parallel: bool) -> list[str]:
+def detect_languages(self, use_parallel: bool) -> list[DetectedLanguage]:
 ```
 
 **説明**:
@@ -6541,9 +6809,9 @@ Args:
     use_parallel: 並列処理を使用するかどうか（デフォルト: True）
 
 Returns:
-    検出された言語のリスト
+    検出された言語オブジェクトのリスト
 
-*定義場所: docgen/language_detector.py:67*
+*定義場所: docgen/language_detector.py:68*
 
 ---
 
@@ -6558,9 +6826,26 @@ def get_detected_languages(self) -> list[str]:
 
 **説明**:
 
-検出された言語を取得
+検出された言語名のリストを取得（後方互換性用）
 
-*定義場所: docgen/language_detector.py:160*
+*定義場所: docgen/language_detector.py:191*
+
+---
+
+### get_detected_language_objects
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_detected_language_objects(self) -> list[DetectedLanguage]:
+```
+
+**説明**:
+
+検出された言語オブジェクトのリストを取得
+
+*定義場所: docgen/language_detector.py:195*
 
 ---
 
@@ -6577,7 +6862,7 @@ def get_detected_package_managers(self) -> dict[str, str]:
 
 検出されたパッケージマネージャを取得
 
-*定義場所: docgen/language_detector.py:164*
+*定義場所: docgen/language_detector.py:199*
 
 ---
 
@@ -6897,6 +7182,74 @@ class CacheMetadata:
 
 ## docgen/models/config.py
 
+### GeneralConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class GeneralConfig:
+```
+
+**説明**:
+
+General configuration model.
+
+*定義場所: docgen/models/config.py:11*
+
+---
+
+### MessagesConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class MessagesConfig:
+```
+
+**説明**:
+
+Messages configuration model for multilingual support.
+
+*定義場所: docgen/models/config.py:17*
+
+---
+
+### TechnicalKeywordsConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class TechnicalKeywordsConfig:
+```
+
+**説明**:
+
+Technical keywords configuration model.
+
+*定義場所: docgen/models/config.py:29*
+
+---
+
+### ValidatorConfig
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class ValidatorConfig:
+```
+
+**説明**:
+
+Validator configuration model.
+
+*定義場所: docgen/models/config.py:60*
+
+---
+
 ### LanguagesConfig
 
 **型**: `class`
@@ -6910,7 +7263,7 @@ class LanguagesConfig:
 
 Languages configuration model.
 
-*定義場所: docgen/models/config.py:11*
+*定義場所: docgen/models/config.py:66*
 
 ---
 
@@ -6927,7 +7280,7 @@ class OutputConfig:
 
 Output configuration model.
 
-*定義場所: docgen/models/config.py:19*
+*定義場所: docgen/models/config.py:74*
 
 ---
 
@@ -6944,7 +7297,7 @@ class GenerationConfig:
 
 Generation configuration model.
 
-*定義場所: docgen/models/config.py:27*
+*定義場所: docgen/models/config.py:82*
 
 ---
 
@@ -6961,7 +7314,7 @@ class ExcludeConfig:
 
 Exclude configuration model.
 
-*定義場所: docgen/models/config.py:36*
+*定義場所: docgen/models/config.py:91*
 
 ---
 
@@ -6978,7 +7331,7 @@ class CacheConfig:
 
 Cache configuration model.
 
-*定義場所: docgen/models/config.py:43*
+*定義場所: docgen/models/config.py:99*
 
 ---
 
@@ -6995,7 +7348,7 @@ class BenchmarkConfig:
 
 Benchmark configuration model.
 
-*定義場所: docgen/models/config.py:49*
+*定義場所: docgen/models/config.py:105*
 
 ---
 
@@ -7012,7 +7365,7 @@ class DebugConfig:
 
 Debug configuration model.
 
-*定義場所: docgen/models/config.py:55*
+*定義場所: docgen/models/config.py:111*
 
 ---
 
@@ -7029,7 +7382,7 @@ class EmbeddingConfig:
 
 Embedding configuration model.
 
-*定義場所: docgen/models/config.py:61*
+*定義場所: docgen/models/config.py:117*
 
 ---
 
@@ -7046,7 +7399,7 @@ class IndexConfig:
 
 Index configuration model.
 
-*定義場所: docgen/models/config.py:68*
+*定義場所: docgen/models/config.py:124*
 
 ---
 
@@ -7063,7 +7416,7 @@ class RetrievalConfig:
 
 Retrieval configuration model.
 
-*定義場所: docgen/models/config.py:76*
+*定義場所: docgen/models/config.py:132*
 
 ---
 
@@ -7080,7 +7433,7 @@ class ChunkingConfig:
 
 Chunking configuration model.
 
-*定義場所: docgen/models/config.py:83*
+*定義場所: docgen/models/config.py:140*
 
 ---
 
@@ -7095,7 +7448,7 @@ class RagExcludeConfig:
 
 *説明なし*
 
-*定義場所: docgen/models/config.py:90*
+*定義場所: docgen/models/config.py:147*
 
 ---
 
@@ -7112,7 +7465,7 @@ class RagConfig:
 
 RAG configuration model.
 
-*定義場所: docgen/models/config.py:102*
+*定義場所: docgen/models/config.py:159*
 
 ---
 
@@ -7129,7 +7482,7 @@ class ArchitecturePythonConfig:
 
 Python architecture configuration.
 
-*定義場所: docgen/models/config.py:114*
+*定義場所: docgen/models/config.py:171*
 
 ---
 
@@ -7146,7 +7499,7 @@ class ArchitectureJavascriptConfig:
 
 JavaScript architecture configuration.
 
-*定義場所: docgen/models/config.py:121*
+*定義場所: docgen/models/config.py:178*
 
 ---
 
@@ -7163,7 +7516,7 @@ class ArchitectureConfig:
 
 Architecture diagram generation configuration.
 
-*定義場所: docgen/models/config.py:127*
+*定義場所: docgen/models/config.py:184*
 
 ---
 
@@ -7180,7 +7533,52 @@ class DocgenConfig:
 
 Main configuration model for docgen.
 
-*定義場所: docgen/models/config.py:138*
+*定義場所: docgen/models/config.py:195*
+
+---
+
+
+## docgen/models/detected_language.py
+
+### DetectedLanguage
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class DetectedLanguage:
+```
+
+**説明**:
+
+検出された言語の詳細情報を保持するクラス
+
+Attributes:
+    name: 言語名 (例: 'python', 'javascript')
+    version: 検出されたバージョン (例: '3.11', '18.0.0')
+    package_manager: 使用されているパッケージマネージャ (例: 'poetry', 'npm')
+    source_extensions: ソースコードの拡張子リスト (例: ['.py', '.pyi'])
+    rag_enabled: RAGインデックスに含めるかどうか
+    doc_config: ドキュメント生成に関する設定
+
+*定義場所: docgen/models/detected_language.py:6*
+
+---
+
+### get_rag_patterns
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def get_rag_patterns(self) -> list[str]:
+```
+
+**説明**:
+
+RAGインデックスに含めるためのglobパターンリストを取得
+
+*定義場所: docgen/models/detected_language.py:27*
 
 ---
 
@@ -7494,7 +7892,7 @@ Args:
 Returns:
     チャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:142*
+*定義場所: docgen/rag/chunker.py:148*
 
 ---
 
@@ -7504,7 +7902,7 @@ Returns:
 
 **シグネチャ**:
 ```
-def chunk_codebase(self, project_root: Path) -> list[dict[str, Any]]:
+def chunk_codebase(self, project_root: Path, allowed_patterns: list[str] | None) -> list[dict[str, Any]]:
 ```
 
 **説明**:
@@ -7513,11 +7911,12 @@ def chunk_codebase(self, project_root: Path) -> list[dict[str, Any]]:
 
 Args:
     project_root: プロジェクトルート
+    allowed_patterns: 許可するファイルパターンのリスト（Noneの場合はすべて許可/設定依存）
 
 Returns:
     すべてのチャンクのリスト
 
-*定義場所: docgen/rag/chunker.py:177*
+*定義場所: docgen/rag/chunker.py:194*
 
 ---
 
@@ -7841,7 +8240,7 @@ def embedder(self) -> Embedder:
 
 Embedderインスタンスを取得（Lazy loading）
 
-*定義場所: docgen/rag/retriever.py:50*
+*定義場所: docgen/rag/retriever.py:51*
 
 ---
 
@@ -7858,7 +8257,7 @@ def indexer(self) -> VectorIndexer:
 
 VectorIndexerインスタンスを取得（Lazy loading）
 
-*定義場所: docgen/rag/retriever.py:57*
+*定義場所: docgen/rag/retriever.py:58*
 
 ---
 
@@ -7882,7 +8281,7 @@ Args:
 Returns:
     チャンクのリスト（スコア付き）
 
-*定義場所: docgen/rag/retriever.py:83*
+*定義場所: docgen/rag/retriever.py:84*
 
 ---
 
@@ -7905,7 +8304,7 @@ Args:
 Returns:
     フォーマット済みのコンテキスト文字列
 
-*定義場所: docgen/rag/retriever.py:118*
+*定義場所: docgen/rag/retriever.py:185*
 
 ---
 
@@ -7930,7 +8329,7 @@ Args:
 Returns:
     再ランク済みのチャンクのリスト
 
-*定義場所: docgen/rag/retriever.py:150*
+*定義場所: docgen/rag/retriever.py:217*
 
 ---
 
@@ -8007,9 +8406,9 @@ class CodeChunkStrategy:
 
 **説明**:
 
-Strategy for chunking code files (Python, YAML, TOML).
+Strategy for chunking code files (Python, JavaScript/TypeScript, YAML, TOML).
 
-*定義場所: docgen/rag/strategies/code_strategy.py:15*
+*定義場所: docgen/rag/strategies/code_strategy.py:16*
 
 ---
 
@@ -8026,7 +8425,7 @@ def chunk(self, content: str, file_path: Path) -> list[dict[str, Any]]:
 
 Chunk code content based on file extension.
 
-*定義場所: docgen/rag/strategies/code_strategy.py:18*
+*定義場所: docgen/rag/strategies/code_strategy.py:19*
 
 ---
 
@@ -8130,7 +8529,7 @@ class DocumentValidator:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path | None):
+def __init__(self, project_root: Path | None, config: dict[str, Any] | None):
 ```
 
 **説明**:
@@ -8139,8 +8538,9 @@ def __init__(self, project_root: Path | None):
 
 Args:
     project_root: プロジェクトルート
+    config: 設定辞書（技術キーワードの設定を含む）
 
-*定義場所: docgen/rag/validator.py:56*
+*定義場所: docgen/rag/validator.py:54*
 
 ---
 
@@ -8164,7 +8564,7 @@ Args:
 Returns:
     エラーメッセージのリスト
 
-*定義場所: docgen/rag/validator.py:65*
+*定義場所: docgen/rag/validator.py:99*
 
 ---
 
@@ -8187,7 +8587,7 @@ Args:
 Returns:
     警告メッセージのリスト
 
-*定義場所: docgen/rag/validator.py:145*
+*定義場所: docgen/rag/validator.py:179*
 
 ---
 
@@ -8213,7 +8613,7 @@ Args:
 Returns:
     検証結果の辞書
 
-*定義場所: docgen/rag/validator.py:180*
+*定義場所: docgen/rag/validator.py:214*
 
 ---
 
@@ -8230,7 +8630,7 @@ def print_report(self, validation_result: dict[str, Any]):
 
 検証結果をコンソールに出力
 
-*定義場所: docgen/rag/validator.py:226*
+*定義場所: docgen/rag/validator.py:260*
 
 ---
 
@@ -8551,6 +8951,31 @@ Returns:
     文字列
 
 *定義場所: docgen/utils/config_utils.py:81*
+
+---
+
+### get_message
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def get_message(config: dict[str, Any] | None, message_key: str, language: str | None) -> str:
+```
+
+**説明**:
+
+多言語対応メッセージを取得
+
+Args:
+    config: 設定辞書（Noneの場合はデフォルト値を使用）
+    message_key: メッセージキー（例: "default_description"）
+    language: 言語コード（Noneの場合は設定から取得、それもなければ"en"）
+
+Returns:
+    メッセージ文字列
+
+*定義場所: docgen/utils/config_utils.py:101*
 
 ---
 
@@ -8893,7 +9318,7 @@ class UnifiedFileScanner:
 
 プロジェクト全体を一度だけ走査して、必要な情報を収集するクラス
 
-*定義場所: docgen/utils/file_scanner.py:16*
+*定義場所: docgen/utils/file_scanner.py:17*
 
 ---
 
@@ -8903,7 +9328,7 @@ class UnifiedFileScanner:
 
 **シグネチャ**:
 ```
-def __init__(self, project_root: Path, exclude_dirs: set[str] | None, exclude_files: set[str] | None):
+def __init__(self, project_root: Path, exclude_dirs: set[str] | None, exclude_files: set[str] | None, gitignore_matcher: GitIgnoreMatcher | None):
 ```
 
 **説明**:
@@ -8914,8 +9339,9 @@ Args:
     project_root: プロジェクトルートディレクトリ
     exclude_dirs: 除外するディレクトリ名のセット
     exclude_files: 除外するファイル名のセット
+    gitignore_matcher: .gitignoreマッチャー（Noneの場合は.gitignoreを読み込まない）
 
-*定義場所: docgen/utils/file_scanner.py:19*
+*定義場所: docgen/utils/file_scanner.py:20*
 
 ---
 
@@ -8938,7 +9364,7 @@ Returns:
     - 'all_files': すべてのファイルのリスト
     - 'files_by_relative_path': 相対パス -> 絶対パスのマッピング
 
-*定義場所: docgen/utils/file_scanner.py:41*
+*定義場所: docgen/utils/file_scanner.py:45*
 
 ---
 
@@ -8961,7 +9387,7 @@ Args:
 Returns:
     (絶対パス, 相対パス) のタプルのリスト
 
-*定義場所: docgen/utils/file_scanner.py:138*
+*定義場所: docgen/utils/file_scanner.py:162*
 
 ---
 
@@ -8981,7 +9407,7 @@ def get_all_files(self) -> list[tuple[Path, Path]]:
 Returns:
     (絶対パス, 相対パス) のタプルのリスト
 
-*定義場所: docgen/utils/file_scanner.py:167*
+*定義場所: docgen/utils/file_scanner.py:191*
 
 ---
 
@@ -8998,7 +9424,7 @@ def clear_cache(self):
 
 キャッシュをクリア（再スキャンが必要な場合）
 
-*定義場所: docgen/utils/file_scanner.py:187*
+*定義場所: docgen/utils/file_scanner.py:211*
 
 ---
 
@@ -9008,7 +9434,7 @@ def clear_cache(self):
 
 **シグネチャ**:
 ```
-def get_unified_scanner(project_root: Path, exclude_dirs: set[str] | None, exclude_files: set[str] | None) -> UnifiedFileScanner:
+def get_unified_scanner(project_root: Path, exclude_dirs: set[str] | None, exclude_files: set[str] | None, use_gitignore: bool) -> UnifiedFileScanner:
 ```
 
 **説明**:
@@ -9019,11 +9445,12 @@ Args:
     project_root: プロジェクトルートディレクトリ
     exclude_dirs: 除外するディレクトリ名のセット
     exclude_files: 除外するファイル名のセット
+    use_gitignore: .gitignoreを適用するかどうか
 
 Returns:
     UnifiedFileScannerインスタンス
 
-*定義場所: docgen/utils/file_scanner.py:199*
+*定義場所: docgen/utils/file_scanner.py:223*
 
 ---
 
@@ -9217,6 +9644,116 @@ Returns:
     パースされたTOMLデータ。失敗時はNone
 
 *定義場所: docgen/utils/file_utils.py:157*
+
+---
+
+
+## docgen/utils/gitignore_parser.py
+
+### GitIgnoreMatcher
+
+**型**: `class`
+
+**シグネチャ**:
+```
+class GitIgnoreMatcher:
+```
+
+**説明**:
+
+`.gitignore`パターンを解析してマッチングを行うクラス
+
+*定義場所: docgen/utils/gitignore_parser.py:14*
+
+---
+
+### __init__
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def __init__(self, project_root: Path, gitignore_path: Path | None):
+```
+
+**説明**:
+
+初期化
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+    gitignore_path: .gitignoreファイルのパス（Noneの場合はproject_root/.gitignore）
+
+*定義場所: docgen/utils/gitignore_parser.py:17*
+
+---
+
+### is_ignored
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def is_ignored(self, file_path: Path) -> bool:
+```
+
+**説明**:
+
+ファイルパスが.gitignoreで無視されるかどうかを判定
+
+Args:
+    file_path: チェックするファイルパス（絶対パスまたは相対パス）
+
+Returns:
+    無視される場合True
+
+*定義場所: docgen/utils/gitignore_parser.py:202*
+
+---
+
+### should_exclude_dir
+
+**型**: `method`
+
+**シグネチャ**:
+```
+def should_exclude_dir(self, dir_path: Path) -> bool:
+```
+
+**説明**:
+
+ディレクトリを除外すべきかどうかを判定
+
+Args:
+    dir_path: チェックするディレクトリパス
+
+Returns:
+    除外すべき場合True
+
+*定義場所: docgen/utils/gitignore_parser.py:236*
+
+---
+
+### load_gitignore_patterns
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def load_gitignore_patterns(project_root: Path) -> GitIgnoreMatcher | None:
+```
+
+**説明**:
+
+.gitignoreファイルを読み込んでマッチャーを作成
+
+Args:
+    project_root: プロジェクトルートディレクトリ
+
+Returns:
+    GitIgnoreMatcherインスタンス、またはNone（.gitignoreが存在しない場合）
+
+*定義場所: docgen/utils/gitignore_parser.py:265*
 
 ---
 
@@ -9694,7 +10231,7 @@ def get_current_timestamp() -> str:
 
 Get current timestamp in standard format.
 
-*定義場所: docgen/utils/markdown_utils.py:31*
+*定義場所: docgen/utils/markdown_utils.py:32*
 
 ---
 
@@ -9704,7 +10241,7 @@ Get current timestamp in standard format.
 
 **シグネチャ**:
 ```
-def extract_project_description(project_root: Path, project_info_description: str | None, exclude_readme_path: Path | None) -> str:
+def extract_project_description(project_root: Path, project_info_description: str | None, exclude_readme_path: Path | None, config: dict[str, Any] | None) -> str:
 ```
 
 **説明**:
@@ -9715,11 +10252,12 @@ Args:
     project_root: Project root directory
     project_info_description: Description from project info (fallback)
     exclude_readme_path: README path to exclude (to prevent circular reference)
+    config: Configuration dictionary (for multilingual messages)
 
 Returns:
     Project description text
 
-*定義場所: docgen/utils/markdown_utils.py:38*
+*定義場所: docgen/utils/markdown_utils.py:39*
 
 ---
 
@@ -9742,7 +10280,7 @@ Args:
 Returns:
     Cleaned text with thinking processes removed
 
-*定義場所: docgen/utils/markdown_utils.py:79*
+*定義場所: docgen/utils/markdown_utils.py:87*
 
 ---
 
@@ -9822,16 +10360,18 @@ class PromptLoader:
 
 **シグネチャ**:
 ```
-def load_prompt(cls, file_name: str, key: str) -> str:
+def load_prompt(cls, file_name: str, key: str, language: str | None, config: dict[str, Any] | None) -> str:
 ```
 
 **説明**:
 
-プロンプトを読み込む
+プロンプトを読み込む（多言語対応）
 
 Args:
     file_name: TOMLファイル名（例: 'agents_prompts.toml'）
     key: プロンプトのキー（例: 'overview', 'full'）
+    language: 言語コード（Noneの場合は設定から取得）
+    config: 設定辞書
     **kwargs: テンプレート変数の置換用パラメータ
 
 Returns:
@@ -9841,7 +10381,7 @@ Raises:
     FileNotFoundError: ファイルが見つからない場合
     KeyError: 指定されたキーが見つからない場合
 
-*定義場所: docgen/utils/prompt_loader.py:98*
+*定義場所: docgen/utils/prompt_loader.py:153*
 
 ---
 
@@ -9851,26 +10391,28 @@ Raises:
 
 **シグネチャ**:
 ```
-def load_system_prompt(cls, file_name: str, key: str) -> str:
+def load_system_prompt(cls, file_name: str, key: str, language: str | None, config: dict[str, Any] | None) -> str:
 ```
 
 **説明**:
 
-システムプロンプトを読み込む
+システムプロンプトを読み込む（多言語対応）
 
 Args:
     file_name: TOMLファイル名（例: 'agents_prompts.toml'）
     key: システムプロンプトのキー（例: 'overview', 'generate'）
+    language: 言語コード（Noneの場合は設定から取得）
+    config: 設定辞書
     **kwargs: テンプレート変数の置換用パラメータ
 
 Returns:
     読み込んだシステムプロンプト文字列（テンプレート変数が置換済み）
 
 Raises:
-    FileNotFoundError: ファイルが見つかりません場合
+    FileNotFoundError: ファイルが見つからない場合
     KeyError: 指定されたキーが見つからない場合
 
-*定義場所: docgen/utils/prompt_loader.py:133*
+*定義場所: docgen/utils/prompt_loader.py:197*
 
 ---
 
@@ -9887,7 +10429,7 @@ def clear_cache(cls):
 
 キャッシュをクリア（主にテスト用）
 
-*定義場所: docgen/utils/prompt_loader.py:168*
+*定義場所: docgen/utils/prompt_loader.py:241*
 
 ---
 
@@ -9930,5 +10472,23 @@ def main():
 メイン処理
 
 *定義場所: scripts/generate_requirements.py:74*
+
+---
+
+
+## scripts/verify_language_detector.py
+
+### main
+
+**型**: `function`
+
+**シグネチャ**:
+```
+def main():
+```
+
+*説明なし*
+
+*定義場所: scripts/verify_language_detector.py:13*
 
 ---

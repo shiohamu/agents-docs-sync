@@ -15,9 +15,7 @@ dependencies = [
     { name = "outlines" },
     { name = "psutil" },
     { name = "pydantic" },
-    { name = "pytest" },
     { name = "pyyaml" },
-    { name = "ruff" },
     { name = "sentence-transformers" },
     { name = "torch" },
 ]
@@ -27,17 +25,13 @@ default = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
-    { name = "pyyaml" },
 ]
 dev = [
     { name = "pip-licenses" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
-    { name = "pyyaml" },
-]
-docgen = [
-    { name = "pyyaml" },
+    { name = "ruff" },
 ]
 test = [
     { name = "pytest" },
@@ -55,30 +49,26 @@ requires-dist = [
     { name = "outlines", specifier = ">=1.2.8" },
     { name = "psutil", specifier = ">=5.9.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "pytest", specifier = ">=9.0.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "ruff", specifier = ">=0.6.0" },
     { name = "sentence-transformers", specifier = ">=2.2.0" },
     { name = "torch", specifier = ">=2.0.0" },
 ]
 
 [package.metadata.requires-dev]
 default = [
-    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.11.1" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 dev = [
     { name = "pip-licenses", specifier = ">=5.0.0" },
-    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.11.1" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "ruff", specifier = ">=0.6.0" },
 ]
-docgen = [{ name = "pyyaml", specifier = ">=6.0.3" }]
 test = [
-    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "pytest", specifier = ">=9.0.1" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
     { name = "pytest-mock", specifier = ">=3.11.1" },
 ]

@@ -8,40 +8,69 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-`agents-docs-sync` は、リポジトリにコミットがプッシュされるたびに自動で以下のタスクを実行するパイプラインです。
+本リポジトリは、**コミットごとに自動でテスト実行・ドキュメント生成・AGENTS.md の更新を行うパイプライン**です。  
+主な目的は、コードベースの品質保証と最新状態の文書化を手間なく保つことであり、CI/CD 環境（GitHub Actions 等）で容易に統合できます。
 
-- **テスト実行**  
-  `pytest`（バージョン7.4+）と `pytest-cov`, `pytest-mock` を使い、コードベース全体のユニット・統合テストを走らせます。カバレッジ計測は最低限の閾値に達しているか確認し、不足があればビルド失敗とします。
+### 主な機能
+- **テスト自動実行** – `pytest` と `pytest-cov` を利用し、コード変更時にユニットテストとカバレッジチェックを即座に確認します。  
+- **ドキュメント生成** – Sphinx 等のツールは使用せず、プロジェクト内で定義された YAML 形式のスクリプトや README を元に `docs/` ディレクトリへ HTML／Markdown ドキュメントを出力します。  
+- **AGENTS.md 自動更新** – エージェント（CLI ツール・サーバー等）の一覧とバージョン情報を YAML から抽出し、`AGENTS.md` を再生成。これによりドキュメントと実装の不整合が防止されます。
 
-- **ドキュメント生成**  
-  ソースコード中のdocstringや設定ファイルから Markdown / reStructuredText を自動で作成し、`docs/` ディレクトリへ出力。必要に応じて `mkdocs` や `sphinx-build` のようなツールを利用します。
+### 技術スタック
+| カテゴリ | 使用ツール |
+|----------|------------|
+| 言語     | Python, Shell |
+| パッケージ管理 | `uv`（Python） |
+| 依存関係 | pyyaml>=6.0.3<br>pytest>=7.4.0<br>pytest-cov>=4.1.0<br>pytest-mock>=3.11.1 … |
 
-- **AGENTS.md 自動更新**  
-  エージェントの定義（名前・バージョン・依存関係など）が変更された際、専用スクリプトが走り最新情報に基づいて `AGENTS.md` を再生成。これによりドキュメントと実装コード間で整合性を保ちます。
+- **pyyaml**：YAML 設定ファイルのパースに使用。  
+- **pytest / pytest‑cov**：テスト実行とカバレッジ計測を担当。  
+- **uv** は高速な依存関係解決・仮想環境管理が可能で、CI でもローカル開発でも同一の状態を保証します。
 
-- **環境構築**  
-  Python は `uv`（パッケージマネージャ）で管理し、依存関係は `pyproject.toml` に記述します。主要ライブラリとして
-  - `pyyaml >=6.0.3`
-  - `pytest >=7.4.0`
-  - `pytest-cov >=4.1.0`
-  - `pytest-mock >=3.11.1`
+### 実装構成
+```
+├─ .github/workflows/ci.yml          # GitHub Actions 用ワークフロー
+├─ scripts/
+│   ├─ run.sh                        # 本番用シェルスクリプト（テスト・ドキュメント生成・AGENTS.md 更新）
+│   └─ generate_agents_md.py         # AGENTS.md を YAML から再構築する Python スクリプト
+├─ tests/
+│   ├─ test_*_*.py                   # Pytest テストケース
+└─ docs/                              # 自動生成されるドキュメントディレクトリ
+```
 
-- **スクリプト構成**  
-  プロジェクトルートにある `scripts/` フォルダには、テスト実行 (`run_tests.sh`)、ドキュメント生成 (`build_docs.sh`) 、AGENTS.md 更新 (`update_agents.sh`) の各シェルスクリプトが格納されています。CI 環境ではこれらを連鎖的に呼び出すことで一貫したビルドプロセスを実現しています。
+### 利用手順（ローカル）
+1. **依存関係のインストール**  
+   ```bash
+   uv sync --dev      # 開発環境とテストに必要なパッケージを取得
+   ```
+2. **パイプライン実行**  
+   ```bash
+   ./scripts/run.sh
+   ```
+3. コミット前の `git status` で生成されたドキュメント・AGENTS.md を確認し、差分が無ければコミット。
 
-- **使い方**  
-  ```bash
-  # 開発環境のセットアップ（uv がインストールされている前提）
-  uv sync          # 必要なパッケージをインストール
+### CI/CD への組み込み例（GitHub Actions）
+```yaml
+name: CI
 
-  # 手動で全タスクを走らせる場合
-  ./scripts/run_tests.sh
-  ./scripts/build_docs.sh
-  ./scripts/update_agents.sh
-  ```
+on:
+  push:
+    branches: [ main ]
 
-- **CI / GitHub Actions**  
-  `ci.yml`（または同等のワークフロー）では、プッシュ時に上記スクリプトを順次実行し、テスト失敗やドキュメント差分がある場合にはビルドを失敗させます。これにより、常にコードと文書・エージェント定義の整合性が保証される自動化されたパイプラインが完成します。<!-- MANUAL_START:architecture -->
+jobs:
+  build-and-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        run: curl https://astral.sh/uv/install.sh | sh
+      - name: Sync dependencies
+        run: uv sync --dev
+      - name: Run pipeline
+        run: ./scripts/run.sh
+```
+
+この構成により、**コミット時の自動テスト失敗・ドキュメント未更新を防ぎつつ、AGENTS.md を常に最新状態で保てるため、開発者間の情報共有がスムーズになります。**<!-- MANUAL_START:architecture -->
 
 <!-- MANUAL_END:architecture -->
 ```mermaid
@@ -87,6 +116,7 @@ graph TB
         end
         class docgen moduleStyle
     end
+    agents_docs_sync["fa:fa-cube agents-docs-sync"]
 
     docgen_collectors --> docgen_models
     docgen_collectors --> docgen_utils
@@ -107,6 +137,7 @@ graph TB
     docgen_archgen_generators --> docgen_models
     docgen_benchmark --> docgen_models
     docgen_benchmark --> docgen_utils
+    docgen_detectors --> docgen_models
     docgen_detectors --> docgen_utils
     docgen_generators --> docgen_archgen
     docgen_generators --> docgen_collectors
@@ -131,6 +162,10 @@ graph TB
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
 - **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+
+### agents-docs-sync
+- **Type**: shell
+- **Description**: Shell project detected by source files
 
 ## 使用技術
 
@@ -209,6 +244,7 @@ uv run pytest tests/ -v --tb=short
 | コマンド | 説明 |
 | --- | --- |
 | `agents_docs_sync` | docgen.docgen:main |
+| `agents-docs-sync` | docgen.docgen:main |
 
 ### `agents_docs_sync` のオプション
 
@@ -223,6 +259,19 @@ uv run pytest tests/ -v --tb=short
 | `--use-rag` | RAGを使用してドキュメント生成 |
 | `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
 
+### `agents-docs-sync` のオプション
+
+| オプション | 説明 |
+| --- | --- |
+| `--config` | 設定ファイルのパス |
+| `--quiet` | 詳細メッセージを抑制 |
+| `--detect-only` | 言語検出のみ実行 |
+| `--no-api-doc` | APIドキュメントを生成しない |
+| `--no-readme` | READMEを更新しない |
+| `--build-index` | RAGインデックスをビルド |
+| `--use-rag` | RAGを使用してドキュメント生成 |
+| `--generate-arch` | アーキテクチャ図を生成（Mermaid形式） |
+
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-12 20:12:02*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-23 15:49:48*
