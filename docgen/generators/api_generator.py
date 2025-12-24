@@ -155,9 +155,14 @@ class APIGenerator(BaseGenerator):
                 self.logger.info(
                     f"[API生成] {parser_language} ({parser_type}): {len(apis)}件のAPI要素を抽出しました"
                 )
+            except (ImportError, AttributeError) as e:
+                self.logger.error(
+                    f"[API生成] {parser_language} ({parser_type}) パーサーの読み込みに失敗しました: {e}",
+                    exc_info=True,
+                )
             except Exception as e:
                 self.logger.error(
-                    f"[API生成] {parser_language} ({parser_type}) パーサーでエラーが発生しました: {e}",
+                    f"[API生成] {parser_language} ({parser_type}) パーサーで予期しないエラーが発生しました: {e}",
                     exc_info=True,
                 )
                 parser_stats[parser_language] = {

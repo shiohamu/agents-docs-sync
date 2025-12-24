@@ -10,6 +10,8 @@ from typing import Any
 # フォールバック: 絶対インポート
 from ..models.agents import AgentsDocument
 from ..models.project import ProjectInfo
+from ..utils.exceptions import GenerationError, LLMError
+from ..utils.logger import get_logger
 from ..utils.markdown_utils import (
     get_current_timestamp,
 )
@@ -391,8 +393,11 @@ class AgentsGenerator(BaseGenerator):
             if not summary or summary.strip() == "実装済みAPI情報:":
                 return ""
             return summary
+        except (ImportError, AttributeError) as e:
+            self.logger.debug(f"実装検証モジュールの読み込みに失敗: {e}")
+            return ""
         except Exception as e:
-            self.logger.warning(f"実装情報の取得に失敗しました: {e}")
+            self.logger.warning(f"実装情報の取得中に予期しないエラーが発生しました: {e}", exc_info=True)
             return ""
 
     def _generate_content_with_llm(
@@ -468,8 +473,11 @@ class AgentsGenerator(BaseGenerator):
             )
             return self._generate_template(project_info)
 
-        except Exception as e:
+        except (LLMError, GenerationError) as e:
             self.logger.error(f"LLM生成エラー: {e}")
+            return self._generate_template(project_info)
+        except Exception as e:
+            self.logger.error(f"LLM生成中に予期しないエラーが発生しました: {e}", exc_info=True)
             return self._generate_template(project_info)
 
     def _generate_hybrid(self, project_info: ProjectInfo) -> str:
@@ -511,8 +519,11 @@ class AgentsGenerator(BaseGenerator):
             if new_overview:
                 content = self._replace_overview_section(content, new_overview)
 
-        except Exception as e:
+        except (LLMError, GenerationError) as e:
             self.logger.warning(f"ハイブリッド生成（概要改善）中にエラーが発生しました: {e}")
+            # エラーが発生してもテンプレート生成されたコンテンツを返す
+        except Exception as e:
+            self.logger.warning(f"ハイブリッド生成中に予期しないエラーが発生しました: {e}", exc_info=True)
             # エラーが発生してもテンプレート生成されたコンテンツを返す
 
         return content

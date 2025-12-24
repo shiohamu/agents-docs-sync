@@ -8,6 +8,7 @@ from typing import Any
 
 from ..models.project import ProjectInfo
 from ..models.readme import ReadmeDocument
+from ..utils.exceptions import GenerationError, LLMError
 from ..utils.markdown_utils import DESCRIPTION_START, get_current_timestamp
 from ..utils.prompt_loader import PromptLoader
 from .base_generator import BaseGenerator
@@ -463,8 +464,11 @@ class ReadmeGenerator(BaseGenerator):
             )
             return self._generate_template(project_info)
 
-        except Exception as e:
+        except (LLMError, GenerationError) as e:
             self.logger.error(f"LLM生成エラー: {e}")
+            return self._generate_template(project_info)
+        except Exception as e:
+            self.logger.error(f"LLM生成中に予期しないエラーが発生しました: {e}", exc_info=True)
             return self._generate_template(project_info)
 
     def _generate_hybrid(self, project_info: ProjectInfo) -> str:
@@ -507,8 +511,11 @@ class ReadmeGenerator(BaseGenerator):
             if new_overview:
                 content = self._replace_overview_section(content, new_overview)
 
-        except Exception as e:
+        except (LLMError, GenerationError) as e:
             self.logger.warning(f"ハイブリッド生成（概要改善）中にエラーが発生しました: {e}")
+            # エラーが発生してもテンプレート生成されたコンテンツを返す
+        except Exception as e:
+            self.logger.warning(f"ハイブリッド生成中に予期しないエラーが発生しました: {e}", exc_info=True)
             # エラーが発生してもテンプレート生成されたコンテンツを返す
 
         return content

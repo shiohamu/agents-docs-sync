@@ -4,6 +4,7 @@ OpenAI APIクライアント
 
 from typing import Any
 
+from ...utils.exceptions import LLMError
 from ...utils.logger import get_logger
 from .base import DEFAULT_MODELS, BaseLLMClient, LLMClientInitializer
 
@@ -53,8 +54,10 @@ class OpenAIClient(BaseLLMClient):
             if response and response.choices:
                 return response.choices[0].message.content
             return None
+        except LLMError:
+            raise
         except Exception as e:
-            logger.error(f"OpenAI API呼び出しエラー: {e}")
+            logger.error(f"OpenAI API呼び出しエラー: {e}", exc_info=True)
             return None
 
     def _create_outlines_model_internal(self, outlines):

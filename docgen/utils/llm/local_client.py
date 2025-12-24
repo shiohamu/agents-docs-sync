@@ -4,7 +4,7 @@
 
 from typing import Any
 
-from ...utils.exceptions import ConfigError, ErrorMessages
+from ...utils.exceptions import ConfigError, ErrorMessages, LLMError
 from ...utils.logger import get_logger
 from .base import BaseLLMClient
 
@@ -52,8 +52,10 @@ class LocalLLMClient(BaseLLMClient):
                 raise ConfigError(
                     ErrorMessages.UNSUPPORTED_PROVIDER.format(provider=self.config.provider)
                 )
+        except (ConfigError, LLMError):
+            raise
         except Exception as e:
-            logger.error(f"ローカルLLM呼び出しエラー: {e}")
+            logger.error(f"ローカルLLM呼び出しエラー: {e}", exc_info=True)
             return None
 
     def _create_outlines_model_internal(self, outlines):

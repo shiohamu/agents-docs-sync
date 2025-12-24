@@ -4,6 +4,7 @@ Anthropic APIクライアント
 
 from typing import Any
 
+from ...utils.exceptions import LLMError
 from ...utils.logger import get_logger
 from .base import DEFAULT_MODELS, BaseLLMClient, LLMClientInitializer
 
@@ -57,8 +58,10 @@ class AnthropicClient(BaseLLMClient):
                         text_content += block.text
                 return text_content.strip() if text_content else None
             return None
+        except LLMError:
+            raise
         except Exception as e:
-            logger.error(f"Anthropic API呼び出しエラー: {e}")
+            logger.error(f"Anthropic API呼び出しエラー: {e}", exc_info=True)
             return None
 
     def _create_outlines_model_internal(self, outlines):

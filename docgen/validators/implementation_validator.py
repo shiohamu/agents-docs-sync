@@ -175,8 +175,10 @@ class ImplementationValidator:
                     gitignore_matcher=gitignore_matcher,
                 )
                 all_apis.extend(apis)
+            except (AttributeError, TypeError) as e:
+                logger.debug(f"パーサー {parser.get_parser_type()} のAPI抽出でエラー: {e}")
             except Exception as e:
-                logger.warning(f"パーサー {parser.get_parser_type()} でエラー: {e}")
+                logger.warning(f"パーサー {parser.get_parser_type()} で予期しないエラーが発生しました: {e}", exc_info=True)
 
         # インデックスを構築
         self._api_index = {"function": set(), "method": set(), "class": set()}

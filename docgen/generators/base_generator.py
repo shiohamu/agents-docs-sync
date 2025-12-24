@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ..models.project import ProjectInfo
+from ..utils.exceptions import FileOperationError, GenerationError
 from ..utils.logger import get_logger
 
 if TYPE_CHECKING:
@@ -186,7 +187,11 @@ class BaseGenerator(ABC):
         try:
             content = self.output_path.read_text(encoding="utf-8")
             return self.manual_section_service.extract(content)
-        except Exception:
+        except (FileNotFoundError, UnicodeDecodeError, PermissionError) as e:
+            self.logger.debug(f"既存ファイルからの手動セクション抽出に失敗: {e}")
+            return {}
+        except Exception as e:
+            self.logger.warning(f"予期しないエラーが発生しました: {e}", exc_info=True)
             return {}
 
     def _generate_markdown(self, project_info: ProjectInfo) -> str:
@@ -262,9 +267,15 @@ class BaseGenerator(ABC):
             self.logger.info(f"✓ {self._get_document_type()}を生成しました")
             return True
 
-        except Exception as e:
+        except (FileOperationError, GenerationError) as e:
             self.logger.error(
                 f"{self._get_document_type()}生成中にエラーが発生しました: {e}", exc_info=True
+            )
+            return False
+        except Exception as e:
+            self.logger.error(
+                f"{self._get_document_type()}生成中に予期しないエラーが発生しました: {e}",
+                exc_info=True,
             )
             return False
 
@@ -309,8 +320,11 @@ class BaseGenerator(ABC):
                     for e in validation_result.found_entities
                 ],
             }
+        except (ImportError, AttributeError) as e:
+            self.logger.debug(f"実装検証モジュールの読み込みに失敗: {e}")
+            return None
         except Exception as e:
-            self.logger.warning(f"実装検証中にエラーが発生しました: {e}")
+            self.logger.warning(f"実装検証中に予期しないエラーが発生しました: {e}", exc_info=True)
             return None
 
     def _print_validation_report(self, validation_result: dict[str, Any]):
@@ -386,8 +400,11 @@ class BaseGenerator(ABC):
             self.logger.warning(f"Architecture markdown file not found at {markdown_path}")
             return ""
 
+        except (FileNotFoundError, PermissionError) as e:
+            self.logger.warning(f"アーキテクチャ図ファイルの読み込みに失敗しました: {e}")
+            return ""
         except Exception as e:
-            self.logger.warning(f"アーキテクチャ図の生成/取得に失敗しました: {e}", exc_info=True)
+            self.logger.warning(f"アーキテクチャ図の生成/取得中に予期しないエラーが発生しました: {e}", exc_info=True)
             return ""
 
     def _generate_key_features(
