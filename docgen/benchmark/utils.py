@@ -45,8 +45,9 @@ def format_memory(bytes_size: int) -> str:
     Returns:
         フォーマットされた文字列
     """
+    size = float(bytes_size)
     for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if bytes_size < 1024.0:
-            return f"{bytes_size:.2f} {unit}"
-        bytes_size /= 1024.0
-    return f"{bytes_size:.2f} PB"
+        if size < 1024.0:
+            return f"{size:.2f} {unit}"
+        size /= 1024.0
+    return f"{size:.2f} PB"

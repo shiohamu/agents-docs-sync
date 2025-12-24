@@ -177,7 +177,7 @@ class APIGenerator(BaseGenerator):
             self.cache_manager.save()
 
         # API情報をソート（ファイル名、行番号順）
-        all_apis.sort(key=lambda x: (x["file"], x["line"]))
+        all_apis.sort(key=lambda x: (x.file_path, x.line_number or 0))
 
         return self._render_api_markdown(all_apis)
 
@@ -208,7 +208,7 @@ class APIGenerator(BaseGenerator):
         # ファイルごとにグループ化
         current_file = None
         for api in apis:
-            file_path = api["file"]
+            file_path = api.file_path
 
             # 新しいファイルセクション
             if file_path != current_file:
@@ -219,21 +219,22 @@ class APIGenerator(BaseGenerator):
                 lines.append("")
 
             # API情報を出力
-            lines.append(f"### {api['name']}")
+            lines.append(f"### {api.name}")
             lines.append("")
-            lines.append(f"**型**: `{api['type']}`")
+            lines.append(f"**型**: `{api.type}`")
             lines.append("")
             lines.append("**シグネチャ**:")
             lines.append("```")
-            lines.append(api["signature"])
+            signature = api.signature or ""
+            lines.append(signature)
             lines.append("```")
             lines.append("")
 
-            if api["docstring"]:
+            if api.docstring:
                 lines.append("**説明**:")
                 lines.append("")
                 # docstringを整形（インデントを調整）
-                docstring_lines = api["docstring"].split("\n")
+                docstring_lines = api.docstring.split("\n")
                 for doc_line in docstring_lines:
                     lines.append(doc_line)
                 lines.append("")
@@ -241,7 +242,8 @@ class APIGenerator(BaseGenerator):
                 lines.append("*説明なし*")
                 lines.append("")
 
-            lines.append(f"*定義場所: {file_path}:{api['line']}*")
+            line_number = api.line_number or 0
+            lines.append(f"*定義場所: {file_path}:{line_number}*")
             lines.append("")
             lines.append(SECTION_SEPARATOR)
             lines.append("")

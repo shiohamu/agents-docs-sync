@@ -16,7 +16,7 @@ class MarkdownChunkStrategy(BaseChunkStrategy):
         chunks = []
         lines = content.splitlines()
 
-        current_section = []
+        current_section: list[str] = []
         section_start = 0
         header_name = "Introduction"
 

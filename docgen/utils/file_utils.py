@@ -127,7 +127,7 @@ def find_files_with_extensions(root_dir: Path, extensions: list[str]) -> list[Pa
     Returns:
         見つかったファイルのリスト
     """
-    files = []
+    files: list[Path] = []
     for ext in extensions:
         files.extend(root_dir.glob(f"**/*{ext}"))
     return sorted(files)

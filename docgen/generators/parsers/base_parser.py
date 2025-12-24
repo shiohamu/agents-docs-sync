@@ -359,26 +359,46 @@ class BaseParser(ABC):
         if cache_manager is not None and parser_type is not None:
             cached_result = cache_manager.get_cached_result(file_path, parser_type)
             if cached_result is not None:
-                # キャッシュされた結果の浅いコピーを作成（キャッシュ内のデータを変更しないため）
-                # 各API情報は辞書なので、浅いコピーで十分（ネストされたリストがある場合は個別にコピー）
-                result = []
-                for api in cached_result:
-                    # 辞書の浅いコピーを作成
-                    api_copy = api.copy()
-                    # 相対パスを設定
-                    api_copy["file"] = str(file_path_relative)
-                    # ネストされたリスト（parametersなど）がある場合はコピー
-                    if "parameters" in api_copy and api_copy["parameters"] is not None:
-                        api_copy["parameters"] = api_copy["parameters"].copy()
-                    if "decorators" in api_copy and api_copy["decorators"] is not None:
-                        api_copy["decorators"] = api_copy["decorators"].copy()
-                    result.append(api_copy)
+                # キャッシュされた結果をAPIInfoオブジェクトに変換
+                result: list[APIInfo] = []
+                parser_type_str = parser_type or self.get_parser_type()
+                for api_data in cached_result:
+                    # キャッシュから取得したデータが辞書の場合はAPIInfoに変換
+                    if isinstance(api_data, dict):
+                        # 辞書からAPIInfoを作成
+                        api_dict = dict(api_data)
+                        api_dict["file_path"] = str(file_path_relative)
+                        # languageフィールドが不足している場合は追加
+                        if "language" not in api_dict:
+                            api_dict["language"] = parser_type_str
+                        api_info = APIInfo(**api_dict)
+                    elif isinstance(api_data, APIInfo):
+                        # APIInfoオブジェクトのコピーを作成
+                        api_info = APIInfo.model_validate(api_data.model_dump())
+                        api_info.file_path = str(file_path_relative)
+                    else:
+                        continue
+                    result.append(api_info)
                 return result
 
         try:
             apis = self.parse_file(file_path)
+            # APIInfoオブジェクトのリストを処理
+            processed_apis: list[APIInfo] = []
             for api in apis:
-                api["file"] = str(file_path_relative)
+                if isinstance(api, dict):
+                    # 辞書の場合はAPIInfoに変換（必須フィールドを確認）
+                    api_dict = dict(api)
+                    api_dict["file_path"] = str(file_path_relative)
+                    # languageフィールドが不足している場合は追加
+                    if "language" not in api_dict:
+                        api_dict["language"] = parser_type or self.get_parser_type()
+                    processed_apis.append(APIInfo(**api_dict))
+                else:
+                    # APIInfoオブジェクトの場合は属性を設定
+                    api.file_path = str(file_path_relative)
+                    processed_apis.append(api)
+            apis = processed_apis
 
             # 結果をキャッシュに保存
             if cache_manager is not None and parser_type is not None:

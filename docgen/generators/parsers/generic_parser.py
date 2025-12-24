@@ -86,14 +86,15 @@ class GenericParser(BaseParser):
                     )
 
                     apis.append(
-                        {
-                            "name": name,
-                            "type": "function",
-                            "signature": signature,
-                            "docstring": self._clean_docstring(docstring),
-                            "line": line_num,
-                            "file": str(file_path.relative_to(self.project_root)),
-                        }
+                        APIInfo(
+                            name=name,
+                            type="function",
+                            signature=signature,
+                            docstring=self._clean_docstring(docstring),
+                            line_number=line_num,
+                            file_path=str(file_path.relative_to(self.project_root)),
+                            language=self.language,
+                        )
                     )
 
             # クラス定義を抽出
@@ -104,14 +105,15 @@ class GenericParser(BaseParser):
                     signature = f"class {name}" if "class" in match.group(0) else f"struct {name}"
 
                     apis.append(
-                        {
-                            "name": name,
-                            "type": "class",
-                            "signature": signature,
-                            "docstring": "",
-                            "line": line_num,
-                            "file": str(file_path.relative_to(self.project_root)),
-                        }
+                        APIInfo(
+                            name=name,
+                            type="class",
+                            signature=signature,
+                            docstring="",
+                            line_number=line_num,
+                            file_path=str(file_path.relative_to(self.project_root)),
+                            language=self.language,
+                        )
                     )
         except re.error as e:
             logger.warning(

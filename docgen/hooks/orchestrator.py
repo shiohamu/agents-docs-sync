@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 import sys
 import time
+from typing import Any
 
 from docgen.utils.exceptions import HookError
 
@@ -19,13 +20,13 @@ import asyncio
 class HookOrchestrator:
     """Git hook実行のオーケストレーター"""
 
-    def __init__(self, hook_name: str, args: list[str] = None):
+    def __init__(self, hook_name: str, args: list[str] | None = None):
         self.hook_name = hook_name
         self.args = args or []
         self.project_root = self._find_project_root()
         self.config_loader = ConfigLoader(str(self.project_root))
         self.hooks_config = self.config_loader.load_config()
-        self.task_registry = {}
+        self.task_registry: dict[str, Any] = {}
 
     def _find_project_root(self) -> Path:
         """プロジェクトルートを見つける"""

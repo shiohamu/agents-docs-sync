@@ -5,6 +5,7 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 from pathlib import Path
+from typing import Any
 
 from .detectors.detector_patterns import DetectorPatterns
 from .detectors.plugin_registry import PluginRegistry
@@ -27,7 +28,7 @@ class LanguageDetector:
         """
         self.project_root = project_root
         self.detected_languages: list[DetectedLanguage] = []
-        self.detected_package_managers = {}
+        self.detected_package_managers: dict[str, Any] = {}
 
         # 設定マネージャーの初期化
         if config_manager:
@@ -91,7 +92,7 @@ class LanguageDetector:
             if plugin_detector:
                 detectors.insert(0, plugin_detector)
 
-        detected = []
+        detected: list[DetectedLanguage] = []
         package_managers = {}
 
         if use_parallel:

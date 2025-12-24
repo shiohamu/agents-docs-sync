@@ -167,7 +167,13 @@ class CacheManager:
 
         if current_hash and current_hash == cached_hash:
             logger.debug(f"キャッシュから結果を取得: {file_path}")
-            return cache_entry.get("result")
+            result = cache_entry.get("result")
+            if result is None:
+                return None
+            # 辞書のリストをAPIInfoのリストに変換
+            if isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict):
+                return [APIInfo(**item) if isinstance(item, dict) else item for item in result]
+            return result
 
         # ハッシュが一致しない場合、キャッシュは無効
         logger.debug(f"キャッシュが無効（ハッシュ不一致）: {file_path}")
@@ -197,10 +203,12 @@ class CacheManager:
         except OSError:
             return
 
+        # APIInfoオブジェクトを辞書に変換して保存
+        result_dicts = [api.model_dump() if isinstance(api, APIInfo) else api for api in result]
         self._cache_data[cache_key] = {
             "hash": file_hash,
             "mtime": file_mtime,
-            "result": result,
+            "result": result_dicts,
             "cached_at": datetime.now().isoformat(),
         }
 

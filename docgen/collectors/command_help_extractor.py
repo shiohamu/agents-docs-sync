@@ -200,7 +200,7 @@ class CommandHelpExtractor:
             List of option dicts with 'name' and 'help' keys
         """
         try:
-            options = []
+            options: list[dict[str, str]] = []
             seen_names = set()
             source = None
 
@@ -277,7 +277,7 @@ class CommandHelpExtractor:
         Returns:
             Structured command hierarchy dict
         """
-        result = {"options": [], "subcommands": {}}
+        result: dict[str, Any] = {"options": [], "subcommands": {}}
 
         try:
             if ":" not in entry_point:
@@ -349,7 +349,7 @@ class CommandHelpExtractor:
         Returns:
             Structured command hierarchy dict with options and subcommands
         """
-        result = {"options": [], "subcommands": {}}
+        result: dict[str, Any] = {"options": [], "subcommands": {}}
 
         try:
             # 0. Try dynamic extraction via create_parser

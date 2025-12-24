@@ -91,7 +91,7 @@ class BenchmarkReporter:
 
             for i, bottleneck_name in enumerate(summary.bottlenecks, 1):
                 result = next((r for r in results if r.name == bottleneck_name), None)
-                if result:
+                if result is not None:
                     percentage = (
                         (result.duration / summary.total_duration * 100)
                         if summary.total_duration > 0

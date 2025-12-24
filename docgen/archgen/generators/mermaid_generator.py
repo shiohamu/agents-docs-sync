@@ -163,7 +163,7 @@ class MermaidGenerator:
         lines: list[str],
         indent: str,
         parent_path: str = "",
-        all_ids: set[str] = None,
+        all_ids: set[str] | None = None,
     ) -> None:
         """モジュール間の依存関係を生成"""
         if all_ids is None:

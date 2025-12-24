@@ -5,9 +5,13 @@ JSDocコメントを抽出してAPI情報を生成
 
 from pathlib import Path
 import re
+from typing import TYPE_CHECKING
 
 from ...models import APIInfo
 from .base_parser import BaseParser
+
+if TYPE_CHECKING:
+    from ...models import APIParameter
 
 
 class JSParser(BaseParser):
@@ -78,21 +82,22 @@ class JSParser(BaseParser):
             parameters = self._extract_parameters(docstring)
 
             apis.append(
-                {
-                    "name": name,
-                    "type": api_type,
-                    "signature": signature,
-                    "docstring": self._clean_jsdoc(docstring),
-                    "parameters": parameters,
-                    "line": line_num,
-                    "file": str(file_path.relative_to(self.project_root)),
-                }
+                APIInfo(
+                    name=name,
+                    type=api_type,
+                    signature=signature,
+                    docstring=self._clean_jsdoc(docstring),
+                    parameters=parameters,
+                    line_number=line_num,
+                    file_path=str(file_path.relative_to(self.project_root)),
+                    language="javascript",
+                )
             )
 
         # JSDocなしの関数も抽出（簡易版）
         for match in self.FUNCTION_PATTERN.finditer(content):
             name = match.group(1) or match.group(2) or match.group(3) or match.group(4)
-            if name and not any(api["name"] == name for api in apis):
+            if name and not any(api.name == name for api in apis):
                 line_num = content[: match.start()].count("\n") + 1
 
                 # クラス内にあるかをチェック
@@ -104,30 +109,32 @@ class JSParser(BaseParser):
 
                 signature = self._extract_signature(content, match.end(), name, api_type)
                 apis.append(
-                    {
-                        "name": name,
-                        "type": api_type,
-                        "signature": signature,
-                        "docstring": "",
-                        "line": line_num,
-                        "file": str(file_path.relative_to(self.project_root)),
-                    }
+                    APIInfo(
+                        name=name,
+                        type=api_type,
+                        signature=signature,
+                        docstring="",
+                        line_number=line_num,
+                        file_path=str(file_path.relative_to(self.project_root)),
+                        language="javascript",
+                    )
                 )
 
         for match in self.CLASS_PATTERN.finditer(content):
             name = match.group(1)
-            if name and not any(api["name"] == name for api in apis):
+            if name and not any(api.name == name for api in apis):
                 line_num = content[: match.start()].count("\n") + 1
                 signature = f"class {name}"
                 apis.append(
-                    {
-                        "name": name,
-                        "type": "class",
-                        "signature": signature,
-                        "docstring": "",
-                        "line": line_num,
-                        "file": str(file_path.relative_to(self.project_root)),
-                    }
+                    APIInfo(
+                        name=name,
+                        type="class",
+                        signature=signature,
+                        docstring="",
+                        line_number=line_num,
+                        file_path=str(file_path.relative_to(self.project_root)),
+                        language="javascript",
+                    )
                 )
 
         return apis
@@ -168,7 +175,7 @@ class JSParser(BaseParser):
 
         return f"function {name}(...)"
 
-    def _extract_parameters(self, docstring: str) -> list[str]:
+    def _extract_parameters(self, docstring: str) -> "list[APIParameter] | None":
         """
         JSDocからパラメータを抽出
 
@@ -176,9 +183,11 @@ class JSParser(BaseParser):
             docstring: JSDocコメントの内容
 
         Returns:
-            パラメータ名のリスト
+            APIParameterオブジェクトのリスト、またはNone
         """
-        params = []
+        from ...models import APIParameter
+
+        params: "list[APIParameter]" = []
         lines = docstring.split("\n")
         for line in lines:
             # * を削除してから処理
@@ -188,12 +197,24 @@ class JSParser(BaseParser):
                 # ドット付きのパラメータ名を処理
                 parts = line.split()
                 if len(parts) >= 3:
+                    param_type = parts[1].strip("{}") if len(parts) > 1 else "any"
                     param_name = parts[2].rstrip("-").strip()
                     # ドットを含む場合は最後の部分のみを取得
                     if "." in param_name:
                         param_name = param_name.split(".")[-1]
-                    params.append(param_name)
-        return params
+                    # 説明を抽出（- 以降）
+                    description = None
+                    if "-" in line:
+                        desc_start = line.find("-") + 1
+                        description = line[desc_start:].strip()
+                    params.append(
+                        APIParameter(
+                            name=param_name,
+                            type=param_type,
+                            description=description,
+                        )
+                    )
+        return params if params else None
 
     def _clean_jsdoc(self, docstring: str) -> str:
         """

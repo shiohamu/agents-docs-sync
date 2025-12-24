@@ -66,6 +66,8 @@ class BenchmarkComparator:
 
             if baseline_result is None:
                 # 新規追加された処理
+                if current_result is None:
+                    continue
                 comparisons.append(
                     {
                         "name": name,

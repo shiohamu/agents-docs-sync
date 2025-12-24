@@ -36,6 +36,108 @@ def get_current_timestamp() -> str:
     return datetime.now().strftime(CURRENT_TIMESTAMP_FORMAT)
 
 
+def _extract_from_package_json(project_root: Path, default_message: str) -> str | None:
+    """Extract description from package.json."""
+    import json
+
+    package_json = project_root / "package.json"
+    if not package_json.exists():
+        return None
+    try:
+        with open(package_json, encoding="utf-8") as f:
+            data = json.load(f)
+            if "description" in data and data["description"]:
+                desc = data["description"].strip()
+                if desc and default_message not in desc:
+                    return desc
+    except Exception:
+        pass
+    return None
+
+
+def _extract_from_pyproject(project_root: Path, default_message: str) -> str | None:
+    """Extract description from pyproject.toml."""
+    import re
+
+    pyproject = project_root / "pyproject.toml"
+    if not pyproject.exists():
+        return None
+    try:
+        import tomllib
+
+        with open(pyproject, "rb") as f:
+            data = tomllib.load(f)
+        # project.description
+        if "project" in data and "description" in data["project"]:
+            desc = data["project"]["description"].strip()
+            if desc and default_message not in desc:
+                return desc
+        # tool.poetry.description
+        if (
+            "tool" in data
+            and "poetry" in data["tool"]
+            and "description" in data["tool"]["poetry"]
+        ):
+            desc = data["tool"]["poetry"]["description"].strip()
+            if desc and default_message not in desc:
+                return desc
+    except Exception:
+        try:
+            content = pyproject.read_text(encoding="utf-8")
+            desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
+            if desc_match:
+                desc = desc_match.group(1).strip()
+                if desc and default_message not in desc:
+                    return desc
+        except Exception:
+            pass
+    return None
+
+
+def _extract_from_setup_py(project_root: Path, default_message: str) -> str | None:
+    """Extract description from setup.py."""
+    import re
+
+    setup_py = project_root / "setup.py"
+    if not setup_py.exists():
+        return None
+    try:
+        content = setup_py.read_text(encoding="utf-8")
+        desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
+        if desc_match:
+            desc = desc_match.group(1).strip()
+            if desc and default_message not in desc:
+                return desc
+    except Exception:
+        pass
+    return None
+
+
+def _extract_from_readme(
+    project_root: Path, exclude_readme_path: Path | None, default_message: str
+) -> str | None:
+    """Extract description from README.md."""
+    readme_path = project_root / "README.md"
+    if not readme_path.exists() or readme_path == exclude_readme_path:
+        return None
+    try:
+        readme_content = readme_path.read_text(encoding="utf-8")
+        # Extract first meaningful paragraph
+        for line in readme_content.split("\n"):
+            line_stripped = line.strip()
+            if (
+                line_stripped
+                and not line_stripped.startswith("#")
+                and not line_stripped.startswith("<!--")
+            ):
+                # Skip generic template text (多言語対応)
+                if default_message not in line_stripped:
+                    return line_stripped
+    except Exception:
+        pass
+    return None
+
+
 def extract_project_description(
     project_root: Path,
     project_info_description: str | None,
@@ -62,73 +164,25 @@ def extract_project_description(
     Returns:
         Project description text
     """
-    import json
-    import re
-
     from .config_utils import get_message
 
     # デフォルトメッセージを取得（多言語対応）
     default_message = get_message(config, "default_description")
 
     # 1. package.json を優先（JavaScript/TypeScript プロジェクト）
-    package_json = project_root / "package.json"
-    if package_json.exists():
-        try:
-            with open(package_json, encoding="utf-8") as f:
-                data = json.load(f)
-                if "description" in data and data["description"]:
-                    desc = data["description"].strip()
-                    # デフォルトメッセージやテンプレートテキストを除外
-                    if desc and default_message not in desc:
-                        return desc
-        except Exception:
-            pass
+    desc = _extract_from_package_json(project_root, default_message)
+    if desc:
+        return desc
 
     # 2. pyproject.toml を優先（Python プロジェクト）
-    pyproject = project_root / "pyproject.toml"
-    if pyproject.exists():
-        try:
-            import tomllib
-
-            with open(pyproject, "rb") as f:
-                data = tomllib.load(f)
-            # project.description
-            if "project" in data and "description" in data["project"]:
-                desc = data["project"]["description"].strip()
-                if desc and default_message not in desc:
-                    return desc
-            # tool.poetry.description
-            if (
-                "tool" in data
-                and "poetry" in data["tool"]
-                and "description" in data["tool"]["poetry"]
-            ):
-                desc = data["tool"]["poetry"]["description"].strip()
-                if desc and default_message not in desc:
-                    return desc
-        except Exception:
-            try:
-                content = pyproject.read_text(encoding="utf-8")
-                desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
-                if desc_match:
-                    desc = desc_match.group(1).strip()
-                    if desc and default_message not in desc:
-                        return desc
-            except Exception:
-                pass
+    desc = _extract_from_pyproject(project_root, default_message)
+    if desc:
+        return desc
 
     # 3. setup.py を優先（古いPythonプロジェクト）
-    setup_py = project_root / "setup.py"
-    if setup_py.exists():
-        try:
-            content = setup_py.read_text(encoding="utf-8")
-            desc_match = re.search(r'description\s*=\s*["\']([^"\']+)["\']', content)
-            if desc_match:
-                desc = desc_match.group(1).strip()
-                if desc and default_message not in desc:
-                    return desc
-        except Exception:
-            pass
+    desc = _extract_from_setup_py(project_root, default_message)
+    if desc:
+        return desc
 
     # 4. project_info_description を使用（LanguageInfoCollectorから取得済み、既に優先順位が適用されている）
     if project_info_description:
@@ -137,23 +191,9 @@ def extract_project_description(
             return desc
 
     # 5. README.md をフォールバック（上記が存在しない場合のみ）
-    readme_path = project_root / "README.md"
-    if readme_path.exists() and readme_path != exclude_readme_path:
-        try:
-            readme_content = readme_path.read_text(encoding="utf-8")
-            # Extract first meaningful paragraph
-            for line in readme_content.split("\n"):
-                line_stripped = line.strip()
-                if (
-                    line_stripped
-                    and not line_stripped.startswith("#")
-                    and not line_stripped.startswith("<!--")
-                ):
-                    # Skip generic template text (多言語対応)
-                    if default_message not in line_stripped:
-                        return line_stripped
-        except Exception:
-            pass
+    desc = _extract_from_readme(project_root, exclude_readme_path, default_message)
+    if desc:
+        return desc
 
     # 6. Default message (多言語対応)
     return default_message

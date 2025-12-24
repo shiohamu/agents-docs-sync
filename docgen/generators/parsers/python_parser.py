@@ -61,8 +61,8 @@ class PythonASTVisitor(ast.NodeVisitor):
     def __init__(self, file_path: Path, project_root: Path):
         self.file_path = file_path
         self.project_root = project_root
-        self.apis = []
-        self.class_stack = []
+        self.apis: list[APIInfo] = []
+        self.class_stack: list[str] = []
 
     def visit_ClassDef(self, node: ast.ClassDef):
         # プライベートクラス（_で始まる）はスキップ（オプション）

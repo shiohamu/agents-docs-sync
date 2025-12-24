@@ -127,7 +127,7 @@ class CodeChunkStrategy(BaseChunkStrategy):
         interface_pattern = r"(?:export\s+)?(?:interface|type)\s+(\w+)"
 
         # 関数とクラスを抽出
-        found_elements = []
+        found_elements: list[dict[str, int | str]] = []
 
         # クラス定義を抽出
         for match in re.finditer(class_pattern, content, re.MULTILINE):
@@ -247,7 +247,7 @@ class CodeChunkStrategy(BaseChunkStrategy):
         chunks = []
         lines = content.splitlines()
 
-        current_section = []
+        current_section: list[str] = []
         section_start = 0
         section_name = "preamble"
 
@@ -298,7 +298,7 @@ class CodeChunkStrategy(BaseChunkStrategy):
         chunks = []
         lines = content.splitlines()
 
-        current_section = []
+        current_section: list[str] = []
         section_start = 0
         section_name = "header"
 

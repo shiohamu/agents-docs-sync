@@ -327,7 +327,7 @@ class ImplementationValidator:
                     if is_in_code_block(line_start_pos + match.start()):
                         continue
 
-                    name = match.group(1) if match.lastindex >= 1 else match.group(2)
+                    name = match.group(1) if match.lastindex is not None and match.lastindex >= 1 else match.group(2)
                     if name:
                         # 一般的な単語を除外
                         if name.lower() in ["def", "async", "function", "const", "let", "var"]:
@@ -348,7 +348,7 @@ class ImplementationValidator:
                     if is_in_code_block(line_start_pos + match.start()):
                         continue
 
-                    name = match.group(1) if match.lastindex >= 1 else match.group(2)
+                    name = match.group(1) if match.lastindex is not None and match.lastindex >= 1 else match.group(2)
                     if name:
                         # 一般的な単語を除外
                         if name.lower() in ["class", "struct", "type", "impl"]:

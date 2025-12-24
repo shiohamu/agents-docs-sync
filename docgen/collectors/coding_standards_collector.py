@@ -34,7 +34,7 @@ class CodingStandardsCollector:
         Returns:
             Dictionary of coding standards
         """
-        standards = {}
+        standards: dict[str, str | dict[str, Any] | bool] = {}
 
         # Collect from pyproject.toml
         pyproject = self.project_root / self.PYPROJECT_TOML

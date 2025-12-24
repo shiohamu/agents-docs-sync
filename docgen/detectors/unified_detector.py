@@ -6,6 +6,7 @@
 """
 
 from pathlib import Path
+from typing import Any
 
 from ..models import DetectedLanguage
 from .base_detector import BaseDetector
@@ -28,7 +29,7 @@ class UnifiedDetector(BaseDetector):
         """
         super().__init__(project_root)
         self.language = language
-        self._detected = None  # キャッシュ用
+        self._detected: bool | None = None  # キャッシュ用
 
     def detect(self) -> bool:
         """
