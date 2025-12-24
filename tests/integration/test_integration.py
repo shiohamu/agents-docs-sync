@@ -4,13 +4,6 @@
 """
 
 from pathlib import Path
-import sys
-
-# docgenモジュールをインポート可能にする
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-DOCGEN_DIR = PROJECT_ROOT / "docgen"
-
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.docgen import DocGen
 

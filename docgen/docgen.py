@@ -12,11 +12,7 @@ from typing import Any
 DOCGEN_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = DOCGEN_DIR.parent
 
-# sys.pathにプロジェクトルートを追加（パッケージとして実行する場合）
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-# パッケージとしてインストールされた場合は相対インポートを使用
+# 相対インポートを使用（パッケージとしてインストールされている場合も動作）
 from .benchmark import BenchmarkContext
 from .cli import CommandRunner, create_parser
 from .config_manager import ConfigManager

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
+"""
+Language detector verification script
+Run with: python -m docgen.language_detector or install package first
+"""
 from pathlib import Path
-import sys
-
-# Ensure project root is in path
-project_root = Path.cwd()
-sys.path.insert(0, str(project_root))
 
 from docgen.language_detector import LanguageDetector
 from docgen.models import DetectedLanguage

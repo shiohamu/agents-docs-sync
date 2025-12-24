@@ -5,13 +5,6 @@ DocGenクラスのテスト
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# docgenモジュールをインポート可能にする
-PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-DOCGEN_DIR = PROJECT_ROOT / "docgen"
-import sys
-
-sys.path.insert(0, str(PROJECT_ROOT))
-
 from docgen.docgen import DocGen
 from docgen.models import DetectedLanguage
 

@@ -5,6 +5,7 @@ Extracts help text and descriptions from Python CLI entry points
 
 import argparse
 import importlib
+import importlib.util
 from pathlib import Path
 import sys
 from typing import Any
@@ -16,6 +17,53 @@ logger = get_logger(__name__)
 
 class CommandHelpExtractor:
     """Extract help text from Python CLI entry points"""
+
+    @staticmethod
+    def _import_module_safely(module_path: str, project_root: Path | None = None) -> Any:
+        """
+        Safely import a module, trying project_root first, then falling back to sys.path
+
+        Args:
+            module_path: Module path (e.g., "docgen.docgen")
+            project_root: Project root directory (optional)
+
+        Returns:
+            Imported module or None if import fails
+        """
+        module = None
+        if project_root:
+            # Try to find module file in project_root
+            module_file = project_root / module_path.replace(".", "/")
+            # Try .py extension first
+            if (module_file.with_suffix(".py")).exists():
+                spec = importlib.util.spec_from_file_location(
+                    module_path, module_file.with_suffix(".py")
+                )
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+            # Try __init__.py in directory
+            elif (module_file / "__init__.py").exists():
+                spec = importlib.util.spec_from_file_location(
+                    module_path, module_file / "__init__.py"
+                )
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+
+        # Fallback to standard import if not found in project_root
+        if module is None:
+            # Temporarily add project_root to sys.path if provided
+            original_path = sys.path.copy()
+            try:
+                if project_root and str(project_root) not in sys.path:
+                    sys.path.insert(0, str(project_root))
+                module = importlib.import_module(module_path)
+            finally:
+                if project_root:
+                    sys.path = original_path
+
+        return module
 
     @staticmethod
     def extract_from_entry_point(entry_point: str, project_root: Path | None = None) -> str:
@@ -37,23 +85,15 @@ class CommandHelpExtractor:
 
             module_path, _ = entry_point.split(":", 1)
 
-            # Add project root to sys.path if provided
-            original_path = sys.path.copy()
-            if project_root:
-                sys.path.insert(0, str(project_root))
+            # Import the module using the safe import method
+            module = CommandHelpExtractor._import_module_safely(module_path, project_root)
+            if module is None:
+                return ""
 
-            try:
-                # Import the module
-                module = importlib.import_module(module_path)
+            # Try to find argparse parser in the module
+            description = CommandHelpExtractor._extract_argparse_description(module)
 
-                # Try to find argparse parser in the module
-                description = CommandHelpExtractor._extract_argparse_description(module)
-
-                return description
-
-            finally:
-                # Restore original sys.path
-                sys.path = original_path
+            return description
 
         except Exception as e:
             logger.debug(f"Failed to extract description from {entry_point}: {e}")
@@ -134,23 +174,15 @@ class CommandHelpExtractor:
 
             module_path, _ = entry_point.split(":", 1)
 
-            # Add project root to sys.path if provided
-            original_path = sys.path.copy()
-            if project_root:
-                sys.path.insert(0, str(project_root))
+            # Import the module using the same approach as extract_from_entry_point
+            module = CommandHelpExtractor._import_module_safely(module_path, project_root)
+            if module is None:
+                return []
 
-            try:
-                # Import the module
-                module = importlib.import_module(module_path)
+            # Try to find argparse options in the module
+            options = CommandHelpExtractor._extract_argparse_options(module)
 
-                # Try to find argparse options in the module
-                options = CommandHelpExtractor._extract_argparse_options(module)
-
-                return options
-
-            finally:
-                # Restore original sys.path
-                sys.path = original_path
+            return options
 
         except Exception as e:
             logger.debug(f"Failed to extract options from {entry_point}: {e}")
@@ -254,15 +286,12 @@ class CommandHelpExtractor:
 
             module_path, _ = entry_point.split(":", 1)
 
-            original_path = sys.path.copy()
-            if project_root:
-                sys.path.insert(0, str(project_root))
+            # Import the module using the same approach as extract_from_entry_point
+            module = CommandHelpExtractor._import_module_safely(module_path, project_root)
+            if module is None:
+                return result
 
-            try:
-                module = importlib.import_module(module_path)
-                return CommandHelpExtractor._extract_structured_argparse(module)
-            finally:
-                sys.path = original_path
+            return CommandHelpExtractor._extract_structured_argparse(module)
 
         except Exception as e:
             logger.debug(f"Failed to extract structured commands from {entry_point}: {e}")

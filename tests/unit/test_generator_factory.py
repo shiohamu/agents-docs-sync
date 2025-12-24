@@ -3,16 +3,9 @@ GeneratorFactoryのテスト
 """
 
 from pathlib import Path
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-# docgenモジュールをインポート可能にする
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DOCGEN_DIR = PROJECT_ROOT / "docgen"
-
-sys.path.insert(0, str(PROJECT_ROOT))
 
 from docgen.generator_factory import GeneratorFactory
 

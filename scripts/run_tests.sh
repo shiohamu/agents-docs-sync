@@ -10,14 +10,12 @@ fi
 
 # 言語検出を実行
 echo "言語検出中..."
-DETECTED_LANGS=$(python3 -c "
-import sys
-sys.path.insert(0, '.')
+DETECTED_LANGS=$(PYTHONPATH=. python3 -c "
 from docgen.language_detector import LanguageDetector
 from pathlib import Path
 detector = LanguageDetector(Path('.'))
 langs = detector.detect_languages()
-print(' '.join(langs))
+print(' '.join([lang.name for lang in langs]))
 " 2>/dev/null | tail -1)
 if [ -z "$DETECTED_LANGS" ]; then
     echo "言語検出失敗、デフォルトでPythonテストを実行"
