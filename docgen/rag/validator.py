@@ -230,7 +230,7 @@ class DocumentValidator:
         Returns:
             検証結果の辞書
         """
-        result = {
+        result: dict[str, Any] = {
             "valid": True,
             "errors": [],
             "warnings": [],
@@ -238,11 +238,11 @@ class DocumentValidator:
 
         if check_citations:
             citation_errors = self.validate_citations(document, strict=strict)
-            result["errors"].extend(citation_errors)
+            result["errors"].extend(citation_errors)  # type: ignore[attr-defined]
 
         if check_secrets:
             secret_warnings = self.detect_secrets(document)
-            result["warnings"].extend(secret_warnings)
+            result["warnings"].extend(secret_warnings)  # type: ignore[attr-defined]
 
         # エラーがあれば無効
         if result["errors"]:

@@ -31,9 +31,11 @@ class DetectorConfigLoader:
             pm_rules = []
             # Generate rules from patterns
             if lang in DetectorPatterns.PACKAGE_MANAGER_PATTERNS:
-                for patterns, manager in DetectorPatterns.PACKAGE_MANAGER_PATTERNS[lang]:
-                    files = patterns if isinstance(patterns, tuple) else (patterns,)
-                    pm_rules.append(PackageManagerRule(files=files, manager=manager))
+                patterns_list = DetectorPatterns.PACKAGE_MANAGER_PATTERNS[lang]
+                if isinstance(patterns_list, list):
+                    for patterns, manager in patterns_list:  # type: ignore[assignment]
+                        files = patterns if isinstance(patterns, tuple) else (patterns,)
+                        pm_rules.append(PackageManagerRule(files=files, manager=manager))
 
             configs[lang] = LanguageConfig(
                 name=lang,

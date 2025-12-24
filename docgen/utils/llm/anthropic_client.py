@@ -28,8 +28,9 @@ class AnthropicClient(BaseLLMClient):
             )
             return anthropic.Anthropic(api_key=api_key)
 
+        config_dict = self.config.model_dump() if hasattr(self.config, "model_dump") else self.config
         self.client = LLMClientInitializer.initialize_client_with_fallback(
-            create_anthropic_client, self.config, "anthropic", "anthropic", "Anthropic"
+            create_anthropic_client, config_dict, "anthropic", "anthropic", "Anthropic"  # type: ignore[arg-type]
         )
         self.model = self.config.model or DEFAULT_MODELS["anthropic"]
 

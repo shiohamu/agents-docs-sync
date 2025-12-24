@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .models import BenchmarkResult
 from .recorder import BenchmarkRecorder
 from .utils import format_duration, format_memory
 
@@ -90,18 +91,18 @@ class BenchmarkReporter:
             )
 
             for i, bottleneck_name in enumerate(summary.bottlenecks, 1):
-                result = next((r for r in results if r.name == bottleneck_name), None)
-                if result is not None:
+                bottleneck_result: BenchmarkResult | None = next((r for r in results if r.name == bottleneck_name), None)
+                if bottleneck_result is not None:
                     percentage = (
-                        (result.duration / summary.total_duration * 100)
+                        (bottleneck_result.duration / summary.total_duration * 100)
                         if summary.total_duration > 0
                         else 0
                     )
                     lines.extend(
                         [
-                            f"{i}. **{bottleneck_name}** ({format_duration(result.duration)}, {percentage:.1f}%)",
-                            f"   - メモリ使用量: {format_memory(result.memory_peak)}",
-                            f"   - CPU使用率: {result.cpu_percent:.1f}%",
+                            f"{i}. **{bottleneck_name}** ({format_duration(bottleneck_result.duration)}, {percentage:.1f}%)",
+                            f"   - メモリ使用量: {format_memory(bottleneck_result.memory_peak)}",
+                            f"   - CPU使用率: {bottleneck_result.cpu_percent:.1f}%",
                             "",
                         ]
                     )

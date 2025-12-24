@@ -72,8 +72,8 @@ class ReadmeGenerator(BaseGenerator):
             "dependencies_section": self._format_dependencies_from_data(data.dependencies),
             "setup_section": self._format_setup_instructions(data.setup_instructions),
             "usage_section": "",  # 使用方法は手動セクションまたは別途生成
-            "build_commands": self.template_service.format_commands(data.build_commands),
-            "test_commands": self.template_service.format_commands(data.test_commands),
+            "build_commands": self.template_service.format_commands(data.build_commands or []),
+            "test_commands": self.template_service.format_commands(data.test_commands or []),
             "other_section": "",
             "footer": f"*このREADME.mdは自動生成されています。最終更新: {get_current_timestamp()}*",
             "project_structure": data.project_structure
@@ -90,7 +90,8 @@ class ReadmeGenerator(BaseGenerator):
             if "other" in data.manual_sections:
                 context["other_section"] = data.manual_sections["other"]
 
-        return context
+        # テンプレートをレンダリングして文字列を返す
+        return self.template_service.render("readme", context)
 
     def _format_technologies(self, technologies: list[str]) -> str:
         """使用技術リストを整形"""
@@ -188,8 +189,8 @@ class ReadmeGenerator(BaseGenerator):
                 project_info=self._format_project_info_for_prompt(project_info),
             )
 
-    def _convert_structured_data_to_markdown(self, data, project_info: ProjectInfo) -> str:
-        """READMEの構造化データをマークダウン形式に変換（未使用）"""
+    def _convert_structured_data_to_markdown_legacy(self, data, project_info: ProjectInfo) -> str:
+        """READMEの構造化データをマークダウン形式に変換（未使用・レガシー）"""
         # LLM生成では直接マークダウンを生成するため、このメソッドは使用しない
         return ""
 

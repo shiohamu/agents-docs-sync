@@ -98,10 +98,15 @@ class CommandRunner:
         """Create a handler function for commit-msg command"""
 
         def commit_msg_handler(args: Namespace, project_root: Path) -> int:
-            try:
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING:
                 from ..generators.commit_message_generator import CommitMessageGenerator
-            except (ImportError, ValueError, SystemError):
-                from generators.commit_message_generator import CommitMessageGenerator
+            else:
+                try:
+                    from ..generators.commit_message_generator import CommitMessageGenerator
+                except (ImportError, ValueError, SystemError):
+                    from generators.commit_message_generator import CommitMessageGenerator  # type: ignore[no-redef]
 
             # DocGenの初期化が必要
             from .. import DocGen

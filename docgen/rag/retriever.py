@@ -44,8 +44,8 @@ class DocumentRetriever:
         self.index_dir = self.project_root / "docgen" / "index"
 
         # コンポーネント（Lazy loading）
-        self._embedder = None
-        self._indexer = None
+        self._embedder: Embedder | None = None
+        self._indexer: VectorIndexer | None = None
 
     @property
     def embedder(self) -> Embedder:

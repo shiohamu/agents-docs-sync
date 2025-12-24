@@ -62,8 +62,8 @@ def greet(name: str) -> str:
 
         assert len(apis) == 1
         api = apis[0]
-        assert api["name"] == "greet"
-        assert "こんにちは" in api["docstring"]
+        assert api.name == "greet"
+        assert "こんにちは" in (api.docstring or "")
 
     def test_python_parser_with_very_long_docstring(self, temp_project):
         """非常に長いdocstringの解析テスト"""
@@ -81,7 +81,8 @@ def long_function() -> None:
 
         assert len(apis) == 1
         api = apis[0]
-        assert len(api["docstring"]) > 1000
+        assert api.docstring is not None
+        assert len(api.docstring) > 1000
 
     def test_agents_generator_with_invalid_config(self, temp_project):
         """無効な設定でのAgentsGeneratorテスト"""

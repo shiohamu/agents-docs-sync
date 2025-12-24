@@ -71,7 +71,7 @@ class LanguageInfoCollector(BaseCollector):
                     content = makefile.read_text(encoding="utf-8")
                     from .collector_utils import ConfigReader
 
-                    targets = ConfigReader.parse_makefile_targets(content)
+                    targets = ConfigReader.parse_makefile_targets(content)  # type: ignore[attr-defined]
                     for target in targets:
                         scripts[target] = {
                             "command": f"make {target}",

@@ -64,7 +64,7 @@ class APIGenerator(BaseGenerator):
         # 現在は構造化出力を使用していないためNoneを返す
         return None
 
-    def _create_llm_prompt(self, project_info: ProjectInfo) -> str:
+    def _create_llm_prompt(self, project_info: ProjectInfo, rag_context: str = "") -> str:
         # 現在はLLM生成を使用していないため空文字を返す
         return ""
 

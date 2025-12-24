@@ -44,7 +44,7 @@ class VectorIndexer:
         self.ef_construction = index_config.get("ef_construction", 200)
         self.M = index_config.get("M", 16)
 
-        self._index = None
+        self._index: Any | None = None
         self._metadata: list[dict[str, Any]] = []
 
     def build(self, embeddings: np.ndarray, metadata: list[dict[str, Any]]):
@@ -163,8 +163,9 @@ class VectorIndexer:
             ) from e
 
         self._index = hnswlib.Index(space="cosine", dim=self.embedding_dim)
-        self._index.load_index(str(index_path), max_elements=max_elements)
-        self._index.set_ef(50)
+        if self._index is not None:
+            self._index.load_index(str(index_path), max_elements=max_elements)
+            self._index.set_ef(50)
 
     def search(self, query_embedding: np.ndarray, k: int = 6) -> list[tuple[dict[str, Any], float]]:
         """

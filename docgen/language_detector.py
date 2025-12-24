@@ -90,7 +90,7 @@ class LanguageDetector:
         for lang in self.plugin_registry.get_all_languages():
             plugin_detector = self.plugin_registry.get_detector(lang, self.project_root)
             if plugin_detector:
-                detectors.insert(0, plugin_detector)
+                detectors.insert(0, plugin_detector)  # type: ignore[arg-type]
 
         detected: list[DetectedLanguage] = []
         package_managers = {}

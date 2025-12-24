@@ -9,12 +9,12 @@ from typing import Any
 try:
     import tomllib
 except ImportError:
-    tomllib = None
+    tomllib = None  # type: ignore[assignment]
 
 try:
     import yaml
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore[assignment]
 
 
 def safe_read_file(file_path: Path, encoding: str = "utf-8") -> str | None:

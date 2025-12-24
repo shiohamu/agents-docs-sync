@@ -148,7 +148,7 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
                             item, max_depth, current_depth + 1
                         )
                         if subdir_structure:
-                            result[f"{item.name}/"] = subdir_structure
+                            result[f"{item.name}/"] = subdir_structure  # type: ignore[assignment]
                 elif item.is_file():
                     # ファイルの場合
                     if item.suffix == ".py":
@@ -193,7 +193,7 @@ class StructureAnalyzer(BaseCollector[dict[str, Any]]):
                         # ディレクトリの場合
                         dir_structure = self.collect_directory_structure(item, max_depth=max_depth)
                         if dir_structure:
-                            structure[f"{item.name}/"] = dir_structure
+                            structure[f"{item.name}/"] = dir_structure  # type: ignore[assignment]
 
                 elif item.is_file():
                     # ルートのファイル

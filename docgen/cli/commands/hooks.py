@@ -67,6 +67,8 @@ class HooksCommand(BaseCommand):
             hook_name = getattr(args, "hook_name", None)
             hook_args = getattr(args, "hook_args", [])
 
+            if hook_name is None:
+                raise ValueError("hook_name is required")
             orchestrator = HookOrchestrator(hook_name, hook_args)
 
             # Register tasks

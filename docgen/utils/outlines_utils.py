@@ -3,15 +3,18 @@ Outlines統合ユーティリティモジュール
 共通のOutlines関連機能をまとめる
 """
 
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
 try:
     import outlines
 
     OUTLINES_AVAILABLE = True
 except ImportError:
     OUTLINES_AVAILABLE = False
-    outlines = None
-
-from typing import Any
+    outlines = None  # type: ignore[assignment, no-redef]
 
 
 def should_use_outlines(config: dict[str, Any]) -> bool:

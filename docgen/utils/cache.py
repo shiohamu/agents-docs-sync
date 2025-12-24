@@ -33,7 +33,7 @@ class CacheManager:
         self.enabled: bool = enabled
         self.cache_dir: Path = cache_dir or (project_root / "docgen" / ".cache")
         self.cache_file: Path = self.cache_dir / "parser_cache.json"
-        self._cache_data: dict[str, CacheEntry] | None = None
+        self._cache_data: dict[str, dict[str, Any]] | None = None
         self._metadata: CacheMetadata | None = None
 
         if self.enabled:

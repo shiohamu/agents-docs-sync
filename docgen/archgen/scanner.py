@@ -106,8 +106,9 @@ class ProjectScanner:
         """
         services = []
         for detector in self.detectors:
-            detected = detector.detect(self.project_root)
-            services.extend(detected)
+            if hasattr(detector, "detect"):
+                detected = detector.detect(self.project_root)  # type: ignore[attr-defined]
+                services.extend(detected)
 
         manifest = ArchitectureManifest(project_name=self.project_root.name, services=services)
 

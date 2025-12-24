@@ -203,7 +203,7 @@ class ImplementationValidator:
 
             # 詳細情報を保存
             key = f"{entity_type}:{name}"
-            self.implemented_apis[key] = api
+            self.implemented_apis[key] = api.model_dump() if hasattr(api, "model_dump") else api  # type: ignore[assignment]
 
         logger.info(
             f"インデックス構築完了: "

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 class JSParser(BaseParser):
     """JavaScript/TypeScriptコード解析クラス"""
 
-    PARSER_TYPE: str = "javascript"
+    PARSER_TYPE: str = "javascript"  # type: ignore[misc]
 
     # JSDocコメントのパターン
     JSDOC_PATTERN = re.compile(

@@ -6,14 +6,15 @@ try:
     import tomllib
 except ImportError:
     try:
-        import tomli as tomllib
+        import tomli as _tomli
+        tomllib = _tomli  # type: ignore[assignment]
     except ImportError:
-        tomllib = None
+        tomllib = None  # type: ignore[assignment]
 
 try:
     import yaml
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore[assignment]
 
 
 @dataclass

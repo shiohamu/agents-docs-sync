@@ -29,8 +29,9 @@ class OpenAIClient(BaseLLMClient):
                 base_url=config.base_url,  # カスタムエンドポイント対応
             )
 
+        config_dict = self.config.model_dump() if hasattr(self.config, "model_dump") else self.config
         self.client = LLMClientInitializer.initialize_client_with_fallback(
-            create_openai_client, self.config, "openai", "openai", "OpenAI"
+            create_openai_client, config_dict, "openai", "openai", "OpenAI"  # type: ignore[arg-type]
         )
         self.model: str = self.config.model or DEFAULT_MODELS["openai"]
 

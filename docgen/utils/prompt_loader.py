@@ -4,20 +4,24 @@ TOMLファイルからプロンプトを読み込み、キャッシュする
 """
 
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 try:
     import tomllib
 except ImportError:
     try:
-        import tomli as tomllib
+        import tomli as _tomli
+        tomllib = _tomli  # type: ignore[assignment, no-redef]
     except ImportError:
-        tomllib = None
+        tomllib = None  # type: ignore[assignment, no-redef]
 
 try:
     import yaml
 except ImportError:
-    yaml = None
+    yaml = None  # type: ignore[assignment, no-redef]
 
 from .logger import get_logger
 

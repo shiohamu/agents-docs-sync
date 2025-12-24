@@ -16,7 +16,7 @@ logger = get_logger("generic_parser")
 class GenericParser(BaseParser):
     """汎用コード解析クラス"""
 
-    PARSER_TYPE: str = "generic"
+    PARSER_TYPE: str = "generic"  # type: ignore[misc]
 
     # 言語別のコメントパターン
     COMMENT_PATTERNS = {

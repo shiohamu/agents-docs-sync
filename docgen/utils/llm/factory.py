@@ -64,7 +64,12 @@ class LLMClientFactory:
                         return None
 
             elif mode == "local":
-                local_config = config.get("local", {})
+                if isinstance(config, dict):
+                    local_config = config.get("local", {})
+                else:
+                    local_config = getattr(config, "local", {})
+                    if hasattr(local_config, "model_dump"):
+                        local_config = local_config.model_dump()
                 return LocalLLMClient(local_config)
             else:
                 logger.error(f"サポートされていないモード: {mode}")

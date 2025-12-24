@@ -72,7 +72,7 @@ class ContributingGenerator(BaseGenerator):
         }
 
         # Jinja2テンプレートでレンダリング
-        return self._render_template("contributing_template.md.j2", context)
+        return self.template_service.render("contributing_template.md.j2", context)
 
     def _generate_footer(self) -> str:
         """フッターを生成"""

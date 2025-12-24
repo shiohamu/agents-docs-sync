@@ -57,7 +57,7 @@ class LLMClientInitializer:
         """
         env_name = getattr(config, "api_key_env", None) or default_env
         api_key = getattr(config, "api_key", None) or os.getenv(env_name, "")
-        return api_key
+        return api_key or ""
 
     @staticmethod
     def initialize_client_with_fallback(

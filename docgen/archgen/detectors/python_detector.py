@@ -312,7 +312,7 @@ class PythonDetector:
         try:
             with open(path) as f:
                 lines = f.readlines()
-                deps = self._extract_package_names(lines)
+                deps = self._extract_package_names(lines)  # type: ignore[arg-type]
         except Exception:
             pass
         return deps

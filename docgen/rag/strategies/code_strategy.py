@@ -127,7 +127,7 @@ class CodeChunkStrategy(BaseChunkStrategy):
         interface_pattern = r"(?:export\s+)?(?:interface|type)\s+(\w+)"
 
         # 関数とクラスを抽出
-        found_elements: list[dict[str, int | str]] = []
+        found_elements: list[dict[str, Any]] = []
 
         # クラス定義を抽出
         for match in re.finditer(class_pattern, content, re.MULTILINE):
@@ -210,8 +210,12 @@ class CodeChunkStrategy(BaseChunkStrategy):
 
         # チャンクを作成
         for elem in found_elements:
-            start_idx = elem["start_line"] - 1  # 0-indexed
-            end_idx = elem["end_line"]
+            start_line = elem.get("start_line", 1)
+            end_line = elem.get("end_line", 1)
+            if not isinstance(start_line, int) or not isinstance(end_line, int):
+                continue
+            start_idx = start_line - 1  # 0-indexed
+            end_idx = end_line
             chunk_text = "\n".join(lines[start_idx:end_idx])
 
             chunks.append(

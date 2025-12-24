@@ -30,7 +30,7 @@ else:
 class PythonParser(BaseParser):
     """Pythonコード解析クラス"""
 
-    PARSER_TYPE: str = "python"
+    PARSER_TYPE: str = "python"  # type: ignore[misc]
 
     def _parse_to_ast(self, content: str, file_path: Path) -> ast.AST | None:
         """ASTにパース"""
@@ -73,14 +73,15 @@ class PythonASTVisitor(ast.NodeVisitor):
         docstring = ast.get_docstring(node) or ""
 
         self.apis.append(
-            {
-                "name": node.name,
-                "type": "class",
-                "signature": signature,
-                "docstring": docstring,
-                "line": node.lineno,
-                "file": str(self.file_path.relative_to(self.project_root)),
-            }
+            APIInfo(
+                name=node.name,
+                type="class",
+                signature=signature,
+                docstring=docstring or None,
+                line_number=node.lineno,
+                file_path=str(self.file_path.relative_to(self.project_root)),
+                language="python",
+            )
         )
 
         self.class_stack.append(node.name)
@@ -103,28 +104,36 @@ class PythonASTVisitor(ast.NodeVisitor):
         docstring = ast.get_docstring(node) or ""
 
         # パラメータと戻り値の型を取得
-        parameters = []
-        for arg in node.args.args:
-            param_str = arg.arg
-            if arg.annotation:
-                param_str += f": {_ast_unparse(arg.annotation)}"
-            parameters.append(param_str)
+        from ...models import APIParameter
 
-        return_type = ""
+        api_parameters: list[APIParameter] = []
+        for arg in node.args.args:
+            param_name = arg.arg
+            param_type = _ast_unparse(arg.annotation) if arg.annotation else "Any"
+            api_parameters.append(
+                APIParameter(
+                    name=param_name,
+                    type=param_type,
+                    description=None,
+                )
+            )
+
+        return_type = None
         if node.returns:
             return_type = _ast_unparse(node.returns)
 
         self.apis.append(
-            {
-                "name": node.name,
-                "type": api_type,
-                "signature": signature,
-                "docstring": docstring,
-                "parameters": parameters,
-                "return_type": return_type,
-                "line": node.lineno,
-                "file": str(self.file_path.relative_to(self.project_root)),
-            }
+            APIInfo(
+                name=node.name,
+                type=api_type,
+                signature=signature,
+                docstring=docstring or None,
+                parameters=api_parameters if api_parameters else None,
+                return_type=return_type or None,
+                line_number=node.lineno,
+                file_path=str(self.file_path.relative_to(self.project_root)),
+                language="python",
+            )
         )
 
     def _get_function_signature(self, node) -> str:

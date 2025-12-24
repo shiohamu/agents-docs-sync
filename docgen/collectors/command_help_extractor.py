@@ -304,7 +304,7 @@ class CommandHelpExtractor:
         """
         import argparse
 
-        result = {"options": [], "subcommands": {}}
+        result: dict[str, Any] = {"options": [], "subcommands": {}}
 
         for action in parser._actions:
             # Skip help/version actions

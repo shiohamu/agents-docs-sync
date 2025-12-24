@@ -35,6 +35,7 @@ class GeneratorFactory:
             raise ValueError(f"Unknown generator type: {generator_type}")
 
         # Import the generator class dynamically
+        GeneratorClass: type[BaseGenerator]
         if generator_type == "api":
             from .generators.api_generator import APIGenerator as GeneratorClass
         elif generator_type == "readme":

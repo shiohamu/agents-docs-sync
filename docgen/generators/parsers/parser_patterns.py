@@ -104,6 +104,7 @@ class ParserPatterns:
         line_number: int | None = None,
         signature: str | None = None,
         docstring: str | None = None,
+        language: str | None = None,
     ) -> APIInfo:
         """
         Create APIInfo object with common fields.
@@ -116,11 +117,28 @@ class ParserPatterns:
             line_number: Line number (optional)
             signature: Function signature (optional)
             docstring: Documentation string (optional)
+            language: Programming language (optional, inferred from file extension if not provided)
 
         Returns:
             APIInfo object
         """
         relative_path = file_path.relative_to(project_root)
+
+        # 言語を推測（拡張子から）
+        if language is None:
+            ext_to_lang = {
+                ".py": "python",
+                ".js": "javascript",
+                ".jsx": "javascript",
+                ".ts": "typescript",
+                ".tsx": "typescript",
+                ".go": "go",
+                ".rs": "rust",
+                ".java": "java",
+                ".cpp": "cpp",
+                ".c": "c",
+            }
+            language = ext_to_lang.get(file_path.suffix.lower(), "unknown")
 
         return APIInfo(
             name=name,
@@ -129,6 +147,7 @@ class ParserPatterns:
             line_number=line_number,
             signature=signature,
             docstring=docstring,
+            language=language,
         )
 
     @classmethod

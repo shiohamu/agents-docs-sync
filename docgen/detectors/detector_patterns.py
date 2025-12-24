@@ -2,13 +2,14 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 
 class DetectorPatterns:
     """Common file detection patterns used by language detectors."""
 
     # ファイル検索結果のキャッシュ（プロジェクトルートごと）
-    _file_cache: dict[Path, dict[str, bool]] = {}
+    _file_cache: dict[Path, dict[tuple[str, ...], bool]] = {}
 
     # 統合ファイル検索結果のキャッシュ（一度の走査で全言語を検出）
     _unified_scan_cache: dict[Path, dict[str, bool]] = {}
@@ -365,6 +366,8 @@ class DetectorPatterns:
             Package manager name or None
         """
         patterns = cls.PACKAGE_MANAGER_PATTERNS.get(language, [])
+        if not isinstance(patterns, list):
+            return None
         for file_patterns, manager in patterns:
             if isinstance(file_patterns, tuple):
                 if file_exists_func(*file_patterns):

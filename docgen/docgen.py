@@ -61,7 +61,7 @@ class DocGen:
         self.config = self.config_manager.get_config()
         self.language_detector = LanguageDetector(self.project_root, self.config_manager)
         self.detected_languages: list[DetectedLanguage] = []
-        self.detected_package_managers = {}
+        self.detected_package_managers: dict[str, Any] = {}
 
     def detect_languages(self, use_parallel: bool = True) -> list[DetectedLanguage]:
         """
