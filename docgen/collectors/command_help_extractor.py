@@ -7,7 +7,6 @@ import argparse
 import importlib
 import importlib.util
 from pathlib import Path
-import sys
 from typing import Any
 
 from ..utils.logger import get_logger
@@ -53,15 +52,33 @@ class CommandHelpExtractor:
 
         # Fallback to standard import if not found in project_root
         if module is None:
-            # Temporarily add project_root to sys.path if provided
-            original_path = sys.path.copy()
+            # Try standard import (works when package is installed)
             try:
-                if project_root and str(project_root) not in sys.path:
-                    sys.path.insert(0, str(project_root))
                 module = importlib.import_module(module_path)
-            finally:
+            except ImportError:
+                # If project_root is provided, try to find the module file directly
                 if project_root:
-                    sys.path = original_path
+                    # Convert module path to file path
+                    module_parts = module_path.split(".")
+                    module_file = project_root
+                    for part in module_parts:
+                        module_file = module_file / part
+
+                    # Try .py file
+                    py_file = module_file.with_suffix(".py")
+                    if py_file.exists():
+                        spec = importlib.util.spec_from_file_location(module_path, py_file)
+                        if spec and spec.loader:
+                            module = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(module)
+                    # Try __init__.py in directory
+                    elif (module_file / "__init__.py").exists():
+                        spec = importlib.util.spec_from_file_location(
+                            module_path, module_file / "__init__.py"
+                        )
+                        if spec and spec.loader:
+                            module = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(module)
 
         return module
 

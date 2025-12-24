@@ -23,8 +23,10 @@ class AnthropicClient(BaseLLMClient):
         def create_anthropic_client(config):
             import anthropic
 
+            # configが辞書の場合はgetattrで取得、オブジェクトの場合は属性アクセス
+            api_key_env = config.get("api_key_env") if isinstance(config, dict) else getattr(config, "api_key_env", None)
             api_key = LLMClientInitializer.get_api_key(
-                config, config.api_key_env, "ANTHROPIC_API_KEY"
+                config, api_key_env, "ANTHROPIC_API_KEY"
             )
             return anthropic.Anthropic(api_key=api_key)
 

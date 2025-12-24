@@ -89,7 +89,7 @@ class LanguageInfoCollector(BaseCollector):
                 import tomllib
 
                 with open(pyproject, "rb") as f:
-                    data = tomllib.load(f)
+                    data = tomllib.load(f)  # type: ignore[arg-type]
 
                 # Standard [project.scripts]
                 if "project" in data and "scripts" in data["project"]:
@@ -189,8 +189,8 @@ class LanguageInfoCollector(BaseCollector):
             try:
                 import tomllib
 
-                with open(pyproject, "rb") as f:
-                    data = tomllib.load(f)
+                with open(pyproject, "rb") as f:  # type: ignore[assignment]
+                    data = tomllib.load(f)  # type: ignore[arg-type]
                 # project.description
                 if "project" in data and "description" in data["project"]:
                     desc = data["project"]["description"]

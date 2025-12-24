@@ -23,10 +23,13 @@ class OpenAIClient(BaseLLMClient):
         def create_openai_client(config):
             import openai
 
-            api_key = LLMClientInitializer.get_api_key(config, config.api_key_env, "OPENAI_API_KEY")
+            # configが辞書の場合はgetattrで取得、オブジェクトの場合は属性アクセス
+            api_key_env = config.get("api_key_env") if isinstance(config, dict) else getattr(config, "api_key_env", None)
+            api_key = LLMClientInitializer.get_api_key(config, api_key_env, "OPENAI_API_KEY")
+            base_url = config.get("base_url") if isinstance(config, dict) else getattr(config, "base_url", None)
             return openai.OpenAI(
                 api_key=api_key,
-                base_url=config.base_url,  # カスタムエンドポイント対応
+                base_url=base_url,  # カスタムエンドポイント対応
             )
 
         config_dict = self.config.model_dump() if hasattr(self.config, "model_dump") else self.config

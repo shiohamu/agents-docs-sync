@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 import shutil
-import sys
 import tempfile
 
 import pytest
@@ -9,10 +8,8 @@ import pytest
 # Set environment variable for testing at module level to ensure it's set before logger initialization
 os.environ["DOCGEN_TESTING"] = "1"
 
-# Add project root to sys.path for imports (only once at module level)
+# Project root is now handled by pytest.ini/pythonpath configuration
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
 
 
 @pytest.fixture(autouse=True)
