@@ -262,7 +262,7 @@ class APIGenerator(BaseGenerator):
         self, exclude_dirs: list[str], extensions: set[str]
     ) -> list[tuple[Path, Path]]:
         """
-        プロジェクトファイルを一度だけスキャン（複数パーサー間で共有）
+        プロジェクトファイルを一度だけスキャン（UnifiedFileScannerを使用）
 
         Args:
             exclude_dirs: 除外するディレクトリ
@@ -271,89 +271,49 @@ class APIGenerator(BaseGenerator):
         Returns:
             (絶対パス, 相対パス)のタプルのリスト
         """
-        files_to_parse = []
+        from ..utils.file_scanner import get_unified_scanner
+
         project_root_resolved = self.project_root.resolve()
         extensions_set = {ext.lower() for ext in extensions}
 
-        # .gitignoreマッチャーを作成
-        gitignore_matcher = None
+        # 統一ファイルスキャナーを取得
         use_gitignore = self.config.get("exclude", {}).get("use_gitignore", True)
-        if use_gitignore:
-            from ..utils.gitignore_parser import load_gitignore_patterns
+        scanner = get_unified_scanner(
+            project_root=self.project_root,
+            exclude_dirs=set(exclude_dirs),
+            use_gitignore=use_gitignore,
+        )
 
-            gitignore_matcher = load_gitignore_patterns(self.project_root)
+        # スキャン結果を取得
+        scan_result = scanner.scan_once()
+        files_to_parse = []
 
+        # 拡張子でフィルタリング
         try:
-            for root, dirs, files in os.walk(self.project_root, followlinks=False):
-                root_path = Path(root)
-
-                # 除外ディレクトリを早期にスキップ（dirsをin-placeで変更）
-                dirs_to_remove = []
-                for d in dirs:
-                    dir_path = root_path / d
-                    # 既存の除外チェック
-                    if d in exclude_dirs or d.startswith(".") or d.endswith(".egg-info"):
-                        dirs_to_remove.append(d)
-                        continue
-                    # .gitignoreチェック
-                    if gitignore_matcher and gitignore_matcher.should_exclude_dir(dir_path):
-                        dirs_to_remove.append(d)
-                        continue
-
-                for d in dirs_to_remove:
-                    dirs.remove(d)
-
-                # パスベースの除外チェック
-                try:
-                    rel_path = root_path.relative_to(project_root_resolved)
-                    if any(excluded in rel_path.parts for excluded in exclude_dirs):
-                        dirs[:] = []  # このディレクトリ以下をスキップ
-                        continue
-                    if any(part.endswith(".egg-info") for part in rel_path.parts):
-                        dirs[:] = []  # egg-infoディレクトリ以下をスキップ
-                        continue
-                    # .gitignoreチェック（ディレクトリ全体）
-                    if gitignore_matcher and gitignore_matcher.should_exclude_dir(root_path):
-                        dirs[:] = []  # このディレクトリ以下をスキップ
-                        continue
-                except ValueError:
-                    # プロジェクトルート外の場合はスキップ
-                    continue
-
-                # ファイルをチェック
-                for file_name in files:
-                    file_path = root_path / file_name
-
-                    # .gitignoreチェック
-                    if gitignore_matcher and gitignore_matcher.is_ignored(file_path):
-                        continue
-
-                    # 拡張子をチェック
-                    ext = file_path.suffix.lower()
-                    if ext not in extensions_set:
-                        continue
-
-                    try:
-                        # パスの正規化（シンボリックリンクを解決）
-                        file_path_resolved = file_path.resolve()
-
-                        # プロジェクトルート外へのアクセスを防止
+            for ext, files in scan_result["files_by_extension"].items():
+                if ext.lower() in extensions_set:
+                    for file_path in files:
                         try:
-                            file_path_relative = file_path_resolved.relative_to(
-                                project_root_resolved
-                            )
-                        except ValueError:
-                            # プロジェクトルート外のファイルはスキップ
-                            continue
+                            # パスの正規化（シンボリックリンクを解決）
+                            file_path_resolved = file_path.resolve()
 
-                        # シンボリックリンクのチェック
-                        if file_path.is_symlink():
-                            continue
+                            # プロジェクトルート外へのアクセスを防止
+                            try:
+                                file_path_relative = file_path_resolved.relative_to(
+                                    project_root_resolved
+                                )
+                            except ValueError:
+                                # プロジェクトルート外のファイルはスキップ
+                                continue
 
-                        files_to_parse.append((file_path, file_path_relative))
-                    except (OSError, PermissionError):
-                        # ファイルアクセスエラーは無視して続行
-                        continue
+                            # シンボリックリンクのチェック
+                            if file_path.is_symlink():
+                                continue
+
+                            files_to_parse.append((file_path, file_path_relative))
+                        except (OSError, PermissionError):
+                            # ファイルアクセスエラーは無視して続行
+                            continue
         except (OSError, PermissionError) as e:
             from ..utils.logger import get_logger
 

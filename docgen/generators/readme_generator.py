@@ -136,30 +136,9 @@ class ReadmeGenerator(BaseGenerator):
 
         return "\n".join(lines)
 
-    def _generate_key_features(self, project_info: ProjectInfo) -> list[str]:
-        """主要機能を生成"""
-        if not self._should_use_llm():
-            return []
-        return self._generate_content_with_llm("readme_prompts.toml", "key_features", project_info)
-
-    def _generate_architecture(self, project_info: ProjectInfo) -> str:
-        """アーキテクチャを生成"""
-        # 設定ベースのアーキテクチャ図生成を試みる
-        arch_content = self._get_architecture_diagram_content()
-        if arch_content:
-            return arch_content
-
-        if not self._should_use_llm():
-            return ""
-        return self._generate_content_with_llm("readme_prompts.toml", "architecture", project_info)
-
-    def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
-        """トラブルシューティングを生成"""
-        if not self._should_use_llm():
-            return ""
-        return self._generate_content_with_llm(
-            "readme_prompts.toml", "troubleshooting", project_info
-        )
+    def _get_default_prompt_file(self) -> str:
+        """デフォルトのプロンプトファイル名を取得"""
+        return "readme_prompts.toml"
 
     def _generate_markdown(self, project_info: ProjectInfo) -> str:
         """

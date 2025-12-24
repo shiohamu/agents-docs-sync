@@ -319,34 +319,9 @@ class AgentsGenerator(BaseGenerator):
             return ""
         return str(guidelines)
 
-    def _generate_key_features(self, project_info: ProjectInfo) -> list[str]:
-        """主要機能を生成"""
-        if not self._should_use_llm():
-            return []
-        content = self._generate_content_with_llm(
-            "agents_prompts.toml", "key_features", project_info
-        )
-        # コンテンツをリストに変換するロジックが必要
-        return [line.strip("- ") for line in content.splitlines() if line.strip()]
-
-    def _generate_architecture(self, project_info: ProjectInfo) -> str:
-        """アーキテクチャを生成"""
-        # 設定ベースのアーキテクチャ図生成を試みる
-        arch_content = self._get_architecture_diagram_content()
-        if arch_content:
-            return arch_content
-
-        if not self._should_use_llm():
-            return ""
-        return self._generate_content_with_llm("agents_prompts.toml", "architecture", project_info)
-
-    def _generate_troubleshooting(self, project_info: ProjectInfo) -> str:
-        """トラブルシューティングを生成"""
-        if not self._should_use_llm():
-            return ""
-        return self._generate_content_with_llm(
-            "agents_prompts.toml", "troubleshooting", project_info
-        )
+    def _get_default_prompt_file(self) -> str:
+        """デフォルトのプロンプトファイル名を取得"""
+        return "agents_prompts.toml"
 
     def _should_use_llm(self) -> bool:
         """LLMを使用すべきかどうかを判定"""

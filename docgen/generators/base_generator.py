@@ -408,19 +408,23 @@ class BaseGenerator(ABC):
             return ""
 
     def _generate_key_features(
-        self, project_info: ProjectInfo, prompt_file: str = "agents_prompts.toml"
+        self, project_info: ProjectInfo, prompt_file: str | None = None
     ) -> list[str]:
         """主要機能を生成
 
         Args:
             project_info: プロジェクト情報
-            prompt_file: プロンプトファイル名（デフォルト: agents_prompts.toml）
+            prompt_file: プロンプトファイル名（Noneの場合はサブクラスのデフォルトを使用）
 
         Returns:
             主要機能のリスト
         """
         if not self._should_use_llm():
             return []
+
+        # プロンプトファイル名が指定されていない場合は、サブクラスのデフォルトを使用
+        if prompt_file is None:
+            prompt_file = self._get_default_prompt_file()
 
         content = self._generate_content_with_llm(prompt_file, "key_features", project_info)
 
@@ -432,13 +436,13 @@ class BaseGenerator(ABC):
         return [line.strip("- ") for line in content.splitlines() if line.strip()]
 
     def _generate_architecture(
-        self, project_info: ProjectInfo, prompt_file: str = "agents_prompts.toml"
+        self, project_info: ProjectInfo, prompt_file: str | None = None
     ) -> str:
         """アーキテクチャを生成
 
         Args:
             project_info: プロジェクト情報
-            prompt_file: プロンプトファイル名（デフォルト: agents_prompts.toml）
+            prompt_file: プロンプトファイル名（Noneの場合はサブクラスのデフォルトを使用）
 
         Returns:
             アーキテクチャの説明文字列
@@ -451,6 +455,10 @@ class BaseGenerator(ABC):
         if not self._should_use_llm():
             return ""
 
+        # プロンプトファイル名が指定されていない場合は、サブクラスのデフォルトを使用
+        if prompt_file is None:
+            prompt_file = self._get_default_prompt_file()
+
         return self._generate_content_with_llm(prompt_file, "architecture", project_info)
 
     def _should_use_llm(self) -> bool:
@@ -462,6 +470,36 @@ class BaseGenerator(ABC):
         generation_config = self.agents_config.get("generation", {})
         mode = generation_config.get(self._get_mode_key(), "template")
         return mode in ("llm", "hybrid")
+
+    def _get_default_prompt_file(self) -> str:
+        """デフォルトのプロンプトファイル名を取得（サブクラスでオーバーライド可能）
+
+        Returns:
+            プロンプトファイル名
+        """
+        # デフォルトはagents_prompts.toml
+        return "agents_prompts.toml"
+
+    def _generate_troubleshooting(
+        self, project_info: ProjectInfo, prompt_file: str | None = None
+    ) -> str:
+        """トラブルシューティングを生成
+
+        Args:
+            project_info: プロジェクト情報
+            prompt_file: プロンプトファイル名（Noneの場合はサブクラスのデフォルトを使用）
+
+        Returns:
+            トラブルシューティングの説明文字列
+        """
+        if not self._should_use_llm():
+            return ""
+
+        # プロンプトファイル名が指定されていない場合は、サブクラスのデフォルトを使用
+        if prompt_file is None:
+            prompt_file = self._get_default_prompt_file()
+
+        return self._generate_content_with_llm(prompt_file, "troubleshooting", project_info)
 
     def _generate_content_with_llm(
         self, prompt_file: str, section: str, project_info: ProjectInfo
