@@ -10,6 +10,7 @@ services:
   - hnswlib
   - httpx
   - jinja2
+  - mypy
   - openai
   - outlines
   - pip-licenses
@@ -19,9 +20,11 @@ services:
   - pytest-cov
   - pytest-mock
   - pyyaml
+  - radon
   - ruff
   - sentence-transformers
   - torch
+  - types-pyyaml
   modules:
   - name: docgen
     path: !!python/object/apply:pathlib.PosixPath

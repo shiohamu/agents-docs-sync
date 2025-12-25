@@ -8,14 +8,52 @@
 <!-- MANUAL_START:description -->
 
 <!-- MANUAL_END:description -->
-agents-docs-sync は、ソースコードをコミットするたびに自動的にテストの実行・ドキュメント生成・AGENTS.md の更新を行う CI パイプラインです。  
-- **継続的検証**：`pytest`, `pytest-cov`, `pytest-mock` を使用してコードベース全体でユニット／統合テストが走り、失敗した変更は即座にフィードバックされます。  
-- **ドキュメント自動生成**：Python ソースや YAML 設定ファイルから API ドキュメントを抽出し、Markdown 形式の `docs/` ディレクトリへ書き込みます。これにより手作業で更新する必要がなくなります。  
-- **AGENTS.md の自動同期**：プロジェクト内のエージェント定義（Python クラスや YAML ファイル）を解析し、最新状態を `AGENTS.md` に反映させます。CI 失敗時に差分だけがコミットされるため、ドキュメントと実装が常に整合します。  
-- **技術スタック**：Python（3.11+）＋シェルスクリプトで構成し、依存管理は `uv` を利用しています。主要ライブラリとして `pyyaml>=6.0.3`, `pytest>=7.4.0`, `pytest-cov>=4.1.0`, `pytest-mock>=3.11.1` などを使用します。  
-- **導入の簡便さ**：プロジェクトルートに `.github/workflows/agents-sync.yml` を置くだけで GitHub Actions に統合でき、ローカルでは `uv run agents-docs-sync` コマンドで同等機能が実行可能です。  
+agents-docs-syncは、Python で実装された CI/CD パイプラインの補助ツールです。  
+GitHub Actions 等に組み込むことで、コードをコミットするたびに以下が自動的に行われます。
 
-このパイプラインを活用することで、開発サイクル中に常に正確なテスト結果と最新のドキュメント・エージェント一覧を保持できるため、品質保証とメンテナンスコストの低減が実現します。<!-- MANUAL_START:architecture -->
+- **テスト実行** – `pytest`（pyproject.toml に uv で管理）とカバレッジ計測 (`pytest-cov`) を使用してすべてのユニット・統合テストを走らせ、失敗時はビルドを中断します。  
+- **ドキュメント生成** – `pyyaml` によって YAML で定義されたエージェント構成から Markdown / MkDocs のページを自動作成し、最新の API ドキュメントと設定例を常に同期させます。  
+- **AGENTS.md 自動更新** – プロジェクト内の全てのエージェント定義（`agents/*.py`, `config/**/*.yaml` など）から情報を抽出し、概要・使用方法・依存関係をまとめた `AGENTS.md` を再生成します。  
+- **レポート作成** – テスト結果とカバレッジ統計は GitHub の Actions レポートに添付されるほか、必要に応じて Slack やメールで通知できます。
+
+### 主なファイル構造
+```
+agents-docs-sync/
+├─ scripts/          # コマンドラインスクリプト (sync.py, generate_docs.sh)
+├─ agents/           # エージェント実装（Python）
+├─ config/           # YAML 設定・テンプレート
+└─ docs/             # MkDocs / Sphinx 用の静的ファイル生成先
+```
+
+### 実行方法  
+```bash
+# 依存関係をインストール (uv を使用)
+uv sync
+
+# 手動で同期実行（CI の代わりにローカルテスト）
+uv run scripts/sync.py --all
+```
+`--all` オプションは、全てのステップ（テスト・ドキュメント生成・AGENTS.md 更新）を順次走らせます。  
+GitHub Actions では `actions/setup-python@v5`, `github/codeql-action/upload-sarif@v1.0.3` 等と組み合わせることで、CI パイプラインに簡単に統合できます。
+
+### 主なメリット
+- **ドキュメントの整合性維持**：コード変更ごとに自動生成されるため、手作業で更新するミスが減ります。  
+- **品質保証**：テスト失敗時は即座にビルドを停止し、デプロイ前に問題点を検出できます。  
+- **開発者体験向上**：`AGENTS.md` にエージェントの概要と使用例が自動でまとめられるため、新規メンバーも迅速に理解できるようになります。
+
+### 依存関係
+```toml
+# pyproject.toml (uv)
+[tool.uv]
+dev-dependencies = [
+    "pyyaml>=6.0.3",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.1"
+]
+```
+これらはすべて `uv sync` で解決され、CI 環境でも同一バージョンが保証されます。<!-- MANUAL_START:architecture -->
+
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -109,7 +147,7 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, mypy, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, radon, ruff, sentence-transformers, torch, types-pyyaml
 
 ## 使用技術
 
@@ -218,4 +256,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このREADME.mdは自動生成されています。最終更新: 2025-12-24 06:57:14*
+*このREADME.mdは自動生成されています。最終更新: 2025-12-24 16:04:17*

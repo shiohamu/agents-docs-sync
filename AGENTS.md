@@ -1,6 +1,6 @@
 # AGENTS ドキュメント
 
-自動生成日時: 2025-12-24 06:57:47
+自動生成日時: 2025-12-24 16:05:17
 
 このドキュメントは、AIコーディングエージェントがプロジェクト内で効果的に作業するための指示とコンテキストを提供します。
 
@@ -12,47 +12,58 @@
 <!-- MANUAL_END:description -->
 
 
-本プロジェクトは、ソースコードのコミットごとに自動的にテストを実行し、ドキュメント（Sphinx / MkDocs など）を生成した上で `AGENTS.md` を最新状態へ更新するパイプラインです。  
-主なフローは以下の通りです。
+本プロジェクトは、ソースコードをコミットするたびに自動でテスト実行・ドキュメント生成・AGENTS.md の更新という一連の作業をパイプラインとして統合したものです。  
+主な機能と構成要素は以下の通りです。
 
-- **コミットトリガー**：GitHub Actions またはローカルの pre‑push フックから呼び出されます。
-- **環境構築**  
-  - `uv` を使用して依存関係をインストール（Python ランタイム＋パッケージマネージャ）  
-    ```bash
-    uv sync --frozen
-    ```
-- **テスト実行**  
-  - `pytest`, `pytest-cov`, `pytest-mock` 等でユニット・統合テストを走らせ、カバレッジは `.coverage` に保存。  
-  - テスト結果が失敗した場合はパイプライン全体が停止し、ドキュメント更新も行われません。
-- **ドキュメント生成**  
-  - ソースコードの docstring を元に Sphinx/MkDocs がビルドされます（`docs/` 配下）。  
-  - ビルド後は `build/html/index.html` 等が最新化。  
-- **AGENTS.md の自動更新**  
-  - プロジェクト内のエージェント定義ファイルをパースし、各クラス名・概要・使用方法などを抽出して Markdown テーブルに整形します。  
-  - `pyyaml` を利用した設定読み込み (`agents.yaml`) により、カスタムメタ情報（例：優先度や依存関係）も埋め込むことが可能です。
+- **CI/CD パイプライン**: GitHub Actions などで設定され、`push` や `pull_request` が発火すると実行されます。
+- **テスト自動化**：Python の `pytest`, `pytest-cov`, `pytest-mock` を用いてユニット・統合テストを走らせ、カバレッジ情報も同時に取得します。  
+  - テストはすべての Python ファイル（`tests/` ディレクトリ内）で実行されます。
+- **ドキュメント生成**：Python スクリプト `docs/generate.py` がプロジェクト全体を走査し、YAML 設定 (`agents.yml`) から各エージェントの仕様書を Markdown に変換します。  
+  - 依存ライブラリとして `pyyaml>=6.0.3` を使用しています。
+- **AGENTS.md 自動更新**：生成したドキュメント（例: `docs/agents/*.md`）を結合し、プロジェクトルートの `AGENTS.md` に反映します。  
+  - このファイルは AI エージェントが参照する主要な情報源であり、新しいエージェントや変更点が即座に可視化されます。
+- **パッケージ管理**：Python の依存関係は `uv`（[https://github.com/astral-sh/uv](https://github.com/astral-sh/uv)）で解決します。  
+  - `pyproject.toml` に必要なライブラリが明記されており、CI 環境でも同一構成を簡単に再現できます。
 
-### AI エージェント向けの実装ポイント
-
-| 機能 | 具体的なコード/ファイル |
-|------|------------------------|
-| **パイプライン呼び出し** | `.github/workflows/sync.yml`（GitHub Actions）または `scripts/pre-commit.sh` |
-| **テストカバレッジ集計** | `pytest --cov=agents -q` → 生成される XML/JSON を CI のステータスに反映 |
-| **ドキュメントビルド** | `make html`（Sphinx）または `mkdocs build` |
-| **AGENTS.md 更新ロジック** | `scripts/update_agents_md.py`：YAML から読み込んだ情報を Markdown に変換し、ファイルに書き込み |
-
-### カスタマイズ方法
-
-1. **エージェントメタデータ追加**  
-   - `agents.yaml` 内で各クラスの属性（例: `role`, `description`, `dependencies`）を書いておくと、自動生成時に反映されます。  
-2. **CI の拡張**  
-   - 必要なら別ブランチ向けにステージング用ドキュメントを作成し、PR 時だけ更新するよう設定できます（環境変数 `STAGING` を利用）。  
-3. **ローカル実行テスト**  
+### 実行手順（ローカル環境）
+1. **依存関係のインストール**  
    ```bash
-   uv run scripts/run_pipeline.sh  # テスト・ビルド・MD 更新一括実行
+   uv sync --dev  # dev には pytest 系が含まれる
+   ```
+2. **テスト実行**  
+   ```bash
+   python -m pytest tests/
+   ```
+3. **ドキュメント生成 & AGENTS.md 更新**  
+   ```bash
+   python docs/generate.py
    ```
 
-この構成により、AI エージェントの開発者はコードをコミットするだけで、最新のユニットテスト結果と整形されたドキュメント、および `AGENTS.md` の更新が保証されます。  
-パイプライン全体をスクリプト化しているため、新しいエージェントクラスやメタ情報を追加する際は、設定ファイルだけを書き換えるか必要に応じて小さな修正で済みます。
+### CI 用の設定例（GitHub Actions）
+```yaml
+name: Docs Sync
+
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run tests
+        run: python -m pytest tests/
+      - name: Generate docs & update AGENTS.md
+        run: python docs/generate.py
+```
+
+このパイプラインにより、コミット単位でエージェントの定義・ドキュメントが常に最新状態になり、AI エージェントを利用する開発者は変更点や追加情報を即座に把握できます。
 **使用技術**: python, shell
 ## プロジェクト構造
 ```
@@ -143,6 +154,7 @@
 │   │   ├── file_scanner.py
 │   │   ├── file_utils.py
 │   │   ├── gitignore_parser.py
+│   │   ├── markdown_utils.py
 │   │   └── prompt_loader.py
 │   ├── validators//
 │   │   └── implementation_validator.py
@@ -164,6 +176,7 @@
 ## アーキテクチャ
 
 <!-- MANUAL_START:architecture -->
+
 <!-- MANUAL_END:architecture -->
 ```mermaid
 graph TB
@@ -257,7 +270,7 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, mypy, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, radon, ruff, sentence-transformers, torch, types-pyyaml
 
 ---
 
@@ -453,4 +466,4 @@ uv run pytest tests/ -v --tb=short
 
 ---
 
-*このAGENTS.mdは自動生成されています。最終更新: 2025-12-24 06:57:47*
+*このAGENTS.mdは自動生成されています。最終更新: 2025-12-24 16:05:17*

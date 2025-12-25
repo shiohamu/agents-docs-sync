@@ -92,5 +92,5 @@ graph TB
 ### agents-docs-sync
 - **Type**: python
 - **Description**: コミットするごとにテスト実行・ドキュメント生成・AGENTS.md の自動更新を行うパイプライン
-- **Dependencies**: anthropic, hnswlib, httpx, jinja2, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, ruff, sentence-transformers, torch
+- **Dependencies**: anthropic, hnswlib, httpx, jinja2, mypy, openai, outlines, pip-licenses, psutil, pydantic, pytest, pytest-cov, pytest-mock, pyyaml, radon, ruff, sentence-transformers, torch, types-pyyaml
 
